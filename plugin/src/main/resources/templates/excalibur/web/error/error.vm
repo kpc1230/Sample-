@@ -1,0 +1,34 @@
+#* @vtlvariable name="errorCollection" type="com.atlassian.borrowed.greenhopper.web.ErrorCollection" *#
+<html>
+<head>
+    <content tag="section">browse_link</content>
+    <meta name="decorator" content="general"/>
+    <title>$i18n.getText('bonfire.error.heading')</title>
+</head>
+<body>
+    <div class="bonfire-license-error">
+        <div class="aui-message error">
+            <p class="title">
+                <span class="aui-icon icon-error"></span>
+                An error has occurred.
+            </p>
+            <h4>Details</h4>
+            <p>
+            <ul>
+                #if ($action && $action.getErrorCollection().hasErrors())
+                    #foreach($error in ${action.getErrorCollection().getErrors()})
+                        <li>$error.getMessageKeyEscaped()</li>
+                    #end
+                #end
+            
+                #if (!$action)
+                    #foreach($error in ${errorCollection.getErrors()})
+                        <li>$error.getMessageKeyEscaped()</li>
+                    #end
+                #end
+            </ul>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

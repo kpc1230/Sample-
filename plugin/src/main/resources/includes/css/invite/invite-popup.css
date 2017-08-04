@@ -1,0 +1,118 @@
+.ajs-menu-bar .ajs-button a.share span {
+    background-image:url(images/share.png);
+}
+
+#inline-dialog-shareContentPopup .contents {
+    overflow: visible;
+}
+
+
+form.share-content-popup fieldset {
+    margin-top: 3px;
+    margin-bottom: 1px;
+}
+form.share-content-popup .button-panel {
+    border-top: 1px solid #EEE;
+    padding: 9px 10px 9px;
+    text-align: right;
+}
+
+form.share-content-popup .button-panel input:disabled {
+    color: graytext;
+}
+
+form.share-content-popup .textarea {
+    height: 60px;
+    padding-left: 3px;
+    padding-right: 3px;
+    width: 100%;
+}
+
+form.share-content-popup .multi-select {
+    width: 100%;
+}
+
+form.share-content-popup .button {
+    margin: 2px 0 2px 2px;
+}
+
+form.share-content-popup ol {
+    margin: 7px 0 7px 0px;
+    padding: 0;
+    list-style-type: none;
+}
+
+form.share-content-popup ol li {
+    margin: 4px 0;
+}
+
+form.share-content-popup ol li img {
+    height: 1.72em;
+    vertical-align: middle;
+    width: 1.72em;
+    margin-right: 5px;
+}
+
+form.share-content-popup .submit {
+    text-align: center;
+}
+
+form.share-content-popup .autocomplete li.active a span {
+    color: white;
+}
+
+form.share-content-popup .remove-recipient {
+    float: right;
+    background: url(../../../images/icons/trash_16.gif) no-repeat 50% 50%;
+    text-indent: -9999px;
+    height: 24px;
+    width: 24px;
+    cursor: pointer;
+}
+
+form.share-content-popup .aui-dd-parent, .aui-dd-parent .aui-dropdown {
+    width: 259px;
+}
+
+#sharenames-suggestions .yad {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+#sharenames-textarea {
+    float: none;
+}
+
+.progress-messages {
+    left: 10px;
+    position: absolute;
+}
+
+
+.share-page-progress {
+    position: absolute;
+    background-color: white;
+    z-index: 1;
+    border-radius: 3px;
+}
+
+.share-page-progress-container-inner {
+    position: absolute;
+    text-align: center;
+}
+
+form.aui .share-page-progress-container-inner p {
+    margin: 0;
+    padding-bottom: 0;
+}
+
+form.aui fieldset {
+    padding: 8px 8px 8px 12px;
+    margin: 0 auto;
+}
+
+.close-dialog {
+    cursor: pointer;
+}

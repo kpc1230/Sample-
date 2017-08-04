@@ -1,0 +1,76 @@
+<div id="session-activity" class="module content">
+    <div class="mod-header">
+
+        <div id="quicklinks">
+            <ul class="operations">
+                <li class="aui-dd-parent">
+                    <a id="session-filter" class="notes lnk standard icon-filters #if ($action.notesFilterStateUI.applied)applied#end" href="#filter"><span>$i18n.getText('filter.button.label') #if ($action.notesFilterStateUI.applied) <em>$i18n.getText('filter.button.applied')</em>&nbsp;#end</span></a>
+                    #parse("templates/excalibur/web/testsessions/test-session-notes-filter.vm")
+                </li>
+            </ul>
+        </div>
+        <h2>$i18n.getText('session.section.header')</h2>
+    </div>
+    <div class="bf-aui-group bf-activity-container">
+        #set($first = true)
+        #foreach ($item in $session.sessionActivity)
+            <div class="bf-aui-group">
+                <div class="bf-aui-item bf-activity-avatar #if(!$item.user.name.equals($currentUser.name)) bf-activity-item #end #if($first) bf-first-activity #end">
+                    #if (!$item.user.name.equals($currentUser.name))
+                        #if ($item.user.active)
+                            <div class="session-participant-icon aui-avatar aui-avatar-small">
+                                <div class="aui-avatar-inner">
+                                    <a href="$requestContext.baseUrl/secure/ViewProfile.jspa?name=$action.htmlEncode($item.user.name)">
+                                        <img src="$action.htmlEncode($item.getAvatarUrl())" alt="">
+                                    </a>
+                                </div>
+                            </div>
+                        #else
+                            <img src="$action.htmlEncode($item.getAvatarUrl())" alt="">
+                        #end
+                    #end
+                </div>
+                <div class="bf-aui-item bf-activity-item #if($item.getFatNote($session) && $item.getFatNote($session).editable) bf-activity-note #end #if($first) bf-first-activity #end">
+                    #if (!$item.user.name.equals($currentUser.name))
+                        #if ($item.user.active)
+                            <a class="bf-activity-name bf-activity-first-name user-hover" href="$requestContext.baseUrl/secure/ViewProfile.jspa?name=$action.htmlEncode($item.user.name)" rel="$action.htmlEncode($item.user.name)">
+                                $action.htmlEncode($item.user.displayName)
+                            </a>
+                        #else
+                            <span class="bf-activity-first-name bf-inactive-name">
+                                $action.htmlEncode($item.user.displayName)
+                            </span>
+                        #end
+                    #end
+                    #parse($item.templateName)
+                </div>
+            </div>
+            #set($currentUser = $item.user)
+            #set($first = false)
+        #end
+        #if($session.canCreateNote)
+            <div class="bf-aui-group">
+                <div class="bf-aui-item bf-activity-avatar #if(!$item.user.equals($currentUser)) bf-activity-item #end">
+                </div>
+                <div class="bf-aui-item bf-activity-item">
+                    <div id="addNote" class="session-add-note-container">
+                        <form id="addNoteForm" class="aui dont-default-focus">
+                            <div>
+                                <textarea class="textarea long-field long-field" id="newNote" name="newNote" placeHolder="Add note">$action.htmlEncode($!action.newNote)</textarea>
+                                $action.auiErrorsForFieldHTML("newNote")
+                                <div id="error-new-note" class="warning"></div>
+                            </div>
+                            <div class="session-add-note-submit">
+                                <input type="hidden" name="testSessionId" value="${session.id}">
+                                <button class="button toolbar-trigger" type="submit" name="confirm">
+                                    $i18n.getText('session.add.note')
+                                </button>
+                                <a class="wiki-renderer help-icon" href="${baseurl}/secure/BonfireNotesHelp.jspa" id="viewNotesHelp" onclick="window.open('${baseurl}/secure/BonfireNotesHelp.jspa', 'wiki_renderer_notation_help', 'width=780, height=575, resizable, scrollbars=yes'); trackHelpButtonUse(); return false;" title="${i18n.getText("renderer.notation-help")}"><span class="aui-icon aui-icon-help"></span></a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        #end
+    </div>
+</div>

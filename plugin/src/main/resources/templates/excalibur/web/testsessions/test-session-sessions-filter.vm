@@ -1,0 +1,33 @@
+#* @vtlvariable name="action" type="com.atlassian.excalibur.tabpanels.TabPanelAction" *#
+#* @vtlvariable name="sessionsFilterStateUI" type="com.atlassian.excalibur.view.SessionsFilterStateUI" *#
+#set ($sessionsFilterStateUI = $action.sessionsFilterStateUI)
+
+<form id="bf-filter-form" class="sessions aui top-label hidden" data-filer-url="$sessionsFilterStateUI.filterURL">
+    <h3>Show:</h3>
+
+    <div>
+        <div id="filter-control" class="sessions">
+            <input type="radio" #if ($sessionsFilterStateUI.filterNothing) checked="checked" data-initial="checked" #end id="sessionsFilterNothing" name="sessionsFilterNothing" title="Filter applied" value="true"/><label for="sessionsFilterNothing">All</label><br>
+            <input type="radio" #if ($sessionsFilterStateUI.applied) checked="checked" data-initial="checked" #end id="sessionsFilterApplied" name="sessionsFilterApplied" title="Filter applied" value="true"/><label for="sessionsFilterApplied">Selection</label><br>
+        </div>
+        <div id="filter-specifics" class="sessions">
+            <div id="filter-tags">
+                <input type="hidden" name="sessionsFilterSpecified" value="true"/> ## we need this so we can defintely know they have chosen to filter
+                <input type="checkbox" #if ($sessionsFilterStateUI.filterStatusCreated) checked="checked" data-initial="checked" #end id="sessionsFilterStatusCreated" name="sessionsFilterStatusCreated" title="Created" value="true"/>
+                <label for="sessionsFilterStatusCreated">Created</label><br>
+                <input type="checkbox" #if ($sessionsFilterStateUI.filterStatusStarted) checked="checked" data-initial="checked" #end id="sessionsFilterStatusStarted" name="sessionsFilterStatusStarted" title="Started" value="true"/>
+                <label for="sessionsFilterStatusStarted">Started</label><br>
+                <input type="checkbox" #if ($sessionsFilterStateUI.filterStatusPaused) checked="checked" data-initial="checked" #end id="sessionsFilterStatusPaused" name="sessionsFilterStatusPaused" title="Paused" value="true"/>
+                <label for="sessionsFilterStatusPaused">Paused</label><br>
+                <input type="checkbox" #if ($sessionsFilterStateUI.filterStatusCompleted) checked="checked" data-initial="checked" #end id="sessionsFilterStatusCompleted" name="sessionsFilterStatusCompleted" title="Completed" value="true"/>
+                <label for="sessionsFilterStatusCompleted">Completed</label><br>
+            </div>
+        </div>
+    </div>
+    <div class="buttons-container">
+        <div class="buttons">
+            <input type="submit" class="aui-button save" title="Apply" id="filterSubmit">
+            <a id="filter-close" class="aui-button aui-button-link" href="#cancel">Cancel</a>
+        </div>
+    </div>
+</form>

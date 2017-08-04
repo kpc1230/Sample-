@@ -1,0 +1,26 @@
+#if ($showTopNav)
+    <dl id="bonfire-build-info" style="display:none;">
+        <dt data-bonfire-var="bonfire-buildVersion" data-bonfire-value="$bonfireBuildVersion"></dt>
+        <dt data-bonfire-var="bonfire-buildDate" data-bonfire-value="$bonfireBuildDate"></dt>
+        <dt data-bonfire-var="bonfire-buildNumber" data-bonfire-value="$bonfireBuildNumber"></dt>
+        <dt data-bonfire-var="bonfire-licenseStatus" data-bonfire-value="$bonfireLicenseStatus"></dt>
+    </dl>
+    
+    #if ($upgradeTasksErrors)
+        <div class="bonfire-headsup">
+            #foreach($error in ${upgradeTasksErrors.getErrors()})
+                <span>$error.getMessageKeyEscaped()</span><br/>
+            #end
+        </div>
+    #end
+    
+    #if ($session)
+    <div class="bonfire-headsup">
+        <span id="bonfire-headsup-text">
+            <b>$i18n.getText("headsup.current.session") : </b>
+            <a id="bonfire-linkToCurrentSession" href="$requestContext.baseUrl/secure/ViewSession.jspa?testSessionId=$session.id">$textutils.htmlEncode($session.getName())</a>
+            <a id="bonfire-linkToTriangle" href="$requestContext.baseUrl/secure/ViewSession.jspa?testSessionId=$session.id"></a>
+        </span>
+    </div>
+    #end
+#end

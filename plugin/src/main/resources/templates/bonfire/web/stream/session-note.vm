@@ -1,0 +1,23 @@
+<p class="bf-activity-text">$i18n.getText('session.stream.note.action')</p>
+<div class="bf-aui-group">
+    #set( $fatNote = $item.getFatNote($session) )
+    #parse("templates/excalibur/web/notes/editable-note.vm")
+</div>
+<div class="bf-aui-group bf-activity-time">
+    $action.formatWithUserTimeZone($item.time)
+    #if ($fatNote.editable)
+        <span id="bf-toggle-$fatNote.id" class="bf-activity-action #if (!$fatNote.actionable) hidden #end bf-toggle-note-link" data-note-id="$fatNote.id">
+            #if($fatNote.completed)
+                <a href="#">$i18n.getText('session.stream.note.button.reopen')</a>
+            #else
+                <a href="#">$i18n.getText('session.stream.note.button.complete')</a>
+            #end
+        </span>
+        <span class="bf-activity-action bf-edit-note-link" data-note-id="$fatNote.id">
+            <a href="#">$i18n.getText('session.stream.note.button.edit')</a>
+        </span>
+        <span class="bf-activity-action bf-delete-note-link" data-note-id="$fatNote.id">
+            <a href="#">$i18n.getText('session.stream.note.button.delete')</a>
+        </span>
+    #end
+</div>

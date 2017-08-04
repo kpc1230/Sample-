@@ -1,0 +1,154 @@
+{namespace BF.template}
+
+/**
+ * Renders a single session on the session navigator page
+ * @param session
+ * @param contextPath
+ * @param xsrfToken
+ */
+{template .drawSingleSessionRow}
+	<dd>
+	    <div class="bf-nav-row">
+	        <p class="bf-nav-cell bf-nav-session-content">
+	    		<img class="bf-nav-assignee-avatar" src="{$session.userAvatarSrc}">
+	    		<a href="{$contextPath}/secure/ViewSession.jspa?testSessionId={$session.id}&origin=nav">{$session.name}</a>
+	    	</p>
+	    	<div class="bf-nav-cell bf-nav-shared">
+	    		{if $session.shared}Yes{/if}
+	    	</div>
+	    	<div class="bf-nav-cell bf-nav-project">
+	    		<a href="{$contextPath}/browse/{$session.projectKey}">{$session.projectName}</a>
+	    	</div>
+	    	<div class="bf-nav-cell bf-nav-created">
+	    		<span>{$session.createTimeFormatted}</span>
+	    	</div>
+	    	<div class="bf-nav-cell bf-nav-assignee-name">
+	    		<a class="user-hover" href="{$contextPath}/secure/ViewProfile.jspa?name={$session.user}" rel="{$session.user}">{$session.userDisplayName}</a>
+	    	</div>
+	    	<div class="bf-nav-cell bf-nav-inline-status">
+	    	{let $lozenge}
+	    		{if $session.prettyStatus == 'Completed'}
+	    			aui-lozenge-success
+	    		{elseif $session.prettyStatus == 'Paused'}
+					aui-lozenge-moved
+	    		{elseif $session.prettyStatus == 'Started'}
+	    			aui-lozenge-current
+	    		{elseif $session.prettyStatus == 'Created'}
+					aui-lozenge-complete
+	    		{/if}
+	    	{/let}
+				<div class="bf-nav-inline-loz aui-lozenge {$lozenge}">
+				    {$session.prettyStatus}
+				</div>
+	    	</div>
+	    	<div class="bf-nav-cell bf-nav-actions">
+		    	<div class="bf-hover-trigger">
+					<span class="bf-nav-quicksession-trigger bf-nav-info-icon" data-session-id="{$session.id}" title="{getText('session.links.details.title')}" ></span>
+				</div>
+				<div class="bf-hover-trigger bf-more-div">
+					<a class="bf-nav-more-trigger bf-nav-cog-icon" href="#" title="{getText('session.links.more.title')}">
+						<span class="bf-menu-arrow"></span>
+					</a>
+					{call .drawSessionMenu}
+						{param permissions : $session.permissions /}
+						{param contextPath : $contextPath /}
+						{param sessionId : $session.id /}
+						{param xsrfToken: $xsrfToken /}
+					{/call}
+				</div>
+			</div>
+	    </div>
+    </dd>
+{/template}
+
+/**
+ * Renders a single session on the session navigator page
+ */
+{template .drawNoMoreSessions}
+	<div width="100%">
+		<span class="bf-nav-none-left">{getText('session.navigator.nomore.message')}</span>
+	</div>
+{/template}
+
+/**
+ * Renders dropdown menu for an individual session
+ * @param permissions - an instance of SessionDisplayHelper.java
+ * @param contextPath
+ * @param sessionId
+ * @param xsrfToken
+ */
+{template .drawSessionMenu}
+	<div class="aui-list hidden">
+	    <ul class="aui-list-section aui-last aui-first">
+	        {if $permissions.isStatusEditable}
+	            {if $permissions.isStarted}
+	                <li class="aui-list-item">
+	                    <a href="{$contextPath}/rest/bonfire/1.0/sessions/{$sessionId}/pause" class="aui-list-item-link gf-post-trigger">{getText('greenfire.menu.button.pause')}</a>
+	                </li>
+	            {else}
+	                <li class="aui-list-item">
+	                    <a href="{$contextPath}/rest/bonfire/1.0/sessions/{$sessionId}/start" class="aui-list-item-link gf-post-trigger">{getText('greenfire.menu.button.start')}</a>
+	                </li>
+	            {/if}
+	            {if not $permissions.isComplete and not $permissions.isCreated}
+	                <li class="aui-list-item">
+	                    <a id="gf-complete-dialog" href="{$contextPath}/secure/CompleteSession.jspa?testSessionId={$sessionId}&atl_token={$xsrfToken}" class="aui-list-item-link">{getText('greenfire.menu.button.complete')}</a>
+	                </li>
+	            {/if}
+	        {/if}
+	        {if not $permissions.isAssignee}
+	            {if $permissions.canJoin and not $permissions.isJoined}
+	                <li class="aui-list-item">
+	                    <a href="{$contextPath}/rest/bonfire/1.0/sessions/{$sessionId}/participate" class="aui-list-item-link gf-post-trigger">{getText('greenfire.menu.button.join')}</a>
+	                </li>
+	            {/if}
+	            {if $permissions.isJoined}
+	                <li class="aui-list-item">
+	                    <a href="{$contextPath}/secure/LeaveSession.jspa?testSessionId={$sessionId}&atl_token={$xsrfToken}" class="aui-list-item-link gf-delete-trigger">{getText('greenfire.menu.button.leave')}</a>
+	                </li>
+	            {/if}
+	        {/if}
+	        {if $permissions.canAssign}
+	            <li class="aui-list-item">
+	                <a href="{$contextPath}/secure/AssignSession.jspa?testSessionId={$sessionId}&noRedirect=true" class="aui-list-item-link gf-dialog-link-trigger">{getText('greenfire.menu.button.assign')}</a>
+	            </li>
+	        {/if}
+	        {if $permissions.isSessionEditable}
+	            <li class="aui-list-item">
+	                <a href="{$contextPath}/secure/ConfirmDeleteSession.jspa?testSessionId={$sessionId}&noRedirect=true" class="aui-list-item-link gf-dialog-link-trigger">{getText('greenfire.menu.button.delete')}</a>
+	            </li>
+	        {/if}
+	        <li class="aui-list-item">
+	            <a href="{$contextPath}/secure/ViewSession.jspa?testSessionId={$sessionId}" class="aui-list-item-link">{getText('greenfire.menu.button.goto')}</a>
+	        </li>
+	    </ul>
+	</div>
+{/template}
+
+/**
+ * Renders the empty state for the session navigator
+ */
+{template .drawEmptySessionList}
+	<div class="bf-nav-error-container">
+	    <div class="aui-message warning shadowed">
+	    	<span class="aui-icon icon-warning"></span> {getText('session.navigator.empty.message')}
+	    </div>
+    </div>
+{/template}
+
+/**
+ * Renders the welcome state for the session navigator
+ * @param contextPath
+ */
+{template .drawWelcome}
+	<div class="bf-nav-error-container">
+	    <div class="aui-message success shadowed">
+		    <p class="title">
+		    	<span class="aui-icon icon-success"></span>
+		        <strong>{getText('session.navigator.welcome.message.title')}</strong>
+		    </p>
+		    <p>{getText('session.navigator.welcome.message.1')|noAutoescape}{$contextPath}/secure/BonfireGettingStarted.jspa{getText('session.navigator.welcome.message.2')|noAutoescape}</p>
+	    </div>
+    </div>
+{/template}
+

@@ -1,0 +1,87 @@
+## TODO escape and i18n all text
+<table class="gf-table-no-border">
+    <tbody><tr>
+        <td class="gf-testing-status-cell">
+            <span class="gf-testing-label">Status:</span><strong> $textutils.htmlEncode($testingStatus)</strong>
+        </td>
+        <td class="gf-completed-count-cell">
+            <span class="gf-testing-label">$testingBar.completeCount/$testingBar.totalCount Completed</span>
+        </td>
+    </tr></tbody>
+</table>
+#if ($hasRelatedTo)
+    <table class="gf-test-status-table">
+        <tbody><tr>
+        #if ($testingBar.getNotstartedPercent() != 0)
+            <td class="gf-test-status-bar gf-status-one" 
+                style="width: $testingBar.getNotstartedPercent()%" 
+                title="$testingBar.getNotstartedPercent()%"></td>
+        #end
+        #if ($testingBar.getInprogressPercent() != 0)
+            <td class="gf-test-status-bar gf-status-two" 
+                style="width: $testingBar.getInprogressPercent()%"
+                title="$testingBar.getInprogressPercent()%"></td>
+        #end
+        #if ($testingBar.getCompletePercent() != 0)
+            <td class="gf-test-status-bar gf-status-three" 
+                style="width: $testingBar.getCompletePercent()%"
+                title="$testingBar.getCompletePercent()%"></td>
+        #end                
+        </tr></tbody>
+    </table>
+#end
+
+###################
+## Session table ##
+###################
+
+<div class="gf-table gf-session-table">
+    #if ($hasRelatedTo)
+        <div class="gf-row gf-row-head">
+            <div class="gf-cell gf-icon-cell"></div>
+            <div class="gf-cell gf-max-width">$i18n.getText('greenfire.table.heading.session')</div>
+            <div class="gf-cell gf-status-cell">$i18n.getText('greenfire.table.heading.status')</div>
+            <div class="gf-cell gf-actions-cell">$i18n.getText('greenfire.table.heading.actions')</div>
+        </div>
+        #foreach($session in $relatedTo)
+            <div class="gf-row gf-session-row">
+                ## Icon URL ##
+                <div class="gf-cell gf-icon-cell">
+                    <img class="gf-icon" src="$session.iconUrl"/>
+                </div>
+                ## Name + Link ##
+                <div class="gf-cell gf-max-width gf-session-cell">
+                    <div class="gf-session-link" title="$textutils.htmlEncode($session.sessionName)">
+                        <a href="$baseurl/secure/ViewSession.jspa?testSessionId=$session.sessionId">$textutils.htmlEncode($session.sessionName)</a>
+                    </div>
+                </div>
+                ## Status ##
+                <div class="gf-cell gf-status-cell">
+                    <div class="gf-inline-loz $session.status">
+                        $session.status
+                    </div>
+                </div>
+                ## Actions ##
+                <div class="gf-cell gf-actions-cell">
+                    <div class="gf-table">
+                        <div class="gf-details-button">
+                            <span class="gf-view-session-button gf-icon gf-info-icon" data-session-id="$session.sessionId" title="details" ></span>
+                        </div>
+                        <div class="gf-more-button">
+                            <a class="gf-more-trigger gf-icon gf-cog-icon" href="#" title="more">
+                                <span class="gf-menu-arrow"></span>
+                            </a>
+                            #parse("templates/bonfire/web/greenfire/greenfire-session-menu.vm")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        #end
+    #else
+        <span class="gf-message">$i18n.getText('greenfire.no.sessions')</span>
+    #end
+</div>
+<div class="gf-button-cell gf-create-button-cell">
+    <a href="$baseurl/secure/CreateSession.jspa?issueId=$issue.id" class="gf-button gf-create-session-button"><span class="gf-icon gf-add-icon"></span>$i18n.getText('greenfire.create.session.button')</a>
+</div>
+

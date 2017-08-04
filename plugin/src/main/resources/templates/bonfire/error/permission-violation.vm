@@ -1,0 +1,26 @@
+<html>
+<head>
+    <content tag="section">browse_link</content>
+    <meta name="decorator" content="general"/>
+    <title>$i18n.getText('perm.violation.title')</title>
+</head>
+<body>
+    <div id="jira-message-container" class="content-container" style="margin-left: auto;margin-right: auto;width: 572px;">
+        <div class="content-body aui-panel">
+            <div class="form-body">
+                <header>
+                    <h1>$i18n.getText('perm.violation.title')</h1>
+                </header>
+                <div class="aui-message warning"><span class="aui-icon icon-warning"></span>
+                <p>
+                    $i18n.getText('perm.violation.desc')
+                </p>
+                <p>
+                    $i18n.getText('contact.admin.for.perm', $i18n.getText('common.concepts.contact.administrator', '<a href="/jira/secure/ContactAdministrators!default.jspa">', '</a>'))
+                </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

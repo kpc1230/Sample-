@@ -1,0 +1,11 @@
+.uibonfire-widget {
+    font-family: Arial, FreeSans, Helvetica, sans-serif;
+    font-size: 13px;
+}
+.uibonfire-widget-content {
+    background-color: #FFF;
+    border-color: #BBB;
+}
+.uibonfire-menu-item a.uibonfire-state-hover:hover {
+    color: #FFF;
+}

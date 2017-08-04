@@ -1,0 +1,125 @@
+## TODO this needs to be rewritten to be more modular for readability and reduce duplication. 
+<div class="aui-group">
+    <div class="aui-item">
+    <div class="aui-toolbar2 session-operations">
+        <div class="aui-toolbar2-inner">
+            ## isSessionEditable is true for ADMINS, creators and assignee
+            #if ($session.isSessionEditable())
+                <div class="aui-buttons">
+                    <a id="edit-test-session" class="aui-button" href="$requestContext.baseUrl/secure/EditSession.jspa?testSessionId=$session.id">$i18n.getText('session.ops.button.edit')</a>
+                </div>
+
+            ## Status Block - If you can edit the status
+                #if($session.isStatusEditable())
+                <div class="aui-buttons">
+                    #if ($session.showPauseWarning)
+                        <a id="pause-test-session" class="aui-button #if($session.isCreated()) last #end" href="$requestContext.baseUrl/secure/ConfirmPauseSession.jspa?testSessionId=${session.id}" onClick="sessionStatusChangeInJira('$session.getSessionStatusChange()');"><span>$session.getSessionStatusChange()</span></a>
+                    #else
+                        <a id="statuschange-test-session" class="aui-button #if($session.isCreated()) last #end" href="$requestContext.baseUrl/secure/ActivateInSession.jspa?atl_token=${xsrfToken}&sessionId=${session.id}" onClick="sessionStatusChangeInJira('$session.getSessionStatusChange()');"><span>$session.getSessionStatusChange()</span></a>
+                    #end
+
+                    #if(!$session.isComplete() && !$session.isCreated())
+                        <a id="gf-complete-dialog" class="aui-button" href="$baseurl/secure/CompleteSession.jspa?atl_token=${xsrfToken}&testSessionId=$session.id">$i18n.getText(
+                            'session.ops.button.complete')</a>
+                    #end
+                </div>
+                #end
+            ## If you aren't the assignee then you also may have the option to join/leave
+                #if(!$session.isAssignee())
+                    <div class="aui-buttons">
+                        ## Members of the session have the option to leave. Always.
+                        #if($session.isJoined)
+                            <a class="aui-button" href="$requestContext.baseUrl/secure/LeaveSession.jspa?atl_token=${xsrfToken}&testSessionId=${session.id}" onClick="trackParticipationLeave();">$i18n.getText(
+                                'session.ops.button.leave')</a>
+                        #elseif($session.canJoin)
+                            <a class="aui-button" href="$requestContext.baseUrl/secure/JoinSession.jspa?atl_token=${xsrfToken}&testSessionId=${session.id}" onClick="trackParticipationJoin();">$i18n.getText(
+                                'session.ops.button.join')</a>
+                        #else
+                            <button disabled class="aui-button disabled">$i18n.getText('session.ops.button.join')</button>
+                        #end
+                    </div>
+                #end
+                #if ($session.showInvite)
+                    <div class="aui-buttons">
+                        <a id="bonfire-invite-trigger" class="aui-button bonfire-invite-button" href="#">
+                            <span class="aui-icon aui-icon-small aui-iconfont-email"></span>
+                            $i18n.getText('session.invite.label')
+                        </a>
+                    </div>
+                #end
+            ## This is the More Actions dropdown
+
+                <div class="aui-buttons">
+                    <a href="#" id="capture-test-session-actions" aria-owns="test-session-actions" aria-haspopup="true" class="aui-button aui-style-default aui-dropdown2-trigger">$i18n.getText('session.ops.button.more')</a>
+                </div>
+                <div id="test-session-actions" class="aui-style-default aui-dropdown2">
+                ## Assign / Clone / Delete
+                    <div class="aui-dropdown2-section">
+                        <ul>
+                            <li>
+                                <a id="assign-test-session" class="aui-list-item-link" href="$requestContext.baseUrl/secure/AssignSession.jspa?testSessionId=$session.id">$i18n.getText('session.ops.button.assign')</a>
+                            </li>
+                            <li>
+                                <a id="clone-test-session"class="aui-list-item-link" href="$requestContext.baseUrl/secure/CloneSession.jspa?testSessionId=$session.id">$i18n.getText('session.ops.button.clone')</a>
+                            </li>
+                            <li>
+                                <a id="delete-test-session" class="aui-list-item-link" href="$requestContext.baseUrl/secure/ConfirmDeleteSession.jspa?testSessionId=$session.id&returnOnDeleteUrl=$action.htmlEncode($session.sessionReturnURL)">$i18n.getText('session.ops.button.delete')</a>
+                            </li>
+                            <li>
+                                <a id="add-raised-to-session" class="aui-list-item-link" href="$requestContext.baseUrl/secure/AddRaisedIssue.jspa?testSessionId=$session.id">$i18n.getText('add.raised.in.session.short')</a>
+                            </li>
+                        </ul>
+                    </div>
+                ## Share/ Stop share
+                    <div class="aui-dropdown2-section">
+                        <ul>
+                            <li class="aui-list-item">
+                                #if($session.shared)
+                                    #if($session.hasActive)
+                                        <a id="unshare-test-session-confirm" class="aui-list-item-link" href="$requestContext.baseUrl/secure/ConfirmUnshareSession.jspa?testSessionId=${session.id}">$i18n.getText('session.ops.button.unshare')</a>
+                                    #else
+                                        <a id="unshare-test-session" class="aui-list-item-link" href="#">$i18n.getText('session.ops.button.unshare')</a>
+                                    #end
+                                #else
+                                    <a id="share-test-session" class="aui-list-item-link" href="#">$i18n.getText('session.ops.button.share')</a>
+                                #end
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            ## Everyone else will only have the option to join/leave
+            #else
+                <div class="aui-buttons">
+                    #if($session.isJoined)
+                        <a id="leave-test-session" class="aui-button first last" href="$requestContext.baseUrl/secure/LeaveSession.jspa?atl_token=${xsrfToken}&testSessionId=${session.id}" onClick="trackParticipationLeave();">$i18n.getText(
+                            'session.ops.button.leave')</a>
+                    #elseif($session.canJoin)
+                        <a id="join-test-session" class="aui-button first last" href="$requestContext.baseUrl/secure/JoinSession.jspa?atl_token=${xsrfToken}&testSessionId=${session.id}" onClick="trackParticipationJoin();">$i18n.getText(
+                            'session.ops.button.join')</a>
+                    #else
+                        <span class="aui-button disabled first last bf-disabled-join">$i18n.getText('session.ops.button.join')</span>
+                    #end
+                </div>
+                <div class="aui-buttons">
+                    #if($session.canAssign)
+                        <a id="assign-test-session" class="aui-button first last" href="$requestContext.baseUrl/secure/AssignSession.jspa?testSessionId=$session.id">$i18n.getText('session.ops.button.assign')</a>
+                    #else
+                        <span class="aui-button disabled first last">$i18n.getText('session.ops.button.assign')</span>
+                    #end
+                </div>
+            #end
+
+        </div>
+        <!-- .aui-toolbar-inner -->
+    </div>
+
+    <div id="bf-opsbar-errors" class="aui-message error shadowed hidden">
+        <span class="aui-icon icon-error"></span>
+    </div>
+    #parse("templates/bonfire/web/testsessions/modules/session-view-joininfo.vm")
+
+    </div>
+    <div class="aui-item session-right-column">
+        #parse("templates/bonfire/web/testsessions/modules/session-view-sessionstatus.vm")
+    </div>
+</div>

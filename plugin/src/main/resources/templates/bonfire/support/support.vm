@@ -1,0 +1,62 @@
+#* @vtlvariable name="action" type="com.atlassian.bonfire.web.BonfireSupportAction" *#
+<html>
+<head>
+    <title>Bonfire Support Information</title>
+    <meta name="admin.active.section" content="admin_plugins_menu/testing_section">
+</head>
+
+<body class="nl">
+<div id="main-content">
+    <div class="active-area content-body aui-panel">
+        <h2>Bonfire Support Information</h2>
+
+        <div id="support-info">
+            <h3>Bonfire Build Information</h3>
+            <dl>
+                <dt>Build Version:</dt>
+                <dd>$action.buildVersion</dd>
+                <dt>Build Date:</dt>
+                <dd>$action.buildDate</dd>
+                <dt>Build Number:</dt>
+                <dd>$action.buildNumber</dd>
+                <dt>Licence Status:</dt>
+                <dd>$action.licenseStatus</dd>
+                <dt>Highest Upgraded Version:</dt>
+                <dd>$action.highestRunVersion</dd>
+            </dl>
+            <h3>JIRA Build Information</h3>
+            <dl>
+                <dt>JIRA Build Version:</dt>
+                <dd>$action.jiraVersion</dd>
+                <dt>JIRA Build Info:</dt>
+                <dd>$action.jiraBuildInformation</dd>
+            </dl>
+            #if (! $action.anonymousUserInPlay)
+                <h3>Required Configuration</h3>
+                <dl>
+                    <dt>Attachments Enabled:</dt>
+                    <dd>$action.attachementsOn</dd>
+                    <dt>TimeTracking Enabled:</dt>
+                    <dd>$action.timeTrackingOn</dd>
+                    <dt>Bonfire Issue Link Defined :</dt>
+                    <dd>$action.issueLinkDefined</dd>
+                    <dt>Bonfire Raised During Field Id :</dt>
+                    <dd>$action.raisedInFieldId</dd>
+                    <dt>Bonfire Related To Field Id :</dt>
+                    <dd>$action.relatedToFieldId</dd>
+                </dl>
+
+                <h3>Upgrade Tasks Run</h3>
+                <dl>
+                    #foreach ($upgradeTask in $action.upgradeTaskInfo)
+                        <dt>$upgradeTask.bonfireVersion</dt>
+                        <dd>$upgradeTask.upgradeClassName : $upgradeTask.when</dd>
+                    #end
+                </dl>
+
+            #end
+        </div>
+    </div>
+</div>
+</body>
+</html>

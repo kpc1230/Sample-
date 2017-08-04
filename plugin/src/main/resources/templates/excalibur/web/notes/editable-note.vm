@@ -1,0 +1,51 @@
+#* @vtlvariable name="action" type="com.atlassian.excalibur.tabpanels.TabPanelAction" *#
+
+#if ($action.updatedNoteId == $fatNote.id)  #set ($flashNote = "flash") #else #set ($flashNote = "") #end
+#if (!$action.viewTestSession) #set ($double = "double") #end
+#if ($fatNote.completed) #set ($completed = "completed") #else #set ($completed = "") #end
+#if ($fatNote.editable) #set ($editable = "editable") #else #set ($editable = "") #end
+
+#set ($sessionNoteId = "session-note-$fatNote.id")
+
+<form class="aui dont-default-focus edit-note-form" data-note-id="$fatNote.id">
+
+    <input type="hidden" name="returnUrl" value="$textutils.htmlEncode($action.returnUrl)"/>
+
+    <div id="$sessionNoteId" class="editable-note-target $!double $!flashNote $!completed $!editable">
+        <div class="editable-note-icon-container">
+            #if (!$action.viewTestSession)
+                ## we dont want the session link if we are on a view session page
+                <a href="$requestContext.baseUrl/secure/ViewSession.jspa?testSessionId=$fatNote.sessionId" title="Go to session &quot;$textutils.htmlEncode($fatNote.sessionName)&quot;">
+                    <span class="editable-note-icon editable-note-session-icon" data-session-id="$fatNote.sessionId">Go to session</span>
+                </a>
+            #end
+            #if ($fatNote.actionable)
+                <input type="checkbox" class="editable-note-resolution-control" data-note-id="$fatNote.id" #if ($fatNote.completed) checked="checked" #end />
+            #end
+        </div>
+
+        <div class="editable-note-content" data-note-id="$fatNote.id" data-session-id="$fatNote.sessionId">
+            <textarea class="editable-note-original">$textutils.htmlEncode($fatNote.noteData)</textarea>
+            <div class="editable-note-readonly active $editable">
+                <span class="icon icon-edit-sml" title="Edit this note"></span>
+                <span class="icon icon-delete editable-note-delete-button" title="Delete this note"></span>
+                <div class="editable-note-wiki-wrapper">
+                    $fatNote.noteDataHtml
+                </div>
+            </div>
+            <div class="editable-note-input-container"></div>
+            <div class="editable-note-buttons buttons hidden">
+                <button class="bf-inline-edit-buttons bf-submit" type="submit"><span class="bf-inline-edit-button-icons add-info-submit-button"></span></button><button class="bf-inline-edit-buttons bf-cancel" type="cancel" class="cancel" href="#"><span class="bf-inline-edit-button-icons add-info-cancel-button"></span></button>
+            </div>
+        </div>
+        <div id="error-$fatNote.id" class="warning">
+        </div>
+    </div>
+</form>
+<form action="$requestContext.baseUrl/secure/DeleteSessionNote.jspa" method="POST" class="dont-default-focus" id="note-delete-form-$fatNote.id">
+    <input type="hidden" name="returnUrl" value="$textutils.htmlEncode($action.returnUrl)"/>
+    <input type="hidden" name="noteId" value="$fatNote.id"/>
+    <input type="hidden" name="testSessionId" value="$fatNote.sessionId"/>
+    <input type="hidden" name="atl_token" value="${xsrfToken}"/>
+    <input type="submit" class="hidden"/>
+</form>

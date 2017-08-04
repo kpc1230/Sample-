@@ -1,0 +1,150 @@
+{namespace BF.template}
+
+/**
+ * Renders The inline dialog for the session details view
+ * @param session
+ * @param contextPath
+ */
+{template .quicksession}
+    <div class="bfq-main-container">
+        <div class="bfq-header">
+            <div class="bfq-name-container">
+                <a href="{$contextPath}/secure/ViewSession.jspa?testSessionId={$session.id}" class="bfq-session-name" title="{$session.name}">{$session.name}</a>
+            </div>
+            <div class="bfq-button-container">
+                <span class="bfq-button bfq-first bfq-addinfo-tab">{getText('session.section.additionalinfo')}</span>
+                <span class="bfq-button bfq-last bfq-not-selected bfq-notes-tab">{getText('session.section.notes')}</span>
+            </div>
+        </div>
+        <div class="bfq-main-content">
+            <div class="bfq-swappable-content bfq-additionalInfo">
+                <div class="bfq-addinfo-wiki {if $session.canEditSession}bfq-editable{/if}" {if $session.canEditSession}title="{getText('session.section.inlineedit.title')}"{/if}>
+                    {if $session.hasAdditionalInfo}
+                        {$session.additionalInfo|noAutoescape}
+                    {else}
+                        {if $session.canEditSession}
+                            <em>{getText('session.section.additionalinfo.empty')}</em>
+                        {else}
+                            {getText('session.section.additionalinfo.empty.noedit')}
+                        {/if}
+                    {/if}
+                </div>
+                {if $session.canEditSession}
+                    <input class="bfq-session-id" type="hidden" value="{$session.id}"/>
+                    <textarea class="bfq-original-addinfo hidden">
+                        {$session.rawAdditionalInfo}
+                    </textarea>
+                    <div class="bfq-addinfo-edit hidden">
+                        <div class="bfq-error"></div>
+                        <div class="bfq-add-info-container">
+                            <textarea class="bfq-info-textarea"></textarea>
+                        </div>
+                        <div class="bfq-inline-button-container bfq-add-info-actions">
+                            {call .drawInlineEditButtons /}
+                        </div>
+                    </div>
+                {/if}
+            </div>
+            <div class="bfq-swappable-content bfq-notes hidden">
+                <input class="bfq-session-id" type="hidden" value="{$session.id}"/>
+                <div class="bfq-allnotes bfq-table">
+                    {if $session.hasNotes}
+                            {foreach $note in $session.notes}
+                                {call .drawnote}
+                                    {param note : $note /}
+                                {/call}
+                            {/foreach}
+                    {else}
+                        <em>{getText('bonfire.view.session.dialog.nonotes')}</em>
+                    {/if}
+                </div>
+                {if $session.canAddNote}
+                    <div class="bfq-add-note-container">
+                        <textarea class="bfq-add-note-textarea bfq-placeholder" placeHolder="Add note"></textarea>
+                    </div>
+                    <div class="bfq-error bfq-addnote-error"></div>
+                    <div class="bfq-add-note-actions">
+                        <span class="bfq-note-button hidden">Add Note</span>
+                    </div>
+                {/if}
+            </div>
+        </div>
+    </div>
+{/template}
+
+/**
+ * Renders an individual note
+ * @param note
+ */
+{template .drawnote}
+    <div class="bfq-note-container">
+        <input class="bfq-note-id" type="hidden" value="{$note.id}"/>
+        <div class="bfq-note-left">
+            <img src="{$note.userIconUrl}" title="Author: {$note.authorDisplayName}" width="32px" height="32px"/>
+        </div>
+        <div class="bfq-note-right">
+            <div class="bfq-note-display-container">
+                <div class="bfq-note-data {if $note.canEdit}bfq-editable{/if}" {if $note.canEdit}title="{getText('session.section.inlineedit.title')}"{/if}>
+                    {$note.noteData|noAutoescape}
+                </div>
+                <div class="bfq-error"></div>
+                <div class="bfq-note-ops">
+                    <span class="bfq-timestamp">{$note.createdDate} {$note.createdTime}</span>
+                    {if $note.canEdit}
+                        <a href="#" class="bfq-note-op bfq-edit-note" title="{getText('session.section.inlineedit.title')}">edit</a>
+                        <a href="#" class="bfq-note-op bfq-delete-note" title="{getText('session.section.delete.title')}">delete</a>
+                    {/if}
+                </div>
+            </div>
+            {if $note.canEdit}
+                <textarea class="bfq-original-note hidden">
+                    {$note.rawNoteData}
+                </textarea>
+                <div class="bfq-note-edit hidden">
+                    <div class="bfq-edit-error"></div>
+                    <div class="bfq-note-edit-container">
+                        <textarea class="bfq-note-textarea"></textarea>
+                    </div>
+                    <div class="bfq-inline-button-container bfq-note-edit-actions">
+                        {call .drawInlineEditButtons /}
+                    </div>
+                </div>
+            {/if}
+        </div>
+    </div>
+{/template}
+
+/**
+ * Renders the message to show when there is no additional info
+ */
+{template .getNoAddInfoMsg}
+    <em>{getText('session.section.additionalinfo.empty')}</em>
+{/template}
+
+/**
+ * Renders the message to show when there are no notes
+ */
+{template .getNoNoteMsg}
+    <em>{getText('bonfire.view.session.dialog.nonotes')}</em>
+{/template}
+
+/**
+ * Renders the inline-edit buttons
+ */
+{template .drawInlineEditButtons}
+    <span class="bfq-waiting-icon hidden"></span><button class="bfq-inline-edit-buttons bfq-submit" type="submit"><span class="bfq-inline-edit-button-icons bfq-tick-icon"></span></button><button class="bfq-inline-edit-buttons bfq-cancel" type="cancel" class="cancel" href="#"><span class="bfq-inline-edit-button-icons bfq-cross-icon"></span></button>
+{/template}
+
+/**
+ * Renders the error state for the quick session
+ */
+{template .quicksessionError}
+    <div class="bfq-main-container bfq-error-main">
+    	<div class="bfq-error-container">
+		    <div class="aui-message error shadowed">
+		        <span class="aui-icon icon-error"></span>
+		        <p>{getText('session.invalid.long')}</p>
+		    </div>
+	    </div>
+	</div>
+{/template}

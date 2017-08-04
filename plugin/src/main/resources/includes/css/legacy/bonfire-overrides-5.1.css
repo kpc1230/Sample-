@@ -1,0 +1,36 @@
+/**
+
+ This file is for backporthing things that didn't exist in JIRA 5.1.x and older
+
+**/
+
+.aui-button[aria-disabled="true"],
+.aui-button[aria-disabled="true"]:hover,
+.aui-button[aria-disabled="true"]:focus,
+.aui-button[aria-disabled="true"]:active,
+.aui-button[aria-disabled="true"][aria-pressed] {
+    background: #f2f2f2;
+    background: -moz-linear-gradient(top, #FFF 0%, #f2f2f2 100%); /* FF3.6+ */
+    background: -webkit-linear-gradient(top, #FFF 0%,#f2f2f2 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #FFF 0%,#f2f2f2 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #FFF 0%,#f2f2f2 100%); /* IE10+ */
+    background: linear-gradient(top, #FFF 0%,#f2f2f2 100%); /* W3C */
+    border-color: #ddd;
+    box-shadow: none;
+    color: #999;
+    cursor: default;
+    text-shadow: none;
+}
+.aui-icon.aui-icon-small.aui-iconfont-add {
+    display: inline-block;
+    padding-left: 4px;
+    padding-bottom: 3px;
+}
+
+#bonfire-session-main h2 {
+    display: inline-block;
+    background-color: white;
+    padding-right: 10px;
+    font-size: 15px;
+    margin: 0;
+}

@@ -1,0 +1,18 @@
+#* @vtlvariable name="action" type="com.atlassian.bonfire.web.BonfireAboutAction" *#
+<html>
+<head>
+    <title>Bonfire Support Information</title>
+</head>
+
+<body class="nl">
+<div id="main-content">
+    <div class="active-area content-body aui-panel">
+        <h2>About Bonfire</h2>
+
+        <div id="about-info">
+            Bonfire $action.buildVersion - $action.buildNumber
+        </div>
+    </div>
+</div>
+</body>
+</html>

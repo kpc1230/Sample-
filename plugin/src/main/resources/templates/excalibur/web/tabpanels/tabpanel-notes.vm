@@ -1,0 +1,11 @@
+#* @vtlvariable name="fatNotes" type="com.atlassian.excalibur.view.FatNoteUI[]" *#
+
+<div class="test-sessions">
+    <div class="test-session-notes">
+    #foreach($fatNote in $fatNotes)
+        <div class="bonfire-session-note">
+            #parse("templates/excalibur/web/notes/editable-note.vm")
+        </div>
+    #end
+    </div>
+</div>

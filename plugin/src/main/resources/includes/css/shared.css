@@ -1,0 +1,1514 @@
+.session-wrap {}
+
+#sessions-back-lnk {
+	left: 8px;
+	top: 12px;
+}
+#sessions-back-lnk:hover {
+	border-color: #999;
+	text-decoration: none;
+}
+/* JIRA 5 compat */
+#page #session-participants-module {
+    margin: 0;
+}
+#page .session-page-wrapper a.bf-button {
+    color: #111;
+}
+.session-page-wrapper span.bf-button.disabled {
+    opacity: 0.5;
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#efefef',GradientType=0 ) alpha(opacity=50); /* For IE8 and earlier */
+}
+.session-page-wrapper a.bf-button,
+.session-page-wrapper span.bf-button{
+	border: 1px solid #DDD;
+	color: #111;
+	display: block;
+	float: left;
+	height: 1.5em;
+	padding: 2px 8px;
+	border-left-color: white;
+	z-index: 1000;
+	font-size: 13px;
+	line-height: 1.3077;
+    background-image: -moz-linear-gradient(100% 100% 90deg, #efefef, #ffffff);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ffffff), to(#efefef));
+    background-image: -webkit-linear-gradient(#ffffff, #efefef);
+    background-image: -o-linear-gradient(#ffffff, #efefef);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#efefef',GradientType=0 );
+}
+.session-page-wrapper a.bf-button.first,
+.session-page-wrapper span.bf-button.first {
+    border-top-left-radius: 0.25em;
+    border-bottom-left-radius: 0.25em;
+    border-left-color: #DDD;
+}
+.session-page-wrapper a.bf-button.last,
+.session-page-wrapper span.bf-button.last {
+    border-top-right-radius: 0.25em;
+    border-bottom-right-radius: 0.25em;
+    margin-right: 8px;
+}
+.bf-ops-heading {
+    margin-right: 8px;
+    font-size: 15px;
+    line-height: 22px;
+}
+.session-page-wrapper a.bf-button:hover {
+	border-color: #999;
+	text-decoration: none;
+}
+.session-page-wrapper a.bf-button:active {
+    background-image: -moz-linear-gradient(100% 100% 90deg, #d8e4f0, #cad5e0);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#cad5e0), to(#d8e4f0));
+    background-image: -webkit-linear-gradient(#cad5e0, #d8e4f0);
+    background-image: -o-linear-gradient(#cad5e0, #d8e4f0);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#CAD5E0', endColorstr='#D8E4F0',GradientType=0 );
+    text-decoration: none;
+}
+.bf-mod-menu {
+    background-color: white;
+    padding: 3px 0 0 0;
+    margin: 0;
+    list-style-type: none;
+    float: right;
+}
+.bf-header-wrapper {
+    margin: 10px;
+}
+#create-test-session {
+    background-position: 2px 4px;
+}
+#test-session-operations {
+	background: url("../../../images/icons/tools_20.png") no-repeat scroll 2px 2px transparent;
+	height: auto;
+	width: auto;
+	text-indent: 0;
+}
+#test-session-operations:hover {
+	background-color:#3C78B5;
+	color:#FFFFFF;
+}
+#test-session-operations-dropdown.active #test-session-operations {
+	background-color:#3C78B5;
+	color:#FFFFFF;
+}
+#bonfire-more-dropdown {
+    padding: 0;
+    border: 1px solid #6A8EB3;
+}
+.session-container {border-bottom:1px solid #ddd;padding:7px 0 1px 62px;position:relative;background-repeat:no-repeat;background-position:7px 7px;min-height:54px;}
+.session-container:hover {background-color:#f0f0f0;}
+.session-container.small-avatar {padding:3px 0 1px 22px;background-position:3px 5px;min-height:24px;}
+.session-container .time-stamp {color:#666;margin-right:3px;}
+.session-title {
+    font-weight: 400;
+    margin: 0 0 5px;
+}
+
+.session-container .user-hover {font-size: 0.85em;}
+
+.session-stream-content {padding:12px 0 6px;}
+
+.session-stats {overflow:hidden;margin-bottom:6px; font-size: 0.85em;}
+.session-stats dl {
+    display: block;
+    float: left;
+    margin: 0 12px 0 0;
+}
+.session-stats dt,
+.session-stats dd {
+    color: #666;
+    display: inline;
+    -webkit-margin-start: 0px;
+    -moz-margin-start: 0px;
+    -ms-margin-start: 0px;
+    margin-start: 0px;
+    margin: 0px;
+}
+
+.based-on-issue {
+    padding: 8px;
+    font-size: 13px;
+}
+.based-on-issue dt {
+    color:#666;
+    float:left;
+    margin-right:3px;
+}
+.based-on-issue img {
+    vertical-align:middle; 
+    position: relative; 
+    top: -2px;
+}
+
+#exc-issues-raised .based-on-issue {margin:12px 12px 12px 6px; font-size: inherit;}
+
+#session-details {
+	position:relative;
+	margin:12px 0 3px;
+	min-height: 60px;
+}
+#session-related-issue {
+	margin: 0;
+}
+.bf-raised-session-wrapper {
+    padding: 8px;
+}
+.bf-issue-list {
+    list-style-type: none;
+    display: inline-block;
+    padding: 0;
+    margin: 0;
+}
+.bf-issue-list li {
+    display: inline-block;
+    vertical-align: top;
+}
+.bf-issue-list li.bf-icon {
+    width: 16px;
+}
+.bf-issue-list li.bf-key {
+    padding-left: 4px;
+    width: 80px;
+    word-wrap: break-word;
+}
+.bf-issue-done {
+    text-decoration: line-through;
+}
+.bf-issue-list li.bf-data {
+    padding-left: 4px;
+    padding-right: 4px;
+    width: 260px;
+}
+.bf-issue-list li a {
+    text-indent: 0;
+}
+.bf-issue-list li span {
+    text-indent: 0;
+}
+#session-additional-info-rendered.bf-empty {
+    color: gray;
+    user-select: none;
+   -moz-user-select: -moz-none;
+   -webkit-user-select: none;
+   -khtml-user-select: none;
+}
+.raised-issue {
+    padding-bottom: 4px;
+}
+.raised-issue img {
+    vertical-align: middle;
+    position: relative;
+    top: -2px;
+}
+#bf-session-stats {
+    clear: both;
+    overflow: hidden;
+    padding: 8px;
+}
+#bf-session-stats dl {
+    padding-bottom: 8px;
+}
+.bf-summary-label {
+    color: #666;
+    width: 30%;
+    display: block;
+    float: left;
+}
+.bf-summary-data {
+    text-align: right;
+    width: 70%;
+    display: block;
+    float: left;
+    margin-left: 0;
+}
+#session-summary {
+	position: relative;
+}
+.session-tester {
+    font-size: 13px;
+    font-weight:400;
+}
+
+#session-list-operations {
+    float: right;
+    margin-bottom: 4px;
+    margin-top: 20px;
+}
+
+#session-list-operations-footer {
+    float: right;
+    margin: 0 1em 1em;
+}
+
+/********************************************************************
+ * Filter Notes related rules
+ */
+#session-filter {
+    float: right;
+}
+
+#session-activity #session-filter {
+    margin-top: -2px
+}
+#session-list-operations .pagination {
+    padding-top: 2px;
+}
+
+#session-bottom-pagination .pagination {
+    float: right;
+    margin: 0 12px 4px 12px;
+    padding-top: 2px;
+    text-align: right;
+    width: auto;
+}
+
+#filter-control {
+    padding: 8px 16px;
+}
+
+#filter-specifics {
+    padding: 0 16px 8px 24px;
+    overflow: hidden;
+}
+
+#filter-specifics.disabled,
+#filter-specifics.disabled span,
+#filter-specifics.disabled label,
+#filter-specifics.disabled select,
+#filter-options.disabled,
+#filter-options.disabled label
+{
+    color: #DDDDDD;
+}
+
+
+#filter-session-only {
+    padding-top: 8px;
+}
+
+#filter-tags,
+#filter-options{
+    float: left;
+}
+
+#filter-tags, #filter-session-only {
+    width: 126px;
+}
+
+#filter-options {
+    padding-left: 16px;
+    width: 118px;
+}
+
+#bf-filter-form > h3 {
+    margin: 0;
+    padding: 8px 16px 0 8px;
+    border:none;
+}
+
+/* #jira and .buttons-container are required to combat CSS specificity in OnDemand */
+/* OnDemand compat */
+#jira #bf-filter-form .buttons-container .buttons {
+    padding: 8px 16px;
+    text-align: right;
+}
+
+#bf-filter-form select {
+    min-width: 0;
+}
+
+.status-container {
+    float: right;
+    width: auto;
+    margin-right: 6px;
+}
+.status-container.status-container-inline {
+    float: none;
+    display: inline-block;
+    padding: 0;
+    line-height: 17px;
+    margin-left: 8px;
+    vertical-align: text-bottom;
+}
+.session-shared-buttons {
+    float:right;
+    padding-top: 4px;
+    padding-right: 16px;
+}
+
+div.join-container {
+    float: none;
+    padding: 0;
+    display: inline-block;
+}
+
+dl.joinable-dl {
+    margin: 4px 0 0;
+}
+
+#join-session-link {
+    color: #fff;
+    font-weight: normal;
+}
+
+#exc-issues-raised {
+	position: relative;
+    padding: 12px;
+}
+/* JIRA 5 compat */
+#page #exc-issues-raised {
+    padding:  0;
+}
+/*#session-links-wrapper {*/
+	/*padding: 12px 12px 0;*/
+/*}*/
+#session-links {
+    width: 100%;
+}
+#link-testsessions {
+	color: #3C78B5;
+	position: relative;
+	top: 12px;
+	margin-left: 12px;
+}
+
+#session-top-bar {
+	color: #3C78B5;
+	font-weight: normal;
+	line-height: 1.3;
+	padding: 10px 0 1px 72px;
+	background-repeat: no-repeat;
+	background-position: 7px 7px;
+	min-height: 54px;
+	position: relative;
+}
+
+.browse-session-link {
+    position:relative;
+    width: 135px;
+    float: right;
+    font-size: 1.1em;
+    padding: 3px 7px 4px 7px;
+}
+
+#product-label {
+    font-size: 15px;
+    line-height: 1.2667;
+}
+
+#session-top-container {
+    display: table;
+    padding-bottom: 6px;
+}
+
+#bonfire-session-main {
+    margin: 0;
+}
+
+#bonfire-session-main h2 {
+    display: inline;
+    margin-right: 10px;
+}
+
+.session-right-column {
+    width: 356px;
+}
+
+#session-additional-info {
+    margin: 0;
+}
+#session-additional-info-rendered {
+	color: black;
+	font-weight: normal;
+	font-size: 13px;
+    margin: 0;
+    padding: 8px;
+    padding-bottom: 4px;
+}
+#session-info-textarea {
+    border: 0;
+    outline: 0;
+    padding: 0;
+    resize: none;
+    width: 100%;
+    overflow: hidden;
+}
+#session-additional-info-buttons {
+    position: absolute;
+    right: 0;
+    z-index: 50;
+    background-color: #DDEDFF;
+    padding: 8px 10px;
+    border-radius: 0 0 3px 3px;
+    border: 1px solid #A7C8FF;
+    border-top: none;
+}
+#session-additional-info-edit {
+    padding: 5px;
+}
+#additional-info-target {
+    padding-top: 4px;
+    position: relative;
+}
+#additional-info-target.editable:hover #session-additional-info-rendered {
+    outline: 1px solid #AAA;
+    cursor: pointer;
+}
+#additional-info-target.editable .icon-edit-sml {
+    position: absolute;
+    top: 4px;
+    right: 0px;
+    display: none;
+    background-color: #F0F0F0;
+    border-bottom: 1px solid #BBB;
+    border-left: 1px solid #BBB;
+}
+#additional-info-target.editable:hover .icon-edit-sml.hidden {
+    display: none;
+}
+#additional-info-target.editable:hover .icon-edit-sml {
+    display: block;
+}
+.textbox-wrapper {
+    background-color: white;
+    border: 1px solid #4E91FE;
+    padding: 4px 24px 2px 4px;
+}
+.session-avatar, .session-avatar.mod-content {
+	border-top: 1px solid #DDD;
+	background-repeat: no-repeat;
+	background-position: 8px 8px;
+    clear: both;
+	min-height: 54px;
+    margin-top: 4px;
+	padding: 8px 0 0 64px;
+	position: relative;
+}
+form.aui button.bf-inline-edit-buttons {
+    height: 22px;
+    padding: 0;
+    width: 28px;
+    display: inline-block;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #AAA;
+    background-image: -moz-linear-gradient(100% 100% 90deg, #DFDFDF, white);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(white), to(#DFDFDF));
+    background-image: -webkit-linear-gradient(white, #DFDFDF);
+    background-image: -o-linear-gradient(white, #DFDFDF);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#dfdfdf',GradientType=0 );
+}
+form.aui button.bf-inline-edit-buttons.bf-submit {
+    border-radius: 3px 0 0 3px;
+}
+form.aui button.bf-inline-edit-buttons.bf-submit:hover,
+form.aui button.bf-inline-edit-buttons.bf-cancel:hover {
+    border-color: #666;
+}
+form.aui button.bf-inline-edit-buttons.bf-cancel {
+    border-radius: 0 3px 3px 0;
+    border-left-color: #EEE;
+    margin-left: 0;
+}
+.bf-inline-edit-button-icons {
+    background: transparent no-repeat 0 0;
+    background-image: url("images/icons/tick_cross.png");
+    display: inline-block;
+    height: 16px;
+    vertical-align: text-top;
+    width: 16px;
+    margin: 0;
+    padding: 0;
+}
+.bf-waiting-icon {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    height: 16px;
+    width: 16px;
+    background: transparent url("images/icons/wait.gif") no-repeat 0 0;
+}
+.add-info-cancel-button {
+    background-position: -23px 0;
+}
+form.aui button.bf-inline-edit-buttons:hover .add-info-cancel-button {
+    background-position: -23px -20px;
+} 
+.add-info-submit-button {
+    background-position: 1px 0;
+}
+form.aui button.bf-inline-edit-buttons:hover .add-info-submit-button {
+    background-position: 1px -20px;
+}
+
+.active-area .bonfire-tab-panel-wrapper {
+    padding: 11px;
+}
+/* JIRA 5 compat */
+#page #project-tab .bonfire-tab-panel-wrapper {
+    padding: 0;
+}
+
+#bonfire-project-tab-header {
+	margin-bottom: 12px;
+}
+
+#bonfire-project-tab-header b {
+    font-size: 1.6em;
+	font-weight: bold;
+}
+/* JIRA 5 compat */
+#page #bonfire-project-tab-header b {
+    color: #292929;
+    font-size: 23px;
+    line-height: 1.174;
+}
+
+#bonfire-project-tab-menu-holder {
+    margin-top: 12px;
+}
+
+.test-sessions {
+    margin-top: 50px;
+}
+.test-sessions .results-count {margin:0 0 6px 0;}
+.test-sessions .pagination {margin-right:0;}
+.session-results, .test-session-notes {clear:both;border-top:1px solid #ddd;margin-bottom:1em;}
+.session-results-empty {margin-top: 0.5em;}
+
+.status-progress-wrap {
+	display: inline-block;
+	width: 564px;
+}
+
+#session-status {
+	margin: 0;
+	padding: 0;
+	top:0;
+    right:0;
+    float: right;
+    font-size:14px;
+}
+
+.status-progress {
+	list-style:none;
+	padding:0;
+	margin:0;
+	overflow:hidden;
+	height: 45px;
+	position: relative;
+}
+
+#session-participant-inner {
+    padding: 8px;
+}
+#session-participants-rendered {
+    padding-left: 16px;
+    padding-right: 16px;
+    margin-top: 12px;
+}
+.bf-first-status {
+    padding-top: 5px;
+}
+.session-page-wrapper #bonfire-extention-alert{
+    margin: 0 0 12px;
+}
+.status-progress li {
+	display:block;
+	float:left;
+	margin:0;
+	padding: 2px 0;
+	width:108px;
+	text-align:center;
+	height: 26px;
+	position: relative;
+}
+.status-progress dt {
+    font-size:14px;
+    font-weight:700;
+    padding-top: 3px;
+    padding-left: 8px;
+}
+.status-progress li.prog-one {
+	border-top-left-radius: 3px;
+	border-bottom-left-radius: 3px;
+}
+.status-progress li.prog-two {
+	border-left: none;
+	border-right: none;
+	margin-left:5px;
+}
+.status-progress li.prog-three {
+	margin-left:5px;
+	border-top-right-radius: 3px;
+	border-bottom-right-radius: 3px;
+}
+
+.prog-one 					{ z-index:9; background-color: #ccc;	color: #333; }
+.prog-one:after 			{ border:15px solid transparent; border-left:12px solid #ccc; border-right:0; content:""; height:0; top:0;	right:-12px;	position:absolute; width:0; z-index:9; }
+.prog-one.CREATED			{ background-color: #4a6785;	color: #FFFFFF; }
+.prog-one.CREATED:after 	{ border:15px solid transparent; border-left:12px solid #4a6785; border-right:0; content:""; height:0; top:0;	right:-12px;	position:absolute; width:0; z-index:9; }
+
+.prog-two 					{ z-index:7; background-color: #ccc;	color: #333; }
+.prog-two:before 			{ border:15px solid transparent; border-left:12px solid #FFFFFF; border-right:0; content:""; height:0; top:0;	left:0px;	position:absolute; width:0; z-index:8; }
+.prog-two:after 			{ border:15px solid transparent; border-left:12px solid #ccc; border-right:0; content:""; height:0; top:0;	right:-12px;	position:absolute; width:0; z-index:7; }
+.prog-two.STARTED			{ background-color: #f6c342; 	color: #333; }
+.prog-two.STARTED:after		{ border:15px solid transparent; border-left:12px solid #f6c342; border-right:0; content:""; height:0; top:0;	right:-12px;	position:absolute; width:0; z-index:7; }
+.prog-two.PAUSED			{ background-color: #815b3a; 	color: #FFFFFF; }
+.prog-two.PAUSED:after 		{ border:15px solid transparent; border-left:12px solid #815b3a; border-right:0; content:""; height:0; top:0;	right:-12px;	position:absolute; width:0; z-index:7; }
+
+.prog-three					{ z-index:5; background-color: #ccc;	color: #333; }
+.prog-three:before 			{ border:15px solid transparent; border-left:12px solid #FFFFFF; border-right:0; content:""; height:0; top:0;	left:0px;	position:absolute; width:0; z-index:6; }
+.prog-three.COMPLETED 		{ background-color: #14892c; 		color: #FFFFFF; }
+
+.session-activity-container-timeless {padding:4px 0 0 0;}
+
+.session-activity-container {border-top:1px solid #ddd;padding:4px 0 0 0;margin-top: 4px;}
+
+.session-activity-container .time-stamp {
+	color:#666;
+	margin:0 6px;
+    padding:4px 0;
+	display: inline-block;
+	vertical-align: top;
+	position: absolute;
+}
+/*
+.session-activity-content img {
+	margin-top:-5px;
+}
+*/
+
+.session-activity-container .session-stream-content {padding:6px 0;}
+
+.session-add-note-container {padding:8px 0 1px;}
+
+.session-action {
+	color: #3C78B5;
+	padding-top: 5px;
+}
+
+#session-activity {
+	padding: 20px 0 0;
+    margin-left: 0;
+    margin-right: 0;
+}
+.stats-summary {clear:right;list-style:none;margin:0;padding:0;float:right;width:100%;}
+.stats-summary li {
+	width: 32%;
+	padding-right: 1%;
+	float:left;
+	margin:0;
+	color: black;
+	}
+.stats-summary dl {width:90%;margin:0 5%;}
+.stats-summary dl dt,
+.stats-summary dl dd {float:none;line-height:inherit;width:100%;margin:0;padding:0;text-align:center;}
+.stats-summary dl dt {font-size: 12px; color:#7A7A7A;}
+.stats-summary dl dd {font-size:32px;background-color:transparent;}
+.stats-summary dl a {color:#fff;}
+.stats-summary dl a:hover {color:#fff;text-decoration:none}
+
+#inline-dialog-complete_session_popup {
+	z-index:2000;
+	left: auto;
+	right: 24px;
+	top: 44px;
+	display: none;
+	font-size: 13px;
+	position: absolute;
+	z-index: 100;
+	font-size: 13px;
+}
+#inline-dialog-complete_session_popup .contents {
+	width: auto;
+	min-width: 300px;
+	max-width: 526px;
+	-moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+	-webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+	box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+	background: white;
+	border: 1px solid #BBB;
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+#inline-dialog-complete_session_popup table {
+    min-width: 0px;
+}
+
+#complete-session-form {
+	min-width:400px;
+	margin-bottom: 0;
+}
+#complete-session-form fieldset{
+	padding:10px;
+}
+#complete-session-form .buttons-container {
+	margin-bottom: 0;
+	min-height: 0;
+	overflow: hidden;
+	position: relative;
+}
+/* #jira and .buttons-container are required to combat CSS specificity in OnDemand */
+/* OnDemand compat */
+#jira #complete-session-form .buttons-container .buttons {
+	padding: 10px;
+	text-align: right;
+}
+#exc-save {
+	margin: 0 10px 0 0;
+}
+#arrow-complete_session_popup {
+	position: absolute;
+	left:auto;
+	right:67px;
+	top: -7px;
+}
+#complete-session-form tbody tr td .checkbox {
+	margin-left: 23px;
+}
+#exc-log-time {
+	margin-left:7px;
+}
+#session-time-spent-checkbox img {
+	vertical-align: middle;
+	position: relative;
+	top: -2px;
+}
+.bonfire-installation-content {
+	background-color: white;
+	border: 1px solid #BBB;
+	border-radius: 5px;
+	margin: 12px;
+}
+/* JIRA 5 compat */
+#page .bonfire-installation-content {
+	margin: 16px 0;
+}
+.msie-8 #bf-assignee-span {
+    width: 250px;
+}
+
+#bonfire-big-browser-icon {
+	background-repeat: no-repeat;
+	min-height: 580px;
+	margin: 12px;
+	padding-left: 700px;
+	position: relative;
+}
+#bonfire-get-right-container {
+	position: relative;
+	left: 50%;
+	margin-left: -128px;
+	width: 256px;
+}
+#bonfire-download-subheading {
+	font-size: 4em;
+	text-align: center;
+	padding-top: 9%;
+}
+#bonfire-download-button {
+	margin-left: -30px;
+	left: 50%;
+	position: relative;
+	top: -72px
+}
+
+#bonfire-feedback {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    font-size: 11px;
+    color: #326CA6;
+    border: 1px solid #CCC;
+    border-bottom: none;
+    border-right: none;
+    background-color: whiteSmoke;
+    padding: 6px;
+    font-weight: bold;
+    z-index: 1000;
+}
+
+.session-operations {
+    margin-top: -10px;
+}
+
+#bf-opsbar-errors {
+    margin-top: 12px;
+}
+
+#bonfire-extention-alert{
+	height: 30px;
+	padding: 5px;
+	background-color: #E0EFFF;
+	display: block;
+	border: 1px solid #9EB6D4;
+	margin: 12px 0 0;
+	line-height: 30px;
+	padding: 5px 14px;
+}
+
+#bonfire-extention-close-button {
+	background-repeat: no-repeat;
+	cursor: pointer;
+	float: right;
+	height: 16px;
+	width: 16px;
+	margin-top: 6px;
+    background: url('images/aui-icon-close.png') no-repeat scroll 0 0 transparent;
+}
+
+
+#ex-session-info {
+	resize: vertical;
+}
+
+#default-template {
+    width: 250px;
+}
+
+#bonfire-quicklink {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+.bonfire-list-item {
+    margin: 0 0 0 0 ! important;
+    width: 100%;
+}
+/* OnDemand compat */
+.aui-dd-parent .aui-dropdown .bonfire-list-item a {
+    padding:  0.3em 0.5em;
+}
+
+.bonfire-error {
+    margin-top: 5px;
+    margin-bottom: 2px;
+    margin-left: 12px;
+    clear: left;
+    color: #CC0000;
+    font-weight: bold;
+}
+
+.bonfire-msg {
+    position: fixed;
+    text-align: center;
+    z-index: 10000;
+}
+
+.bonfire-msg.flash {
+    background-color: #FFFFDD;
+    -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+    -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+}
+
+#support-info {
+    margin: 0.5em 0.5em 0 1em;
+}
+
+#support-info h3 {
+    margin: 0.5em 0;
+}
+
+#support-info dd {
+    margin-left: 2em;
+}
+
+/* Override JIRA's `.active-area h2` and `.active-area .content h2` rules */
+#session-additional-info h2,
+.active-area .editable-note-target .editable-note-content h2 {
+    margin-left: 0;
+    margin-top: 0;
+}
+
+.bonfire-license-error {
+    padding: 8px;
+}
+.bonfire-license-error p {
+    margin-bottom: 16px;
+}
+.bonfire-license-error h4 {
+    color: #000;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 18px;
+    margin-top: 1em;
+}
+
+.session-participant {
+    display: block;
+    float: left;
+    width: 100%;
+    padding-bottom: 3px;
+}
+
+.session-participant-icon {
+    float: left;
+}
+.bf-activity-avatar {
+    width: 36px;
+}
+.bf-activity-assignee-icon {
+    padding-right: 8px;
+}
+.bf-activity-item {
+    border-top: 1px solid #EAEAEA;
+    padding-top: 5px;
+}
+.bf-activity-screenshot {
+    padding-top: 8px;
+    padding-left: 14px;
+}
+.bf-activity-blue {
+    /*background-color: #ECF2F9;*/
+}
+.bf-activity-container {
+    padding: 8px;
+    padding-top: 0;
+}
+.bf-activity-action {
+    padding: 0 8px;
+}
+.bf-activity-screenshot img {
+    border: 1px solid #CCC;
+}
+.bf-activity-item .bf-activity-first-name {
+    font-weight: bold;
+}
+.bf-activity-item .bf-activity-name {
+    color: #326CA6;
+    float: left;
+    padding-right: 6px;
+}
+#session-activity .bf-activity-item .status-container {
+    padding: 0;
+    padding-right: 6px;
+    float: left;
+    margin:0;
+}
+#session-activity .bf-activity-item .status-container dd {
+    padding: 0;
+    padding-top: 1px;
+}
+.bf-first-activity {
+    border: 0;
+}
+.bf-activity-item p.bf-activity-text {
+    color: #555;
+    float:left;
+    margin: 0;
+    padding: 0 6px 0 0;
+}
+.bf-activity-item p.bf-activity-text.bf-andthen {
+    padding: 0;
+}
+.bf-activity-note:hover {
+    background-color: #efefef;
+}
+.bf-activity-time {
+    color: #777;
+    font-size: 11px;
+    padding-bottom: 5px;
+    padding-top: 5px;
+    float:left;
+}
+.bf-activity-small-icon {
+    margin: -3px 4px 0 0;
+    vertical-align: middle;
+}
+.session-participant-inactive {
+    opacity: 0.4;
+}
+
+a.session-participant-left {
+    color: gray;
+}
+
+.session-participant-assigned {
+    font-size: 13px;
+    color: #EE7600;
+}
+
+.session-participant-join {
+    font-size: 24px;
+    color: #3BAA06;
+}
+
+.session-participant-text {
+    display: block;
+    float: left;
+    margin: 3px 0 0 8px;
+    white-space:nowrap;
+}
+
+.session-participant-link {
+    font-weight: bold;
+}
+
+/* Copy of AUI classes because 4.4 doesn't have it */
+.bf-aui-panel {
+    background: #fff;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    padding: 16px;
+}
+.bf-aui-group {
+    display: table;
+    -moz-box-sizing: border-box;
+    -ms-box-sizing: border-box;
+    -o-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    border-spacing: 0;
+    table-layout: fixed;
+    width: 100%;
+}
+
+.bf-aui-group > .bf-aui-item {
+    -moz-box-sizing: border-box;
+    -ms-box-sizing: border-box;
+    -o-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    display: table-cell;
+    margin: 0;
+    vertical-align: top;
+}
+
+#session-activity .bf-aui-group > .bf-aui-item + .bf-aui-item {
+    padding-left: 0px;
+}
+.bf-aui-group > .bf-aui-item + .bf-aui-item {
+    padding-left: 16px;
+}
+/* JIRA 5 compat */
+#page .session-page-wrapper {
+    padding: 0px;
+}
+
+.session-page-wrapper {
+    font-size: 13px;
+    padding: 12px;
+    min-width: 980px;
+}
+
+#ex-issueKey-multi-select a.issue-picker-popup {
+    display: none;
+}
+
+.jira-no-popup .jira-multi-select.jira-issue-picker + .issue-picker-popup {
+    display: none;
+}
+
+.bf-to-jira-link {
+    float: right;
+    padding-right: 8px;
+    font-size: 11px;
+}
+
+#bonfiremodule .web-panel-session {
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 4px;
+}
+
+#bonfiremodule .session-field-heading {
+    padding-top: 4px;
+    color: #666;
+}
+
+.bf-wp-session-list {
+    padding: 0;
+    display: inline-block;
+    margin: 0;
+}
+
+.bf-wp-session-list li {
+    display: inline-block;
+}
+
+.bf-wp-icon {
+    width: 16px;
+    vertical-align: top;
+    padding-right: 4px;
+}
+
+.bf-wp-sessionname {
+    width: 262px;
+}
+
+.session-cf-value {
+    text-overflow: ellipsis; 
+    overflow: hidden; 
+    white-space:nowrap;
+}
+
+.property-list > li.bf-raised-in-row {
+    padding: 10px 0;
+    border-bottom: 1px solid #DDD;
+}
+
+.bf-table {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+    padding-top:5px;
+    padding-bottom:5px;
+}
+
+.bf-session-underline {
+    border-bottom: 1px solid #DDD;
+}
+
+.bf-inline-status {
+    vertical-align: text-bottom;
+}
+
+.bf-single-session-row {
+    padding-right: 20px;
+    width:100%;
+    display: table-cell;
+    table-layout: fixed;
+}
+
+.bf-create-link {
+    width: 134px;
+}
+
+.bf-session-title-cell {
+    width: 100%;
+}
+.bf-table-no-border {
+    border-spacing: 0;
+}
+.bf-table-in-cell {
+    display: table;
+}
+
+.bf-ops-cell,
+.bf-cell {
+    display: table-cell;
+    table-layout: fixed;
+}
+
+.bf-ops-cell .operations .aui-dd-parent {
+    margin-bottom: 4px;
+}
+
+.bf-row {
+    display: table-row;
+    table-layout: fixed;
+}
+
+div.wrap.bf-context-cell {
+    padding-bottom: 4px;
+    padding-top: 4px;
+}
+
+div.wrap.bf-context-cell.full-width {
+    width: 100%;
+}
+
+.bf-context-web-heading {
+    color: #333;
+    padding-bottom: 5px;
+}
+
+.bf-cell.bf-context-cell.bf-context-rhs {
+    border-left: 1px solid #DDD;
+    padding-left: 11em;
+}
+
+.bf-inline-status {
+    width: 100px;
+    white-space: nowrap;
+    display: table-cell;
+    table-layout: fixed;
+}
+
+.bf-no-decoration, .bf-no-decoration:link, .bf-no-decoration:visited {
+    text-decoration: none;
+}
+
+.bf-inline-loz {
+    width: 88px;
+}
+
+.bf-completed-count-cell {
+    text-align: right;
+    min-width: 100px;
+}
+
+.bf-testing-status-cell {
+    min-width: 100px;
+}
+
+.bf-testing-status-bar-cell {
+    width: 100%;
+}
+
+.bf-testing-status-top {
+    width: 50%;
+}
+
+.bf-testing-label {
+    color: #535353;
+}
+
+.bf-test-status-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0px;
+    margin-top: 5px;
+}
+
+.bf-test-status-bar {
+    height: 5px;
+}
+
+.bf-status-one {
+    background-color:#3C78B5;
+    border-right: 0px;
+}
+.bf-status-two {
+    background-color:#F7A400;
+    border-left: 0px;
+    border-right: 0px;
+}
+.bf-status-three {
+    background-color:#090;
+    border-left: 0px;
+}
+
+.bf-icon-context {
+    -moz-box-sizing: border-box; 
+    -webkit-box-sizing: border-box; 
+    box-sizing: border-box;
+    padding-left: 20px;
+}
+
+.bf-icon-context.bf-browser-firefox {
+    background: url("images/icons/firefox_16.png") no-repeat 0px 0px;
+}
+
+.bf-icon-context.bf-browser-chrome {
+    background: url("images/icons/chrome_16.png") no-repeat 0px 0px;
+}
+
+.bf-icon-context.bf-browser-safari {
+    background: url("images/icons/safari_16.png") no-repeat 0px 0px;
+}
+
+.bf-icon-context.bf-browser-msie {
+    background: url("images/icons/ie_16.png") no-repeat 0px 0px;
+}
+
+.bf-icon-context.bf-os-mac {
+    background: url("images/icons/apple_16.png") no-repeat 0px 0px;
+}
+
+.bf-icon-context.bf-os-linux {
+    background: url("images/icons/linux_16.png") no-repeat 0px 0px;
+}
+
+.bf-icon-context.bf-os-windows {
+    background: url("images/icons/windows_16.png") no-repeat 0px 0px;
+}
+
+.bf-icon-context.bf-twixy {
+    background: url("images/icons/twix_closed.png") no-repeat 6px 4px;
+    cursor: pointer;
+}
+
+.bf-icon-context.bf-twixy.bf-twix-open {
+    background: url("images/icons/twix_open.png") no-repeat 4px 6px;
+    white-space: normal;
+    overflow: visible;
+}
+
+.bf-icon-context.bf-browser-none,
+.bf-icon-context.bf-os-none{
+    padding-left: 0px;
+}
+
+.issue-nav-link {
+    color: #333;
+    float: right;
+    outline: 0 none;
+    padding: 0 7px;
+    text-decoration: none;
+}
+
+.bf-add-raised-issues-link {
+    color: #333;
+    float: right;
+    outline: 0 none;
+    padding-left: 7px;
+    text-decoration: none;
+}
+
+.session-page-wrapper .bf-button.bonfire-invite-button {
+    position: relative;
+    padding-left: 26px;
+}
+
+.bf-inactive-name {
+    color: #666;
+    float: left;
+    padding-right: 6px;
+}
+
+img.session-participant-icon {
+    padding-bottom: 4px;
+}
+
+span.session-tester {
+    color: #326CA6;
+}
+
+span.session-tester.session-participant-left {
+    color: gray;
+}
+
+.bf-context-heading {
+    color: #666;
+    width: 100%;
+}
+
+.bf-context-value {
+    padding-left: 8px;
+}
+
+.bf-disabled-join-reason {
+    padding: 8px;
+    color: #535353;
+}
+
+.bf-info-icon {
+    background: transparent url("images/icons/info_17.png") no-repeat 0 0;
+    display: inline-block;
+    vertical-align: text-top;
+    margin-bottom: 1px;
+    margin-left: 2px;
+    margin-right: 2px;
+    height: 17px;
+    width: 17px;
+}
+.bf-inline-details-button:hover .bf-info-icon {
+    background: transparent url("images/icons/info_invert_17.png") no-repeat 0 0;
+}
+.bf-inline-details-button,
+.bf-more-button {
+    display: inline-block;
+}
+.bf-inline-details-button:hover,
+.bf-more-button:hover {
+    background-color: #3C78B5;
+    border-radius: 3px;
+}
+.bf-cog-icon {
+    background: transparent url("images/icons/cog_grey_16.png") no-repeat 0 0;
+    width: 30px;
+    display: inline-block;
+    vertical-align: text-top;
+    margin-bottom: 1px;
+    margin-left: 2px;
+    height: 17px;
+}
+.bf-more-button:hover .bf-cog-icon {
+    background: transparent url("images/icons/cog_grey_invert_16.png") no-repeat 0 0;
+}
+.bf-more-button .bf-menu-arrow {
+    height: 0;
+    width: 0;
+    border: 4px solid black;
+    border-bottom: none;
+    border-left-color: transparent;
+    border-right-color: transparent;
+    display: inline-block;
+    position: relative;
+    right: -18px;
+    top: -4px;
+}
+.bf-more-button:hover .bf-menu-arrow {
+    border-top-color: white;
+}
+.bf-inline-actions {
+    width: 60px;
+    white-space: nowrap;
+    display: table-cell;
+    table-layout: fixed;
+    padding-left: 8px;
+}
+
+#bonfire-session-main .module > .mod-header > div {
+    display: inline;
+    vertical-align: text-bottom;
+    padding-right: 8px;
+    background-color: white;
+}
+
+.bf-raised-in-actions {
+    position: absolute;
+    right: 19px;
+    top: 5px;
+    padding: 1px;
+}
+
+.bf-raised-in-details-button {
+    position: absolute;
+    top: 6px;
+    right: 52px;
+}
+
+.bf-unraise-icon {
+    display: none;
+}
+.bf-raised-session-wrapper:hover .bf-unraise-icon {
+    display:block;
+    opacity: 0.25;
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#efefef',GradientType=0 ) alpha(opacity=25); /* For IE8 and earlier */
+}
+.bf-raised-session-wrapper:hover .bf-unraise-icon:hover {
+    display:block;
+    opacity: 1;
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#efefef',GradientType=0 ) alpha(opacity=100); /* For IE8 and earlier */
+}
+
+/** More menu on sessions page **/
+.bf-opts-dropdown .bf-menu-arrow {
+    height: 0;
+    width: 0;
+    border: 4px solid #333333;
+    border-bottom: none;
+    border-left-color: transparent;
+    border-right-color: transparent;
+    display: inline-block;
+    position: relative;
+    right: 0px;
+    top: -1px;
+}
+.bf-opts-dropdown-trigger:hover .bf-menu-arrow {
+    border-top-color: black;
+}
+.property-list dd,
+.status-container dd {
+    -webkit-margin-start: 0px;
+    -moz-margin-start: 0px;
+    -ms-margin-start: 0px;
+    margin-start: 0px;
+    margin: 0px;
+}
+
+/* Fixes the double footer problem for JIRA > 6.0  */
+#footer .footer-body > .footer-body.bf-footer-body {
+    margin: 0;
+    padding: 0;
+    min-height: 0;
+}
+

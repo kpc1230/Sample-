@@ -1,0 +1,48 @@
+<div id="session-participants-section" class="module">
+    <div class="mod-header">
+        <h2>$i18n.getText('session.section.participants')</h2><div><span class="aui-badge">$session.participants.size()</span></div>
+    </div>
+    <div id="session-participant-inner" class="bf-aui-group">
+        <div id="session-participants-module" class="module">
+            ##
+            ## Participants section
+            ##
+            #foreach ($participant in $session.participants)
+                <div class="session-participant">
+                    #if($participant.user.active)
+                        <div class="aui-avatar aui-avatar-small session-participant-icon">
+                            <div class="aui-avatar-inner">
+                                <a href="$requestContext.baseUrl/secure/ViewProfile.jspa?name=$action.htmlEncode($participant.user.name)">
+                                    <img #if(!$participant.active)class="session-participant-inactive"#end src="$textutils.htmlEncode($participant.avatarUrl)" alt="">
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="session-participant-text">
+                            <a class="session-tester user-hover #if(!$participant.active) session-participant-left #end"
+                                   href="$requestContext.baseUrl/secure/ViewProfile.jspa?name=$action.htmlEncode($participant.user.name)"
+                                   rel="$action.htmlEncode($participant.user.name)">$action.htmlEncode($participant.user.displayName)</a>
+                            #if($participant.assignee)
+                                <span class="aui-lozenge aui-lozenge-current aui-lozenge-subtle">$i18n.getText('session.section.participants.assigned')</span>
+                            #end
+                        </div>
+                    #else
+                        <div class="aui-avatar aui-avatar-small session-participant-icon">
+                            <div class="aui-avatar-inner">
+                                <img #if(!$participant.active)class="session-participant-inactive"#end src="$textutils.htmlEncode($participant.avatarUrl)" alt="">
+                            </div>
+                        </div>
+                        <div class="session-participant-text">
+                            <span class="session-tester #if(!$participant.active) session-participant-left #end">
+                                $action.htmlEncode($participant.user.displayName)
+                            </span>
+                            #if($participant.assignee)
+                                <span class="aui-lozenge aui-lozenge-current aui-lozenge-subtle">$i18n.getText('session.section.participants.assigned')</span>
+                            #end
+                        </div>
+                    #end
+                </div>
+            #end
+        </div>
+    </div>
+</div>

@@ -1,0 +1,39 @@
+<div id="session-summary" class="module">
+    <div class="mod-header">
+        <h2>$i18n.getText('session.section.summary')</h2>
+    </div>
+    <div id="bf-session-stats">
+        <dl>
+            <dt class="bf-summary-label">$i18n.getText('session.section.summary.datecreated')</dt>
+            <dd class="bf-summary-data">$session.getDateCreated()</dd>
+        </dl>
+        <dl>
+            <dt class="bf-summary-label">$i18n.getText('session.section.summary.datecompleted')</dt>
+            <dd class="bf-summary-data">$session.getDateCompleted()</dd>
+        </dl>
+        <dl>
+            <dt class="bf-summary-label">$i18n.getText('session.section.summary.timespent')</dt>
+            <dd class="bf-summary-data">                        
+                #if ( $session.getTimeLogged() )
+                    $session.timeLoggedString
+                #else
+                    &#151; ##&mdash;
+                #end
+            </dd>
+        </dl>
+        <dl>
+            <dt class="bf-summary-label">$i18n.getText('session.section.summary.issuecount')</dt>
+            <dd class="bf-summary-data">$session.getIssuesRaised().size()</dd>
+        </dl>
+        #if(${session.getSubTasksRaised().size()} > 0)
+            <dl>
+                <dt class="bf-summary-label">$i18n.getText('session.section.summary.subissuecount')</dt>
+                <dd class="bf-summary-data">$session.getSubTasksRaised().size()</dd>
+            </dl>
+        #end
+        <dl>
+            <dt class="bf-summary-label">$i18n.getText('session.section.summary.participantcount')</dt>
+            <dd class="bf-summary-data">$session.participants.size()</dd>
+        </dl>
+    </div>
+</div>

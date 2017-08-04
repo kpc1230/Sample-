@@ -1,0 +1,100 @@
+html, body, 
+body.aui-layout.aui-theme-default { /* JIRA 5 Compat*/
+    width: 400px;
+    background-color: #F0F0F0;
+}
+body.nl, .command-bar, #main-content.content-container {
+    min-width: 400px;
+}
+
+.content-container {
+    height: 100%;
+    min-width: 400px;
+    padding: 10px;
+}
+
+.content-container h2 {
+    color: #222;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.content-container p {
+    color: #222;
+    font-size: 12px;
+}
+
+.advanced-field {
+    width: 100%;
+}
+
+.advanced-main {
+    width: 400px;
+}
+
+.aui .buttons .button.advanced-save {
+    background: #308ED6;
+    background: -webkit-linear-gradient(top, #308ED6 0%, #2781C6 100%);
+    background: -moz-linear-gradient(top, #308ED6 0%, #2781C6 100%);
+    background: -ms-linear-gradient(top, #308ED6 0%, #2781C6 100%);
+    background: linear-gradient(top, #308ED6 0%, #2781C6 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#308ed6', endColorstr='#2781c6',GradientType=0 );
+    border: 1px solid #2069A2;
+    color: white;
+    font-weight: bold;
+    height: 26px;
+    width: 54px;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .6);
+    margin: 10px 8px 0 0;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    font-size: 13px;
+    position: fixed;
+    bottom: 19px;
+    right: 10px;
+}
+
+.aui .buttons .button.advanced-save.disabled {
+    background: #CAD5E0;
+    border: 1px solid #CAD5E0;
+    background: -webkit-linear-gradient(top, #CAD5E0 0%, #D8E4F0 100%);
+    background: -moz-linear-gradient(top, #CAD5E0 0%, #D8E4F0 100%);
+    background: -ms-linear-gradient(top, #CAD5E0 0%, #D8E4F0 100%);
+    background: linear-gradient(top, #CAD5E0 0%, #D8E4F0 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cad5e0', endColorstr='#d8e4f0',GradientType=0 );
+}
+
+.saved-indicator {
+    margin-left: auto;
+    margin-right: auto;
+    width: 70%;
+    text-align: center;
+    padding: 8px;
+    margin-top: 8px;
+    margin-bottom: 14px;
+    position: fixed;
+    bottom: 0px;
+    left: 21px;
+}
+
+.advanced-cf-context {
+    padding-top: 4px;
+}
+
+.warning .saved-message, 
+.success .not-saved-message,
+.warning .icon-warning,
+.success .icon-error {
+    display: none;
+}
+
+.warning .not-saved-message,
+.success .saved-message {
+    display: inline;
+}
+
+.success .icon-warning,
+.warning .icon-error {
+    display: block;
+}

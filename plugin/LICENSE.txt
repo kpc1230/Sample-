@@ -1,0 +1,4 @@
+Capture for JIRA is released under the Atlassian End User Agreement.
+
+
+http://www.atlassian.com/end-user-agreement/

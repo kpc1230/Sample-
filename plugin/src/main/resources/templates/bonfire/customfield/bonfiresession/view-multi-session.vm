@@ -1,0 +1,6 @@
+#foreach ($singleSession in $sessions)
+    <div class="session-cf-value" style="float:left;padding-bottom:4px;width:100%;">
+        <img height="16" width="16" alt="Bonfire" src="$singleSession.iconUrl" title="Bonfire">
+        <a href="$baseurl$singleSession.getSessionUrl()">$textutils.htmlEncode($singleSession.getSessionName())</a>
+    </div>
+#end

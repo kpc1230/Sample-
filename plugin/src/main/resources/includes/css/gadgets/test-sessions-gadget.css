@@ -1,0 +1,65 @@
+.bf-gadget-rows-container {
+    width: 100%;
+}
+
+.bf-table {
+    width: 100%;
+    position: relative;
+    display: block;
+}
+.bf-inline-status-background {
+    background: white;
+    width: 110px;
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    height: 28px;
+}
+p.bf-row-content {
+    margin-bottom: 0px;
+}
+
+.bf-inline-status {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space:nowrap;
+    display: block;
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    width: 100px;
+    height: 18px;
+}
+
+.bf-row-content {
+    -moz-box-sizing: border-box; 
+    -webkit-box-sizing: border-box; 
+    box-sizing: border-box;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space:nowrap;
+    width: 100%;
+    display: block;
+    padding: 5px 110px 5px 5px;
+    border-bottom: 1px solid #EAEAEA;
+}
+
+.bf-row-text {
+    padding-left: 4px;
+}
+
+.bf-inline-loz {
+    width: 88px;
+}
+
+#config {
+    min-height: 200px;
+    padding-top: 10px;
+}
+
+.bf-gadget-empty {
+    padding: 8px;
+}
+.bf-gadget-footer {
+    padding: 8px;
+}

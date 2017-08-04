@@ -1,0 +1,55 @@
+<h1 class="dialog-title">$i18n.getText('session.edit.title')</h1>
+<form class="aui" action="$requestContext.baseUrl/secure/EditSessionPost.jspa?testSessionId=$action.htmlEncode(${requestContext.getRequestParameter("testSessionId")})&$action.htmlEncode($action.postContext)" method="post">
+    <div class="form-body">
+        $action.auiErrorsHTML()
+        <div class="field-group">
+            <label for="ex-session-name">$i18n.getText('session.cud.field.name')<span class="aui-icon icon-required"></span><span class="content">$i18n.getText('session.cud.field.required')</span></label>
+            <input type="text" class="text" id="ex-session-name" name="name" value="$action.htmlEncode($action.name)" tabindex="1" maxlength="$action.nameMaxLength">
+        </div>
+        <div class="field-group">
+            #if($action.hasActiveParticipants)
+                <div class="warning">
+                    <span>$i18n.getText('participant.removal.warning.edit')</span>
+                </div>
+            #end
+            <label for="ex-session-shared">$i18n.getText('session.cud.field.shared')</label>
+            <input class="checkbox" type="checkbox" id="ex-session-shared" name="shared" tabindex="2" value="true" #if($action.shared) checked="checked" #end/>
+            <span>$i18n.getText('session.cud.field.shared.info')</span>
+        </div>
+        <div class="field-group jira-no-popup">
+            <label for="ex-issueKey">$i18n.getText('session.cud.field.relatedIssue')</label>
+            <select class="bonfire-issuepicker hidden" multiple="multiple" name="issueKey" id="ex-issueKey" tabindex="3"
+                        data-ajax-options.data.current_jql="project=$action.htmlEncode($action.projectKey)"
+                        data-remove-on-un-select="true"
+                        data-ajax-options.query="true"
+                        data-ajax-options.url="${req.contextPath}/rest/api/1.0/issues/picker"
+                        data-ajax-options.data.show-sub-tasks="true"
+                        data-ajax-options.data.show-sub-task-parent="true"
+                        data-ajax-options.data.current-project-id="$action.projectId">
+                #foreach ($possibleKey in $action.issueKeys)
+                    <option selected="selected" value="$action.htmlEncode($possibleKey)">$action.htmlEncode($possibleKey)</option>
+                #end
+            </select>
+        </div>
+        <div class="field-group">
+            <label for="default-template">$i18n.getText('session.cud.field.default.template')</label>
+            <select id="default-template" name="defaultTemplateId" class="select" tabindex="5">
+                <option value="">$i18n.getText('session.cud.field.none.option')</option>
+                #foreach ($template in $action.templateList)
+                    <option #if($action.defaultTemplateId && $action.defaultTemplateId.equals($template.id.toString())) selected="selected" #end value="$template.id">$action.htmlEncode($template.name)</option>
+                #end
+            </select>
+        </div>
+        <div class="field-group">
+            <label for="ex-session-info">$i18n.getText('session.cud.field.additional.information')</label>
+            <textarea id="ex-session-info" name="additionalInfo" class="field textarea medium" rows="6" tabindex="4">$action.htmlEncode($action.additionalInfo)</textarea>
+        </div>
+    </div>
+    <div class="buttons-container form-footer">
+        <div class="buttons">
+            <input id="ex-submit" type="submit" class="aui-button aui-button-primary" value="Save" tabindex="5">
+            <a href="#close" class="cancel">Close</a>
+        </div>
+    </div>
+    <input type="hidden" name="atl_token" value="${xsrfToken}"/>
+</form>

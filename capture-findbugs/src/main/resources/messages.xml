@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MessageCollection>
+
+    <BugCode abbrev="VUF">Vertigo Unsafe Field</BugCode>
+
+    <Plugin>
+        <ShortDescription>Atlassian Vertigo Findbugs Detectors</ShortDescription>
+        <Details>Detects possible Vertigo violation bugs.</Details>
+    </Plugin>
+
+    <Detector class="com.atlassian.capture.findbugs.BytecodeScanningDetector.UnsafeSingletonFieldDetector">
+        <Details>
+            Detects potentially tenant unsafe fields in singletons.
+        </Details>
+    </Detector>
+
+    <BugPattern type="UNSAFE_SINGLETON_FIELD">
+        <ShortDescription>Potentially unsafe tenanted field</ShortDescription>
+        <LongDescription>Unsafe Vertigo cache {1} {2}</LongDescription>
+        <Details>
+            <![CDATA[ <p>The field may contain tenanted data that persists over requests.</p> ]]>
+        </Details>
+    </BugPattern>
+</MessageCollection>

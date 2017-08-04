@@ -1,0 +1,49 @@
+<html>
+<head>
+    <meta name="decorator" content="popup"/>
+</head>
+<body>
+<div>
+
+    <p>
+        Capture for JIRA test session <strong>notes</strong> allow special <strong>"#tags"</strong> to be inserted so you give
+        more
+        meaning to your notes and find them more easily later.
+    </p>
+
+    <p>
+        Capture for JIRA ships with 4 predefined tags.
+    </p>
+    <ul>
+        <li><strong>#?</strong> which represents a Question <span class="note-tag tag-question"></span></li>
+        <li><strong>#f</strong> which represents a Follow Up <span class="note-tag tag-followUp"></span></li>
+        <li><strong>#!</strong> which represents an Assumption <span class="note-tag tag-assumption"></span></li>
+        <li><strong>#i</strong> which represents an Idea <span class="note-tag tag-idea"></span></li>
+    </ul>
+    <p>
+        You can define your own tags however.
+    </p>
+
+    <p>
+        A special <strong>tag</strong> is simply a word that begins with the <strong>#</strong> character. For
+        <strong>#example</strong> this sentence <strong>#contains</strong> three <strong>#tags</strong>.
+    </p>
+
+    <p>
+        Notes can also contain Atlassian wiki markup. For example you can use <strong>*strong*</strong>,
+        <em>_emphasis_</em>
+        and <sup>^superscript^</sup>.
+    </p>
+
+    <p>
+        You can also use macros such as the {quote} and {noformat}.
+
+    </p>
+
+    <p>
+        You can find <a href="${baseurl}/secure/WikiRendererHelpAction.jspa?&section=texteffects">more information about
+        wiki markup here</a>
+    </p>
+</div>
+</body>
+</html>

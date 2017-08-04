@@ -1,0 +1,9 @@
+<div class="pagination">
+    #if ($pagerTool.previous)
+        <a class="icon icon-previous" href="?page=$pagerTool.previous&noteViewSelected=$action.noteViewSelected&sessionViewSelected=$action.sessionViewSelected#if($action.isUserProfileTabPanelView())&name=$textutils.htmlEncode($action.username())#end"><span>&lt;&lt; Previous</span></a>
+    #end
+    Page $pagerTool.displayPageNumber
+    #if ($pagerTool.next)
+        <a class="icon icon-next" href="?page=$pagerTool.next&noteViewSelected=$action.noteViewSelected&sessionViewSelected=$action.sessionViewSelected#if($action.isUserProfileTabPanelView())&name=$textutils.htmlEncode($action.username())#end"><span>Next &gt;&gt;</span></a>
+    #end
+</div>

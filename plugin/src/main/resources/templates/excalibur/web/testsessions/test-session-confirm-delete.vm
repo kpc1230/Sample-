@@ -1,0 +1,23 @@
+<h1 class="dialog-title">$i18n.getText('session.delete.title')</h1>
+<form class="aui" action="$requestContext.baseUrl/secure/DeleteSession.jspa?testSessionId=$action.htmlEncode($action.testSessionId)&returnOnDeleteUrl=$action.htmlEncode($action.returnOnDeleteUrl)&noRedirect=$action.noRedirect" method="post">
+    <div class="form-body">
+        $action.auiErrorsHTML()
+        <div class="form-description">
+            <p>
+                Are you sure you want to delete this Test Session: "$action.htmlEncode($action.name)"?
+            </p>
+            #if($action.hasActiveParticipants)
+                <p>
+                    $i18n.getText('participant.removal.warning.delete')
+                </p>
+            #end
+        </div>
+    </div>
+    <div class="buttons-container form-footer">
+        <div class="buttons">
+            <input id="ex-submit" type="submit" class="aui-button aui-button-primary" value="Delete">
+            <a href="#close" class="cancel">Close</a>
+        </div>
+    </div>
+    <input type="hidden" name="atl_token" value="${xsrfToken}"/>
+</form>

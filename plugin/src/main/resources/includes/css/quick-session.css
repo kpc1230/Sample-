@@ -1,0 +1,354 @@
+.msie-8 .bfq-main-container.bfq-error-main,
+.bfq-main-container {
+    height: 370px;
+}
+.bfq-main-container.bfq-error-main {
+    height: 170px;
+}
+
+.bfq-header {
+    height: 60px;
+    border-bottom: 1px solid #BBB;
+}
+
+.bfq-button {
+    border: 1px solid #BBB;
+    padding: 8px;
+    display: inline-block;
+    margin-top: 10px;
+    background-color: #D8E4F0;
+}
+
+.bfq-button.bfq-not-selected:hover,
+.bfq-button.bfq-not-selected.bfq-first:hover,
+.bfq-button.bfq-not-selected.bfq-last:hover {
+    border-color: #999;
+    cursor: pointer;
+}
+
+.bfq-button.bfq-not-selected {
+    background-image: -moz-linear-gradient(100% 100% 90deg, #EFEFEF, white);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(white), to(#EFEFEF));
+    background-image: -webkit-linear-gradient(white, #EFEFEF);
+    background-image: -o-linear-gradient(white, #EFEFEF);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#efefef',GradientType=0 );
+}
+
+.bfq-button.bfq-not-selected.bfq-first {
+    border-right: 1px solid #BBB;
+}
+
+.bfq-button.bfq-not-selected.bfq-last {
+    border-left: 1px solid #BBB;
+}
+
+.bfq-button.bfq-first {
+    border-right: 0px;
+    -moz-border-top-left-radius: 3px;
+    -moz-border-bottom-left-radius: 3px;
+    -webkit-border-top-left-radius: 3px;
+    -webkit-border-bottom-left-radius: 3px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+
+.bfq-button.bfq-last {
+    margin-right: 10px;
+    border-left: 0px;
+    -moz-border-top-right-radius: 3px;
+    -moz-border-bottom-right-radius: 3px;
+    -webkit-border-top-right-radius: 3px;
+    -webkit-border-bottom-right-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+.bfq-main-content {
+    height: 290px;
+    border-bottom: 1px solid #BBB;
+}
+.bfq-session-name {
+    font-size: 19px;
+    color: #326CA5;
+}
+
+.bfq-button-container {
+    float: right;
+    display: inline-block;
+}
+
+.bfq-name-container {
+    display: inline-block;
+    margin-top: 20px;
+    margin-left: 19px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 175px;
+}
+
+.bfq-swappable-content {
+    padding: 10px;
+    max-height: 290px;
+    height: 290px; /* Firefox needs this */
+    overflow: auto;
+    -moz-box-sizing: border-box; 
+    -webkit-box-sizing: border-box; 
+    box-sizing: border-box;
+}
+
+.bfq-table {
+    display: table;
+}
+
+.bfq-note-container {
+    display: table-row;
+}
+
+.bfq-note-left {
+    display: table-cell;
+    width: 32px;
+    padding-top: 8px;
+    padding-left: 4px;
+}
+
+.bfq-note-right {
+    display: table-cell;
+    width: 100%;
+    vertical-align: top;
+    padding: 8px 8px 8px;
+    border-bottom: 1px solid #EAEAEA;
+}
+
+.bfq-timestamp {
+    color: #808080;
+    font-size: 11px;
+}
+
+.bfq-note-op {
+    padding-left: 8px;
+}
+.bfq-note-edit {
+    position: relative;
+}
+
+.bfq-note-edit-container,
+.bfq-add-info-container {
+    border: 1px solid #4E91FE;
+    padding-left: 2px;
+}
+
+.bfq-add-note-container {
+    position: relative;
+    margin-top: 20px;
+    border: 1px solid #4E91FE;
+    padding-left: 2px;
+}
+
+.bfq-note-textarea,
+.bfq-info-textarea,
+.bfq-add-note-textarea {
+    width: 100%;
+    height: 60px;
+    max-height: 60px;
+    resize: none;
+    border: 0;
+    -webkit-appearance: none;
+    outline: 0;
+    overflow: auto;
+    padding: 0;
+}
+textarea.bfq-info-textarea {
+    height: 200px;
+    max-height: 200px;
+}
+
+.bfq-add-note-actions {
+    position: relative;
+    height: 31px;
+}
+
+.bfq-note-button {
+    border: 1px solid #AAA;
+    color: #111;
+    display: block;
+    cursor: default;
+    line-height: 22px;
+    padding: 0 10px 1px;
+    text-align: center;
+    font-size: 13px;
+    background-image: -moz-linear-gradient(100% 100% 90deg, #EFEFEF, white);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(white), to(#EFEFEF));
+    background-image: -webkit-linear-gradient(white, #EFEFEF);
+    background-image: -o-linear-gradient(white, #EFEFEF);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#efefef',GradientType=0 );
+    border-radius: 0.25em;
+    text-decoration: none;
+    width: 60px;
+    position: absolute;
+    right: 0px;
+    bottom: 3px;
+    margin-top: 8px;
+}
+
+.bfq-note-button:hover {
+    text-decoration: none;
+    color: #111;
+    cursor: pointer;
+    border-color: #000;
+}
+
+.bfq-note-button:active {
+    text-decoration: none;
+    color: #111;
+    cursor: pointer;
+    border-color: #000;
+    background-color: #D8E4F0;
+    background-image: none;
+}
+
+.bfq-add-info-cancel {
+    display: inline-block;
+    padding-left: 4px;
+}
+
+.bfq-note-edit-cancel,
+.bfq-addinfo-wiki {
+    padding: 8px;
+}
+
+.bfq-note-data {
+    padding-left: 4px;
+}
+.bfq-note-data.bfq-editable {
+    cursor: pointer;
+}
+
+.bfq-note-data.bfq-editable:hover,
+.bfq-addinfo-wiki.bfq-editable:hover {
+    outline: 1px solid #AAA;
+}
+
+.bfq-edit-error,
+.bfq-error {
+    color: #C00;
+    font-weight: bold;
+}
+
+/** Note tag css classes **/
+
+.note-tag {
+    background: url(images/notes-sprite.png) no-repeat;
+    display: inline-block;
+    height: 14px;
+    margin: 0;
+    vertical-align: text-top;
+    width: 12px;
+}
+.note-tag.tag-unknown {
+    background: none;
+    height: auto;
+    vertical-align: inherit;
+    width: auto;
+    font-style: italic;
+}
+.note-tag.tag-question {
+    background-position: 0 -20px;
+}
+.note-tag.tag-assumption {
+    background-position: 0 -40px;
+}
+.note-tag.tag-idea {
+    background-position: 0 -60px;
+}
+.note-tag.tag-followUp {
+    background-position: 0 -80px;
+}
+
+/** inline-edit button **/
+
+.bfq-inline-edit-button-icons {
+    background: transparent no-repeat 0 0;
+    background-image: url("images/icons/tick_cross.png");
+    display: inline-block;
+    height: 16px;
+    vertical-align: text-top;
+    width: 16px;
+    margin: 0;
+    padding: 0;
+}
+.bfq-cross-icon {
+    background-position: -23px 0;
+}
+.bfq-inline-edit-buttons:hover .bfq-cross-icon {
+    background-position: -23px -20px;
+} 
+.bfq-tick-icon {
+    background-position: 1px 0;
+}
+.bfq-inline-edit-buttons:hover .bfq-tick-icon {
+    background-position: 1px -20px;
+}
+
+.bfq-inline-edit-buttons {
+    height: 22px;
+    padding: 0;
+    width: 28px;
+    display: inline-block;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #AAA;
+    background-image: -moz-linear-gradient(100% 100% 90deg, #DFDFDF, white);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(white), to(#DFDFDF));
+    background-image: -webkit-linear-gradient(white, #DFDFDF);
+    background-image: -o-linear-gradient(white, #DFDFDF);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#dfdfdf',GradientType=0 );
+}
+.bfq-inline-edit-buttons.bfq-submit {
+    border-radius: 3px 0 0 3px;
+}
+.bfq-inline-edit-buttons.bfq-submit:hover,
+.bfq-inline-edit-buttons.bfq-cancel:hover {
+    border-color: #666;
+}
+.bfq-inline-edit-buttons.bfq-cancel {
+    border-radius: 0 3px 3px 0;
+    border-left-color: #EEE;
+    margin-left: 0;
+}
+
+.bfq-inline-button-container {
+    position: absolute;
+    z-index: 50;
+    background-color: #DDEDFF;
+    padding: 8px 10px;
+    border-radius: 0 0 3px 3px;
+    border: 1px solid #A7C8FF;
+    border-top: none;
+}
+.bfq-inline-button-container.bfq-add-info-actions {
+    right: 11px;
+}
+.bfq-inline-button-container.bfq-note-edit-actions {
+    right: 0;
+}
+.bfq-waiting-icon {
+    padding-right: 4px;
+    vertical-align: text-bottom;
+    display: inline-block;
+    height: 16px;
+    width: 16px;
+    background: transparent url("images/icons/wait.gif") no-repeat 0 0;
+}
+.bfq-placeholder-label {
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    color: #BBB;
+}
+
+.bfq-error-container {
+    margin: 8px;
+    top:20%;
+    position: relative;
+}

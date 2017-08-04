@@ -1,0 +1,89 @@
+<html>
+<head>
+    <meta name="admin.active.section" content="admin_plugins_menu/testing_section/bonfire-admin-section">
+    <meta name="admin.active.tab" content="bonfire-settings-link">
+    <title>$i18n.getText('admin.content.title.bonfire')</title>
+</head>
+<body>
+    <div class="bonfire-main-div">
+        <div class="bonfire-inner-div">
+            <header>
+                <h2 class="bonfire-admin-heading">$i18n.getText('admin.content.title.bonfire')</h2>
+                <p class="bonfire-admin-subtitle">$i18n.getText('admin.content.title.subtitle')</p>
+            </header>
+            <br />
+            <div id="bonfire-settings">
+                <div class="module admin-summary-webpanel">
+                    <div class="mod-header">
+                        <h3 class="toggle-title">$i18n.getText('admin.content.feedback.title')</h3>
+                    </div>
+                    <div class="mod-content">
+                        <table class="aui aui-table-rowhover">
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="checkbox bf-feedback-setting" #if($action.feedbackEnabled) checked="checked" #end/>
+                                </td>
+                                <td class="bf-full-width">
+                                    $i18n.getText('admin.content.feedback.details')</p>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    #if ($action.projectTypesSupported)
+                    <div class="module admin-summary-webpanel">
+                        <div class="mod-header">
+                            <h3>$i18n.getText('admin.content.navigation.title')</h3>
+                        </div>
+                        <div class="mod-content">
+                            <table class="aui aui-table-rowhover">
+                                <tbody>
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="checkbox capture-servicedesk-projects-setting" #if($action.serviceDeskProjectsEnabled) checked="checked" #end/>
+                                    </td>
+                                    <td class="bf-full-width">
+                                        <p>$i18n.getText('admin.content.navigation.servicedesk.details')</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="checkbox capture-business-projects-setting" #if($action.businessProjectsEnabled) checked="checked" #end/>
+                                    </td>
+                                    <td class="bf-full-width">
+                                        <p>$i18n.getText('admin.content.navigation.business.details')</p>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    #end
+                    <div class="warning bf-settings-errors hidden"></div>
+                    <div class="bf-settings-submit-container">
+                        <button class="aui-button bf-settings-submit">Save</button>
+                        <span class="bf-settings-success hidden">Settings Saved</span>
+                    </div>
+                </div>
+                #parse("templates/bonfire/admin/bonfire-license-common.vm")
+                <div class="module toggle-wrap admin-summary-webpanel expanded twixi-block">
+                    <div class="mod-header twixi-trigger">
+                        <h3 class="toggle-title">$i18n.getText('admin.content.update.title')</h3>
+                    </div>
+                    <div class="mod-content twixi-content">
+                        <p>
+                            <a href="$requestContext.baseUrl/plugins/servlet/upm#upgrade">$i18n.getText('admin.content.update.link')</a>
+                        </p>
+    
+                        <p>
+                            <a href="http://blogs.atlassian.com/jira/bonfire/">$i18n.getText('admin.content.update.blog')</a>
+                        </p>
+                        <br/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

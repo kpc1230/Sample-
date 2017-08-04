@@ -1,0 +1,249 @@
+.session-activity-content {
+    clear: both;
+    display: block;
+    margin-left: 167px;
+}
+.session-activity-content form.aui {
+    margin-bottom: 0;
+    font-size: 14px;
+}
+/* JIRA 5 compat */
+#page .session-activity-content form.aui {
+    font-size: 13px;
+}
+.bonfire-session-note {
+    border-bottom: 1px solid #DDDDDD;
+}
+.bonfire-session-note form.aui {
+    margin-bottom: 0;
+}
+#session-activity .status-container {
+    float: none;
+}
+.status-container, .session-issue-raised, .session-issue-attachment, .assign-container {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+#session-activity .editable-note-target {
+    padding: 0;
+}
+
+.editable-note-target {
+    padding: 4px;
+    position: relative;
+}
+.aui.edit-note-form {
+    margin: 0;
+}
+.editable-note-target.editable:hover {
+    background-color: #F0F0F0;
+}
+
+.editable-note-target.active {
+    background-color: #EBF1FD;
+}
+.editable-note-target.flash {
+    background-color: #FFFFDD;
+}
+form.aui .editable-note-target {
+    color: #000;
+}
+.editable-note-target.completed .editable-note-wiki-wrapper,
+form.aui .editable-note-target.completed .editable-note-wiki-wrapper{
+    opacity: 0.3;
+    text-decoration: line-through;
+}
+.bonfire-session-note .editable-note-target {
+    margin-left: 0;
+}
+
+#session-activity .editable-note-icon-container {
+    display: none;
+}
+#session-activity .editable-note-content {
+    margin-left: 16px;
+}
+
+.editable-note-icon-container {
+    float: left;
+    vertical-align: top;
+    width: 30px;
+}
+.editable-note-target.double .editable-note-icon-container {
+    width: 60px;
+}
+.editable-note-icon-container a,
+.editable-note-icon-container a:hover {
+    text-decoration: none;
+}
+.editable-note-icon, .note-tag {
+    background: url(images/notes-sprite.png) no-repeat;
+    display: inline-block;
+    height: 14px;
+    margin: 0 10px 0 0;
+    vertical-align: text-top;
+    width: 12px;
+}
+.editable-note-session-icon {
+    height: 16px;
+    overflow: hidden;
+    text-indent: -999em;
+    width: 16px;
+}
+.msie-7 .editable-note-icon, .msie-7 .note-tag {
+    display: inline;
+    zoom: 1;
+}
+.editable-note-resolution-control {
+    display: inline-block;
+    height: 16px;
+    margin: 0 10px 0 0;
+    width: 16px;
+}
+.msie .editable-note-resolution-control {
+    margin: 0;
+    vertical-align: text-top;
+}
+.editable-note-session-icon {
+    background-position: 0 -100px;
+}
+.editable-note-target:hover .editable-note-session-icon {
+    background-position: -20px -100px;
+}
+.editable-note-target:hover .editable-note-session-icon:hover {
+    background-position: -40px -100px;
+}
+
+.note-tag {
+    margin: 0;
+}
+.note-tag.tag-unknown {
+    background: none;
+    height: auto;
+    vertical-align: inherit;
+    width: auto;
+    font-style: italic;
+}
+.note-tag.tag-question {
+    background-position: 0 -20px;
+}
+.note-tag.tag-assumption {
+    background-position: 0 -40px;
+}
+.note-tag.tag-idea {
+    background-position: 0 -60px;
+}
+.note-tag.tag-followUp {
+    background-position: 0 -80px;
+}
+
+.editable-note-content {
+    margin-left: 30px;
+    margin-right: 14px;
+    position: relative;
+}
+.editable-note-target.double .editable-note-content {
+    margin-left: 60px;
+    margin-right: 12px;
+}
+
+.editable-note-original {
+    display: none;
+}
+.editable-note-readonly {
+    display: none;
+    padding: 4px 40px 4px 4px;
+    position: relative;
+}
+.editable-note-readonly.active {
+    display: block;
+}
+.editable-note-target:hover .editable-note-readonly.editable {
+    background-color: #FFF;
+    outline: 1px solid #AAA;
+}
+.editable-note-readonly.editable:hover {
+    cursor: pointer;
+}
+.editable-note-readonly .icon-edit-sml {
+    margin: 0;
+    position: absolute;
+    right: 16px;
+    top: 0px;
+    background-color: #F0F0F0;
+    border-left: 1px solid #BBB;
+    border-bottom: 1px solid #BBB;
+    visibility: hidden;
+}
+.editable-note-readonly .editable-note-delete-button {
+    margin: 0;
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    background-color: #F0F0F0;
+    border-left: 1px solid #BBB;
+    border-bottom: 1px solid #BBB;
+    visibility: hidden;
+}
+.editable-note-target:hover .editable .icon-edit-sml,
+.editable-note-target:hover .editable .editable-note-delete-button {
+    visibility: visible;
+}
+.editable-note-wiki-wrapper *:last-child {
+    margin-bottom: 0;
+}
+.editable-note-wiki-wrapper blockquote:first-child {
+    margin-top: 0;
+}
+form.aui .editable-note-wiki-wrapper p {
+    padding: 0;
+}
+
+
+.editable-note-input-container {
+    background-color: #FFF;
+    border: 1px solid #4E91FE;
+    display: none;
+    padding: 4px 4px 2px;
+    width: 100%;
+}
+.editable-note-input-container.active {
+    display: inline-block;
+}
+
+.editable-note-input {
+    border: 0;
+    height: 2em;
+    outline: 0;
+    padding: 0;
+    resize: none;
+    width: 100%;
+}
+
+#addNoteForm {
+    margin-bottom: 1em;
+}
+
+.editable-note-buttons {
+    position: absolute;
+    right: -10px;
+    bottom: -39px;
+    z-index: 50;
+    background-color: #DDEDFF;
+    border-radius: 0 0 3px 3px;
+    border: 1px solid #A7C8FF;
+    border-top: none;
+}
+form.aui .editable-note-buttons.buttons {
+    padding: 8px 10px;
+}
+
+.bf-note-waiting-icon {
+    position: absolute;
+    top: 4px;
+    right: -4px;
+    height: 16px;
+    width: 16px;
+    background: transparent url("images/icons/wait.gif") no-repeat 0 0;
+}

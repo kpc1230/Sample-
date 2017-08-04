@@ -1,0 +1,12 @@
+#* @vtlvariable name="action" type="com.atlassian.bonfire.web.BonfireQuickInfo" *#
+<html>
+<head>
+    <meta name="decorator" content="none">
+</head>
+<body>
+Bonfire v$action.buildVersion <br/>
+Build $action.buildNumber <br/>
+Built $action.buildDate <br/>
+Licence $action.licenseStatus <br/>
+</body>
+</html>

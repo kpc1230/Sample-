@@ -1,0 +1,38 @@
+<html>
+<head>
+    ## TODO change 'inline' to 'blank' when we drop 4.4
+    <meta name="decorator" content="inline"/>
+</head>
+<body>
+    #foreach ($entry in $action.metaFields.entrySet())
+        <meta name="$action.htmlEncode($entry.key)" content="$action.htmlEncode($entry.value)"/>
+    #end
+    ## Actual content
+    <div id="main-content" class="content-container">
+        <div class="advanced-main">
+            <h2>$i18n.getText("advanced.cft.heading")</h2>
+            <p>$i18n.getText("advanced.cft.description")</p>
+            <div class="aui-message #if($action.hasSaved) success #else warning #end saved-indicator">
+                <p class="title">
+                    <span class="aui-icon icon-error"></span>
+                    <span class="not-saved-message">$i18n.getText("advanced.cft.not.saved")</span>
+                    <span class="aui-icon icon-warning"></span>
+                    <span class="saved-message">$i18n.getText("advanced.cft.saved")</span>
+                </p>
+            </div>
+            <form id="advanced-field-form" class="aui advanced-cf-form">
+                #foreach ($item in $action.renderedFields)
+                    $item
+                #end
+                <input type="hidden" name="pid" value="$action.pid"/>
+                <input type="hidden" name="itid" value="$action.itid"/>
+                <input type="hidden" name="rid" value="$action.rid"/>
+                <div class="buttons">
+                    <div id="advanced-cf-errors" class="warning"></div>
+                    <input id="advanced-save-button" type="submit" class="advanced-save button disabled" value="Apply"/>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

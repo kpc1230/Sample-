@@ -1,0 +1,53 @@
+#* @vtlvariable name="action" type="com.atlassian.bonfire.web.sessions.ViewSessionAction" *#
+#* @vtlvariable name="notesFilterStateUI" type="com.atlassian.excalibur.view.NotesFilterStateUI" *#
+#set ($notesFilterStateUI = $action.notesFilterStateUI)
+#if ($notesFilterStateUI.complete == $notesFilterStateUI.incomplete) #set ($filterBoth = true) #else #set ($filterBoth = false) #end
+
+<form id="bf-filter-form" class="notes aui top-label hidden" data-filer-url="$notesFilterStateUI.filterURL">
+    <h3>Show:</h3>
+
+    <div>
+        <div id="filter-control" class="notes">
+            <input type="radio" #if ($notesFilterStateUI.nothing) checked="checked" data-initial="checked" #end id="notesFilterNothing" name="notesFilterNothing" title="Filter applied" value="true"/><label for="notesFilterNothing">All</label><br>
+            <input type="radio" #if ($notesFilterStateUI.applied) checked="checked" data-initial="checked" #end id="notesFilterApplied" name="notesFilterApplied" title="Filter applied" value="true"/><label for="notesFilterApplied">Selection</label><br>
+        </div>
+        <div id="filter-specifics" class="notes">
+            <div id="filter-tags">
+                <input type="hidden" name="notesFilterSpecified" value="true"/> ## we need this so we can defintely know they have chosen to filter
+                <input type="checkbox" #if ($notesFilterStateUI.question) checked="checked" data-initial="checked" #end id="notesFilterQuestion" name="notesFilterQuestion" title="Questions" value="true"/>
+                <label for="notesFilterQuestion">Question</label>&nbsp;<span class="note-tag tag-question" title="#?"></span><br>
+                <input type="checkbox" #if ($notesFilterStateUI.followup) checked="checked" data-initial="checked" #end id="notesFilterFollowup" name="notesFilterFollowup" title="Follow up" value="true"/>
+                <label for="notesFilterFollowup">Follow Ups</label>&nbsp;<span class="note-tag tag-followUp" title="#f"> </span><br>
+                <input type="checkbox" #if ($notesFilterStateUI.assumption) checked="checked" data-initial="checked" #end id="notesFilterAssumption" name="notesFilterAssumption" title="Assumption" value="true"/>
+                <label for="notesFilterAssumption">Assumptions</label>&nbsp;<span class="note-tag tag-assumption" title="#!"></span><br>
+                <input type="checkbox" #if ($notesFilterStateUI.idea) checked="checked" data-initial="checked" #end id="notesFilterIdea" name="notesFilterIdea" title="Idea" value="true"/>
+                <label for="notesFilterIdea">Ideas</label>&nbsp;<span class="note-tag tag-idea" title="#i"></span><br>
+
+                #if ($session)
+                    <div id="filter-session-only">
+                        <input type="checkbox" #if ($notesFilterStateUI.untagged) checked="checked" data-initial="checked" #end id="notesFilterUntagged" name="notesFilterUntagged" title="Untagged notes" value="true"/>
+                        <label for="notesFilterUntagged">Untagged Notes</label><br>
+                        <input type="checkbox" #if ($notesFilterStateUI.issues) checked="checked" data-initial="checked" #end id="notesFilterIssues" name="notesFilterIssues" title="Issues" value="true"/>
+                        <label for="notesFilterIssues">Issues</label><br>
+                    </div>
+                #end
+
+            </div>
+            <div id="filter-options" class="notes">
+                <label for="notesFilterStatus">Note Status:</label>
+                <select id="notesFilterStatus" name="notesFilterStatus">
+                    <option value="all" #if ($filterBoth) selected="selected" data-initial="selected" #end>All</option>
+                    <option value="complete" #if ($notesFilterStateUI.complete && !$notesFilterStateUI.incomplete) selected="selected" data-initial="selected" #end>Done</option>
+                    <option value="incomplete" #if ($notesFilterStateUI.incomplete && !$notesFilterStateUI.complete) selected="selected" data-initial="selected" #end>Not Done</option>
+                </select>
+            </div>
+        </div>
+
+    </div>
+    <div class="buttons-container">
+        <div class="buttons">
+            <input type="submit" class="aui-button save" title="Apply" id="filterSubmit">
+            <a id="filter-close" class="aui-button aui-button-link" href="#cancel">Cancel</a>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,16 @@
+<div id="session-related-issue" class="module">
+    <div class="mod-header">
+        <h2>$i18n.getText('session.section.relatedissues')</h2><div><span class="aui-badge">$session.getRelatedIssues().size()</span></div>
+    </div>
+    <div class="bf-raised-session-wrapper">
+        #foreach ($issue in $session.getRelatedIssues())
+            <div class="raised-issue" class="mod-content">
+                #set( $key = $issue.getKey() )
+                <ul class="bf-issue-list">
+                    ##Stupid inline-blocks need everything on one line
+                    <li class="bf-icon">#displayConstantIcon(${issue.issueTypeObject})</li><li class="bf-key #if($issue.resolved) bf-issue-done #end"><a href="$requestContext.baseUrl/browse/$key">$key</a></li><li class="bf-data"><span>$textutils.htmlEncode($issue.getSummary())</span></li>
+                </ul>
+            </div>
+        #end
+    </div>
+</div>

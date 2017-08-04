@@ -1,0 +1,10 @@
+#
+# The @@ bit are maven replaced.  Anything else is effectively hard coded.
+#
+# Maven will generate a build.properties from this.  Never check that in
+#
+build.version=@@build.version@@
+build.time=@@build.time@@
+build.number=@@build.number@@
+
+extension.version.directory=@@extension.version.directory@@

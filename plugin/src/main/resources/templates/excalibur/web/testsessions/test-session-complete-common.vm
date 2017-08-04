@@ -1,0 +1,87 @@
+<div id="error-complete-session" class="warning">
+</div>
+## If there are no raised issues or subtasks then show a message
+#if ( ${session.getIssuesRaised().size()} ==  0 && ${session.getSubTasksRaised().size()} == 0 )
+    <div class="aui-message info shadowed">
+        <span class="aui-icon icon-info"></span>
+        <p>$i18n.getText('testsession.view.no.issues.raised')</p>
+    </div>
+#else
+    ## If we have issues raised, then we show the table
+    #if ( ${session.getIssuesRaised().size()} >  0)
+        <table class="aui aui-table-rowhover">
+            <thead><tr>
+                <th id="bf-related" colspan="2" nowrap="true">Raised Issues ( $session.getIssuesRaised().size() )</th>
+                <th id="bf-link" nowrap="true">Link to related issue</th>
+            </tr></thead>
+            <tbody>
+                #foreach ($issue in $session.getIssuesRaised())
+                    #set( $key = $issue.getKey() )
+                    <tr>
+                        <td headers="bf-related" nowrap="true">#displayConstantIcon(${issue.issueTypeObject})<a href="${requestContext.baseUrl}/browse/$key">$key</a></td>
+                        <td headers="bf-related" class="bf-com-fullwidth"><span>$textutils.htmlEncode($issue.summary)</span></td>
+                        <td headers="bf-link">
+                            #if($session.getRelatedIssues().isEmpty())
+                                <span>$i18n.getText('session.cud.field.none.option')</span>
+                            #else
+                                <select class="bfcom-select select" data-raised-id="$issue.id">
+                                    <option value="">$i18n.getText('session.cud.field.none.option')</option>
+                                    #foreach ($issue in $session.getRelatedIssues())
+                                        <option value="$issue.id" title="$textutils.htmlEncode($issue.summary)">$issue.key - $textutils.htmlEncode($issue.summary)</option>
+                                    #end
+                                </select>
+                            #end
+                        </td>
+                    </tr>
+                #end
+            </tbody>
+        </table>
+    #end
+    ## If we have sub-tasks raised, then we show the table
+    #if ( ${session.getSubTasksRaised().size()} > 0 )
+        <table class="aui aui-table-rowhover">
+            <thead><tr>
+                <th id="bf-related-sub" colspan="2" nowrap="true">Raised Sub-tasks ( $session.getSubTasksRaised().size() )</th>
+            </tr></thead>
+            <tbody>
+                #foreach ($issue in $session.getSubTasksRaised())
+                    <tr>
+                        <td headers="bf-related-sub" nowrap="true">#displayConstantIcon(${issue.issueTypeObject})<a href="${requestContext.baseUrl}/browse/$issue.key">$issue.key</a></td>
+                        <td headers="bf-related-sub" class="bf-com-fullwidth"><a href="${requestContext.baseUrl}/browse/$issue.parentKey">$issue.parentKey</a> / <span>$textutils.htmlEncode($issue.summary)</span></td>
+                    </tr>
+                #end
+            </tbody>
+        </table>
+    #end
+#end
+<table class="aui">
+    <thead><tr>
+        <th id="bf-timetracking" nowrap="true">Time tracking</th>
+    </tr></thead>
+    <tbody>
+        <td headers="bf-timetracking">
+            <div class="field-group">
+                <label for="bf-time-spent">Time spent in session:</label>
+                <input class="text" type="text" id="bf-time-spent" value="$session.estimatedTimeSpent"/>
+            </div>
+            #if ( $session.hasIssuesToTimeTrack() && $session.isTimeTrackingOn())
+                <div class="field-group">
+                    <label for="bf-log-time-issue">Also log time against:</label>
+                    <select id="bf-log-time-issue" class="bfcom-select select">
+                        <option value="">$i18n.getText('session.cud.field.none.option')</option>
+                        #foreach ($issue in $session.getRelatedIssues())
+                            <option value="$issue.id" title="$textutils.htmlEncode($issue.summary)">$issue.key - $textutils.htmlEncode($issue.summary)</option>
+                        #end
+                    </select>
+                </div>
+            #end
+        </td>
+    </tbody>
+</table>
+#if($session.hasActive)
+    <div class="aui-message warning shadowed bf-kick-warning">
+        <span class="aui-icon icon-warning"></span>
+        <p>$i18n.getText('participant.removal.warning.complete')</p>
+    </div>
+#end
+

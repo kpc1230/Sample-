@@ -1,0 +1,98 @@
+<html>
+<head>
+    <content tag="section">bonfire_top_menu_dropdown</content>
+    <meta name="decorator" content="general"/>
+    <title>$i18n.getText('session.navigator.page.title')</title>
+</head>
+<body>
+<header class="aui-page-header">
+    <div class="aui-page-header-inner">
+        <div class="aui-page-header-main">
+            <h1>$i18n.getText('session.navigator.page.heading')</h1>
+        </div>
+        <div class="aui-page-header-actions">
+            <a class="aui-button aui-button-subtle bf-nav-permalink" title="$i18n.getText('session.navigator.permalink.title')">
+                <span class="aui-icon aui-icon-small aui-iconfont-link"></span>
+            </a>
+            <a class="aui-button aui-button-light bf-nav-create-session-link" href="$requestContext.baseUrl/secure/CreateSession.jspa">
+                <span class="aui-icon aui-icon-small aui-iconfont-add"></span>
+                $i18n.getText('project.tab.create.session')
+            </a>
+        </div>
+    </div>
+</header>
+<div class="aui-page-panel">
+    <div class="aui-page-panel-inner">
+        <section class="aui-page-panel-content">
+
+            <div class="bf-nav-filter-row-container">
+                <span class="bf-nav-label">$i18n.getText('session.navigator.filter.label')</span>
+                <div class="bf-nav-filter-container">
+                    <span class="bf-nav-filter-label">$i18n.getText('session.navigator.filter.project.label')</span>
+                    <span class="bf-nav-filter-value bf-nav-project-value">$i18n.getText('session.navigator.filter.option.all')</span>
+                    <span class="bf-nav-filter-arrow"></span>
+                    <select class="bf-nav-project-filter bf-nav-filter">
+                        <option data-pkey=""value="">$i18n.getText('session.navigator.filter.option.all')</option>
+                        <optgroup label="Relevant projects">
+                            #foreach ($project in $action.projectList)
+                                <option value="$project.id" data-pkey="$action.htmlEncode($project.key)" #if($action.projectFilter.equals($project.key) || $action.projectFilter.equals($project.id.toString())) selected="selected" #end)>$action.htmlEncode($project.name)</option>
+                            #end
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="bf-nav-filter-container">
+                    <span class="bf-nav-filter-label">$i18n.getText('session.navigator.filter.assignee.label')</span>
+                    <span class="bf-nav-filter-value bf-nav-assignee-value">$i18n.getText('session.navigator.filter.option.all')</span>
+                    <span class="bf-nav-filter-arrow"></span>
+                    <select class="bf-nav-assignee-filter bf-nav-filter">
+                        <option value="">$i18n.getText('session.navigator.filter.option.all')</option>
+                        <optgroup label="Relevant users">
+                            #foreach ($user in $action.userList)
+                                <option value="$action.htmlEncode($user.name)" #if($action.userFilter.equals($user.name)) selected="selected" #end>$action.htmlEncode($user.displayName)</option>
+                            #end
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="bf-nav-filter-container">
+                    <span class="bf-nav-filter-label">$i18n.getText('session.navigator.filter.status.label')</span>
+                    <span class="bf-nav-filter-value bf-nav-status-value">$i18n.getText('session.navigator.filter.option.all')</span>
+                    <span class="bf-nav-filter-arrow"></span>
+                    <select class="bf-nav-status-filter bf-nav-filter">
+                        <option value="">$i18n.getText('session.navigator.filter.option.all')</option>
+                        #foreach ($status in $action.statusList)
+                            <option value="$status" #if($action.statusFilter.toLowerCase().equals($status.toLowerCase())) selected="selected" #end>$action.getPrettyStatus($status)</option>
+                        #end
+                    </select>
+                </div>
+                <div style="position:relative;display:inline-block;">
+                    <input class="bf-nav-search-box bf-nav-placeholder" type="text" placeholder="Session name contains" value="$action.htmlEncode($action.searchTerm)">
+                </div>
+                <div class="bf-nav-reset-container">
+                    <a class="bf-nav-reset-filters">$i18n.getText('session.navigator.filter.reset.text')</a>
+                </div>
+            </div>
+            <input class="bf-nav-nextstart" type="hidden" value="0"/>
+            <input class="bf-nav-sortfield" type="hidden" value="$action.getSortField()"/>
+            <input class="bf-nav-sortorder" type="hidden" value="$action.getSortOrder()"/>
+            <div class="bf-nav-session-list">
+                <div class="bf-nav-thead">
+                    <div class="bf-nav-header-cell bf-nav-session-content bf-nav-sortable" data-sort-field="sessionname"><div class="bf-nav-heading"><span>$i18n.getText('session.navigator.table.col.name')</span></div></div>
+                    <div class="bf-nav-header-cell bf-nav-shared bf-nav-sortable" data-sort-field="shared"><div class="bf-nav-heading"><span>$i18n.getText('session.navigator.table.col.shared')</span></div></div>
+                    <div class="bf-nav-header-cell bf-nav-project bf-nav-sortable" data-sort-field="project"><div class="bf-nav-heading"><span>$i18n.getText('session.navigator.table.col.project')</span></div></div>
+                    <div class="bf-nav-header-cell bf-nav-created bf-nav-sortable" data-sort-field="created"><div class="bf-nav-heading"><span>$i18n.getText('session.navigator.table.col.created')</span></div></div>
+                    <div class="bf-nav-header-cell bf-nav-assignee-name bf-nav-sortable" data-sort-field="assignee"><div class="bf-nav-heading"><span>$i18n.getText('session.navigator.table.col.assignee')</span></div></div>
+                    <div class="bf-nav-header-cell bf-nav-inline-status bf-nav-sortable" data-sort-field="status"><div class="bf-nav-heading"><span>$i18n.getText('session.navigator.table.col.status')</span></div></div>
+                    <div class="bf-nav-header-cell bf-nav-actions"><div class="bf-nav-heading"><span>$i18n.getText('session.navigator.table.col.action')</span></div></div>
+                </div>
+                <dl style="margin:0;">
+                </dl>
+                <div class="bf-nav-empty-session-list-container"></div>
+            </div>
+            <div class="bf-nav-spinner-container"></div>
+
+        </section>
+    </div>
+</div>
+
+</body>
+</html>

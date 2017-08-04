@@ -1,0 +1,48 @@
+<div class="aui-list hidden">
+    <ul class="aui-list-section aui-last aui-first">
+        #if ($session.isStatusEditable())
+            #if ($session.canPause())
+                <li class="aui-list-item">
+                    <a href="$baseurl/rest/bonfire/1.0/sessions/${session.sessionId}/pause" class="aui-list-item-link gf-post-trigger">$i18n.getText('greenfire.menu.button.pause')</a>
+                </li>
+            #else
+                <li class="aui-list-item">
+                    <a href="$baseurl/rest/bonfire/1.0/sessions/${session.sessionId}/start" class="aui-list-item-link gf-post-trigger">$i18n.getText('greenfire.menu.button.start')</a>
+                </li>
+            #end
+            #if ($session.canComplete())
+                <li class="aui-list-item">
+                    <a id="gf-complete-dialog" href="$baseurl/secure/CompleteSession.jspa?atl_token=${xsrfToken}&testSessionId=$session.sessionId" class="aui-list-item-link">$i18n.getText(
+                        'greenfire.menu.button.complete')</a>
+                </li>
+            #end
+        #end
+        ## non-assignees may join or leave
+        #if (!$session.isAssignee())
+            #if ($session.canJoin() && !$session.isJoined())
+                <li class="aui-list-item">
+                    <a href="$baseurl/rest/bonfire/1.0/sessions/${session.sessionId}/participate" class="aui-list-item-link gf-post-trigger">$i18n.getText('greenfire.menu.button.join')</a>
+                </li>
+            #end
+            #if ($session.isJoined())
+                <li class="aui-list-item">
+                    <a href="$baseurl/secure/LeaveSession.jspa?atl_token=${xsrfToken}&testSessionId=${session.sessionId}" class="aui-list-item-link gf-delete-trigger">$i18n.getText(
+                        'greenfire.menu.button.leave')</a>
+                </li>
+            #end
+        #end
+        #if ($session.canAssign())
+            <li class="aui-list-item">
+                <a href="$baseurl/secure/AssignSession.jspa?testSessionId=$session.sessionId&noRedirect=true" class="aui-list-item-link gf-dialog-link-trigger">$i18n.getText('greenfire.menu.button.assign')</a>
+            </li>
+        #end
+        #if ($session.isSessionEditable())
+            <li class="aui-list-item">
+                <a href="$baseurl/secure/ConfirmDeleteSession.jspa?testSessionId=$session.sessionId&noRedirect=true" class="aui-list-item-link gf-dialog-link-trigger">$i18n.getText('greenfire.menu.button.delete')</a>
+            </li>
+        #end
+        <li class="aui-list-item">
+            <a href="$baseurl/secure/ViewSession.jspa?testSessionId=$session.sessionId" class="aui-list-item-link">$i18n.getText('greenfire.menu.button.goto')</a>
+        </li>
+    </ul>
+</div>

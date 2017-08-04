@@ -1,0 +1,1 @@
+<input class="hidden" id="$customField.id" name="$customField.id" type="hidden" value="$textutils.htmlEncode($!value)" />

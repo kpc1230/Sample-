@@ -1,0 +1,17 @@
+<h1 class="dialog-title">$i18n.getText('session.unshare.title')</h1>
+<form class="aui" action="$requestContext.baseUrl/secure/UnshareSession.jspa?testSessionId=$action.htmlEncode($requestContext.getRequestParameter("testSessionId"))" method="post">
+    <div class="form-body">
+        <div class="form-description">
+            <p>
+                $i18n.getText('participant.removal.warning.unshare')
+            </p>
+        </div>
+    </div>
+    <div class="buttons-container form-footer">
+        <div class="buttons">
+            <input type="submit" class="submit aui-button aui-button-primary" value="Unshare">
+            <a href="#close" class="cancel">Close</a>
+        </div>
+    </div>
+    <input type="hidden" name="atl_token" value="${xsrfToken}"/>
+</form>

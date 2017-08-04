@@ -1,0 +1,840 @@
+<!--
+${project.groupId}.${project.artifactId} but it was original named "plugin" and hence we need to maintain this until a 2.0 still release.
+-->
+<atlassian-plugin key="${project.groupId}.plugin" name="${project.name}" plugins-version="2">
+    <plugin-info>
+        <description>Capture for JIRA - Agile Testing</description>
+        <version>${pom.version}</version>
+
+        <vendor name="Atlassian" url="http://www.atlassian.com" />
+        <param name="atlassian-licensing-enabled">true</param>
+
+        <!-- UPM URLs -->
+        <param name="configure.url"><![CDATA[/secure/BonfireSettings.jspa?decorator=admin]]></param>
+        <param name="post.install.url"><![CDATA[/secure/BonfireGettingStarted.jspa]]></param>
+        <param name="post.update.url"><![CDATA[/secure/BonfireGettingStarted.jspa]]></param>
+
+        <param name="atlassian-data-center-compatible">true</param>
+    </plugin-info>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- WEB RESOURCES-->
+    <resource type="download" name="js/" location="includes/js/"/>
+    <resource type="download" name="images/" location="includes/images"/>
+    <resource type="download" name="css/" location="includes/css"/>
+
+    <resource type="i18n" name="bonfire-i18n" location="i18n/bonfire-i18n" />
+
+    <web-resource key="bonfire-common-resources" name="Capture for JIRA Common">
+        <!-- This resource should be included in every Bonfire page -->
+        <context>bf-context</context>
+
+        <resource type="download" name="utils.js" location="includes/js/utils/utils.js"/>
+    </web-resource>
+
+    <web-resource key="bonfire-legacy-five-two" name="Capture for JIRA Legacy 5.2 Resources">
+        <resource type="download" name="bf-legacy-5.2.css" location="includes/css/legacy/bonfire-overrides-5.2.css"/>
+    </web-resource>
+
+    <web-resource key="bonfire-legacy-five-one" name="Capture for JIRA Legacy 5.1 Resources">
+        <resource type="download" name="bf-legacy-5.1.css" location="includes/css/legacy/bonfire-overrides-5.1.css"/>
+    </web-resource>
+
+    <web-resource key="bonfire-legacy-five-zero" name="Capture for JIRA Legacy 5.0 Resources">
+        <resource type="download" name="bf-legacy-5.0.css" location="includes/css/legacy/bonfire-overrides-5.0.css"/>
+    </web-resource>
+
+    <web-resource key="bonfire-shared-assets">
+        <dependency>com.atlassian.bonfire.plugin:bonfire-analytics</dependency>
+        <resource type="download" name="shared.css" location="includes/css/shared.css"/>
+    </web-resource>
+
+    <web-resource key="bonfire-analytics" name="Capture for JIRA Analytics resources">
+        <resource type="download" name="capture-analytics.js" location="includes/js/analytics/capture-analytics.js" />
+    </web-resource>
+
+    <web-resource key="bonfire-admin" name="Capture for JIRA Admin">
+        <dependency>com.atlassian.bonfire.plugin:bonfire-common-resources</dependency>
+        <resource type="download" name="bon-admin.css" location="includes/css/admin.css"/>
+        <resource type="download" name="bon-admin.js" location="includes/js/admin/admin.js" />
+    </web-resource>
+
+    <web-resource key="bonfire-extension-callout-resources" name="Capture for JIRA extension callout resources">
+        <transformation extension="soy">
+            <transformer key="jiraSoyTransformer" />
+        </transformation>
+        <resource type="download" name="bon-callout.css" location="includes/css/callout.css"/>
+        <resource type="download" name="bon-callout.js" location="includes/js/callout/callout.js" />
+        <resource type="download" name="bon-callout.soy.js" location="includes/soy/callout/callout.soy" />
+    </web-resource>
+
+    <web-resource key="bonfire-jquery-ui" name="Capture for JIRA jQuery UI">
+        <resource type="download" name="bonfire-jquery-ui.css" location="includes/css/lib/jquery-ui-1.8.16.bonfire.css" />
+        <resource type="download" name="bonfire-jquery-ui-overrides.css" location="includes/css/lib/jquery-ui-bonfire-overrides.css" />
+        <resource type="download" name="bonfire-jquery-ui.js" location="includes/js/lib/jquery-ui-1.8.16.js" />
+    </web-resource>
+
+    <web-resource key="bonfire-jquery-fancybox" name="Capture for JIRA jQuery Fancybox">
+        <resource type="download" name="bonfire-jquery-fancybox.js" location="includes/js/lib/bf-jquery-fancybox.js" />
+        <resource type="download" name="bonfire-jquery-fancybox.css" location="includes/css/lib/bf-jquery-fancybox.css" />
+    </web-resource>
+
+    <web-resource key="bonfire-issuecollector-assets" name="Capture for JIRA IssueCollector">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <resource type="download" name="bonfire-issuecollector.js" location="includes/js/feedback/bf-issuecollector.js" />
+    </web-resource>
+
+    <web-resource key="greenfire-assets">
+        <dependency>com.atlassian.bonfire.plugin:bonfire-jquery-ui</dependency>
+        <dependency>com.atlassian.bonfire.plugin:quick-session-dialog-resources</dependency>
+        <dependency>com.atlassian.bonfire.plugin:complete-session-resource</dependency>
+        <resource type="download" name="greenfire-tab.css" location="includes/css/greenfire/greenfire-tab.css" />
+        <resource type="download" name="greenfire-tab.js" location="includes/js/greenfire/greenfire-tab.js" />
+    </web-resource>
+
+    <!-- This resource is for the view session dialog that provides a simple view for a session -->
+    <web-resource key = "quick-session-dialog-resources" name="Quick Session Dialog Resources">
+
+        <transformation extension="soy">
+            <transformer key="jiraSoyTransformer" />
+        </transformation>
+
+        <dependency>com.atlassian.bonfire.plugin:bonfire-common-resources</dependency>
+        <resource type="download" name="quick-session.css" location="includes/css/quick-session.css" />
+        <resource type="download" name="quick-session.js" location="includes/js/quicksession/quick-session.js" />
+        <resource type="download" name="quick-session.soy.js" location="includes/soy/quicksession/quick-session.soy" />
+    </web-resource>
+
+    <!-- This resource is for all other dialogs that bonfire uses -->
+    <web-resource key="bonfire-test-session-dialog-assets">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-jquery-ui</dependency>
+        <dependency>com.atlassian.bonfire.plugin:complete-session-resource</dependency>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-common-resources</dependency>
+        <!-- TODO update this script so the quick session stuff isn't included on the issue nav -->
+        <dependency>com.atlassian.bonfire.plugin:quick-session-dialog-resources</dependency>
+        <resource type="download" name="test-session-dialog.js" location="includes/js/sessions/test-session-dialog.js" />
+        <resource type="download" name="bonfire-client-msg.js" location="includes/js/msg/bonfire-client-msg.js" />
+    </web-resource>
+
+    <web-resource key="bonfire-filtered-sessions-assets">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-jquery-ui</dependency>
+
+        <resource type="download" name="filtered-sessions.js" location="includes/js/sessions/filtered-sessions.js"/>
+    </web-resource>
+
+    <web-resource key="bonfire-create-session" name="Capture for JIRA Create Session Resources">
+        <transformation extension="soy">
+            <transformer key="jiraSoyTransformer" />
+        </transformation>
+
+        <dependency>com.atlassian.bonfire.plugin:bonfire-jquery-ui</dependency>
+        <resource type="download" name="create-session.css" location="includes/css/create-session.css"/>
+        <resource type="download" name="create-session.js" location="includes/js/sessions/create-session.js"/>
+        <resource type="download" name="create-session.soy.js" location="includes/soy/sessions/create-session.soy"/>
+    </web-resource>
+
+    <web-resource key="bonfire-active-session-headsup-assets">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <resource type="download" name="bonfire-headsup.css" location="includes/css/bonfire-headsup.css" />
+        <resource type="download" name="bonfire-headsup.js" location="includes/js/headsup/headsup.js"/>
+    </web-resource>
+
+    <web-resource key="bonfire-editable-notes-assets">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <resource type="download" name="editable-notes.css" location="includes/css/editable-notes.css"/>
+        <resource type="download" name="editable-notes.js" location="includes/js/notes/editable-notes.js"/>
+    </web-resource>
+
+    <web-resource key="bonfire-invite" name="Capture for JIRA Invite Includes">
+        <resource type="download" name="bonfire-email-dialog.js" location="includes/js/sessions/invite/email-dialog.js" />
+        <resource type="download" name="bonfire-email-dialog.css" location="includes/css/invite/invite-popup.css" />
+        <resource type="download" name="bonfire-UserSharePicker.js" location="includes/js/sessions/invite/ShareUserPicker.js" />
+        <resource type="download" name="bonfire-UserSharePickerItem.js" location="includes/js/sessions/invite/ShareUserPickerItem.js" />
+        <resource type="download" name="bonfire-share-user-multi-select.js" location="includes/js/sessions/invite/share-user-multi-select.js" />
+    </web-resource>
+
+    <web-resource key="bonfire-test-session-view" name="Capture for JIRA Test Session View">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-invite</dependency>
+        <dependency>com.atlassian.auiplugin:aui-experimental-progress-tracker</dependency>
+
+        <resource type="download" name="test-session-view.js" location="includes/js/sessions/test-session-view.js"/>
+    </web-resource>
+
+    <web-resource key="bonfire-getting-started" name="Capture for JIRA Getting Started">
+        <resource type="download" name="getting-started.css" location="includes/css/getting-started.css"/>
+        <resource type="download" name="getting-started.js" location="includes/js/menu/getting-started.js" />
+    </web-resource>
+    <web-resource key="get-bonfire-resources" name="Get Capture for JIRA Resoures">
+        <dependency>jira.webresources:global-static</dependency>
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-analytics</dependency>
+
+        <resource type="download" name="getting-started.css" location="includes/css/get-bonfire.css"/>
+        <resource type="download" name="getting-started.js" location="includes/js/menu/get-capture.js"/>
+    </web-resource>
+
+    <web-resource key="bonfire-advanced-cft" name="Capture for JIRA Advanced Custom Fields">
+        <dependency>jira.webresources:global-static</dependency>
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+
+        <resource type="download" name="advanced-cft.css" location="includes/css/advanced-cft.css"/>
+        <resource type="download" name="advanced-cft.js" location="includes/js/advancedcft/advanced-cft.js"/>
+    </web-resource>
+
+    <web-resource key="complete-session-resource" name="Capture for JIRA Complete Session Resource">
+        <resource type="download" name="complete-session.css" location="includes/css/complete-session.css"/>
+        <resource type="download" name="complete-session.js" location="includes/js/sessions/complete-session.js"/>
+    </web-resource>
+    <web-resource key="local-storage-resource" name="Capture for JIRA Local Storage Resource">
+        <resource type="download" name="bf-storage.js" location="includes/js/utils/storage.js"/>
+    </web-resource>
+
+    <!-- This resource is for the session navigator page -->
+    <web-resource key = "session-navigator-resources" name="Session Navigator Resources">
+        <transformation extension="soy">
+            <transformer key="jiraSoyTransformer" />
+        </transformation>
+
+        <dependency>com.atlassian.bonfire.plugin:local-storage-resource</dependency>
+        <dependency>com.atlassian.bonfire.plugin:infinite-scroller-resources</dependency>
+        <dependency>com.atlassian.bonfire.plugin:complete-session-resource</dependency>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-create-session</dependency>
+        <dependency>com.atlassian.bonfire.plugin:quick-session-dialog-resources</dependency>
+        <resource type="download" name="session-navigator.css" location="includes/css/session-navigator.css" />
+        <resource type="download" name="session-navigator.js" location="includes/js/sessionnav/session-navigator.js" />
+        <resource type="download" name="session-navigator.soy.js" location="includes/soy/sessionnav/session-navigator.soy" />
+    </web-resource>
+    <web-resource key = "infinite-scroller-resources" name="Session Navigator Resources">
+        <resource type="download" name="infinite-scroller.js" location="includes/js/lib/infinitescroller/infinite-scroller.js" />
+        <resource type="download" name="loaded-range.js" location="includes/js/lib/infinitescroller/loaded-range.js" />
+        <resource type="download" name="spin.js" location="includes/js/lib/infinitescroller/spin.min.js" />
+    </web-resource>
+
+    <!-- This resource is for the introduction/conclusion in the JIRA about panel for licensing -->
+    <web-resource key="bonfire-about" name="Capture for JIRA About Page">
+        <resource type="soy" name="about.soy" location="includes/soy/about/about.soy"/>
+    </web-resource>
+
+
+
+    <!--_________________________________-->
+    <!--Web Resources for Gadgets        -->
+    <!--_________________________________-->
+
+    <web-resource key="bonfire-gadget-test-session">
+        <dependency>com.atlassian.auiplugin:aui-lozenge</dependency>
+
+        <resource type="download" name="test-sessions.css" location="includes/css/gadgets/test-sessions-gadget.css">
+            <property key="content-type" value="text/css"/>
+        </resource>
+        <resource type="download" name="test-sessions.js" location="includes/js/gadgets/test-sessions-gadget.js">
+            <param name="content-type" value="text/javascript; charset=UTF-8"/>
+        </resource>
+        <transformation extension="soy">
+            <transformer key="jiraSoyTransformer" />
+        </transformation>
+        <resource type="download" name="test-session.soy.js" location="includes/soy/gadgets/test-session-gadget.soy" />
+    </web-resource>
+
+    <web-resource key="bonfire-gadget-common">
+        <dependency>com.atlassian.bonfire.plugin:bonfire-jquery-ui</dependency>
+        <resource type="download" name="common.js" location="includes/js/gadgets/gadget-common.js">
+            <param name="content-type" value="text/javascript; charset=UTF-8" />
+        </resource>
+    </web-resource>
+
+    <!--context-webresources-conditional-->
+
+    <web-resource key="bonfire-shared" name="Capture for JIRA Shared">
+        <condition class="com.atlassian.bonfire.conditions.UrlReadingBonfireActivatedCondition" />
+        <context>jira.view.issue</context>
+        <context>jira.browse.project</context>
+        <context>jira.userprofile</context>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-shared-assets</dependency>
+        <resource type="download" name="empty.js" location="includes/empty.js"/><!-- Workaround for PLUGWEB-233 -->
+        <resource type="download" name="empty.css" location="includes/empty.css"/><!-- Workaround for PLUGWEB-233 -->
+    </web-resource>
+
+    <web-resource key="bonfire-issuecollector" name="Capture for JIRA IssueCollector">
+        <condition class="com.atlassian.bonfire.conditions.UrlReadingBonfireActivatedCondition" />
+        <context>jira.browse.project</context>
+        <context>jira.userprofile</context>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-issuecollector-assets</dependency>
+        <resource type="download" name="empty.js" location="includes/empty.js"/><!-- Workaround for PLUGWEB-233 -->
+        <resource type="download" name="empty.css" location="includes/empty.css"/><!-- Workaround for PLUGWEB-233 -->
+    </web-resource>
+
+    <web-resource key="greenfire-resources" name="GreenFire Resources">
+        <condition class="com.atlassian.bonfire.conditions.UrlReadingBonfireActivatedCondition" />
+        <context>gh-rapid</context>
+        <dependency>com.atlassian.bonfire.plugin:greenfire-assets</dependency>
+        <resource type="download" name="empty.js" location="includes/empty.js"/><!-- Workaround for PLUGWEB-233 -->
+        <resource type="download" name="empty.css" location="includes/empty.css"/><!-- Workaround for PLUGWEB-233 -->
+    </web-resource>
+
+    <!-- This resource is for all other dialogs that bonfire uses -->
+    <web-resource key="bonfire-test-session-dialog" name="Capture for JIRA Test Session Dialog">
+        <condition class="com.atlassian.bonfire.conditions.UrlReadingBonfireActivatedCondition" />
+        <context>jira.browse.project</context>
+        <context>jira.view.issue</context>
+        <context>jira.userprofile</context>
+        <context>jira.navigator.advanced</context>
+        <context>jira.navigator.simple</context>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-test-session-dialog-assets</dependency>
+        <resource type="download" name="empty.js" location="includes/empty.js"/><!-- Workaround for PLUGWEB-233 -->
+        <resource type="download" name="empty.css" location="includes/empty.css"/><!-- Workaround for PLUGWEB-233 -->
+    </web-resource>
+
+    <web-resource key="bonfire-filtered-sessions" name="Capture for JIRA Filter Sessions">
+        <condition class="com.atlassian.bonfire.conditions.UrlReadingBonfireActivatedCondition" />
+        <context>jira.browse.project</context>
+        <context>jira.userprofile</context>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-filtered-sessions-assets</dependency>
+        <resource type="download" name="empty.js" location="includes/empty.js"/><!-- Workaround for PLUGWEB-233 -->
+        <resource type="download" name="empty.css" location="includes/empty.css"/><!-- Workaround for PLUGWEB-233 -->
+    </web-resource>
+
+    <web-resource key="bonfire-active-session-headsup" name="Capture for JIRA Active Session Headsup">
+        <condition class="com.atlassian.bonfire.conditions.UrlReadingBonfireActivatedCondition" />
+        <context>atl.general</context>
+        <context>atl.admin</context>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-active-session-headsup-assets</dependency>
+        <resource type="download" name="empty.js" location="includes/empty.js"/><!-- Workaround for PLUGWEB-233 -->
+        <resource type="download" name="empty.css" location="includes/empty.css"/><!-- Workaround for PLUGWEB-233 -->
+    </web-resource>
+
+    <web-resource key="bonfire-editable-notes" name="Capture for JIRA editable notes CSS">
+        <condition class="com.atlassian.bonfire.conditions.UrlReadingBonfireActivatedCondition" />
+        <context>jira.browse.project</context>
+        <context>jira.userprofile</context>
+        <dependency>com.atlassian.bonfire.plugin:bonfire-editable-notes-assets</dependency>
+        <resource type="download" name="empty.js" location="includes/empty.js"/><!-- Workaround for PLUGWEB-233 -->
+        <resource type="download" name="empty.css" location="includes/empty.css"/><!-- Workaround for PLUGWEB-233 -->
+    </web-resource>
+
+    <!--project-sidebar-webresources-->
+
+    <web-resource key="capture-sidebar-resources">
+        <context>gh-rapid</context>
+        <context>jira.project.sidebar</context>
+        <dependency>com.atlassian.bonfire.plugin:capture-sidebar-assets</dependency>
+
+        <resource type="download" name="project-tabpanel.css" location="includes/css/project-tabpanel.css">
+            <property key="content-type" value="text/css"/>
+        </resource>
+    </web-resource>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- WEB PANELS -->
+
+    <web-panel key="bonfiremodule" location="atl.jira.view.issue.left.context" weight="701">
+        <context-provider class="com.atlassian.bonfire.contextproviders.BonfireCFVelocityContextProvider"/>
+        <resource name="view" type="velocity" location="/templates/bonfire/web/issuepanel/bonfire-web-panel.vm"/>
+        <label key="bonfire.issue.web.panel" />
+        <condition class="com.atlassian.bonfire.conditions.BonfireIssueWebPanelCondition"/>
+        <condition class="com.atlassian.bonfire.conditions.BonfireActivatedCondition"/>
+        <condition class="com.atlassian.jira.plugin.webfragment.conditions.JiraGlobalPermissionCondition"><param name="permission">use</param></condition>
+    </web-panel>
+
+    <web-panel key="bonfireGFWebPanel" location="atl.gh.issue.details.tab" weight="10">
+        <context-provider class="com.atlassian.bonfire.contextproviders.GreenFireContextProvider"/>
+        <resource name="view" type="velocity" location="/templates/bonfire/web/greenfire/greenfire-web-panel.vm"/>
+        <resource type="download" name="icon.png" location="includes/images/icons/capture_icon_grey_16.png" />
+        <label key="bonfire.gf.web.panel" />
+        <tooltip key="bonfire.gf.web.panel" />
+        <param name="iconFont" value="jira-test-session"/>
+        <condition class="com.atlassian.bonfire.conditions.BonfireActivatedCondition"/>
+        <condition class="com.atlassian.jira.plugin.webfragment.conditions.JiraGlobalPermissionCondition"><param name="permission">use</param></condition>
+    </web-panel>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- WEB ITEMS -->
+
+    <!--_________________________________-->
+    <!--Capture for JIRA Admin Pages              -->
+    <!--_________________________________-->
+
+    <web-section key="bonfire-admin-section" name="Capture for JIRA Admin Section" location="testing_section" i18n-name-key="gh.configuration.name" weight="90">
+        <label key="Capture for JIRA"/>
+    </web-section>
+
+    <web-item key="bonfire-settings-link" section="testing_section/bonfire-admin-section" weight="10">
+        <conditions type="AND">
+            <condition class="com.atlassian.bonfire.conditions.BonfireActivatedCondition"/>
+            <condition class="com.atlassian.jira.plugin.webfragment.conditions.UserIsAdminCondition"/>
+        </conditions>
+        <label key="Capture for JIRA Settings"/>
+        <link linkId="bonfire-settings-link"><![CDATA[/secure/BonfireSettings.jspa?decorator=admin]]></link>
+        <param name="webfragments.keywords">capture.admin.settings.keywords</param>
+    </web-item>
+
+    <!--_________________________________-->
+    <!--Capture for JIRA Top Navigation Menu Items-->
+    <!--_________________________________-->
+
+    <web-item key="bonfire_top_menu_dropdown" name="Test Sessions Menu Link" section="system.top.navigation.bar" weight="40">
+        <label key="bonfire.top.menu.dropdown.label"/>
+        <tooltip key="bonfire.top.menu.dropdown.title"/>
+        <link linkId="bonfire_top_menu_dropdown">/secure/SessionNavigator.jspa</link>
+        <conditions type="AND">
+            <condition class="com.atlassian.bonfire.conditions.BonfireActivatedCondition"/>
+        </conditions>
+    </web-item>
+
+    <web-section key="bonfire_top_main_menu.1" name="Test Sessions Menu Contents" location="bonfire_top_menu_dropdown" weight="100"/>
+    <web-item key="bonfire_getting_started" name="Capture for JIRA Getting Started Link" section="bonfire_top_menu_dropdown/bonfire_top_main_menu.1" weight="20">
+        <label key="bonfire.top.menu.testsessions.label"/>
+        <tooltip key="bonfire.top.menu.testsessions.title"/>
+        <link linkId="bonfire_gettingstarted_link">/secure/SessionNavigator.jspa</link>
+        <conditions type="AND">
+            <condition class="com.atlassian.bonfire.conditions.BonfireActivatedCondition"/>
+            <condition class="com.atlassian.jira.plugin.webfragment.conditions.JiraGlobalPermissionCondition"><param name="permission">use</param></condition>
+        </conditions>
+    </web-item>
+
+    <web-section key="bonfire_top_main_menu.2" name="Test Sessions Menu Contents" location="bonfire_top_menu_dropdown" weight="100"/>
+    <web-item key="bonfire_getting_started_item" name="Capture for JIRA Getting Started Link" section="bonfire_top_menu_dropdown/bonfire_top_main_menu.2" weight="20">
+        <label key="bonfire.top.menu.gettingstarted.label"/>
+        <tooltip key="bonfire.top.menu.gettingstarted.title"/>
+        <link linkId="bonfire_gettingstarted_link">/secure/BonfireGettingStarted.jspa</link>
+        <conditions type="AND">
+            <condition class="com.atlassian.bonfire.conditions.BonfireActivatedCondition"/>
+        </conditions>
+    </web-item>
+    <web-item key="bonfire_get_extension_item" name="Capture for JIRA Get Extension Link" section="bonfire_top_menu_dropdown/bonfire_top_main_menu.2" weight="20">
+        <label key="bonfire.top.menu.getextension.label"/>
+        <tooltip key="bonfire.top.menu.getextension.title"/>
+        <link linkId="bonfire_get_extension_link">/secure/GetBonfire.jspa</link>
+        <conditions type="AND">
+            <condition class="com.atlassian.bonfire.conditions.BonfireActivatedCondition"/>
+            <condition class="com.atlassian.jira.plugin.webfragment.conditions.JiraGlobalPermissionCondition"><param name="permission">use</param></condition>
+        </conditions>
+    </web-item>
+
+    <!--_________________________________-->
+    <!--Capture for JIRA General Web Items Items-->
+    <!--_________________________________-->
+
+    <web-item key="bonfire-issue-operation" section="operations-operations" >
+        <label key="Create test session"/>
+        <styleClass>issueaction-create-test-session</styleClass>
+        <link linkId="create-test-session">/secure/CreateSession.jspa?issueId=${issueId}</link>
+        <condition class="com.atlassian.jira.plugin.webfragment.conditions.UserLoggedInCondition"/>
+        <condition class="com.atlassian.bonfire.conditions.BonfireActivatedCondition"/>
+        <condition class="com.atlassian.bonfire.conditions.BonfireCreateSessionCondition"/>
+    </web-item>
+
+    <!--_________________________________-->
+    <!--Capture for JIRA Project Centric navigation (since JIRA 6.4)-->
+    <!--_________________________________-->
+    <web-item
+        key="capture-test-sessions"
+        section="jira.project.sidebar.navigation"
+        weight="710">
+        <label key="capture.project.tab.title"/>
+        <param name="iconClass" value="aui-icon-large icon-sidebar-test-sessions"/>
+        <link>/projects/$pathEncodedProjectKey?selectedItem=com.atlassian.bonfire.plugin:capture-test-sessions</link>
+        <condition class="com.atlassian.bonfire.conditions.BonfireActivatedCondition"/>
+        <condition class="com.atlassian.bonfire.conditions.CaptureEnabledForProjectTypeCondition"/>
+    </web-item>
+
+    <web-panel
+        key="capture-test-sessions-sidebar-webpanel"
+        section="jira.project.sidebar.navigation"
+        weight="710" location="com.atlassian.bonfire.plugin:capture-test-sessions">
+        <label key="capture.project.tab.title"/>
+        <param name="iconClass" value="aui-icon-large icon-sidebar-test-sessions"/>
+        <resource type="velocity" name="view" location="templates/excalibur/web/tabpanels/common-tabpanel.vm" />
+        <context-provider class="com.atlassian.excalibur.tabpanels.CaptureTestSessionsContextProvider"/>
+        <condition class="com.atlassian.bonfire.conditions.BonfireActivatedCondition"/>
+    </web-panel>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!--  WEB ACTIONS -->
+    <webwork1 key="bonfire-webactions" class="java.lang.Object">
+        <actions>
+            <!-- TODO Three separate actions for changing statuses on sessions. These should be merged into one -->
+            <action name="com.atlassian.excalibur.web.ExcaliburSessionAction" alias="ExcaliburSessionAction">
+                <command name="view" alias="CreateSession">
+                    <view name="success">/templates/excalibur/web/testsessions/test-session-create.vm</view>
+                </command>
+                <command name="create" alias="CreateSessionPost">
+                    <view name="error">/templates/excalibur/web/testsessions/test-session-create.vm</view>
+                </command>
+                <command name="edit" alias="EditSession">
+                    <view name="success">/templates/excalibur/web/testsessions/test-session-edit.vm</view>
+                </command>
+                <command name="editPost" alias="EditSessionPost">
+                    <view name="error">/templates/excalibur/web/testsessions/test-session-edit.vm</view>
+                </command>
+                <command name="clone" alias="CloneSession">
+                    <view name="success">/templates/excalibur/web/testsessions/test-session-clone.vm</view>
+                </command>
+                <command name="clonePost" alias="CloneSessionPost">
+                    <view name="error">/templates/excalibur/web/testsessions/test-session-clone.vm</view>
+                </command>
+                <command name="assign" alias="AssignSession">
+                    <view name="success">/templates/excalibur/web/testsessions/test-session-assign.vm</view>
+                </command>
+                <command name="assignPost" alias="AssignSessionPost">
+                    <view name="error">/templates/excalibur/web/testsessions/test-session-assign.vm</view>
+                </command>
+                <command name="confirm" alias="ConfirmPauseSession">
+                    <view name="success">/templates/excalibur/web/testsessions/test-session-confirm-pause.vm</view>
+                </command>
+                <command name="confirm" alias="ConfirmUnshareSession">
+                    <view name="success">/templates/excalibur/web/testsessions/test-session-confirm-unshare.vm</view>
+                </command>
+                <command name="confirm" alias="ConfirmDeleteSession">
+                    <view name="success">/templates/excalibur/web/testsessions/test-session-confirm-delete.vm</view>
+                </command>
+                <command name="unshare" alias="UnshareSession">
+                    <view name="success">/templates/excalibur/web/testsessions/test-session-confirm-unshare.vm</view>
+                </command>
+                <command name="delete" alias="DeleteSession">
+                    <view name="error">/templates/excalibur/web/testsessions/test-session-confirm-delete.vm</view>
+                </command>
+                <command name="deleteNote" alias="DeleteSessionNote">
+                    <view name="error">/templates/excalibur/web/testsessions/test-session-create.vm</view>
+                </command>
+                <command name="addRaise" alias="AddRaisedIssue">
+                    <view name="success">/templates/excalibur/web/testsessions/test-session-add-raisedin.vm</view>
+                </command>
+                <command name="addRaisePost" alias="AddRaisedIssuePost">
+                    <view name="error">/templates/excalibur/web/testsessions/test-session-add-raisedin.vm</view>
+                </command>
+            </action>
+
+            <action name="com.atlassian.bonfire.web.sessions.ViewSessionAction" alias="ViewSessionAction">
+                <command name="view" alias="ViewSession">
+                    <view name="success">/templates/excalibur/web/testsessions/test-session-view.vm</view>
+                    <view name="permission">/templates/bonfire/error/permission-violation.vm</view>
+                    <view name="error">/templates/excalibur/web/error/error.vm</view>
+                </command>
+                <command name="joinSession" alias="JoinSession">
+                    <view name="error">/templates/excalibur/web/error/error.vm</view>
+                </command>
+                <command name="leaveSession" alias="LeaveSession">
+                    <view name="error">/templates/excalibur/web/error/error.vm</view>
+                </command>
+                <command name="complete" alias="CompleteSession">
+                    <view name="success">/templates/excalibur/web/testsessions/test-session-complete-dialog.vm</view>
+                </command>
+            </action>
+
+            <action name="com.atlassian.bonfire.web.sessions.SessionNavigatorAction" alias="SessionNavigatorAction">
+                <command name="view" alias="SessionNavigator">
+                    <view name="success">/templates/bonfire/web/testsessions/session-navigator-view.vm</view>
+                    <view name="permission">/templates/bonfire/error/permission-violation.vm</view>
+                    <view name="error">/templates/excalibur/web/error/error.vm</view>
+                </command>
+            </action>
+
+            <action name="com.atlassian.bonfire.web.BonfireAdvancedCFTAction" alias="BonfireAdvancedCFTAction">
+                <command name="view" alias="AdvancedCFT">
+                    <view name="success">/templates/bonfire/web/advancedcft/advanced-cft-page.vm</view>
+                    <view name="error">/templates/bonfire/web/advancedcft/advanced-cft-error.vm</view>
+                </command>
+            </action>
+
+            <!-- Session Status Navigator-->
+            <action name="com.atlassian.excalibur.web.ExcaliburSessionStatusAction" alias="ExcaliburSessionStatusAction">
+                <command name="activate" alias="ActivateSession">
+                    <!-- TODO this needs to change  -->
+                    <view name="error">/templates/excalibur/web/error/error.vm</view>
+                </command>
+                <command name="activateInSession" alias="ActivateInSession">
+                    <view name="error">/templates/excalibur/web/error/error.vm</view>
+                </command>
+            </action>
+
+            <action name="com.atlassian.bonfire.web.BonfireSettingsAction" alias="BonfireSettingsAction">
+                <command name="viewSettings" alias="BonfireSettings">
+                    <view name="success">/templates/bonfire/admin/bonfire-settings.vm</view>
+                </command>
+            </action>
+
+            <action name="com.atlassian.bonfire.web.BonfireQuickInfo" alias="BonfireQuickInfoAction">
+                <command name="info" alias="BonfireQuickInfo">
+                    <view name="success">/templates/bonfire/beta/quickinfo.vm</view>
+                </command>
+            </action>
+
+            <action name="com.atlassian.bonfire.web.BonfireSupportAction" alias="BonfireSupportAction">
+                <command name="support" alias="BonfireSupport">
+                    <view name="success">/templates/bonfire/support/support.vm</view>
+                </command>
+            </action>
+
+            <action name="com.atlassian.bonfire.web.BonfireNotesHelpAction" alias="BonfireNotesHelpAction">
+                <command name="help" alias="BonfireNotesHelp">
+                    <view name="success">/templates/bonfire/help/noteshelp.vm</view>
+                </command>
+            </action>
+
+            <action name="com.atlassian.bonfire.web.BonfireLicenseErrorAction" alias="BonfireLicenseErrorAction">
+                <command name="licenseError" alias="BonfireLicenseError">
+                    <view name="success">/templates/bonfire/error/licenseerror.vm</view>
+                </command>
+            </action>
+
+            <action name="com.atlassian.bonfire.web.BonfireGettingStartedAction" alias="BonfireGettingStartedAction">
+                <command name="gettingStarted" alias="BonfireGettingStarted">
+                    <view name="success">/templates/bonfire/menu/gettingstarted.vm</view>
+                </command>
+                <command name="getBonfire" alias="GetBonfire">
+                    <view name="success">/templates/bonfire/menu/get-bonfire.vm</view>
+                </command>
+            </action>
+
+            <action name="com.atlassian.bonfire.web.BonfireAboutAction" alias="BonfireAboutAction">
+                <command name="about" alias="BonfireAbout">
+                    <view name="success">/templates/bonfire/menu/about.vm</view>
+                </command>
+            </action>
+
+        </actions>
+    </webwork1>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- REST -->
+    <rest key="bonfire-rest" path="/bonfire" version="1.0">
+        <description>Capture for JIRA REST resources</description>
+    </rest>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- Custom Fields -->
+    <customfield-type key="bonfire-text" name="Capture for JIRA text field"
+        i18n-name-key="bonfire.customfield.type.text.name"
+        class="com.atlassian.bonfire.customfield.BonfireTextCFT"
+        managed-access-level="locked" managed-description-key="bonfire.customfield.locked.desc">
+        <description key="admin.customfield.type.url.desc">Created by Capture for JIRA.</description>
+
+        <resource type="velocity" name="edit" location="templates/bonfire/customfield/bonfiretext/edit-hidden.vm"/>
+    </customfield-type>
+
+    <!-- This type is not used anywhere. This is here so customers with values in this field type don't lose it -->
+    <customfield-type key="bonfire-url" name="Capture for JIRA URL field"
+        i18n-name-key="bonfire.customfield.type.url.name.legacy"
+        class="com.atlassian.bonfire.customfield.BonfireURLCFType"
+        managed-access-level="locked" managed-description-key="bonfire.customfield.locked.desc">
+        <description key="admin.customfield.type.url.desc">Created by Capture for JIRA.</description>
+
+        <resource type="velocity" name="edit" location="templates/bonfire/customfield/bonfiretext/edit-hidden.vm"/>
+    </customfield-type>
+
+    <customfield-type key="bonfire-session-cft" name="Capture for JIRA session field"
+        i18n-name-key="bonfire.customfield.type.session.name"
+        class="com.atlassian.bonfire.customfield.BonfireSessionCFType"
+        managed-access-level="locked" managed-description-key="bonfire.customfield.locked.desc">
+        <description>Created by Capture for JIRA.</description>
+
+        <resource type="velocity" name="view" location="templates/bonfire/customfield/bonfiresession/view-session.vm"/>
+        <resource type="velocity" name="edit" location="templates/bonfire/customfield/bonfiresession/edit-session.vm"/>
+        <resource type="velocity" name="xml" location="templates/bonfire/customfield/bonfiresession/xml-session.vm"/>
+    </customfield-type>
+
+    <customfield-type key="bonfire-multi-session-cft" name="Capture for JIRA multi session field"
+        i18n-name-key="bonfire.customfield.type.multisession.name"
+        class="com.atlassian.bonfire.customfield.BonfireMultiSessionCFType"
+        managed-access-level="locked" managed-description-key="bonfire.customfield.locked.desc">
+        <description>Created by Capture for JIRA.</description>
+
+        <resource type="velocity" name="view" location="templates/bonfire/customfield/bonfiresession/view-multi-session.vm"/>
+        <resource type="velocity" name="edit" location="templates/bonfire/customfield/bonfiresession/edit-multi-session.vm"/>
+        <resource type="velocity" name="xml" location="templates/bonfire/customfield/bonfiresession/xml-multi-session.vm"/>
+    </customfield-type>
+
+    <customfield-type key="bonfire-testing-status-cft" name="Capture for JIRA testing status field"
+        i18n-name-key="bonfire.customfield.type.testingstatus.name"
+        class="com.atlassian.bonfire.customfield.TestingStatusCFType"
+        managed-access-level="locked" managed-description-key="bonfire.customfield.locked.desc">
+        <description>Created by Capture for JIRA.</description>
+
+        <resource type="velocity" name="column-view" location="templates/bonfire/customfield/testingstatus/column-testing-status.vm"/>
+    </customfield-type>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- Custom Field Searchers-->
+
+    <customfield-searcher key="bonfire-session-searcher" i18n-name-key="bonfire.session.searcher.name" class="com.atlassian.bonfire.customfield.searcher.SessionSearcher">
+        <description key="bonfire.session.searcher.desc" />
+        <valid-customfield-type package="com.atlassian.bonfire.plugin" key="bonfire-multi-session-cft"/>
+        <valid-customfield-type package="com.atlassian.bonfire.plugin" key="bonfire-session-cft"/>
+    </customfield-searcher>
+
+    <customfield-searcher key="bonfire-testingstatus-searcher" i18n-name-key="bonfire.testingstatus.searcher.name" class="com.atlassian.bonfire.customfield.searcher.TestingStatusSearcher">
+        <description key="bonfire.testingstatus.searcher.desc" />
+        <valid-customfield-type package="com.atlassian.bonfire.plugin" key="bonfire-testing-status-cft"/>
+    </customfield-searcher>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- Workflow Conditions, Validators and Post-Functions -->
+    <workflow-condition key="complete-session-condition" name="Complete session condition" i18n-name-key="bonfire.condition.complete.name" class="com.atlassian.bonfire.workflow.condition.CompleteSessionConditionFactory">
+        <description>Condition that prevents the transaction if there are incomplete Capture for JIRA test sessions related to this issue.</description>
+        <condition-class>com.atlassian.bonfire.workflow.condition.CompleteSessionCondition</condition-class>
+        <resource type="velocity" name="view" location="templates/bonfire/workflow/view-complete-session-condition.vm"/>
+    </workflow-condition>
+
+    <workflow-validator key="complete-session-validator" name="Complete session validator" i18n-name-key="bonfire.validator.complete.name" class="com.atlassian.bonfire.workflow.validator.CompleteSessionValidatorFactory">
+        <description>Validates that all Capture for JIRA test sessions related to this issue are complete.</description>
+        <validator-class>com.atlassian.bonfire.workflow.validator.CompleteSessionValidator</validator-class>
+        <resource type="velocity" name="view" location="templates/bonfire/workflow/view-complete-session-validator.vm"/>
+    </workflow-validator>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+
+    <!-- Stub About Page module type to suppress warnings in JIRA less than 6.0.2 DO NOT USE -->
+    <module-type key="about-page-panel" class="com.atlassian.bonfire.plugin.module.BfStubAboutPagePanelModuleDescriptor" name="About page panel module type">
+        <restrict application="jira">
+            <version>(,6.0.1]</version>
+        </restrict>
+    </module-type>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- Tab Panels -->
+
+    <project-tabpanel key="capture-ts-project-tabpanel" i18n-name-key="Test sessions" name="Capture Test Sessions Project Tab Panel" class="com.atlassian.excalibur.tabpanels.LegacyCaptureProjectTabPanel">
+        <description>Displays Test Sessions and Notes related to a project in a project tab panel.</description>
+        <label>Test Sessions</label>
+        <resource type="velocity" name="navigator" location="templates/excalibur/web/tabpanels/common-tabpanel.vm" />
+    </project-tabpanel>
+
+    <view-profile-panel key="capture-ts-profile-tabpanel" i18n-name-key="Test sessions"
+                        name="Test sessions profile tab panel"
+                        class="com.atlassian.excalibur.tabpanels.NoopCaptureProfileTabPanel">
+        <description>Displays warning message about the moving test sessions out of user profile page.</description>
+        <resource type="velocity" name="navigator" location="templates/excalibur/web/tabpanels/profile-tabpanel.vm"/>
+        <order>110</order>
+    </view-profile-panel>
+
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- Top Navigation (Heads up display) -->
+    <top-navigation key="bonfire-headsup-display"
+        name="Capture for JIRA headsup display"
+        class="com.atlassian.excalibur.topnav.BonfireHeadsupDisplay" state="enabled">
+        <resource type="velocity" name="view" location="templates/excalibur/web/topnav/bonfire-headsup.vm"/>
+        <order>5</order>
+    </top-navigation>
+
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- Wiki Markup Stuff -->
+    <renderer-component-factory key="bonfire-renderer-component-factory" name="Capture for JIRA Renderer Component Factory"
+        class="com.atlassian.bonfire.renderer.BonfireRendererComponentFactory">
+        <order>219</order><!-- We want to happen before the TokenRendererComponent which is order 220 -->
+    </renderer-component-factory>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- Event Listeners -->
+    <component-import key="eventPublisher" interface="com.atlassian.event.api.EventPublisher"/>
+
+    <component key="bonfireIssueEventListener" class="com.atlassian.bonfire.listeners.IssueEventListener">
+        <description>Processes the incoming JIRA issue events.</description>
+    </component>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- General Components -->
+
+    <component-import key="pluginUpgradeManager" interface="com.atlassian.sal.api.upgrade.PluginUpgradeManager"/>
+
+    <component key="bonfire-license-service" name="Capture for JIRA License Service"
+        class="com.atlassian.bonfire.service.BonfireLicenseServiceImpl" public="true">
+        <interface>com.atlassian.sal.api.lifecycle.LifecycleAware</interface>
+    </component>
+
+    <component-import key="darkFeatureManager" interface="com.atlassian.sal.api.features.DarkFeatureManager"/>
+
+    <component-import key="pluginLicenseManager" interface="com.atlassian.upm.api.license.PluginLicenseManager"/>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                         -->
+    <!-- Flyway scripts location -->
+    <rdbms-schema key="rdbms-schema-module" migrations="db/migrations" ignore-missing-migrations="true"/>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- AdHoc Upgrade Tasks -->
+    <adhoc-upgrade key="adHocTestingStatusDuplicatesRemovalUpgradeTask" class="com.atlassian.bonfire.upgradetasks.AdHocTestingStatusDuplicatesRemovalUpgradeTask"/>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- Upgrade Tasks -->
+    <upgrade-task-factory key="bonfire-plugin-upgrade-task-factory"
+                          class="com.atlassian.bonfire.upgradetasks.BonfireUpgradeTaskFactory"/>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- Servlet Filter -->
+
+    <servlet-filter name="Capture for JIRA P3P Filter" key="bonP3PFilter" location="before-login"
+        class="com.atlassian.bonfire.web.filters.BonfireP3PFilter" weight="501">
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+    </servlet-filter>
+
+    <servlet-filter name="Capture for JIRA Legacy Resource Filter" key="bonLegacyResources" location="before-dispatch"
+        class="com.atlassian.bonfire.web.filters.BonfireLegacyResourceFilter" weight="501">
+        <url-pattern>/secure/SessionNavigator.jspa*</url-pattern>
+        <url-pattern>/secure/ViewSession.jspa*</url-pattern>
+        <url-pattern>/browse/*</url-pattern>
+        <url-pattern>/secure/GetBonfire.jspa*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+    </servlet-filter>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- Gadgets -->
+
+    <gadget key="bonfire-test-sessions-gadget" location="gadget/bonfire-sessions-gadget.xml">
+        <param name="roles-required">use</param>
+    </gadget>
+
+    <!-- ======================================================================================================================== -->
+    <!--                                                                                                                          -->
+    <!-- Footer -->
+
+    <jira-footer key="bonfire-seo-footer" name="Capture for JIRA Footer"
+        class="com.atlassian.bonfire.web.footer.BonfireFooter" state="enabled">
+        <resource type="velocity" name="view" location="templates/bonfire/web/footer/bf-footer.vm"/>
+        <order>5</order>
+    </jira-footer>
+
+    <!-- JQL Functions -->
+    <jql-function key="my-active-session-function" name="My Active Test Session Function" class="com.atlassian.bonfire.customfield.jql.MyActiveSessionJqlFunction">
+        <fname>myActiveSession</fname>
+        <description>Resolves the current test session that the current user is a part of</description>
+        <list>false</list>
+    </jql-function>
+
+    <about-page-panel name="about-page-section-bonfire" key="about-page-section-bonfire">
+        <introduction module-key="${project.groupId}.plugin:bonfire-about" function="BF.template.about.introduction" />
+        <licenses location="bom.csv" />
+        <conclusion module-key="${project.groupId}.plugin:bonfire-about" function="BF.template.about.conclusion" />
+    </about-page-panel>
+
+    <analytics-whitelist key="jira-capture-analytics-whitelist" resource="whitelist/jira-capture-whitelist.json"/>
+
+    <cors-defaults key="captureCheckCorsDefaults" class="com.atlassian.bonfire.security.JIRACaptureCorsDefaults" />
+
+</atlassian-plugin>

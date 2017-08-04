@@ -1,0 +1,19 @@
+<body>
+    <div class="bonfire-license-error">
+        <div class="aui-message error">
+            <p class="title">
+                <span class="aui-icon icon-error"></span>
+                An error has occurred.
+            </p>
+            <p>
+                Please contact your administrator if this problem continues.
+            </p>
+            <h4>Details</h4>
+            <p>
+            <ul>
+                <li>Your Bonfire license has expired. Please visit <a href="https://my.atlassian.com">My Atlassian</a> to renew</li>
+            <ul>
+            </p>
+        </div>
+    </div>
+</body>

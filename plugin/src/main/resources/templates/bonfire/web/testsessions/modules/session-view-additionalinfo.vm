@@ -1,0 +1,29 @@
+<div id="session-additional-info" class="module">
+    <div class="mod-header">
+        <h2>$i18n.getText('session.section.additionalinfo')</h2>
+    </div>
+    <div id="additional-info-target" #if ($session.isSessionEditable()) class="editable" #end>
+        #if ( !$session.hasAdditionalInfo() )        
+            <div id="session-additional-info-rendered">$session.additionalInfoHtml</div>
+        #else
+            <div id="session-additional-info-rendered" class="bf-empty">$i18n.getText('session.section.additionalinfo.empty')</div>
+        #end
+        #if ($session.isSessionEditable())
+            <span class="icon icon-edit-sml" title="Edit additional info"></span>
+            <div id="session-additional-info-edit" class="hidden">
+                <form class="aui edit-additional-info-form">
+                    <textarea id="session-additional-info-original" class="hidden">$textutils.htmlEncode($session.additionalInfoRaw)</textarea>
+                    <div class="textbox-wrapper">
+                        <span class="bf-waiting-icon hidden"></span>
+                        <textarea id="session-info-textarea"></textarea>
+                    </div>
+                    <div id="session-additional-info-buttons" class="buttons">
+                        <button class="bf-inline-edit-buttons bf-submit" type="submit"><span class="bf-inline-edit-button-icons add-info-submit-button"></span></button><button class="bf-inline-edit-buttons bf-cancel" type="cancel" class="cancel" href="#"><span class="bf-inline-edit-button-icons add-info-cancel-button"></span></button>
+                    </div>
+                    <div id="additionalInfo-errors" class="warning"></div>
+                </form>
+            </div>
+        #end
+    </div>
+</div>
+

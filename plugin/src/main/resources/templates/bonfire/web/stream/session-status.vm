@@ -1,0 +1,20 @@
+<div class="bf-aui-group #if (!$item.user.name.equals($currentUser.name)) bf-first-status #end">
+    #if ($item.status == "COMPLETED")
+        #set ($lozenge = "aui-lozenge-success")
+    #elseif ($item.status == "PAUSED")
+        #set ($lozenge = "aui-lozenge-moved")
+    #elseif ($item.status == "STARTED")
+        #set ($lozenge = "aui-lozenge-current")
+    #elseif ($item.status == "CREATED")
+        #set ($lozenge = "aui-lozenge-complete")
+    #else
+        #set ($lozenge = "")
+    #end
+    <div class="status-container">
+        <span class="aui-lozenge $lozenge">$i18n.getText($item.statusString)</span>
+    </div>
+    <p class="bf-activity-text">$i18n.getText('session.stream.status.posttext')</p>
+    <div class="bf-aui-group bf-activity-time">
+        $action.formatWithUserTimeZone($item.time)
+    </div>
+</div>
