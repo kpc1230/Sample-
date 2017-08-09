@@ -1,4 +1,4 @@
-package com.thed.zephyr.cloud.capture;
+package com.thed.zephyr.capture;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
