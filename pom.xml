@@ -9,6 +9,20 @@
         <relativePath></relativePath>
     </parent>
 
+    <repositories>
+        <repository>
+            <id>inhouse1</id>
+            <name>theD Internal repository</name>
+            <url>https://maven.atlassian.com/content/repositories/atlassian-public</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
+
     <groupId>com.thed.zephyr.cloud.capture</groupId>
     <artifactId>capture-cloud</artifactId>
     <version>0.1-beta</version>
@@ -19,6 +33,9 @@
         <java.version>1.8</java.version>
 
         <atlassian-connect-spring-boot.version>1.3.5</atlassian-connect-spring-boot.version>
+        <atlassian-jira.version>7.1.0-QR20151229171111</atlassian-jira.version>
+        <tenant.provisioning.version>1.1.0</tenant.provisioning.version>
+
     </properties>
 
     <dependencies>
@@ -36,6 +53,99 @@
             <artifactId>atlassian-connect-spring-boot-jpa-starter</artifactId>
             <version>${atlassian-connect-spring-boot.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.atlassian.jira/jira-api -->
+        <dependency>
+            <groupId>com.atlassian.jira</groupId>
+            <artifactId>jira-api</artifactId>
+            <version>${atlassian-jira.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.atlassian.jira/jira-core -->
+        <dependency>
+            <groupId>com.atlassian.jira</groupId>
+            <artifactId>jira-core</artifactId>
+            <version>${atlassian-jira.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>jndi</groupId>
+                    <artifactId>jndi</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.atlassian.jira/jira-tests -->
+        <dependency>
+            <groupId>com.atlassian.jira</groupId>
+            <artifactId>jira-tests</artifactId>
+            <version>${atlassian-jira.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.atlassian.jira/jira-func-tests -->
+        <!--   <dependency>
+               <groupId>com.atlassian.jira</groupId>
+               <artifactId>jira-func-tests</artifactId>
+               <version>7.1.0-QR20151229171111</version>
+           </dependency>-->
+        <!-- https://mvnrepository.com/artifact/com.atlassian.jira/jira-rest-plugin -->
+        <dependency>
+            <groupId>com.atlassian.jira</groupId>
+            <artifactId>jira-rest-plugin</artifactId>
+            <version>${atlassian-jira.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/cloud.atlassian.pocketknife/jira-pocketknife-vertigo-annotations -->
+        <dependency>
+            <groupId>cloud.atlassian.pocketknife</groupId>
+            <artifactId>jira-pocketknife-vertigo-annotations</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <!--  &lt;!&ndash; https://mvnrepository.com/artifact/com.querydsl/querydsl-core &ndash;&gt;
+          <dependency>
+              <groupId>com.querydsl</groupId>
+              <artifactId>querydsl-core</artifactId>
+              <version>4.1.4</version>
+          </dependency>
+
+          &lt;!&ndash; https://mvnrepository.com/artifact/com.querydsl/querydsl-jpa &ndash;&gt;
+          <dependency>
+              <groupId>com.querydsl</groupId>
+              <artifactId>querydsl-jpa</artifactId>
+              <version>4.1.4</version>
+          </dependency>
+  -->
+
+
+        <!--   <dependency>
+               <groupId>cloud.atlassian.provisioning</groupId>
+               <artifactId>tenant-provisioning-api</artifactId>
+               <version>${tenant.provisioning.version}</version>
+           </dependency>-->
+
+        <!-- https://mvnrepository.com/artifact/com.atlassian.plugins/atlassian-connect-core -->
+        <!--    <dependency>
+                <groupId>com.atlassian.plugins</groupId>
+                <artifactId>atlassian-connect-core</artifactId>
+                <version>1.2.32</version>
+            </dependency>-->
+
+        <!-- https://mvnrepository.com/artifact/com.atlassian.plugins/atlassian-plugins-core -->
+        <!--   <dependency>
+               <groupId>com.atlassian.plugins</groupId>
+               <artifactId>atlassian-plugins-core</artifactId>
+               <version>4.1.0</version>
+           </dependency>-->
+        <!-- https://mvnrepository.com/artifact/com.atlassian.annotations/atlassian-annotations -->
+        <dependency>
+            <groupId>com.atlassian.annotations</groupId>
+            <artifactId>atlassian-annotations</artifactId>
+            <version>2.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+
+
     </dependencies>
 
     <build>
@@ -49,6 +159,7 @@
                 </configuration>
             </plugin>
         </plugins>
+
     </build>
 
     <profiles>
