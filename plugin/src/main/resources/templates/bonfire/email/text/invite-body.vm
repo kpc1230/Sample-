@@ -1,9 +1,0 @@
-#if($remoteUser.displayName)
-    $i18n.getText("bonfire.session.invite.body.firstline", $remoteUser.displayName)
-#end
-
-    $i18n.getText("bonfire.session.invite.body.link", "$baseurl/secure/ViewSession.jspa?testSessionId=$session.id")
-    
-    $!message
-
-#parse("templates/email/text/includes/footer.vm")

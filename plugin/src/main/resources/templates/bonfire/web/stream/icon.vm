@@ -1,2 +1,0 @@
-## Renders an icon for an issue. Relies on an Issue "issue" being in the context of the item, and requestContext for the base url
-<img src="$action.htmlEncode($action.getIconUrl($item.issue))" height=16 width=16 border=0 align=absmiddle alt="$item.issue.issueTypeObject.nameTranslation" title="$item.issue.issueTypeObject.nameTranslation - $item.issue.issueTypeObject.descTranslation">

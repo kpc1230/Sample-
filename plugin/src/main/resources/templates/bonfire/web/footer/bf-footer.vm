@@ -1,6 +1,0 @@
-## TODO i18n me
-#if ($showFooter)
-    <div class="footer-body bf-footer-body">
-        <a href="http://www.atlassian.com/software/bonfire/overview?utm_source=bonfire_footer">Deliver quality working software</a> with <a href="http://www.atlassian.com/software/bonfire/overview/agile-testing?utm_source=bonfire_footer">Agile testing</a> powered by <a href="http://www.atlassian.com/software/bonfire/overview?utm_source=bonfire_footer">Capture for JIRA</a> ($bonfireVersion)
-    </div>
-#end

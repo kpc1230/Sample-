@@ -1,7 +1,0 @@
-<p class="bf-activity-text">$i18n.getText('session.stream.assignedto')</p>
-<a class="bf-activity-name user-hover" href="$requestContext.baseUrl/secure/ViewProfile.jspa?name=$action.htmlEncode($item.assignee.name)" rel="$action.htmlEncode($item.assignee.name)">
-    $action.htmlEncode($item.assignee.displayName)
-</a>
-<div class="bf-aui-group bf-activity-time">
-    $action.formatWithUserTimeZone($item.time)
-</div>

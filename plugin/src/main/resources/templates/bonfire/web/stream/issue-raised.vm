@@ -1,9 +1,0 @@
-<p class="bf-activity-text">$i18n.getText('session.stream.createdissue')</p>
-#parse("/templates/bonfire/web/stream/icon.vm")
-#if($item.parentIssue)
-    <a href="$requestContext.baseUrl/browse/$item.parentIssue.key">$item.parentIssue.key</a> /
-#end
-<a href="$requestContext.baseUrl/browse/$item.issue.key"> $item.issue.key </a> - $textutils.htmlEncode($item.getSummary())
-<div class="bf-aui-group bf-activity-time">
-    $action.formatWithUserTimeZone($item.time)
-</div>

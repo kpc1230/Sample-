@@ -1,4 +1,0 @@
-<p class="bf-activity-text">$i18n.getText('session.stream.leftsession')</p>
-<div class="bf-aui-group bf-activity-time">
-    $action.formatWithUserTimeZone($item.time)
-</div>

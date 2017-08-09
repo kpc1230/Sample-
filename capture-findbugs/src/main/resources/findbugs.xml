@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<FindbugsPlugin pluginid="com.atlassian.capture.findbugs.detectors" defaultenabled="true" provider="Atlassian">
-
-    <Detector class="com.atlassian.capture.findbugs.BytecodeScanningDetector.UnsafeSingletonFieldDetector"
-              reports="UNSAFE_SINGLETON_FIELD" speed="fast"/>
-    <BugPattern abbrev="VUF" type="UNSAFE_SINGLETON_FIELD" category="CORRECTNESS"/>
-
-</FindbugsPlugin>

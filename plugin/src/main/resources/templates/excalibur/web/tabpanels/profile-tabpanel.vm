@@ -1,3 +1,0 @@
-<div class="aui-message aui-message-warning">
-    <p>$i18n.getText('capture.profile.page.panel.moved.warning.text')</p>
-</div>

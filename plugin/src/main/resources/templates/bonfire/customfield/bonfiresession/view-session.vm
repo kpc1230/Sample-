@@ -1,6 +1,0 @@
-#if ($hasSession)
-    <div class="session-cf-value">
-        <img height="16" width="16" alt="Bonfire" src="$iconUrl" title="Bonfire">
-        <a href="$baseurl$sessionURL">$textutils.htmlEncode($sessionName)</a>
-    </div>
-#end
