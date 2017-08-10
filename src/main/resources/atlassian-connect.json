@@ -8,25 +8,5 @@
   "lifecycle": {
     "installed": "/installed",
     "uninstalled": "/uninstalled"
-  },
-
-  "modules": {
-    "webPanels": [
-      {
-        "key" : "bonfiremodule",
-        "name": {
-          "value": "Testing"
-        },
-        "url": "/public/html/testing",
-        "layout": {
-          "width": "70%"
-        },
-        
-        "location": "atl.jira.view.issue.left.context",
-        "weight": 701
-      }
-    ]
-    
-  },
-  "scopes": ["READ", "WRITE","ADMIN"]
+  }
 }
