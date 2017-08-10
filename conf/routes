@@ -1,9 +1,0 @@
-# Routes
-# This file defines all application routes (Higher priority routes first)
-# ~~~~
-
-
-
-# TestSteps routes
-GET           /public/html/testing                                                
-@hello.TestingController.testing()

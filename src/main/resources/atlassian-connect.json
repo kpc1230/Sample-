@@ -1,6 +1,6 @@
 {
   "key": "${addon.key}",
-  "baseUrl": "https://e33c11c2.ngrok.io",
+  "baseUrl": "${addon.base-url}",
   "name": "Capture Cloud (Spring Boot)",
   "authentication": {
     "type": "jwt"
