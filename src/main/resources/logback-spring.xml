@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <appender name="console-root" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date - %level - %logger{15} - %message%n%xException</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+
+    <appender name="console-application" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date - %highlight(%-5level) %cyan(%logger{25}) %class{15} - %message%n%xException</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>TRACE</level>
+        </filter>
+    </appender>
+
+    <appender name="file-raw-logs" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>./capture/logs/capture_%d{yyyy-MM-dd}.log</fileNamePattern>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%date - %highlight(%-5level) %cyan(%logger{25}) %class{15} - %message%n%xException</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+
+    <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>./capture/logs/application_%d{yyyy-MM-dd}.log</fileNamePattern>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%message [- logger=%logger thread=%thread class=%class{} tenantKey=%X{tenantKey} messageType=%level messageDate=%date{MM/dd/yyyy-HH:mm:ss.SSS} shortDate=%date{MM/dd-HH:mm} nodeId=%X{nodeId} -] %n%xException [- end -]%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+
+    <appender name="file-only-error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>./capture/logs/error/error%d{yyyy-MM}.log</fileNamePattern>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%date - %level - %logger in %thread class:%class{} tenant:%X{tenantKey} nodeId=%X{nodeId} %message%n%xException </pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+    </appender>
+
+    <appender name="file-security-auth" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>./capture/logs/auth/auth%d{yyyy-MM-dd}.log</fileNamePattern>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%date - tenant:%X{tenantKey} - %message%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+
+
+    <logger name="application" level="DEBUG" additivity="false">
+        <appender-ref ref="file" />
+        <appender-ref ref="console-application" />
+        <appender-ref ref="file-raw-logs" />
+        <!--<appender-ref ref="ELASTIC" />-->
+    </logger>
+
+    <logger name="auth" level="INFO" additivity="false">
+        <appender-ref ref="file-security-auth" />
+    </logger>
+
+    <root level="info">
+        <!--<appender-ref ref="ELASTIC" />-->
+        <appender-ref ref="file-only-error" />
+        <appender-ref ref="console-root" />
+        <appender-ref ref="file" />
+        <appender-ref ref="file-raw-logs" />
+    </root>
+
+</configuration>

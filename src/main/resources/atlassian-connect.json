@@ -1,12 +1,36 @@
 {
-  "key": "${addon.key}",
-  "baseUrl": "${addon.base-url}",
-  "name": "Capture Cloud (Spring Boot)",
+  "key": "${addonKey}",
+  "baseUrl": "${baseUrl}${server.contextPath}",
+  "name":"Capture For Cloud",
+  "description": "Welcome to Capture for Cloud, Visual Feedback and Exploratory Testing Tool for Jira On Demand!",
   "authentication": {
     "type": "jwt"
   },
+  "vendor": {
+    "name": "Zephyr",
+    "url": "http://www.getzephyr.com"
+  },
+  "links": {
+    "documentation": "https://zephyrdocs.atlassian.net/wiki/display/ALLDOCS/Zephyr+Documentation",
+    "support": "https://www.getzephyr.com/support",
+    "self": "https:///atlassian-connect.json"
+  },
+  "enableLicensing": true,
   "lifecycle": {
     "installed": "/installed",
     "uninstalled": "/uninstalled"
-  }
+  },
+  "modules": {
+    "webhooks":[
+      {
+        "event": "connect_addon_enabled",
+        "url": "/rest/event/plugin/enabled"
+      },
+      {
+        "event": "connect_addon_disabled",
+        "url": "/rest/event/plugin/disabled"
+      }
+    ]
+  },
+  "scopes": ["READ", "WRITE","ADMIN"]
 }
