@@ -21,13 +21,191 @@
     "uninstalled": "/uninstalled"
   },
   "modules": {
+    "webPanels": [
+      {
+        "key" : "bonfiremodule",
+        "name": {
+          "value": "Testing"
+        },
+        "url": "/public/rest/testing?projectId={project.id}&issueId={issue.id}",
+        "conditions": [
+          {
+            "condition": "user_is_logged_in",
+            "invert": false
+          }
+        ],
+        "location": "atl.jira.view.issue.left.context",
+        "weight": 350
+      },
+      {
+        "key": "bonfireGFWebPanel",
+        "name": {
+          "value": "Capture for JIRA"
+        },
+        "url": "bonfireGFWebPanelURL",
+        "location": "atl.gh.issue.details.tab",
+        "weight": 10
+      },
+      {
+        "key": "capture-test-sessions-sidebar-webpanel",
+        "name": {
+          "value": "Test sessions"
+        },
+        "url": "bonfireGFWebPanelURL",
+        "location": "com.atlassian.bonfire.plugin:capture-test-sessions",
+        "section": "jira.project.sidebar.navigation",
+        "weight": 710,
+        "params": {
+          "iconClass": "aui-icon-large icon-sidebar-test-sessions"
+        }
+      }
+    ],
+    "webItems": [
+      {
+        "location": "testing-section/bonfire-admin-section",
+        "weight": 10,
+        "url": "bonfire-settings-link-url",
+        "params": {
+          "webfragments.keywords": "Bonfire"
+        },
+        "name": {
+          "value": "Capture for JIRA Settings"
+        },
+        "key": "bonfire-settings-link"
+      },
+      {
+        "context": "page",
+        "location": "system.top.navigation.bar",
+        "weight": 40,
+        "url": "bonfire-top-menu-dropdown-url",
+        "key": "bonfire-top-menu-dropdown",
+        "params": {
+          "webfragments.keywords": "Bonfire"
+        },
+        "name": {
+          "value": "Capture"
+        },
+        "tooltip": {
+          "value": "Capture"
+        },
+        "conditions": [{
+          "condition": "user_is_logged_in",
+          "invert": false
+        }]
+      },
+      {
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session",
+        "weight": 20,
+        "url": "bonfire-getting-started-url",
+        "name": {
+          "value": "Browse test sessions"
+        },
+        "tooltip": {
+          "value": "View test sessions"
+        },
+        "key": "bonfire-getting-started"
+      },
+      {
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents",
+        "weight": 20,
+        "url": "bonfire-getting-started-url",
+        "name": {
+          "value": "Getting started"
+        },
+        "tooltip": {
+          "value": "Getting started with Capture for JIRA"
+        },
+        "key": "bonfire-getting-started-item"
+      },
+      {
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents",
+        "weight": 20,
+        "url": "bonfire-get-extension-item-url",
+        "name": {
+          "value": "Get browser extension"
+        },
+        "tooltip": {
+          "value": "Get the Capture browser extension"
+        },
+        "key": "bonfire-get-extension-item"
+      },
+      {
+        "location": "operations-operations",
+        "weight": 20,
+        "url": "bonfire-issue-operation-url",
+        "name": {
+          "value": "Create test session"
+        },
+        "tooltip": {
+          "value": "Create test session"
+        },
+        "key": "bonfire-issue-operation"
+      },
+      {
+        "location": "jira.project.sidebar.navigation",
+        "weight": 20,
+        "url": "capture-test-sessions-url",
+        "name": {
+          "value": "Test sessions"
+        },
+        "tooltip": {
+          "value": "Test sessions"
+        },
+        "key": "capture-test-sessions",
+        "params": {
+          "iconClass": "aui-icon-large icon-sidebar-test-sessions"
+        }
+      }
+    ],
+    "webSections": [
+      {
+        "name": { "value": "Zephyr Capture for JIRA Admin Section" },
+        "location": "testing-section",
+        "key": "gh-configuration-name",
+        "weight": 90,
+        "conditions": [
+          {
+            "condition": "user_is_logged_in",
+            "invert": false
+          }
+        ]
+      },
+      {
+        "name": { "value": "Zephyr Capture for JIRA" },
+        "location": "testing-section",
+        "key": "bonfire-admin-section",
+        "weight": 90,
+        "conditions": [
+          {
+            "condition": "user_is_logged_in",
+            "invert": false
+          }
+        ]
+      },
+      {
+        "name": {
+          "value": "Test Sessions Menu Contents"
+        },
+        "location": "bonfire-top-menu-dropdown",
+        "weight": 100,
+        "key": "bonfire-top-main-menu-session"
+      },
+      {
+        "name": {
+          "value": "Test Sessions Menu Contents"
+        },
+        "location": "bonfire-top-menu-dropdown",
+        "weight": 100,
+        "key": "bonfire-top-main-menu-contents"
+      }
+    ],
     "webhooks":[
       {
-        "event": "connect_addon_enabled",
+        "event": "connect-addon-enabled",
         "url": "/rest/event/plugin/enabled"
       },
       {
-        "event": "connect_addon_disabled",
+        "event": "connect-addon-disabled",
         "url": "/rest/event/plugin/disabled"
       }
     ]

@@ -73,15 +73,13 @@ public class ConnectRequestInterceptor implements ClientHttpRequestInterceptor {
     }
 
     public String createJwtToken(URI uri, HttpMethod httpMethod, AtlassianHostUser hostUser) {
-//        ZfjCloudAcHostModel zfjCloudAcHostModel = riakAcHostRepository.getZfjCloudAcHostModel(hostUser.getHost().getClientKey());
-//        JwtBuilder jwtBuilder = new JwtBuilder()
-//                .issuer(hostUser.getHost().getClientKey())
-//                        // .audience(host.getClientKey()) -- TODO Figure out whether we can / should set this?
-//                .queryHash(httpMethod, uri, hostUser.getHost().getBaseUrl())
-//                .signature(zfjCloudAcHostModel.getSharedSecret());
-        //maybeIncludeJwtSubjectClaim(jwtBuilder, hostUser);
-        //return jwtBuilder.build();
-        return "";
+        JwtBuilder jwtBuilder = new JwtBuilder()
+                .issuer(hostUser.getHost().getClientKey())
+                       //  .audience(host.getClientKey()) -- TODO Figure out whether we can / should set this?
+                .queryHash(httpMethod, uri, hostUser.getHost().getBaseUrl())
+                .signature(hostUser.getHost().getSharedSecret());
+        maybeIncludeJwtSubjectClaim(jwtBuilder, hostUser);
+        return jwtBuilder.build();
     }
 
     private JwtBuilder maybeIncludeJwtSubjectClaim(JwtBuilder jwtBuilder, AtlassianHostUser hostUser) {
