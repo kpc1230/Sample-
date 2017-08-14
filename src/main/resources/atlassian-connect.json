@@ -21,6 +21,19 @@
     "uninstalled": "/uninstalled"
   },
   "modules": {
+    "adminPages":[
+      {
+        "url": "/adminGenConf",
+        "key": "captureconfig-general",
+        "name": {
+          "value": "Capture For JIRA"
+        },
+        "conditions": [{
+          "condition": "user_is_logged_in",
+          "invert": false
+        }]
+      }
+    ],
     "webPanels": [
       {
         "key" : "bonfiremodule",
@@ -62,16 +75,17 @@
     ],
     "webItems": [
       {
-        "location": "testing-section/bonfire-admin-section",
+        "url": "captureconfig-general",
+        "key": "capture-config",
+        "context": "page",
+        "location": "capture-admin/capture-admin-config",
         "weight": 10,
-        "url": "bonfire-settings-link-url",
-        "params": {
-          "webfragments.keywords": "Bonfire"
+        "tooltip": {
+          "value":    "Capture for JIRA Settings"
         },
         "name": {
-          "value": "Capture for JIRA Settings"
-        },
-        "key": "bonfire-settings-link"
+          "value":    "Capture for JIRA Settings"
+        }
       },
       {
         "context": "page",
@@ -159,28 +173,18 @@
     ],
     "webSections": [
       {
-        "name": { "value": "Zephyr Capture for JIRA Admin Section" },
-        "location": "testing-section",
-        "key": "gh-configuration-name",
-        "weight": 90,
-        "conditions": [
-          {
-            "condition": "user_is_logged_in",
-            "invert": false
-          }
-        ]
+        "location": "admin_plugins_menu",
+        "key": "capture-admin",
+        "name": {
+          "value": "Capture for JIRA"
+        }
       },
       {
-        "name": { "value": "Zephyr Capture for JIRA" },
-        "location": "testing-section",
-        "key": "bonfire-admin-section",
-        "weight": 90,
-        "conditions": [
-          {
-            "condition": "user_is_logged_in",
-            "invert": false
-          }
-        ]
+        "location": "capture-admin",
+        "key": "capture-admin-config",
+        "name": {
+          "value": "Capture for JIRA"
+        }
       },
       {
         "name": {
