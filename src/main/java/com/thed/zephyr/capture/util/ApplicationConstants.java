@@ -12,4 +12,16 @@ public class ApplicationConstants {
     public static final String SYSTEM_KEY = "System" ;
     public static final String LICENSE_PING_DEFAULT_CRON_EXPR = "0 0 */4 * * *";
     public static final String LICENSE_PING_CRON_EXPR = "license.ping.cron.expression" ;
+
+    /** DynamoDB table names **/
+    public static final String TENANT_TABLE_NAME = "tenant";
+
+    /** DynamoDB table throughput **/
+    public static final long TENANT_TABLE_READ_CAPACITY_UNITS = 10l;
+    public static final long TENANT_TABLE_WRITE_CAPACITY_UNITS = 10l;
+
+    /** DynamoDB tenant table global secondary indexes **/
+    public static final String GSI_CLIENT_KEY = "idx_client_key";
+    public static final String GSI_BASE_URL = "idx_base_url";
+ //   public static final String GSI_STATUS = "idx_status";
 }

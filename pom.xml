@@ -46,11 +46,11 @@
             <artifactId>atlassian-connect-spring-boot-starter</artifactId>
             <version>${atlassian-connect-spring-boot.version}</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>com.atlassian.connect</groupId>
             <artifactId>atlassian-connect-spring-boot-jpa-starter</artifactId>
             <version>${atlassian-connect-spring-boot.version}</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>com.atlassian.connect</groupId>
             <artifactId>atlassian-connect-spring-boot-core</artifactId>
@@ -124,7 +124,29 @@
             <artifactId>log4j-1.2-api</artifactId>
             <version>2.2</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.derjust</groupId>
+            <artifactId>spring-data-dynamodb</artifactId>
+            <version>4.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-dynamodb</artifactId>
+        </dependency>
+
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-bom</artifactId>
+                <version>1.11.175</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <defaultGoal>spring-boot:run</defaultGoal>

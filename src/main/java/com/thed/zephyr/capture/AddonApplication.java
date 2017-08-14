@@ -1,4 +1,6 @@
 package com.thed.zephyr.capture;
+import com.atlassian.connect.spring.AtlassianHostRepository;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepositoryImpl;
 import org.springframework.core.env.Environment;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +28,6 @@ public class AddonApplication {
     @Autowired
     private Environment env;
 
-
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
     public Logger logger(){
@@ -53,5 +54,11 @@ public class AddonApplication {
         }
 
         return DynamicPropertyFactory.getInstance();
+    }
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
+    public AtlassianHostRepository atlassianHostRepository(){
+        return new DynamoDBAcHostRepositoryImpl();
     }
 }
