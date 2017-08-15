@@ -7,6 +7,7 @@ import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +29,10 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
 
     @Override
     public AtlassianHost  save(AtlassianHost atlassianHost) {
+        if(exists(atlassianHost.getClientKey())){
+
+            return updateExistingHost(atlassianHost);
+        }
         AcHostModel acHostModel = new AcHostModel(atlassianHost);
         acHostModel.setStatus(AcHostModel.TenantStatus.ACTIVE);
         return acHostModelRepository.save(acHostModel);
@@ -44,7 +49,7 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
         if (acHostModel.size() == 1){
             return acHostModel.get(0);
         } else if(acHostModel.size() > 1){
-            log.error("The error during getting AcHostModel from DB. Found more then one row with the same clientKey:{}", tenantKey);
+            log.warn("The error during getting AcHostModel from DB. Found more then one row with the same clientKey:{}", tenantKey);
             return acHostModel.get(0);
         }
 
@@ -52,42 +57,66 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
     }
 
     @Override
-    public boolean exists(String s) {
-        return false;
+    public boolean exists(String clientKey) {
+        return findOne(clientKey) != null?true:false;
     }
 
     @Override
     public Iterable<AtlassianHost> findAll() {
-        return null;
+        Iterable<AcHostModel> acHostModelList = acHostModelRepository.findAll();
+        List<AtlassianHost> result = new ArrayList<>();
+        for(AcHostModel acHostModel:acHostModelList){
+            result.add((AtlassianHost)acHostModel);
+        }
+        return result;
     }
 
     @Override
     public Iterable<AtlassianHost> findAll(Iterable<String> iterable) {
-        return null;
+        List<AtlassianHost> result = new ArrayList<>();
+        for(String clientKey:iterable){
+            result.add(findOne(clientKey));
+        }
+        return result;
     }
 
     @Override
     public long count() {
-        return 0;
+        return acHostModelRepository.count();
     }
 
     @Override
-    public void delete(String s) {
-        log.debug("Triggere delete method s:{}", s);
+    public void delete(String clientKey) {
+        AcHostModel acHostModel = (AcHostModel)findOne(clientKey);
+        acHostModelRepository.delete(acHostModel.getCtId());
+        log.debug("The tenant:{} was deleted", clientKey);
     }
 
     @Override
     public void delete(AtlassianHost atlassianHost) {
-        log.debug("Triggere delete method atlassianHost:{}", atlassianHost);
+        delete(atlassianHost.getClientKey());
+        log.debug("The tenant:{} was deleted", atlassianHost.getClientKey());
     }
 
     @Override
     public void delete(Iterable<? extends AtlassianHost> iterable) {
-        log.debug("Triggere delete method with collection of atlassianHost");
+        for(AtlassianHost atlassianHost:iterable){
+            delete(atlassianHost);
+        }
     }
 
     @Override
     public void deleteAll() {
+    //    acHostModelRepository.deleteAll();
         log.debug("Triggere delete all method ");
+    }
+
+    private AtlassianHost updateExistingHost(AtlassianHost atlassianHost){
+        AcHostModel oldAcHostModel = (AcHostModel)findOne(atlassianHost.getClientKey());
+        AcHostModel acHostModel = new AcHostModel(atlassianHost);
+        acHostModel.setCtId(oldAcHostModel.getCtId());
+        acHostModel.setStatus(atlassianHost.isAddonInstalled()? AcHostModel.TenantStatus.ACTIVE: AcHostModel.TenantStatus.UNINSTALLED);
+
+        return  acHostModelRepository.save(acHostModel);
     }
 }
