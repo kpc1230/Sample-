@@ -6,6 +6,7 @@ import com.thed.zephyr.capture.model.SettingsAllRequest;
 import com.thed.zephyr.capture.service.UserService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -19,7 +20,7 @@ public class SettingsController {
     private UserService jiraUserService;
 
 
-    @RequestMapping(value = "rest/api/{username}/settings/", method = RequestMethod.PUT)
+    @RequestMapping(value = "/rest/api/{username}/settings/", method = RequestMethod.PUT,consumes = MediaType.APPLICATION_JSON_VALUE)
     public Boolean createOuUpdateGeneralConfigPageSettimgs(@PathVariable String username, @RequestBody SettingsAllRequest settingsAllRequest) {
         log.info("Create or update General the General Configuration Page settings for the username : " + username);
         try {
@@ -33,7 +34,7 @@ public class SettingsController {
         return true;
     }
 
-    @RequestMapping(value = "rest/api/{username}/settings/", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/rest/api/{username}/settings/", method = RequestMethod.DELETE)
     public Boolean deleteGeneralConfigPageSettings(@PathVariable String username) {
         log.info("Get General Configuration Page settings for the username : " + username);
         try {
