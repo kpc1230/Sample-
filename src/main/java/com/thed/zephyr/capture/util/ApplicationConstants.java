@@ -23,5 +23,20 @@ public class ApplicationConstants {
     /** DynamoDB tenant table global secondary indexes **/
     public static final String GSI_CLIENT_KEY = "idx_client_key";
     public static final String GSI_BASE_URL = "idx_base_url";
- //   public static final String GSI_STATUS = "idx_status";
+    public static final String BROWSER_FIREFOX_EXTENSION_DOWNLOAD = "browser.firefox.extension.download.url";
+    public static final String BROWSER_SAFARI_EXTENSION_DOWNLOAD = "browser.safari.extension.download.url";
+    public static final String BROWSER_IE_EXTENSION_DOWNLOAD = "browser.ie.extension.download.url";
+    public static final String BROWSER_CHROME_EXTENSION_DOWNLOAD = "browser.chrome.extension.download.url";
+    public static final String DOWNLOAD_URL = "downloadUrl" ;
+    public static final String BROWSER = "browser" ;
+    public static final String BROWSER_CHROME = "chrome";
+    public static final String BROWSER_FIREFOX = "firefox";
+    public static final String BROWSER_MSIE = "msie";
+    public static final String BROWSER_MSIE_ALT = "trident/"; // IE11 browser has name Mozilla and can be identified by the keyword
+
+    public static final String BROWSER_SAFARI = "safari";
+    public static final String OS_LINUX = "linux";
+    public static final String OS_WINDOWS = "windows";
+
+    //   public static final String GSI_STATUS = "idx_status";
 }
