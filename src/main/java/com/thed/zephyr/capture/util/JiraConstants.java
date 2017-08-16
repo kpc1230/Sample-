@@ -22,6 +22,7 @@ public class JiraConstants {
     public static final String REST_API_ISSUE_LINK_TYPE = "/rest/api/latest/issueLinkType";
     public static final String REST_API_AUTOCOMPLETE = "/rest/api/latest/jql/autocompletedata/suggestions";
     public static final String REST_API_BASE_ISSUE = "/rest/api/2/issue";
+    public static final String REST_API_PROJECT_VERSIONS = "/rest/api/2/issue";
 
 
 }

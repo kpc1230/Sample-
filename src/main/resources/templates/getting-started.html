@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8"/>
+    <title>Getting Started Page</title>
+    <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui.min.css" media="all" />
+    <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui-experimental.min.css" media="all" />
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-experimental.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-datepicker.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-soy.min.js"></script>
+    <link rel="stylesheet" th:href="@{css/getting-started.css}" />
+</head>
+<body>
+<div class="bf-main-container">
+    <div id="capture-getting-started-main" class="bf-main-content">
+        <div class="bf-getting-started-heading">
+            <h2 class="capture-product-name">Capture for JIRA</h2><span class="capture-getting-started">Getting Started</span>
+        </div>
+        <p id="capture-getting-started-message" class="bf-getting-started-description">Capture for JIRA is the essential tool for exploratory testing. With the browser extension, you can easily submit bugs to JIRA in context and on the fly. Instantly attach and annotate screenshots to share with your team.</p>
+        <div class="bf-newspaper-container">
+            <div class="bf-newspaper-setep bf-newspaper-one">
+                <div class="bf-newspaper-caption">Create a test session with Capture for JIRA</div>
+                <a class="bf-newspaper-link" href="https://confluence.atlassian.com/display/BONFIRE/Working+with+Sessions">What is a test session?</a>
+            </div>
+            <div class="bf-newspaper-setep bf-newspaper-two">
+                <div class="bf-newspaper-caption">Open your web site and launch the browser extension</div>
+                <a class="bf-newspaper-link" href="/secure/GetBonfire.jspa" data-analytic="GetBonfire.jspa">Get the Capture for JIRA extension</a>
+            </div>
+            <div class="bf-newspaper-setep bf-newspaper-three">
+                <div class="bf-newspaper-caption">Raise issues, attach detailed screenshots</div>
+                <a class="bf-newspaper-link" href="https://confluence.atlassian.com/display/BONFIRE/Taking+screenshots">How to annotate screenshots</a>
+            </div>
+            <div class="bf-newspaper-setep bf-newspaper-four">
+                <div class="bf-newspaper-caption">Speed up issue creation by pre-filling fields using templates</div>
+                <a class="bf-newspaper-link" href="https://confluence.atlassian.com/display/BONFIRE/Templates+and+Variables">How to use templates</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" th:inline="javascript" id="connect-loader" data-options="sizeToParent:true;">
+    //<![CDATA[
+
+    (function() {
+        var getUrlParam = function (param) {
+            var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
+            return decodeURIComponent(codedParam);
+        };
+
+        var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
+        var options = document.getElementById('connect-loader').getAttribute('data-options');
+
+        var script = document.createElement("script");
+        script.src = baseUrl + '/atlassian-connect/all.js';
+
+        var style = document.createElement("link");
+        style.rel = "stylesheet";
+        style.href = baseUrl + '/atlassian-connect/all.css';
+        if(options) {
+            script.setAttribute('data-options', options);
+        }
+
+        document.getElementsByTagName("head")[0].appendChild(script);
+        document.getElementsByTagName("head")[0].appendChild(style);
+    })();
+
+    // ]]>
+</script>
+
+</body>
+</html>

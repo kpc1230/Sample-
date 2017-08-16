@@ -21,6 +21,24 @@
     "uninstalled": "/uninstalled"
   },
   "modules": {
+    "generalPages": [
+      {
+        "url": "/getting-started",
+        "name": {
+          "value": "Getting Started"
+        },
+        "key": "getting-started-page",
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents"
+      },
+      {
+        "url": "/get-browser-extension",
+        "name": {
+          "value": "Get Browser Extension"
+        },
+        "key": "get-browser-extension-page",
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents"
+      }
+    ],
     "adminPages":[
       {
         "url": "/adminGenConf",
@@ -110,38 +128,14 @@
       {
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session",
         "weight": 20,
-        "url": "bonfire-getting-started-url",
+        "url": "browse-test-session-url",
         "name": {
           "value": "Browse test sessions"
         },
         "tooltip": {
-          "value": "View test sessions"
+          "value": "Browse test sessions"
         },
-        "key": "bonfire-getting-started"
-      },
-      {
-        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents",
-        "weight": 20,
-        "url": "bonfire-getting-started-url",
-        "name": {
-          "value": "Getting started"
-        },
-        "tooltip": {
-          "value": "Getting started with Capture for JIRA"
-        },
-        "key": "bonfire-getting-started-item"
-      },
-      {
-        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents",
-        "weight": 20,
-        "url": "bonfire-get-extension-item-url",
-        "name": {
-          "value": "Get browser extension"
-        },
-        "tooltip": {
-          "value": "Get the Capture browser extension"
-        },
-        "key": "bonfire-get-extension-item"
+        "key": "browse-test-session-key"
       },
       {
         "location": "operations-operations",
