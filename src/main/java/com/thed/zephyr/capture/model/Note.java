@@ -148,14 +148,14 @@ final public class Note {
     }
 
     // This constructor should only be used when constructing a note from data that was stored in the property sets.
-    public Note(JsonNode noteJSON, TagDao tagDao) {
+    public Note(JsonNode noteJSON, Set<Tag> tags) {
         id = noteJSON.get(NOTE_ID).asLong();
         sessionId = noteJSON.get(NOTE_SESSION_ID).asLong();
         projectId = noteJSON.get(NOTE_PROJECT_ID).asLong();
         createdTime = ISODateTimeFormat.dateTime().parseDateTime(noteJSON.get(NOTE_CREATED_TIME).asText());
         author = noteJSON.get(NOTE_AUTHOR).asText();
         noteData = noteJSON.get(NOTE_DATA).asText();
-        tags = tagDao.extractTags(noteData);
+        this.tags = tags;
         resolutionState = Note.Resolution.valueOf(noteJSON.get(NOTE_RESOLUTION_STATE).asText());
     }
 
