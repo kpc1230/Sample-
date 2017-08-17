@@ -37,7 +37,6 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         for (Table table:tables){
             if(StringUtils.equals(ApplicationConstants.TENANT_TABLE_NAME, table.getTableName())){
                 log.debug("The table:{} already created, skip creation", table.getTableName());
-//                table.delete();
                 return;
             }
         }
