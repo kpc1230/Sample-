@@ -143,6 +143,12 @@
             <groupId>com.opensymphony</groupId>
             <artifactId>webwork</artifactId>
             <version>2.2.6</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>freemarker</groupId>
+                    <artifactId>freemarker</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.atlassian.util.concurrent/atlassian-util-concurrent -->
         <dependency>
@@ -156,6 +162,11 @@
             <groupId>com.atlassian.core</groupId>
             <artifactId>atlassian-core-utils</artifactId>
             <version>5.0-rc1</version>
+        </dependency>
+        <dependency>
+            <groupId>freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+            <version>2.3.20</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
