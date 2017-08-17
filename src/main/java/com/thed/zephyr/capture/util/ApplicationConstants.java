@@ -7,6 +7,7 @@ public class ApplicationConstants {
     public static final String PLUGIN_KEY = "addonKey";
     public static final String LICENSE_PING_JOB = "license.ping.job";
     public static final String CAPTURE_CONNECT_BASE_URL = "connect.baseUrl";
+    public static final String CAPTUREUI_BASE_URL = "captureui.baseUrl";
     public static final String DYNAMIC_PROPERTY_CONFIG_FILE = "dynamic.prop.file.name";
     public static final String DYNAMIC_PROPERTY_CONFIG_URLS = "dynamic.prop.urls";
     public static final String SYSTEM_KEY = "System" ;
