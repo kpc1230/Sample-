@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.service;
+package com.thed.zephyr.capture.service.jira;
 
 import com.fasterxml.jackson.databind.JsonNode;
 

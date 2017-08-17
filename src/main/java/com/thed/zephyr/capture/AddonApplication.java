@@ -18,6 +18,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.env.Environment;
 
@@ -70,7 +71,8 @@ public class AddonApplication {
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
-    HazelcastInstance hazelcastInstance() {
+    @Primary
+    public HazelcastInstance hazelcastInstance() {
          return Hazelcast.newHazelcastInstance();
     }
 

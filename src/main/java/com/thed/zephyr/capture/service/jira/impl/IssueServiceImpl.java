@@ -1,9 +1,9 @@
-package com.thed.zephyr.capture.service.impl;
+package com.thed.zephyr.capture.service.jira.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.thed.zephyr.capture.model.jira.Issue;
-import com.thed.zephyr.capture.service.IssueService;
+import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;

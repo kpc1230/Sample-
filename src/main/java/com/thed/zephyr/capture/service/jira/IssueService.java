@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.service;
+package com.thed.zephyr.capture.service.jira;
 
 import com.thed.zephyr.capture.model.jira.Issue;
 

@@ -1,7 +1,7 @@
 package com.thed.zephyr.capture.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.thed.zephyr.capture.service.UserService;
+import com.thed.zephyr.capture.service.jira.UserService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
