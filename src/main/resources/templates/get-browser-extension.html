@@ -37,14 +37,19 @@
 
 
                 <div class="bf-gs-download" th:switch="${browser}">
-                     <p th:case="${'Unknown'}">Unfortunately we do not currently support your browser.</p>
-                     <a th:target="_parent" th:case="${'Chrome'}" href="https://chrome.google.com/webstore/detail/jira-capture/mmmjimhmoodbiejkjgcecaoibmochpnj" id="capture-download-button"
-                        class="bf-gs-download-btn bf-gs-browser-$browserClass"
-                        th:onclick="'getBonfire(\'' + ${browser} + '\');'" >
+                    <p th:case="${'Unknown'}">Unfortunately we do not currently support your browser.</p>
+                    <a th:target="_parent" th:case="${'Chrome'}" href="https://chrome.google.com/webstore/detail/jira-capture/mmmjimhmoodbiejkjgcecaoibmochpnj" id="capture-download-button"
+                       th:class="${'bf-gs-download-btn bf-gs-browser-'+#strings.toLowerCase(browser)}"
+                       th:onclick="'getBonfire(\'' + ${browser} + '\');'" >
                         <span class="bf-gs-button-right"><strong>Install Capture for JIRA</strong> at the Chrome Store</span>
-                     </a>
-                    <a th:target="_parent" th:case="${browser != 'Chrome'}" th:href="${downloadUrl}" id="capture-download-button" class="bf-gs-download-btn bf-gs-browser-$browserClass" th:onclick="'getBonfire(\'' + ${browser} + '\');'" >
-                        <span class="bf-gs-button-right"><strong>Download Capture for JIRA</strong> for <span th:text="${browser}"></span></span>
+                    </a>
+                    <a th:target="_parent"
+                       th:if="${browser != 'Chrome'}"
+                       th:href="${downloadUrl}"
+                       id="capture-download-button"
+                       th:class="${'bf-gs-download-btn bf-gs-browser-'+#strings.toLowerCase(browser)}"
+                       th:onclick="'getBonfire(\'' + ${browser} + '\');'" >
+                        <span class="bf-gs-button-right"><strong>Download Capture for JIRA</strong> for <span th:text="${browser}" th:remove="tag"></span> </span>
                     </a>
                 </div>
             </div>

@@ -40,4 +40,10 @@ public class ApplicationConstants {
     public static final String OS_WINDOWS = "windows";
 
     //   public static final String GSI_STATUS = "idx_status";
+
+    /*** LockService ***/
+    public static final String HZ_LOCK_IMAP_NAME = "capture_cloud_lock_imap";
+    public static final Integer DEFAULT_LOCK_TIMEOUT_SEC = 5;
+    public static final Integer MAX_LOCK_TIMEOUT_SEC = 300;
+
 }

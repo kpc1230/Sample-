@@ -1,24 +1,29 @@
 package com.thed.zephyr.capture;
 import com.atlassian.connect.spring.AtlassianHostRepository;
-import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepositoryImpl;
-import org.springframework.core.env.Environment;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spring.cache.HazelcastCacheManager;
+import com.netflix.config.DynamicPropertyFactory;
 import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.addon.impl.AddonInfoServiceImpl;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepositoryImpl;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-import com.netflix.config.DynamicPropertyFactory;
-import org.apache.commons.lang3.StringUtils;
-
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
+import org.springframework.core.env.Environment;
+
+
 @SpringBootApplication
+@EnableCaching
 public class AddonApplication {
 
     public static void main(String[] args) throws Exception {
@@ -61,4 +66,18 @@ public class AddonApplication {
     public AtlassianHostRepository atlassianHostRepository(){
         return new DynamoDBAcHostRepositoryImpl();
     }
+
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
+    HazelcastInstance hazelcastInstance() {
+         return Hazelcast.newHazelcastInstance();
+    }
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
+    CacheManager cacheManager() {
+        return new HazelcastCacheManager(hazelcastInstance());
+    }
+
 }

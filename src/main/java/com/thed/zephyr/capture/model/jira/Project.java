@@ -2,12 +2,14 @@ package com.thed.zephyr.capture.model.jira;
 
 import com.fasterxml.jackson.annotation.*;
 
+import java.io.Serializable;
+
 /**
  * Created by Masud on 8/14/17.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Project {
+public class Project implements Serializable{
 
     private Long id;
     private String key;
