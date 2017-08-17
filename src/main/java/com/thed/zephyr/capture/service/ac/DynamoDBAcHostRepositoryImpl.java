@@ -1,6 +1,5 @@
 package com.thed.zephyr.capture.service.ac;
 
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.atlassian.connect.spring.AtlassianHost;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;

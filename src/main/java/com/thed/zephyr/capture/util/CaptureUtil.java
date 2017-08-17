@@ -3,9 +3,15 @@ package com.thed.zephyr.capture.util;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
 
 
 public class CaptureUtil {
+
+    private static final Logger log = LoggerFactory.getLogger("application");
 
     public static String base64(String str) {
         byte[] encodedBytes = Base64.encodeBase64(str.getBytes());
@@ -46,5 +52,10 @@ public class CaptureUtil {
         Long monthStart = dateTime.withDayOfMonth(1).withTimeAtStartOfDay().getMillis();
 
         return monthStart;
+    }
+
+    public static String getLargeAvatarUrl(String userKey) {
+        log.error("The method CaptureUtil.getLargeAvatarUrl() needs to be implemented!");
+        return "";
     }
 }

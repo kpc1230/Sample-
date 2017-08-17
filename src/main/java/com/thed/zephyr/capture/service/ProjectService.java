@@ -1,6 +1,6 @@
 package com.thed.zephyr.capture.service;
 
-import com.thed.zephyr.capture.model.Project;
+import com.thed.zephyr.capture.model.jira.Project;
 
 import java.util.List;
 

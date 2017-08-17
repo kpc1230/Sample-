@@ -1,6 +1,6 @@
 package com.thed.zephyr.capture.service;
 
-import com.thed.zephyr.capture.model.Issue;
+import com.thed.zephyr.capture.model.jira.Issue;
 
 /**
  * Created by Masud on 8/13/17.

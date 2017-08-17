@@ -139,10 +139,24 @@
             <artifactId>guava</artifactId>
             <version>r05</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.opensymphony/webwork -->
         <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.5</version>
+            <groupId>com.opensymphony</groupId>
+            <artifactId>webwork</artifactId>
+            <version>2.2.6</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.atlassian.util.concurrent/atlassian-util-concurrent -->
+        <dependency>
+            <groupId>com.atlassian.util.concurrent</groupId>
+            <artifactId>atlassian-util-concurrent</artifactId>
+            <version>2.3.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.atlassian.core/atlassian-core-utils -->
+        <dependency>
+            <groupId>com.atlassian.core</groupId>
+            <artifactId>atlassian-core-utils</artifactId>
+            <version>5.0-rc1</version>
         </dependency>
 
     </dependencies>

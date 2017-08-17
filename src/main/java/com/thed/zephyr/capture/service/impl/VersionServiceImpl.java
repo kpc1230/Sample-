@@ -1,7 +1,7 @@
 package com.thed.zephyr.capture.service.impl;
 
 import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
-import com.thed.zephyr.capture.model.Version;
+import com.thed.zephyr.capture.model.jira.Version;
 import com.thed.zephyr.capture.service.VersionService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
