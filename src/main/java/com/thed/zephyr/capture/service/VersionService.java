@@ -1,6 +1,6 @@
 package com.thed.zephyr.capture.service;
 
-import com.thed.zephyr.capture.model.Version;
+import com.thed.zephyr.capture.model.jira.Version;
 
 import java.util.List;
 

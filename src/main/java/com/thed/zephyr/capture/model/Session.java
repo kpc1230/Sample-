@@ -1,5 +1,7 @@
 package com.thed.zephyr.capture.model;
 
+import com.thed.zephyr.capture.model.jira.Issue;
+import com.thed.zephyr.capture.model.jira.Project;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 
@@ -27,7 +29,7 @@ public class Session  implements Comparable<Session> {
     private final Map<Long, Note> sessionNotes;
     private final List<Long> sessionNoteIds;
     private final boolean shared;
-    private final List<String> participants;
+    private final List<Participant> participants;
     private final String defaultTemplateId;
 
     public Session(Long id,
@@ -47,7 +49,7 @@ public class Session  implements Comparable<Session> {
                    Map<Long, Note> sessionNotes,
                    List<Long> sessionNoteIds,
                    boolean shared,
-                   List<String> participants,
+                   List<Participant> participants,
                    String defaultTemplateId) {
         this.id = id;
         this.creator = creator;
@@ -114,8 +116,8 @@ public class Session  implements Comparable<Session> {
         return Collections.unmodifiableList(issuesRaised);
     }
 
-    public List<String> getParticipants() {
-        List<String> copy = new ArrayList<String>(participants);
+    public List<Participant> getParticipants() {
+        List<Participant> copy = new ArrayList<Participant>(participants);
         Collections.sort(copy);
         return Collections.unmodifiableList(copy);
     }

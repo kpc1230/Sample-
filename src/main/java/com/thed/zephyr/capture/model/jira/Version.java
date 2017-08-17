@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.model;
+package com.thed.zephyr.capture.model.jira;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;

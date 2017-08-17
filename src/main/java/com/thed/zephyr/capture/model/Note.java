@@ -1,8 +1,11 @@
 package com.thed.zephyr.capture.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
-import org.codehaus.jettison.json.JSONObject;
+import org.joda.time.format.ISODateTimeFormat;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -145,35 +148,22 @@ final public class Note {
     }
 
     // This constructor should only be used when constructing a note from data that was stored in the property sets.
-    public Note(JSONObject noteJSON, TagDao tagDao) throws JSONException {
-        id = Long.valueOf(noteJSON.getString(NOTE_ID));
-        sessionId = Long.valueOf(noteJSON.getString(NOTE_SESSION_ID));
-        projectId = Long.valueOf(noteJSON.getString(NOTE_PROJECT_ID));
-        createdTime = ISODateTimeFormat.dateTime().parseDateTime(noteJSON.getString(NOTE_CREATED_TIME));
-        String userKey = noteJSON.getString(NOTE_AUTHOR);
-        final ApplicationUser user = ComponentAccessor.getUserManager().getUserByKey(userKey);
-        if (user == null) {
-            author = userKey;
-        } else {
-            author = user.getName();
-        }
-        noteData = noteJSON.getString(NOTE_DATA);
+    public Note(JsonNode noteJSON, TagDao tagDao) {
+        id = noteJSON.get(NOTE_ID).asLong();
+        sessionId = noteJSON.get(NOTE_SESSION_ID).asLong();
+        projectId = noteJSON.get(NOTE_PROJECT_ID).asLong();
+        createdTime = ISODateTimeFormat.dateTime().parseDateTime(noteJSON.get(NOTE_CREATED_TIME).asText());
+        author = noteJSON.get(NOTE_AUTHOR).asText();
+        noteData = noteJSON.get(NOTE_DATA).asText();
         tags = tagDao.extractTags(noteData);
-        resolutionState = Note.Resolution.valueOf(noteJSON.getString(NOTE_RESOLUTION_STATE));
+        resolutionState = Note.Resolution.valueOf(noteJSON.get(NOTE_RESOLUTION_STATE).asText());
     }
 
-    // This marshaling method should only be used when saving the note. If you are using it for something else, please don't.
-    public JSONObject marshal() throws JSONException {
-        // Get the user with the username
-        ApplicationUser user = ComponentAccessor.getUserManager().getUserByName(getAuthorUsername());
-        // Get the userkey from the user
-        String userKey = user.getKey();
-        return new JSONObject().put(NOTE_ID, getId().toString())
-                .put(NOTE_SESSION_ID, getSessionId().toString())
-                .put(NOTE_PROJECT_ID, getProjectId().toString())
-                .put(NOTE_CREATED_TIME, getCreatedTime().toString(ISODateTimeFormat.dateTime()))
-                .put(NOTE_AUTHOR, userKey)
-                .put(NOTE_DATA, getNoteData())
-                .put(NOTE_RESOLUTION_STATE, getResolutionState().toString());
+    @Deprecated
+    public JsonNode marshal() {
+        ObjectMapper om = new ObjectMapper();
+        JsonNode jsonNode = om.convertValue(this, JsonNode.class);
+
+        return jsonNode;
     }
 }
