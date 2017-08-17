@@ -46,4 +46,5 @@ public class ApplicationConstants {
     public static final Integer DEFAULT_LOCK_TIMEOUT_SEC = 5;
     public static final Integer MAX_LOCK_TIMEOUT_SEC = 300;
 
+    public static final String VERSIONS = "versions";
 }
