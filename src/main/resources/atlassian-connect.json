@@ -25,7 +25,7 @@
       {
         "url": "/getting-started",
         "name": {
-          "value": "Getting Started"
+          "value": "Getting started"
         },
         "key": "getting-started-page",
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents"
@@ -33,7 +33,7 @@
       {
         "url": "/get-browser-extension",
         "name": {
-          "value": "Get Browser Extension"
+          "value": "Get browser extension"
         },
         "key": "get-browser-extension-page",
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents"

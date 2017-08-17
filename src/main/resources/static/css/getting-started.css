@@ -106,3 +106,6 @@ h2.capture-product-name  {
     padding: 0;
     min-height: 0;
 }
+.footer-body{
+    background-image: none !important;
+}

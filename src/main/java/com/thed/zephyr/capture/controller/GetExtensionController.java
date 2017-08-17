@@ -1,9 +1,13 @@
 package com.thed.zephyr.capture.controller;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
+import com.thed.zephyr.capture.addon.AddonInfoService;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.UserAgentSniffer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,8 +24,11 @@ public class GetExtensionController {
     @Autowired
     private DynamicProperty dynamicProperty;
 
+    @Autowired
+    private AddonInfoService addonInfoService;
+
     @RequestMapping(value = "/get-browser-extension", method = RequestMethod.GET)
-    public String getExtensionPage(HttpServletRequest request, Model model){
+    public String getExtensionPage(@AuthenticationPrincipal AtlassianHostUser hostUser, HttpServletRequest request, Model model){
         String userAgent = request.getHeader("user-agent");
         UserAgentSniffer.SniffedBrowser userAgentSniffer = UserAgentSniffer.sniffBrowser(userAgent);
         String browser = userAgentSniffer.browser.toLowerCase();
@@ -48,6 +55,8 @@ public class GetExtensionController {
         }
 
         model.addAttribute(ApplicationConstants.DOWNLOAD_URL, downloadUrl);
+        model.addAttribute("captureVersion",
+                addonInfoService.getAddonInfo((AcHostModel) hostUser.getHost()).getVersion());
         return "get-browser-extension";
     }
 }

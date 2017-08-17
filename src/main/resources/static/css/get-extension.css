@@ -126,3 +126,6 @@ a.bf-gs-download-btn:active {
     padding: 0;
     min-height: 0;
 }
+.footer-body{
+    background-image: none !important;
+}

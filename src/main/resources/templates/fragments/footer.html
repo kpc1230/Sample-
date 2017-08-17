@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8" />
+</head>
+<body>
+<footer th:fragment="foot" class="footer">
+    <footer id="footer" role="contentinfo">
+        <section class="footer-body">
+            <div class="footer-body bf-footer-body">
+                <a th:target="_parent"
+                   href="http://www.atlassian.com/software/bonfire/overview?utm_source=bonfire_footer">Deliver quality working software</a> with
+                <a th:target="_parent"
+                   href="http://www.atlassian.com/software/bonfire/overview/agile-testing?utm_source=bonfire_footer">Agile testing</a> powered by
+                <a th:target="_parent"
+                   href="http://www.atlassian.com/software/bonfire/overview?utm_source=bonfire_footer">Capture for JIRA</a> (<span th:text="${captureVersion}" th:remove="tag"></span>)
+            </div>
+        </section>
+    </footer>
+</footer>
+</body>
+</html>
