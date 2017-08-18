@@ -8,16 +8,14 @@ import org.joda.time.DateTime;
 import com.google.common.collect.Lists;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
 public class SessionBuilder {
-    private Long id;
+    private String id;
+    private String clientKey;
     private String creator;
     private String assignee;
     private String name;
@@ -32,13 +30,15 @@ public class SessionBuilder {
     private Map<DateTime, Session.Status> sessionStatusHistory;
     private List<SessionActivityItem> sessionActivity;
     private Map<Long, Note> sessionNotes;
-    private List<Long> sessionNoteIds;
+    private Set<Long> sessionNoteIds;
     private boolean shared;
     private List<Participant> participants;
+    private Set<Long> participantIds;
     private String defaultTemplateId;
 
     public SessionBuilder(Session session) {
         this.id = session.getId();
+        this.clientKey = session.getClientKey();
         this.creator = session.getCreator();
         this.assignee = session.getAssignee();
         this.name = session.getName();
@@ -52,21 +52,22 @@ public class SessionBuilder {
         this.issuesRaised = Lists.newArrayList(session.getIssuesRaised());
         this.sessionStatusHistory = new HashMap<DateTime, Session.Status>(session.getSessionStatusHistory());
         this.sessionActivity = Lists.newArrayList(session.getSessionActivity());
-        this.sessionNoteIds = Lists.newArrayList(session.getSessionNoteIds());
+        this.sessionNoteIds = new TreeSet<>(session.getSessionNoteIds());
         this.sessionNotes = new HashMap<Long, Note>(session.getSessionNotes());
         this.shared = session.isShared();
         this.participants = Lists.newArrayList(session.getParticipants());
+        this.participantIds = new TreeSet<>(session.getParticipantIds());
         this.defaultTemplateId = session.getDefaultTemplateId();
     }
 
-    public SessionBuilder(Long id/*, ExcaliburWebUtil webUtil*/) {
+    public SessionBuilder(String id/*, ExcaliburWebUtil webUtil*/) {
     //    this.webUtil = webUtil;
         this.id = id;
         this.issuesRaised = Lists.newArrayList();
         this.relatedIssues = Lists.newArrayList();
         this.sessionStatusHistory = new HashMap<DateTime, Session.Status>();
         this.sessionNotes = new HashMap<Long, Note>();
-        this.sessionNoteIds = Lists.newArrayList();
+        this.sessionNoteIds = new TreeSet();
         this.sessionActivity = Lists.newArrayList();
         this.participants = Lists.newArrayList();
         this.additionalInfo = "";
@@ -74,6 +75,7 @@ public class SessionBuilder {
 
     public Session build() {
         return new Session(id,
+                clientKey,
                 creator,
                 assignee,
                 name,
@@ -91,11 +93,12 @@ public class SessionBuilder {
                 sessionNoteIds,
                 shared,
                 participants,
+                participantIds,
                 defaultTemplateId);
     }
 
 
-    public SessionBuilder setId(Long id) {
+    public SessionBuilder setId(String id) {
         this.id = id;
         return this;
     }
@@ -251,7 +254,7 @@ public class SessionBuilder {
         return this;
     }
 
-    public SessionBuilder setSessionNoteIds(List<Long> sessionNoteIds) {
+    public SessionBuilder setSessionNoteIds(Set<Long> sessionNoteIds) {
         this.sessionNoteIds = sessionNoteIds;
         return this;
     }

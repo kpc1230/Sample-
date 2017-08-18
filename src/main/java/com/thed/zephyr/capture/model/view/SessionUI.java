@@ -109,7 +109,7 @@ public class SessionUI {
         return session.getName();
     }
 
-    public Long getId() {
+    public String getId() {
         return session.getId();
     }
 

@@ -2,7 +2,7 @@ package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.atlassian.connect.spring.AtlassianHost;
-import com.thed.zephyr.capture.repositories.dynamodb.TenantStatusTypeConverter;
+import com.thed.zephyr.capture.service.db.TenantStatusTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.springframework.data.annotation.Id;
 

@@ -16,14 +16,18 @@ public class ApplicationConstants {
 
     /** DynamoDB table names **/
     public static final String TENANT_TABLE_NAME = "tenant";
+    public static final String SESSION_TABLE_NAME = "session";
 
     /** DynamoDB table throughput **/
-    public static final long TENANT_TABLE_READ_CAPACITY_UNITS = 10l;
-    public static final long TENANT_TABLE_WRITE_CAPACITY_UNITS = 10l;
+    public static final long TENANT_TABLE_READ_CAPACITY_UNITS = 5l;
+    public static final long TENANT_TABLE_WRITE_CAPACITY_UNITS = 5l;
+    public static final long SESSION_TABLE_READ_CAPACITY_UNITS = 20l;
+    public static final long SESSION_TABLE_WRITE_CAPACITY_UNITS = 20l;
 
-    /** DynamoDB tenant table global secondary indexes **/
+    /** DynamoDB global secondary indexes **/
     public static final String GSI_CLIENT_KEY = "idx_client_key";
     public static final String GSI_BASE_URL = "idx_base_url";
+
     public static final String BROWSER_FIREFOX_EXTENSION_DOWNLOAD = "browser.firefox.extension.download.url";
     public static final String BROWSER_SAFARI_EXTENSION_DOWNLOAD = "browser.safari.extension.download.url";
     public static final String BROWSER_IE_EXTENSION_DOWNLOAD = "browser.ie.extension.download.url";

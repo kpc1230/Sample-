@@ -6,6 +6,7 @@ import org.joda.time.DateTime;
  * Created by aliakseimatsarski on 8/15/17.
  */
 public class BaseSessionActivityItem implements SessionActivityItem {
+    private String id;
     private DateTime timestamp;
     private String user;
     private String avatarUrl;
@@ -14,6 +15,15 @@ public class BaseSessionActivityItem implements SessionActivityItem {
         this.timestamp = timestamp;
         this.user = user;
         this.avatarUrl = avatarUrl;
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     @Override

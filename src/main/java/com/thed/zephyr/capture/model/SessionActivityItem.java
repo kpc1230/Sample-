@@ -6,6 +6,8 @@ import org.joda.time.DateTime;
  * Created by aliakseimatsarski on 8/14/17.
  */
 public interface SessionActivityItem extends Comparable<SessionActivityItem> {
+
+    public String getId();
     /**
      * @return The name of the template file used to render this SessionActivityItem
      */

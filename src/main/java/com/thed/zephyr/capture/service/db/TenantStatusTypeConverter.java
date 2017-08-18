@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.repositories.dynamodb;
+package com.thed.zephyr.capture.service.db;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
 import com.thed.zephyr.capture.model.AcHostModel;
