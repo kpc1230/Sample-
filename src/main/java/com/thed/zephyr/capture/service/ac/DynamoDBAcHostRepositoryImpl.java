@@ -22,8 +22,16 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
     private AcHostModelRepository acHostModelRepository;
 
     @Override
-    public Optional<AtlassianHost> findFirstByBaseUrl(String s) {
-        return null;
+    public Optional<AtlassianHost> findFirstByBaseUrl(String baseUrl) {
+        Optional<AtlassianHost> option = Optional.empty();
+        List<AcHostModel> acHostModel = acHostModelRepository.findByBaseUrl(baseUrl);
+        if (acHostModel.size() == 1) {
+            return option.of(acHostModel.get(0));
+        } else if (acHostModel.size() > 1) {
+            log.warn("The error during getting AcHostModel from DB. Found more then one row with the same baseUrl:{}", baseUrl);
+            return option.of(acHostModel.get(0));
+        }
+        return option;
     }
 
     @Override

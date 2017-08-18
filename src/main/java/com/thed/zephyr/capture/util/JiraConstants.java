@@ -24,6 +24,7 @@ public class JiraConstants {
     public static final String REST_API_BASE_ISSUE = "/rest/api/2/issue";
     public static final String REST_API_PROJECT_VERSIONS = "/rest/api/2/issue";
     public static final String REST_API_BASE_USER_PROPERTIES = REST_API_BASE+"/user/properties";
+    public static String REST_AUTH_CHECK_URL = "/rest/api/2/myself";
 
 
 }
