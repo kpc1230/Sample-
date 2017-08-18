@@ -1,6 +1,10 @@
 package com.thed.zephyr.capture.repositories;
 
 import com.thed.zephyr.capture.model.Session;
+import com.thed.zephyr.capture.model.jira.Project;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,4 +13,6 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface SessionRepository extends CrudRepository<Session, String> {
+	
+	Page<Session> findByRelatedProject(Project project, Pageable pageable);
 }
