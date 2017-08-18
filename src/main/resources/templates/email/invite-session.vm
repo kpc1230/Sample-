@@ -1,0 +1,1 @@
+$i18n.getText('capture.session.invite.subject', $remoteUser.displayName, $session.name)

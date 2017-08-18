@@ -162,7 +162,14 @@
         "key": "capture-test-sessions",
         "params": {
           "iconClass": "aui-icon-large icon-sidebar-test-sessions"
-        }
+        },
+        "conditions": [{
+          "condition": "feature_flag",
+          "params": {
+            "featureKey": "com.atlassian.jira.projects.ProjectCentricNavigation.Disabled"
+          },
+          "invert": true
+        }]
       }
     ],
     "webSections": [

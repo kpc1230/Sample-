@@ -47,4 +47,5 @@ public class ApplicationConstants {
     public static final Integer MAX_LOCK_TIMEOUT_SEC = 300;
 
     public static final String VERSIONS = "versions";
+    public static final String CAPTURE_BASEURL = "baseUrl";
 }
