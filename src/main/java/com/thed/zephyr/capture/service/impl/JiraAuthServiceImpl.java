@@ -29,7 +29,7 @@ public class JiraAuthServiceImpl implements JiraAuthService {
     DynamoDBAcHostRepository dynamoDBAcHostRepository;
 
     @Override
-    public Boolean authenticateWithJita(String username, String password, String baseURL) {
+    public Boolean authenticateWithJira(String username, String password, String baseURL) {
 
         String uri = baseURL + JiraConstants.REST_AUTH_CHECK_URL;
         try {
@@ -38,8 +38,7 @@ public class JiraAuthServiceImpl implements JiraAuthService {
             headers.set("Authorization", pass);
             headers.set("Content-Type", MediaType.APPLICATION_JSON_VALUE);
             HttpEntity<String> entity = new HttpEntity<String>("parameters", headers);
-            RestTemplate restTemplate2 = new RestTemplate();
-            ResponseEntity<JsonNode> response = restTemplate2.exchange(uri, HttpMethod.GET, entity, JsonNode.class);
+            ResponseEntity<JsonNode> response = restTemplate.exchange(uri, HttpMethod.GET, entity, JsonNode.class);
             log.debug("User credentials authenticated with JIRA : Result - status (" + response.getStatusCode() + ") has body: " + response.hasBody());
             if (response != null && response.getStatusCode() == HttpStatus.OK) {
                 return true;

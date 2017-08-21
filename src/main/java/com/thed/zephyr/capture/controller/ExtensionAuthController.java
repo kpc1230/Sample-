@@ -29,7 +29,7 @@ public class ExtensionAuthController {
     @RequestMapping(value = "/rest/authenticate/be", method = RequestMethod.GET)
     ResponseEntity validateCredentials(@RequestParam String username, @RequestParam String password, @RequestParam String baseUrl, @RequestHeader(value = "User-Agent") String userAgent) {
         log.debug("Validating JIRA user credentials : userAgent : " + userAgent);
-        boolean success = jiraAuthService.authenticateWithJita(username, password, baseUrl);
+        boolean success = jiraAuthService.authenticateWithJira(username, password, baseUrl);
         if (success) {
             AcHostModel host = jiraAuthService.getAcHostModelbyBaseUrl(baseUrl);
             if (host.getStatus() == AcHostModel.TenantStatus.ACTIVE) {
