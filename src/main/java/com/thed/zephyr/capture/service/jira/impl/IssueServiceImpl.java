@@ -26,11 +26,21 @@ public class IssueServiceImpl implements IssueService {
 
     @Override
     public Issue getIssueObject(Long issueId) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-
-        String uri = host.getHost().getBaseUrl()+ JiraConstants.REST_API_ISSUE+"/"+issueId;
-
+    	String uri = host.getHost().getBaseUrl()+ JiraConstants.REST_API_ISSUE+"/"+issueId;
+        return getIssue(uri);
+    }
+    
+    @Override
+    public Issue getIssueObject(String issueKey) {
+    	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+    	String uri = host.getHost().getBaseUrl() + JiraConstants.REST_API_ISSUE+"/" + issueKey;
+        return getIssue(uri);
+    }
+    
+    private Issue getIssue(String uri) {
         try {
             Issue response = restTemplate.getForObject(uri, Issue.class);
             return response;

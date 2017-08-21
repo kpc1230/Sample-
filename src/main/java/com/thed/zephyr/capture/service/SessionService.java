@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Session;
+import com.thed.zephyr.capture.model.SessionRequest;
 
 /**
  * Class acts as a service layer for session.
@@ -26,10 +27,10 @@ public interface SessionService {
 	/**
 	 * Creates the session. 
 	 * 
-	 * @param sesssion -- Session object holds the information to create a session.
+	 * @param sessionRequest -- Session request object holds the information to create a session.
 	 * @return -- Returns the session object which created session id.
 	 */
-	Session createSession(Session session);
+	Session createSession(SessionRequest sessionRequest);
 	
 	
 	/**
@@ -43,10 +44,11 @@ public interface SessionService {
 	/**
 	 * Updates the session. 
 	 * 
-	 * @param sesssion -- Session object holds the information to update a session.
+	 * @param sessionId -- Session id to which information to be updated.
+	 * @param sessionRequest -- Session request object holds the information to update a session.
 	 * @return -- Returns the updated session object.
 	 */
-	Session updateSession(Session session);
+	Session updateSession(String sessionId, SessionRequest sessionRequest) throws CaptureValidationException;
 	
 	/**
 	 * Deletes the session.

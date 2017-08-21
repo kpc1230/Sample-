@@ -67,7 +67,18 @@ public class SessionBuilder {
         this.relatedIssues = Lists.newArrayList();
         this.sessionStatusHistory = new HashMap<DateTime, Session.Status>();
         this.sessionNotes = new HashMap<Long, Note>();
-        this.sessionNoteIds = new TreeSet();
+        this.sessionNoteIds = new TreeSet<>();
+        this.sessionActivity = Lists.newArrayList();
+        this.participants = Lists.newArrayList();
+        this.additionalInfo = "";
+    }
+    
+    public SessionBuilder() {
+    	this.issuesRaised = Lists.newArrayList();
+        this.relatedIssues = Lists.newArrayList();
+        this.sessionStatusHistory = new HashMap<DateTime, Session.Status>();
+        this.sessionNotes = new HashMap<Long, Note>();
+        this.sessionNoteIds = new TreeSet<>();
         this.sessionActivity = Lists.newArrayList();
         this.participants = Lists.newArrayList();
         this.additionalInfo = "";

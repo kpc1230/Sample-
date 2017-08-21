@@ -1,14 +1,21 @@
 package com.thed.zephyr.capture.validator;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
-import com.thed.zephyr.capture.model.Session;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.thed.zephyr.capture.model.SessionRequest;
+import com.thed.zephyr.capture.model.jira.Issue;
 import com.thed.zephyr.capture.model.jira.Project;
+import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 
 /**
@@ -23,22 +30,44 @@ public class SessionValidator implements Validator {
 	
 	@Autowired
 	private ProjectService projectService;
+	
+	@Autowired
+	private IssueService issueService;
 
 	@Override
 	public boolean supports(Class<?> clazz) {
-		return Session.class.isAssignableFrom(clazz);
+		return SessionRequest.class.isAssignableFrom(clazz);
 	}
 
 	@Override
 	public void validate(Object target, Errors errors) {
-		if(target  instanceof Session) {
-			Session session = (Session) target;
-			if(Objects.isNull(session.getRelatedProject().getProjectTypeKey())) {
+		if(target  instanceof SessionRequest) {
+			SessionRequest sessionRequest = (SessionRequest) target;
+			if(Objects.isNull(sessionRequest.getProjectKey())) {
 				errors.reject("", "Project key cannot be empty");
 			}
-			Project project = projectService.getProjectObjByKey(session.getRelatedProject().getKey());
+			Project project = projectService.getProjectObjByKey(sessionRequest.getProjectKey());
 			if(Objects.isNull(project)) {
 				errors.reject("", "Not a valid project");
+			} else {
+				sessionRequest.setProject(project);
+			}
+			if(!Objects.isNull(sessionRequest.getRelatedIssues())) {
+				List<Issue> relatedIssues = Lists.newArrayList();
+			    Map<String, String> duplicatePrevention = Maps.newHashMap();
+ 				List<String> issuesList = sessionRequest.getRelatedIssues();
+				issuesList.stream().forEach(issueKey -> {
+					if (!StringUtils.isEmpty(issueKey) && !duplicatePrevention.containsKey(issueKey)) {
+						Issue issue = issueService.getIssueObject(issueKey);
+						if (Objects.isNull(issue)) {
+		                    errors.reject("", "Issue with key " + issueKey + " cannot be found.");
+		                } else {
+		                	duplicatePrevention.put(issueKey, issueKey);
+	                        relatedIssues.add(issue);
+		                }
+					}
+				});
+				sessionRequest.setIssuesList(relatedIssues);
 			}
 		}
 	}

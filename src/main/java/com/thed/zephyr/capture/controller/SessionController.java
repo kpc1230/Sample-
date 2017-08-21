@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.LightSession;
 import com.thed.zephyr.capture.model.Session;
+import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.service.SessionService;
 import com.thed.zephyr.capture.validator.SessionValidator;
 
@@ -71,9 +72,9 @@ public class SessionController {
 	}
 	
 	@PostMapping(value = "/session", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<Session> createSession(@Valid @RequestBody Session session) {
-		log.info("Start of createSession() --> params " + session.toString());
-		Session createdSession = sessionService.createSession(session);
+	public ResponseEntity<Session> createSession(@Valid @RequestBody SessionRequest sessionRequest) {
+		log.info("Start of createSession() --> params " + sessionRequest.toString());
+		Session createdSession = sessionService.createSession(sessionRequest);
 		log.info("End of createSession()");
 		return ResponseEntity.ok(createdSession);
 	}
@@ -89,13 +90,13 @@ public class SessionController {
 		return ResponseEntity.ok(session);
 	}
 	
-	@PutMapping(value = "/session", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<Session> updateSession(@Valid @RequestBody Session session) throws CaptureValidationException  {
-		log.info("Start of updateSession() --> params " + session.toString());
-		if(StringUtils.isEmpty(session.getId())) {
+	@PutMapping(value = "/session/{id}", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<Session> updateSession(@PathVariable("id") String sessionId, @Valid @RequestBody SessionRequest sessionRequest) throws CaptureValidationException  {
+		log.info("Start of updateSession() --> params " + sessionRequest.toString());
+		if(StringUtils.isEmpty(sessionId)) {
 			throw new CaptureValidationException("Session id cannot be null");
 		}
-		Session updatedSession = sessionService.updateSession(session);
+		Session updatedSession = sessionService.updateSession(sessionId, sessionRequest);
 		log.info("End of updateSession()");
 		return ResponseEntity.ok(updatedSession);
 	}

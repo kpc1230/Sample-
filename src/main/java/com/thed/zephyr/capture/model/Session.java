@@ -14,8 +14,6 @@ import org.springframework.data.annotation.Id;
 import java.time.Duration;
 import java.util.*;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.NotNull;
 
 /**
  * Created by aliakseimatsarski on 8/14/17.
@@ -31,17 +29,13 @@ public class Session  implements Comparable<Session> {
     private String clientKey;
     private String creator;
     private String assignee;
-    @NotNull
-    @Max(500)
     private String name;
-    @Max(2000)
     private String additionalInfo;
     private Status status;
     @DynamoDBTypeConverted(converter = SessionIssueCollectionConverter.class)
     private Collection<Issue> relatedIssues;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CLIENT_KEY)
     @DynamoDBTypeConverted(converter = SessionRelatedProjectTypeConverter.class)
-    @NotNull
     private Project relatedProject;
     private DateTime timeCreated;
     private DateTime timeFinished;
