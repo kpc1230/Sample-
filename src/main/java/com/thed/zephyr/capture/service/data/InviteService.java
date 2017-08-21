@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.service;
+package com.thed.zephyr.capture.service.data;
 
 import com.thed.zephyr.capture.model.Session;
 

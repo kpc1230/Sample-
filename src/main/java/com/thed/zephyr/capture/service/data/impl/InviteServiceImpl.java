@@ -1,8 +1,8 @@
-package com.thed.zephyr.capture.service.impl;
+package com.thed.zephyr.capture.service.data.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.service.InviteService;
+import com.thed.zephyr.capture.service.data.InviteService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;

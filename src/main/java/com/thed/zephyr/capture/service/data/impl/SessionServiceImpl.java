@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.service.impl;
+package com.thed.zephyr.capture.service.data.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,14 +17,14 @@ import com.thed.zephyr.capture.model.SessionBuilder;
 import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.model.jira.Project;
 import com.thed.zephyr.capture.repositories.SessionRepository;
-import com.thed.zephyr.capture.service.SessionService;
+import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 
 /**
  * Class handles the all session related activities.
  * 
  * @author manjunath
- * @see com.thed.zephyr.capture.service.SessionService
+ * @see SessionService
  *
  */
 @Service

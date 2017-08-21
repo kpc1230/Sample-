@@ -1,10 +1,10 @@
-package com.thed.zephyr.capture.service.impl;
+package com.thed.zephyr.capture.service.data.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.AddonInfo;
-import com.thed.zephyr.capture.service.LicenseService;
+import com.thed.zephyr.capture.service.data.LicenseService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;

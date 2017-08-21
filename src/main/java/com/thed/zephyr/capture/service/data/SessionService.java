@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.service;
+package com.thed.zephyr.capture.service.data;
 
 import java.util.List;
 import java.util.Optional;

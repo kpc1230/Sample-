@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.service;
+package com.thed.zephyr.capture.service.data;
 
 /**
  * Created by Masud on 8/17/17.

@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.service;
+package com.thed.zephyr.capture.service.extension;
 
 import com.thed.zephyr.capture.model.AcHostModel;
 
