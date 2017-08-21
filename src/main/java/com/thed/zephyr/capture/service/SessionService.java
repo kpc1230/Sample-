@@ -28,9 +28,32 @@ public interface SessionService {
 	 * 
 	 * @param sesssion -- Session object holds the information to create a session.
 	 * @return -- Returns the session object which created session id.
-	 * @throws CaptureValidationException -- Thrown in case of any validation error.
 	 */
-	Session createSession(Session sesssion) throws CaptureValidationException;
+	Session createSession(Session session);
+	
+	
+	/**
+	 * Fetches the session for the session id.
+	 * 
+	 * @param sessionId -- Session id of which session to be fetched.
+	 * @return -- Returns the fetched session information.
+	 */
+	Session getSession(String sessionId);
+	
+	/**
+	 * Updates the session. 
+	 * 
+	 * @param sesssion -- Session object holds the information to update a session.
+	 * @return -- Returns the updated session object.
+	 */
+	Session updateSession(Session session);
+	
+	/**
+	 * Deletes the session.
+	 * 
+	 * @param sessionId -- Session id of which session to be deleted.
+	 */
+	void deleteSession(String sessionId);
 	
 }
 

@@ -14,6 +14,11 @@ public class ErrorDto {
 	
 	public ErrorDto() {
 	}
+	
+	public ErrorDto(String errorCode, String errorMessage) {
+		this.errorCode = errorCode;
+		this.errorMessage = errorMessage;
+	}
 
 	public String getErrorCode() {
 		return errorCode;

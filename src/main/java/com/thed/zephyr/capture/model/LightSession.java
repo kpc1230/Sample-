@@ -8,7 +8,7 @@ import java.util.Map;
  * Created by aliakseimatsarski on 8/15/17.
  */
 public class LightSession {
-    private final Long id;
+    private final String id;
     private final String name;
     private final String creator;
     private final String assignee;
@@ -19,7 +19,7 @@ public class LightSession {
     private final String additionalInfo;
     private final Map<String, Object> rawData;
 
-    public LightSession(Long id,
+    public LightSession(String id,
                         String name,
                         String creator,
                         String assignee,
@@ -41,7 +41,7 @@ public class LightSession {
         this.rawData = rawData;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 

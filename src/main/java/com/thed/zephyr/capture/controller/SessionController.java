@@ -4,19 +4,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import javax.validation.Valid;
+
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.model.LightSession;
 import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.rest.model.SessionDto;
 import com.thed.zephyr.capture.service.SessionService;
+import com.thed.zephyr.capture.validator.SessionValidator;
 
 /**
  * Class handles all the session related api request.
@@ -33,24 +43,72 @@ public class SessionController {
 	@Autowired
 	private SessionService sessionService;
 	
-	@RequestMapping(value = "/sessions", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public List<SessionDto> getSessions(@RequestParam("projectKey") String projectKey, @RequestParam("offset") Integer offset, @RequestParam("limit") Integer limit) throws CaptureValidationException {
-		log.info("Start of getSessions() --> params ", projectKey, offset, limit);
+	@Autowired
+	private SessionValidator sessionValidator;
+	
+	@InitBinder("session")
+	public void setupBinder(WebDataBinder binder) {
+	    binder.addValidators(sessionValidator);
+	}
+	
+	@GetMapping(value = "/session", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<List<LightSession>> getSessions(@RequestParam("projectKey") String projectKey, @RequestParam("offset") Integer offset, @RequestParam("limit") Integer limit) throws CaptureValidationException {
+		log.info("Start of getSessions() --> params " + projectKey + " " + offset + " " + limit);
+		if(StringUtils.isEmpty(projectKey)) {
+			throw new CaptureValidationException("Project key is required and cannot be empty");
+		}
 		Optional<List<Session>> sessionsList = sessionService.getSessionsForProject(projectKey, offset, limit);
-		List<SessionDto> sessionDtoList = new ArrayList<>();
+		List<LightSession> sessionDtoList = new ArrayList<>();
 		if(sessionsList.isPresent()) {
 			sessionsList.get().stream().forEach(session -> {
-				sessionDtoList.add(new SessionDto(session, false)); //Send only what UI is required instead of whole session object.
+				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
+						session.getRelatedProject(), session.getDefaultTemplateId(), session.getAdditionalInfo(), null); //Send only what UI is required instead of whole session object.
+				sessionDtoList.add(lightSession);
 			});
 		}
 		log.info("end of getSessions()");
-		return sessionDtoList;
+		return ResponseEntity.ok(sessionDtoList);
 	}
 	
-	@RequestMapping(value = "/session", method = RequestMethod.POST, consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> createSession(Session session) {
-		//not yet implemented.
-		return null;
+	@PostMapping(value = "/session", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<Session> createSession(@Valid @RequestBody Session session) {
+		log.info("Start of createSession() --> params " + session.toString());
+		Session createdSession = sessionService.createSession(session);
+		log.info("End of createSession()");
+		return ResponseEntity.ok(createdSession);
+	}
+	
+	@GetMapping(value = "/session/{id}",  produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> getSession(@PathVariable("id") String sessionId) throws CaptureValidationException {
+		log.info("Start of getSession() --> params " + sessionId);
+		if(StringUtils.isEmpty(sessionId)) {
+			throw new CaptureValidationException("Session id cannot be null");
+		}
+		Session session = sessionService.getSession(sessionId);
+		log.info("End of Create Session()");
+		return ResponseEntity.ok(session);
+	}
+	
+	@PutMapping(value = "/session", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<Session> updateSession(@Valid @RequestBody Session session) throws CaptureValidationException  {
+		log.info("Start of updateSession() --> params " + session.toString());
+		if(StringUtils.isEmpty(session.getId())) {
+			throw new CaptureValidationException("Session id cannot be null");
+		}
+		Session updatedSession = sessionService.updateSession(session);
+		log.info("End of updateSession()");
+		return ResponseEntity.ok(updatedSession);
+	}
+	
+	@DeleteMapping(value = "/session/{id}", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> deleteSession(@PathVariable("id") String sessionId) throws CaptureValidationException  {
+		log.info("Start of deleteSession() --> params " + sessionId);
+		if(StringUtils.isEmpty(sessionId)) {
+			throw new CaptureValidationException("Session id cannot be null");
+		}
+		sessionService.deleteSession(sessionId);;
+		log.info("End of deleteSession()");
+		return ResponseEntity.ok().build();
 	}
 
 }

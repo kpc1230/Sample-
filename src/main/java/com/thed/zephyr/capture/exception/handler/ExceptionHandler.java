@@ -1,7 +1,12 @@
 package com.thed.zephyr.capture.exception.handler;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
@@ -45,6 +50,20 @@ public class ExceptionHandler {
 		errorDto.setErrorCode(e.getErrorCode());
 		errorDto.setErrorMessage(e.getMessage());
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorDto);
+	}
+	
+	/**
+	 * Handles the spring validation exception thrown while validating the object.
+	 * 
+	 * @param e -- MethodArgumentNotValidException
+	 * @return -- Returns the list of error objects.
+	 */
+	@org.springframework.web.bind.annotation.ExceptionHandler(value = MethodArgumentNotValidException.class)
+	public ResponseEntity<List<ErrorDto>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+		BindingResult bindingResult = ex.getBindingResult();
+		List<ErrorDto> errosList = bindingResult.getFieldErrors().stream().map(fieldError -> new ErrorDto(fieldError.getCode(), fieldError.getDefaultMessage()))
+				.collect(Collectors.toList());
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errosList);
 	}
 	
 }

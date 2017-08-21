@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,11 +36,31 @@ public class SessionServiceImpl implements SessionService {
 	public Optional<List<Session>> getSessionsForProject(String projectKey, Integer offset, Integer limit) throws CaptureValidationException {
 		List<Session> sessionsList  = new ArrayList<>(0);
 		Project project = projectService.getProjectObjByKey(projectKey);
-		if(project == null) {
+		if(Objects.isNull(project)) {
 			throw new CaptureValidationException("Please provide a valid project key");
 		}
 		sessionsList = sessionRepository.findByRelatedProject(project, getPageRequest(offset, limit)).getContent();
 		return Optional.of(sessionsList);
+	}
+
+	@Override
+	public Session createSession(Session session) {
+		return sessionRepository.save(session);
+	}
+
+	@Override
+	public Session getSession(String sessionId) {
+		return sessionRepository.findOne(sessionId);
+	}
+
+	@Override
+	public Session updateSession(Session session) {
+		return sessionRepository.save(session);
+	}
+
+	@Override
+	public void deleteSession(String sessionId) {
+		sessionRepository.delete(sessionId);
 	}
 	
 	/**
@@ -51,12 +72,6 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private PageRequest getPageRequest(Integer offset, Integer limit) {
 		return new PageRequest((offset == null ? 0 : offset), (limit == null ? 20 : limit));
-	}
-
-	@Override
-	public Session createSession(Session sesssion) throws CaptureValidationException {
-		//Not yet implemented.
-		return null;
 	}
 
 }
