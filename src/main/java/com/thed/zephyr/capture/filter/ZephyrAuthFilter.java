@@ -41,7 +41,7 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
         if (optionalAccessKey.isPresent()) {
             validateAccessKey(optionalAccessKey.get(), request);
 
-            filterChain.doFilter(request, response);
+            super.doFilterInternal(request, response, filterChain);
 
         } else {
             super.doFilterInternal(request, response, filterChain);
