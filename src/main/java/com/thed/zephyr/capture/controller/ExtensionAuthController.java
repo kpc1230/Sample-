@@ -2,8 +2,10 @@ package com.thed.zephyr.capture.controller;
 
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.JiraAuthService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
+import com.thed.zephyr.capture.util.security.AESEncryptionUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -32,7 +34,12 @@ public class ExtensionAuthController {
             AcHostModel host = jiraAuthService.getAcHostModelbyBaseUrl(baseUrl);
             if (host.getStatus() == AcHostModel.TenantStatus.ACTIVE) {
                 StringBuffer buffer = new StringBuffer(host.getCtId()).append("_").append(username).append("_").append(userAgent);
+
                 HttpHeaders headers = new HttpHeaders();
+                String encry = AESEncryptionUtils.encrypt(buffer.toString(), dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
+                headers.add(ApplicationConstants.HEADER_PARAM_PACCESS_KEY, encry);
+                log.debug("Encrypted string....... : " + encry);
+
                 headers.add("accessKey", CaptureUtil.base64(buffer.toString()));
                 log.debug("Validating JIRA user credentials END");
                 return new ResponseEntity(headers, HttpStatus.OK);

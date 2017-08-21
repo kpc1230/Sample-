@@ -52,4 +52,8 @@ public class ApplicationConstants {
 
     public static final String VERSIONS = "versions";
     public static final String CAPTURE_BASEURL = "baseUrl";
+    public static final String AES_ENCRYPTION_SECRET_KEY = "aes.encryption.secret.key";
+    public static final String HEADER_PARAM_PACCESS_KEY = "accessKey";
+    public static final String USER_AGENT = "User-Agent";
+
 }
