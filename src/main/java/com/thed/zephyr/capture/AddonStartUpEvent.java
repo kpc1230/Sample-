@@ -7,6 +7,7 @@ import com.amazonaws.services.dynamodbv2.document.TableCollection;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
 import com.thed.zephyr.capture.service.db.CreateSessionTableRequest;
+import com.thed.zephyr.capture.service.db.CreateTemplateTableRequest;
 import com.thed.zephyr.capture.service.db.CreateTenantTableRequest;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +34,7 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         TableCollection<ListTablesResult> tables = dynamoDB.listTables();
         createTenantTableIfNotExist(tables, dynamoDB);
         createSessionTableIfNotExist(tables, dynamoDB);
+        createTemplateTableIfNotExist(tables, dynamoDB);
     }
 
     private void createTenantTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
@@ -68,6 +70,24 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
             log.info("The Session table was successfully created");
         } catch (InterruptedException e) {
             log.error("Error during creation DynamoDB table:{}", ApplicationConstants.SESSION_TABLE_NAME);
+        }
+    }
+
+    private void createTemplateTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
+        for (Table table:tables){
+            if(StringUtils.equals(ApplicationConstants.TEMPLATE_TABLE_NAME, table.getTableName())){
+                log.debug("The table:{} already created, skip creation", table.getTableName());
+                return;
+            }
+        }
+        log.info("Creating Template DynamoDB table ...");
+        try {
+            CreateTableRequest createTableRequest = new CreateTemplateTableRequest().build();
+            Table table = dynamoDB.createTable(createTableRequest);
+            table.waitForActive();
+            log.info("The Template table was successfully created");
+        } catch (InterruptedException e) {
+            log.error("Error during creation DynamoDB table:{}", ApplicationConstants.TEMPLATE_TABLE_NAME);
         }
     }
 }

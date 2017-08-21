@@ -1,7 +1,7 @@
 package com.thed.zephyr.capture.controller;
 
 import com.thed.zephyr.capture.model.AcHostModel;
-import com.thed.zephyr.capture.service.JiraAuthService;
+import com.thed.zephyr.capture.service.extension.JiraAuthService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;

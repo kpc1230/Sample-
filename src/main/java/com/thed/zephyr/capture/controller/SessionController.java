@@ -26,7 +26,7 @@ import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.LightSession;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.SessionRequest;
-import com.thed.zephyr.capture.service.SessionService;
+import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.validator.SessionValidator;
 
 /**
