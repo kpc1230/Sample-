@@ -1,6 +1,11 @@
 package com.thed.zephyr.capture.filter;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
 import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthenticationFilter;
+import com.atlassian.connect.spring.internal.jwt.Jwt;
+import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.repositories.AcHostModelRepository;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.security.AESEncryptionUtils;
@@ -10,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.FilterChain;
@@ -29,6 +35,8 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
 
     @Autowired
     DynamicProperty dynamicProperty;
+    @Autowired
+    private AcHostModelRepository acHostModelRepository;
 
     public ZephyrAuthFilter(AuthenticationManager authenticationManager, ServerProperties serverProperties) {
         super(authenticationManager, serverProperties);
@@ -40,9 +48,7 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
         Optional<String> optionalAccessKey = getAccessKeyFromHeader(request);
         if (optionalAccessKey.isPresent()) {
             validateAccessKey(optionalAccessKey.get(), request);
-
-            super.doFilterInternal(request, response, filterChain);
-
+            filterChain.doFilter(request, response);
         } else {
             super.doFilterInternal(request, response, filterChain);
         }
@@ -61,10 +67,17 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
     private boolean validateAccessKey(String accessKey, HttpServletRequest request) {
         if (!StringUtils.isEmpty(accessKey)) {
             String decodedKey = AESEncryptionUtils.decrypt(accessKey, dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
+            String[] keyParts = decodedKey.split("_");
             log.debug("Decoded access key : " + decodedKey);
             String useragent = request.getHeader(ApplicationConstants.USER_AGENT);
             log.debug("User-Agent from request received : " + useragent);
             if (StringUtils.endsWith(decodedKey, "_" + useragent)) {
+                String clientKey = keyParts[0];
+                String userKey = keyParts[1];
+                AcHostModel acHostModel = acHostModelRepository.findOne(clientKey);
+                JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(userKey)), new Jwt("", "", ""));
+            //Put JwtAuthentication into SecurityContext to mock JwtAuthenticationFilter behavior and allow RequireAuthenticationHandlerInterceptor pass request
+                SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
                 return true;
             }
         }
