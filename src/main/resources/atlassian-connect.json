@@ -39,7 +39,7 @@
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents"
       },
       {
-        "url": "/browseTestSessions",
+        "url": "/browseTestSessions?projectId={project.id}&projectKey={project.key}",
         "name": {
           "value": "Browse Test Sessions"
         },
@@ -47,7 +47,7 @@
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session"
       },
       {
-        "url": "/viewSession",
+        "url": "/viewSession?projectId={project.id}&projectKey={project.key}",
         "name": {
           "value": "View Session"
         },
@@ -74,7 +74,7 @@
         "name": {
           "value": "Testing"
         },
-        "url": "/public/rest/testing?projectId={project.id}&issueId={issue.id}",
+        "url": "/public/rest/testing?projectId={project.id}&projectKey={project.key}&issueId={issue.id}",
         "conditions": [
           {
             "condition": "user_is_logged_in",

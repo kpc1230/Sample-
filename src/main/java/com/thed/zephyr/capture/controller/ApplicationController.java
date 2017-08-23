@@ -45,28 +45,35 @@ public class ApplicationController {
     }
 
     @RequestMapping(value = "/browseTestSessions")
-    public String getSessionNavigatorPage(Model model) {
+    public String getSessionNavigatorPage(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
         log.debug("Requesting the Browse Test Sessions page");
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        model.addAttribute("projectKey", projectKey);
+        model.addAttribute("projectId", projectId);
         log.debug("Ending Requesting the Browse Test Sessions page");
         return "sessionNavigator";
     }
 
     @RequestMapping(value = "/viewSession")
-    public String getViewSessionPage(Model model) {
+    public String getViewSessionPage(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
         log.debug("Requesting the Session Navigator page");
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        model.addAttribute("projectKey", projectKey);
+        model.addAttribute("projectId", projectId);
         log.debug("Ending Requesting the Session Navigator page");
         return "viewSession";
     }
 
     @RequestMapping(value = "/public/rest/testing")
-    public String getTestingIssueView(Model model) {
+    public String getTestingIssueView(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
         log.debug("Requesting the Testing Issue View page");
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        model.addAttribute("projectKey", projectKey);
+        model.addAttribute("projectId", projectId);
+        model.addAttribute("issueId", issueId);
         log.debug("Ending Requesting the Testing Issue View page");
         return "testingIssueView";
     }
