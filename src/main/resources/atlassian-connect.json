@@ -45,6 +45,14 @@
         },
         "key": "browse-test-session-url",
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session"
+      },
+      {
+        "url": "/viewSession",
+        "name": {
+          "value": "View Session"
+        },
+        "key": "view-session-url",
+        "location": "none"
       }
     ],
     "adminPages":[
