@@ -47,9 +47,9 @@ public class ApplicationController {
     @RequestMapping(value = "/browseTestSessions")
     public String getSessionNavigatorPage(Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
-        log.debug("Requesting the Session Navigator page");
+        log.debug("Requesting the Browse Test Sessions page");
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
-        log.debug("Ending Requesting the Session Navigator page");
+        log.debug("Ending Requesting the Browse Test Sessions page");
         return "sessionNavigator";
     }
 
@@ -60,6 +60,15 @@ public class ApplicationController {
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         log.debug("Ending Requesting the Session Navigator page");
         return "viewSession";
+    }
+
+    @RequestMapping(value = "/public/rest/testing")
+    public String getTestingIssueView(Model model) {
+        String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
+        log.debug("Requesting the Testing Issue View page");
+        model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        log.debug("Ending Requesting the Testing Issue View page");
+        return "testingIssueView";
     }
 
 }
