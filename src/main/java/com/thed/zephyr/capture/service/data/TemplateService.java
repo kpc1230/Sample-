@@ -38,12 +38,25 @@ public interface TemplateService {
 	 * Get all the templates.
 	 * @return
 	 */
-    List<Template> getTemplates();
+    List<TemplateRequest> getTemplates(String userName, Integer offset, Integer limit);
     
     /**
      * Get all the templates for the project projectId.
      * @param projectId - Project Id to be used for searching templates.
+     * @param offset
+     * @param limit
      * @return - List of Template objects found for the project.
      */
-    List<Template> getTemplatesByProject(Long projectId);
+    List<TemplateRequest> getTemplatesByProject(Long projectId, Integer offset, Integer limit);
+    /**
+     * Get all the shared templates for the user with projectId.
+     * @param owner
+     * @param offset
+     * @param limit
+     * @return
+     */
+	List<TemplateRequest> getSharedTemplates(String owner, Integer offset, Integer limit);
+
+	List<TemplateRequest> getFavouriteTemplates(String owner, Integer offset, Integer limit);
+	List<TemplateRequest> getUserTemplates(String userName, Integer offset, Integer limit);
 }
