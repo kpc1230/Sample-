@@ -1,0 +1,219 @@
+{
+  "key": "${addonKey}",
+  "baseUrl": "${baseUrl}${server.contextPath}",
+  "name":"Capture For Cloud",
+  "description": "Welcome to Capture for Cloud, Visual Feedback and Exploratory Testing Tool for Jira On Demand!",
+  "authentication": {
+    "type": "jwt"
+  },
+  "vendor": {
+    "name": "Zephyr",
+    "url": "http://www.getzephyr.com"
+  },
+  "links": {
+    "documentation": "https://zephyrdocs.atlassian.net/wiki/display/ALLDOCS/Zephyr+Documentation",
+    "support": "https://www.getzephyr.com/support",
+    "self": "https:///atlassian-connect.json"
+  },
+  "enableLicensing": true,
+  "lifecycle": {
+    "installed": "/installed",
+    "uninstalled": "/uninstalled"
+  },
+  "modules": {
+    "generalPages": [
+      {
+        "url": "/getting-started",
+        "name": {
+          "value": "Getting started"
+        },
+        "key": "getting-started-page",
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents"
+      },
+      {
+        "url": "/get-browser-extension",
+        "name": {
+          "value": "Get browser extension"
+        },
+        "key": "get-browser-extension-page",
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents"
+      }
+    ],
+    "adminPages":[
+      {
+        "url": "/adminGenConf",
+        "key": "captureconfig-general",
+        "name": {
+          "value": "Capture For JIRA"
+        },
+        "conditions": [{
+          "condition": "user_is_logged_in",
+          "invert": false
+        }]
+      }
+    ],
+    "webPanels": [
+      {
+        "key" : "bonfiremodule",
+        "name": {
+          "value": "Testing"
+        },
+        "url": "/public/rest/testing?projectId={project.id}&issueId={issue.id}",
+        "conditions": [
+          {
+            "condition": "user_is_logged_in",
+            "invert": false
+          }
+        ],
+        "location": "atl.jira.view.issue.left.context",
+        "weight": 350
+      },
+      {
+        "key": "bonfireGFWebPanel",
+        "name": {
+          "value": "Capture for JIRA"
+        },
+        "url": "bonfireGFWebPanelURL",
+        "location": "atl.gh.issue.details.tab",
+        "weight": 10
+      },
+      {
+        "key": "capture-test-sessions-sidebar-webpanel",
+        "name": {
+          "value": "Test sessions"
+        },
+        "url": "bonfireGFWebPanelURL",
+        "location": "com.atlassian.bonfire.plugin:capture-test-sessions",
+        "section": "jira.project.sidebar.navigation",
+        "weight": 710,
+        "params": {
+          "iconClass": "aui-icon-large icon-sidebar-test-sessions"
+        }
+      }
+    ],
+    "webItems": [
+      {
+        "url": "captureconfig-general",
+        "key": "capture-config",
+        "context": "page",
+        "location": "capture-admin/capture-admin-config",
+        "weight": 10,
+        "tooltip": {
+          "value":    "Capture for JIRA Settings"
+        },
+        "name": {
+          "value":    "Capture for JIRA Settings"
+        }
+      },
+      {
+        "context": "page",
+        "location": "system.top.navigation.bar",
+        "weight": 40,
+        "url": "bonfire-top-menu-dropdown-url",
+        "key": "bonfire-top-menu-dropdown",
+        "params": {
+          "webfragments.keywords": "Bonfire"
+        },
+        "name": {
+          "value": "Capture"
+        },
+        "tooltip": {
+          "value": "Capture"
+        },
+        "conditions": [{
+          "condition": "user_is_logged_in",
+          "invert": false
+        }]
+      },
+      {
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session",
+        "weight": 20,
+        "url": "browse-test-session-url",
+        "name": {
+          "value": "Browse test sessions"
+        },
+        "tooltip": {
+          "value": "Browse test sessions"
+        },
+        "key": "browse-test-session-key"
+      },
+      {
+        "location": "operations-operations",
+        "weight": 20,
+        "url": "bonfire-issue-operation-url",
+        "name": {
+          "value": "Create test session"
+        },
+        "tooltip": {
+          "value": "Create test session"
+        },
+        "key": "bonfire-issue-operation"
+      },
+      {
+        "location": "jira.project.sidebar.navigation",
+        "weight": 20,
+        "url": "capture-test-sessions-url",
+        "name": {
+          "value": "Test sessions"
+        },
+        "tooltip": {
+          "value": "Test sessions"
+        },
+        "key": "capture-test-sessions",
+        "params": {
+          "iconClass": "aui-icon-large icon-sidebar-test-sessions"
+        },
+        "conditions": [{
+          "condition": "feature_flag",
+          "params": {
+            "featureKey": "com.atlassian.jira.projects.ProjectCentricNavigation.Disabled"
+          },
+          "invert": true
+        }]
+      }
+    ],
+    "webSections": [
+      {
+        "location": "admin_plugins_menu",
+        "key": "capture-admin",
+        "name": {
+          "value": "Capture for JIRA"
+        }
+      },
+      {
+        "location": "capture-admin",
+        "key": "capture-admin-config",
+        "name": {
+          "value": "Capture for JIRA"
+        }
+      },
+      {
+        "name": {
+          "value": "Test Sessions Menu Contents"
+        },
+        "location": "bonfire-top-menu-dropdown",
+        "weight": 100,
+        "key": "bonfire-top-main-menu-session"
+      },
+      {
+        "name": {
+          "value": "Test Sessions Menu Contents"
+        },
+        "location": "bonfire-top-menu-dropdown",
+        "weight": 100,
+        "key": "bonfire-top-main-menu-contents"
+      }
+    ],
+    "webhooks":[
+      {
+        "event": "connect-addon-enabled",
+        "url": "/rest/event/plugin/enabled"
+      },
+      {
+        "event": "connect-addon-disabled",
+        "url": "/rest/event/plugin/disabled"
+      }
+    ]
+  },
+  "scopes": ["READ", "WRITE","ADMIN"]
+}
