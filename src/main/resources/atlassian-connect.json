@@ -37,6 +37,14 @@
         },
         "key": "get-browser-extension-page",
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents"
+      },
+      {
+        "url": "/browseTestSessions",
+        "name": {
+          "value": "Browse Test Sessions"
+        },
+        "key": "browse-test-session-url",
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session"
       }
     ],
     "adminPages":[
@@ -124,18 +132,6 @@
           "condition": "user_is_logged_in",
           "invert": false
         }]
-      },
-      {
-        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session",
-        "weight": 20,
-        "url": "browse-test-session-url",
-        "name": {
-          "value": "Browse test sessions"
-        },
-        "tooltip": {
-          "value": "Browse test sessions"
-        },
-        "key": "browse-test-session-key"
       },
       {
         "location": "operations-operations",

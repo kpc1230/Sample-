@@ -44,5 +44,22 @@ public class ApplicationController {
         return "generalConfigPage";
     }
 
+    @RequestMapping(value = "/browseTestSessions")
+    public String getSessionNavigatorPage(Model model) {
+        String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
+        log.debug("Requesting the Session Navigator page");
+        model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        log.debug("Ending Requesting the Session Navigator page");
+        return "sessionNavigator";
+    }
+
+    @RequestMapping(value = "/viewSession")
+    public String getViewSessionPage(Model model) {
+        String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
+        log.debug("Requesting the Session Navigator page");
+        model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        log.debug("Ending Requesting the Session Navigator page");
+        return "viewSession";
+    }
 
 }
