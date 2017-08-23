@@ -1,13 +1,13 @@
 package com.thed.zephyr.capture.service.data.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
+import java.util.Objects;
+
+import com.thed.zephyr.capture.model.util.SessionSearchList;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -42,14 +42,16 @@ public class SessionServiceImpl implements SessionService {
 	private ProjectService projectService;
 
 	@Override
-	public Optional<List<Session>> getSessionsForProject(String projectKey, Integer offset, Integer limit) throws CaptureValidationException {
-		List<Session> sessionsList  = new ArrayList<>(0);
+	public SessionSearchList getSessionsForProject(String projectKey, Integer offset, Integer limit) throws CaptureValidationException {
+		Page<Session> sessionsPage;
 		Project project = projectService.getProjectObjByKey(projectKey);
 		if(Objects.isNull(project)) {
 			throw new CaptureValidationException("Please provide a valid project key");
 		}
-		sessionsList = sessionRepository.findByRelatedProject(project, getPageRequest(offset, limit)).getContent();
-		return Optional.of(sessionsList);
+		sessionsPage = sessionRepository.findByRelatedProject(project, getPageRequest(offset, limit));
+		SessionSearchList response  = new SessionSearchList(sessionsPage.getContent(), offset, limit, sessionsPage.getTotalElements());
+
+		return response;
 	}
 
 	@Override
@@ -111,17 +113,6 @@ public class SessionServiceImpl implements SessionService {
 		Session startedSession = sessionBuilder.build();
 		return sessionRepository.save(startedSession);
 	}
-	
-	/**
-	 * Creates the page request object for pagination.
-	 * 
-	 * @param offset -- Offset position to start
-	 * @param limit -- Number of records to return
-	 * @return -- Returns the page request object.
-	 */
-	private PageRequest getPageRequest(Integer offset, Integer limit) {
-		return new PageRequest((offset == null ? 0 : offset), (limit == null ? 20 : limit));
-	}
 
 	@Override
 	public Session pauseSession(String loggedUserKey, Session session) {
@@ -150,4 +141,14 @@ public class SessionServiceImpl implements SessionService {
 		return updatedSession;
 	}
 
+	/**
+	 * Creates the page request object for pagination.
+	 *
+	 * @param offset -- Offset position to start
+	 * @param limit -- Number of records to return
+	 * @return -- Returns the page request object.
+	 */
+	private PageRequest getPageRequest(Integer offset, Integer limit) {
+		return new PageRequest((offset == null ? 0 : offset), (limit == null ? 20 : limit));
+	}
 }

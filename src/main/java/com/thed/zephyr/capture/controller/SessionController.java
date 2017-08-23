@@ -1,12 +1,11 @@
 package com.thed.zephyr.capture.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import javax.validation.Valid;
 
+import com.thed.zephyr.capture.model.util.LightSessionSearchList;
+import com.thed.zephyr.capture.model.util.SessionSearchList;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,29 +59,28 @@ public class SessionController {
 	}
 	
 	@GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<List<LightSession>> getSessions(@RequestParam("projectKey") String projectKey, @RequestParam("offset") Integer offset, @RequestParam("limit") Integer limit) throws CaptureValidationException {
+	public ResponseEntity<LightSessionSearchList> getSessions(@RequestParam("projectKey") String projectKey, @RequestParam("offset") Integer offset, @RequestParam("limit") Integer limit) throws CaptureValidationException {
 		log.info("Start of getSessions() --> params " + projectKey + " " + offset + " " + limit);
 		if(StringUtils.isEmpty(projectKey)) {
 			throw new CaptureValidationException("Project key is required and cannot be empty");
 		}
 		List<LightSession> sessionDtoList = new ArrayList<>();
 		try {
-			Optional<List<Session>> sessionsList = sessionService.getSessionsForProject(projectKey, offset, limit);
-			if(sessionsList.isPresent()) {
-				sessionsList.get().stream().forEach(session -> {
-					LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-							session.getRelatedProject(), session.getDefaultTemplateId(), session.getAdditionalInfo(), null); //Send only what UI is required instead of whole session object.
-					sessionDtoList.add(lightSession);
-				});
-			}
+			SessionSearchList sessionsSearch = sessionService.getSessionsForProject(projectKey, offset, limit);
+			sessionsSearch.getContent().stream().forEach(session -> {
+				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
+						session.getRelatedProject(), session.getDefaultTemplateId(), session.getAdditionalInfo(), null); //Send only what UI is required instead of whole session object.
+				sessionDtoList.add(lightSession);
+			});
+			LightSessionSearchList response = new LightSessionSearchList(sessionDtoList, sessionsSearch.getOffset(), sessionsSearch.getLimit(), sessionsSearch.getTotal());
+
+			return ResponseEntity.ok(response);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
-			log.error("Error in getSessions() -> ", ex);
+			log.error("Error during getting sessions by project:{} limit:{} offset:{}", projectKey, limit, offset, ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
-		log.info("end of getSessions()");
-		return ResponseEntity.ok(sessionDtoList);
 	}
 	
 	@PostMapping(consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})

@@ -1,11 +1,10 @@
 package com.thed.zephyr.capture.service.data;
 
-import java.util.List;
-import java.util.Optional;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.SessionRequest;
+import com.thed.zephyr.capture.model.util.SessionSearchList;
 
 /**
  * Class acts as a service layer for session.
@@ -22,7 +21,7 @@ public interface SessionService {
 	 * @return -- Returns the list of sessions for the project.
 	 * @throws CaptureValidationException -- Thrown in case of invalid project key.
 	 */
-	Optional<List<Session>> getSessionsForProject(String projectKey, Integer offser, Integer limit) throws CaptureValidationException;
+	SessionSearchList getSessionsForProject(String projectKey, Integer offset, Integer limit) throws CaptureValidationException;
 	
 	/**
 	 * Creates the session. 

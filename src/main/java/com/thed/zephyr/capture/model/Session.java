@@ -4,7 +4,6 @@ import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.thed.zephyr.capture.model.jira.Issue;
 import com.thed.zephyr.capture.model.jira.Project;
 import com.thed.zephyr.capture.service.db.DateTimeTypeConverter;
-import com.thed.zephyr.capture.service.db.SessionActivityItemCollectionConverter;
 import com.thed.zephyr.capture.service.db.SessionIssueCollectionConverter;
 import com.thed.zephyr.capture.service.db.SessionRelatedProjectTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
@@ -46,11 +45,13 @@ public class Session  implements Comparable<Session> {
     private Duration timeLogged;
     @DynamoDBTypeConverted(converter = SessionIssueCollectionConverter.class)
     private Collection<Issue> issuesRaised;
+    @DynamoDBIgnore
     private Map<DateTime, Status> sessionStatusHistory;
-    @DynamoDBTypeConverted(converter = SessionActivityItemCollectionConverter.class)
+    @DynamoDBIgnore
     private Collection<SessionActivityItem> sessionActivity;
     @DynamoDBIgnore
     private Map<Long, Note> sessionNotes;
+    @DynamoDBIgnore
     private Set<Long> sessionNoteIds;
     private boolean shared;
     @DynamoDBIgnore
@@ -269,7 +270,9 @@ public class Session  implements Comparable<Session> {
      * @return 0 if equal to session, otherwise based on id, name or owner in that order.
      */
 
+    @Override
     public int compareTo(Session session) {
+        if(session == null) return 1;
         // If equal, return zero
         if (this.id != null && this.id.compareTo(session.getId()) != 0) {
             return -this.id.compareTo(session.getId());
