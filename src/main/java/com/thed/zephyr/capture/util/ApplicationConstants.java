@@ -61,5 +61,7 @@ public class ApplicationConstants {
     public static final String AES_ENCRYPTION_SECRET_KEY = "aes.encryption.secret.key";
     public static final String HEADER_PARAM_PACCESS_KEY = "accessKey";
     public static final String USER_AGENT = "User-Agent";
+    public static final String AUTHORIZATION = "Authorization";
+
 
 }

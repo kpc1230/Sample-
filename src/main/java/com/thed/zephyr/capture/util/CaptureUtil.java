@@ -1,12 +1,15 @@
 package com.thed.zephyr.capture.util;
 
+import org.apache.http.NameValuePair;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 
 public class CaptureUtil {
@@ -57,5 +60,21 @@ public class CaptureUtil {
     public static String getLargeAvatarUrl(String userKey) {
         log.error("The method CaptureUtil.getLargeAvatarUrl() needs to be implemented!");
         return "";
+    }
+
+    public static void getParamMap(List<NameValuePair> params, Map<String, String[]> paramMap) {
+        for (final NameValuePair nameValuePair : params) {
+            final String name = nameValuePair.getName();
+            final String value = nameValuePair.getValue();
+
+            String[] array = new String[] { value};
+            if(paramMap.containsKey(name)) {
+                final String[] currentValues = paramMap.get(name);
+                final int newLength = currentValues.length + 1;
+                array = Arrays.copyOf(currentValues, newLength);
+                array[newLength] = value;
+            }
+            paramMap.put(name, array);
+        }
     }
 }

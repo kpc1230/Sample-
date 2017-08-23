@@ -1,9 +1,13 @@
 package com.thed.zephyr.capture.util;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.service.jira.http.CJiraRestClientFactory;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.security.core.Authentication;
@@ -43,5 +47,35 @@ public class Global {
         AcHostModel acHostModel1 = new AcHostModel();
         acHostModel1.setBaseUrl("http://unknownHost/jira");
         return acHostModel1;
+    }
+
+    @Autowired
+    private CJiraRestClientFactory cJiraRestClientFactory;
+
+    @Bean
+    @Primary
+    @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
+    public JiraRestClient createGetJiraRestClient(){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if(auth != null) {
+            AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+            if (host != null) {
+                return cJiraRestClientFactory.createJiraGetRestClient(host,host.getUserKey());
+            }
+        }
+        return null;
+    }
+
+    @Bean
+    @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
+    public JiraRestClient createPostJiraRestClient(){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if(auth != null) {
+            AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+            if (host != null) {
+                return cJiraRestClientFactory.createJiraPostRestClient(host,host.getUserKey());
+            }
+        }
+        return null;
     }
 }
