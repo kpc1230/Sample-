@@ -32,28 +32,37 @@ public class CreateTemplateTableRequest {
 
     private List<AttributeDefinition> getAttributeDefinitions(){
         List<AttributeDefinition> attributes = Arrays.asList(
+                new AttributeDefinition("id", ScalarAttributeType.S),
                 new AttributeDefinition("clientKey", ScalarAttributeType.S),
-                new AttributeDefinition("sortKey", ScalarAttributeType.S),
                 new AttributeDefinition("createdBy", ScalarAttributeType.S),
-                new AttributeDefinition("shared", ScalarAttributeType.N)
+                new AttributeDefinition("shared", ScalarAttributeType.N),
+                new AttributeDefinition("projectId", ScalarAttributeType.N)
         );
 
         return attributes;
     }
 
-    private Collection<KeySchemaElement> getPrimaryKey(){
-        List<KeySchemaElement> primaryKey = Arrays.asList(
-                new KeySchemaElement("clientKey", KeyType.HASH),
-                new KeySchemaElement("sortKey", KeyType.RANGE),
-                new KeySchemaElement("createdBy", KeyType.RANGE),
-                new KeySchemaElement("shared", KeyType.RANGE)
-        );
+    private KeySchemaElement getPrimaryKey(){
+        KeySchemaElement primaryKey = new KeySchemaElement("id", KeyType.HASH);
 
         return primaryKey;
     }
 
     private List<GlobalSecondaryIndex> getGlobalSecondaryIndexes(){
         List<GlobalSecondaryIndex> globalSecondaryIndices = new ArrayList<>();
+
+        List<KeySchemaElement> indexProjectIdSchema = Arrays.asList(
+                new KeySchemaElement("clientKey" ,KeyType.HASH),
+                new KeySchemaElement("projectId" ,KeyType.RANGE)
+        );
+        GlobalSecondaryIndex projectIdIndex = new GlobalSecondaryIndex()
+                .withIndexName(ApplicationConstants.GSI_PROJECTID)
+                .withProvisionedThroughput(new ProvisionedThroughput()
+                        .withReadCapacityUnits((long) 3)
+                        .withWriteCapacityUnits((long) 3))
+                .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
+                .withKeySchema(indexProjectIdSchema);
+
         List<KeySchemaElement> indexFavouriteSchema = Arrays.asList(
                 new KeySchemaElement("clientKey" ,KeyType.HASH),
                 new KeySchemaElement("createdBy" ,KeyType.RANGE)
@@ -65,6 +74,7 @@ public class CreateTemplateTableRequest {
                         .withWriteCapacityUnits((long) 3))
                 .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                 .withKeySchema(indexFavouriteSchema);
+
         List<KeySchemaElement> indexSharedSchema = Arrays.asList(
                 new KeySchemaElement("clientKey" ,KeyType.HASH),
                 new KeySchemaElement("shared" ,KeyType.RANGE)
@@ -77,9 +87,9 @@ public class CreateTemplateTableRequest {
                 .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                 .withKeySchema(indexSharedSchema);
 
-
         globalSecondaryIndices.add(favouriteIndex);
         globalSecondaryIndices.add(sharedKeyIndex);
+        globalSecondaryIndices.add(projectIdIndex);
 
         return globalSecondaryIndices;
     }
