@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.validation.Valid;
@@ -11,7 +12,8 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,8 +22,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
+import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.LightSession;
 import com.thed.zephyr.capture.model.Session;
@@ -35,7 +41,8 @@ import com.thed.zephyr.capture.validator.SessionValidator;
  * @author manjunath
  *
  */
-@Controller
+@RestController
+@RequestMapping(value="/session")
 public class SessionController {
 	
 	@Autowired
@@ -47,69 +54,173 @@ public class SessionController {
 	@Autowired
 	private SessionValidator sessionValidator;
 	
-	@InitBinder("session")
+	@InitBinder("sessionRequest")
 	public void setupBinder(WebDataBinder binder) {
 	    binder.addValidators(sessionValidator);
 	}
 	
-	@GetMapping(value = "/session", produces = {MediaType.APPLICATION_JSON_VALUE})
+	@GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<List<LightSession>> getSessions(@RequestParam("projectKey") String projectKey, @RequestParam("offset") Integer offset, @RequestParam("limit") Integer limit) throws CaptureValidationException {
 		log.info("Start of getSessions() --> params " + projectKey + " " + offset + " " + limit);
 		if(StringUtils.isEmpty(projectKey)) {
 			throw new CaptureValidationException("Project key is required and cannot be empty");
 		}
-		Optional<List<Session>> sessionsList = sessionService.getSessionsForProject(projectKey, offset, limit);
 		List<LightSession> sessionDtoList = new ArrayList<>();
-		if(sessionsList.isPresent()) {
-			sessionsList.get().stream().forEach(session -> {
-				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-						session.getRelatedProject(), session.getDefaultTemplateId(), session.getAdditionalInfo(), null); //Send only what UI is required instead of whole session object.
-				sessionDtoList.add(lightSession);
-			});
+		try {
+			Optional<List<Session>> sessionsList = sessionService.getSessionsForProject(projectKey, offset, limit);
+			if(sessionsList.isPresent()) {
+				sessionsList.get().stream().forEach(session -> {
+					LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
+							session.getRelatedProject(), session.getDefaultTemplateId(), session.getAdditionalInfo(), null); //Send only what UI is required instead of whole session object.
+					sessionDtoList.add(lightSession);
+				});
+			}
+		} catch(CaptureValidationException ex) {
+			throw ex;
+		} catch(Exception ex) {
+			log.error("Error in getSessions() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 		log.info("end of getSessions()");
 		return ResponseEntity.ok(sessionDtoList);
 	}
 	
-	@PostMapping(value = "/session", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+	@PostMapping(consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<Session> createSession(@Valid @RequestBody SessionRequest sessionRequest) {
 		log.info("Start of createSession() --> params " + sessionRequest.toString());
-		Session createdSession = sessionService.createSession(sessionRequest);
-		log.info("End of createSession()");
-		return ResponseEntity.ok(createdSession);
+		try {
+			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+			String loggedUserKey = host.getUserKey().get();
+			Session createdSession = sessionService.createSession(loggedUserKey, sessionRequest);
+			log.info("End of createSession()");
+			return ResponseEntity.ok(createdSession);
+		} catch(Exception ex) {
+			log.error("Error in createSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
 	}
 	
-	@GetMapping(value = "/session/{id}",  produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> getSession(@PathVariable("id") String sessionId) throws CaptureValidationException {
+	@GetMapping(value = "/{sessionId}",  produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> getSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException {
 		log.info("Start of getSession() --> params " + sessionId);
 		if(StringUtils.isEmpty(sessionId)) {
 			throw new CaptureValidationException("Session id cannot be null");
 		}
-		Session session = sessionService.getSession(sessionId);
-		log.info("End of Create Session()");
-		return ResponseEntity.ok(session);
+		try {
+			Session session = sessionService.getSession(sessionId);
+			log.info("End of Create Session()");
+			return ResponseEntity.ok(session);
+		} catch(Exception ex) {
+			log.error("Error in getSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
 	}
 	
-	@PutMapping(value = "/session/{id}", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<Session> updateSession(@PathVariable("id") String sessionId, @Valid @RequestBody SessionRequest sessionRequest) throws CaptureValidationException  {
+	@PutMapping(value = "/{sessionId}", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<Session> updateSession(@PathVariable("sessionId") String sessionId, @Valid @RequestBody SessionRequest sessionRequest) throws CaptureValidationException  {
 		log.info("Start of updateSession() --> params " + sessionRequest.toString());
 		if(StringUtils.isEmpty(sessionId)) {
 			throw new CaptureValidationException("Session id cannot be null");
 		}
-		Session updatedSession = sessionService.updateSession(sessionId, sessionRequest);
-		log.info("End of updateSession()");
-		return ResponseEntity.ok(updatedSession);
+		try {
+			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+			String loggedUserKey = host.getUserKey().get();
+			Session updatedSession = sessionService.updateSession(loggedUserKey, sessionId, sessionRequest);
+			log.info("End of updateSession()");
+			return ResponseEntity.ok(updatedSession);
+		} catch(CaptureValidationException ex) {
+			throw ex;
+		} catch(Exception ex) {
+			log.error("Error in updateSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
 	}
 	
-	@DeleteMapping(value = "/session/{id}", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> deleteSession(@PathVariable("id") String sessionId) throws CaptureValidationException  {
+	@DeleteMapping(value = "/{sessionId}", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> deleteSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException  {
 		log.info("Start of deleteSession() --> params " + sessionId);
 		if(StringUtils.isEmpty(sessionId)) {
 			throw new CaptureValidationException("Session id cannot be null");
 		}
-		sessionService.deleteSession(sessionId);;
-		log.info("End of deleteSession()");
-		return ResponseEntity.ok().build();
+		try {
+			sessionService.deleteSession(sessionId);
+			log.info("End of deleteSession()");
+			return ResponseEntity.ok().build();
+		} catch(Exception ex) {
+			log.error("Error in deleteSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+	
+	@PutMapping(value = "/{sessionId}/start", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<Session> startSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException {
+		log.info("Start of startSession() --> params " + sessionId);
+		if(StringUtils.isEmpty(sessionId)) {
+			throw new CaptureValidationException("Session id cannot be null");
+		}
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+		String loggedUserKey = host.getUserKey().get();
+		Session loadedSession = sessionService.getSession(sessionId);
+		if(Objects.isNull(loadedSession)) {
+			throw new CaptureValidationException("Invalid session id");
+		}
+		try {
+			sessionService.startSession(loggedUserKey, loadedSession);
+			log.info("End of startSession()");
+			return ResponseEntity.ok().build();
+		} catch(Exception ex) {
+			log.error("Error in startSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+	
+	@PutMapping(value = "/{sessionId}/pause", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<Session> pauseSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException {
+		log.info("Start of pauseSession() --> params " + sessionId);
+		if(StringUtils.isEmpty(sessionId)) {
+			throw new CaptureValidationException("Session id cannot be null");
+		}
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+		String loggedUserKey = host.getUserKey().get();
+		Session loadedSession = sessionService.getSession(sessionId);
+		if(Objects.isNull(loadedSession)) {
+			throw new CaptureValidationException("Invalid session id");
+		}
+		try {
+			sessionService.pauseSession(loggedUserKey, loadedSession);
+			log.info("End of pauseSession()");
+			return ResponseEntity.ok().build();
+		} catch(Exception ex) {
+			log.error("Error in pauseSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+	
+	@PutMapping(value = "/{sessionId}/participate", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<Session> joinSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException {
+		log.info("Start of joinSession() --> params " + sessionId);
+		if(StringUtils.isEmpty(sessionId)) {
+			throw new CaptureValidationException("Session id cannot be null");
+		}
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+		String loggedUserKey = host.getUserKey().get();
+		Session loadedSession = sessionService.getSession(sessionId);
+		if(Objects.isNull(loadedSession)) {
+			throw new CaptureValidationException("Invalid session id");
+		}
+		try {
+			sessionService.joinSession(loggedUserKey, loadedSession);
+			log.info("End of joinSession()");
+			return ResponseEntity.ok().build();
+		} catch(Exception ex) {
+			log.error("Error in joinSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
 	}
 
 }

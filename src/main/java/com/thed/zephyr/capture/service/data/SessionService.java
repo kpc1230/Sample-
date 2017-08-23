@@ -27,10 +27,11 @@ public interface SessionService {
 	/**
 	 * Creates the session. 
 	 * 
+	 * @param loggedUserKey -- Logged in user key.
 	 * @param sessionRequest -- Session request object holds the information to create a session.
 	 * @return -- Returns the session object which created session id.
 	 */
-	Session createSession(SessionRequest sessionRequest);
+	Session createSession(String loggedUserKey, SessionRequest sessionRequest);
 	
 	
 	/**
@@ -44,11 +45,12 @@ public interface SessionService {
 	/**
 	 * Updates the session. 
 	 * 
+	 * @param loggedUserKey -- Logged in user key.
 	 * @param sessionId -- Session id to which information to be updated.
 	 * @param sessionRequest -- Session request object holds the information to update a session.
 	 * @return -- Returns the updated session object.
 	 */
-	Session updateSession(String sessionId, SessionRequest sessionRequest) throws CaptureValidationException;
+	Session updateSession(String loggedUserKey, String sessionId, SessionRequest sessionRequest) throws CaptureValidationException;
 	
 	/**
 	 * Deletes the session.
@@ -56,6 +58,33 @@ public interface SessionService {
 	 * @param sessionId -- Session id of which session to be deleted.
 	 */
 	void deleteSession(String sessionId);
+	
+	/**
+	 * Start the session. 
+	 * 
+	 * @param loggedUserKey -- Logged in user key.
+	 * @param session -- Session object.
+	 * @return -- Returns the started session object.
+	 */
+	Session startSession(String loggedUserKey, Session session);
+	
+	/**
+	 * Pause the session. 
+	 * 
+	 * @param loggedUserKey -- Logged in user key.
+	 * @param session -- Session object.
+	 * @return -- Returns the pause session object.
+	 */
+	Session pauseSession(String loggedUserKey, Session session);
+	
+	/**
+	 * Join the session. 
+	 * 
+	 * @param loggedUserKey -- Logged in user key.
+	 * @param session -- Session object.
+	 * @return -- Returns the pause session object.
+	 */
+	Session joinSession(String loggedUserKey, Session session);
 	
 }
 
