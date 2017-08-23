@@ -25,7 +25,7 @@
       {
         "url": "/getting-started",
         "name": {
-          "value": "Getting started"
+          "value": "Getting Started"
         },
         "key": "getting-started-page",
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents"
@@ -96,7 +96,7 @@
       {
         "key": "capture-test-sessions-sidebar-webpanel",
         "name": {
-          "value": "Test sessions"
+          "value": "Test Sessions"
         },
         "url": "bonfireGFWebPanelURL",
         "location": "com.atlassian.bonfire.plugin:capture-test-sessions",
@@ -146,10 +146,10 @@
         "weight": 20,
         "url": "bonfire-issue-operation-url",
         "name": {
-          "value": "Create test session"
+          "value": "Create Test Session"
         },
         "tooltip": {
-          "value": "Create test session"
+          "value": "Create Test Session"
         },
         "key": "bonfire-issue-operation"
       },
@@ -158,10 +158,10 @@
         "weight": 20,
         "url": "capture-test-sessions-url",
         "name": {
-          "value": "Test sessions"
+          "value": "Test Sessions"
         },
         "tooltip": {
-          "value": "Test sessions"
+          "value": "Test Sessions"
         },
         "key": "capture-test-sessions",
         "params": {
