@@ -9,6 +9,7 @@ import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
 import com.thed.zephyr.capture.service.db.CreateSessionTableRequest;
 import com.thed.zephyr.capture.service.db.CreateTemplateTableRequest;
 import com.thed.zephyr.capture.service.db.CreateTenantTableRequest;
+import com.thed.zephyr.capture.service.db.CreateVariableTableRequest;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -35,6 +36,7 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         createTenantTableIfNotExist(tables, dynamoDB);
         createSessionTableIfNotExist(tables, dynamoDB);
         createTemplateTableIfNotExist(tables, dynamoDB);
+        createVariablesTableIfNotExist(tables, dynamoDB);
     }
 
     private void createTenantTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
@@ -88,6 +90,24 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
             log.info("The Template table was successfully created");
         } catch (InterruptedException e) {
             log.error("Error during creation DynamoDB table:{}", ApplicationConstants.TEMPLATE_TABLE_NAME);
+        }
+    }
+
+    private void createVariablesTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
+        for (Table table:tables){
+            if(StringUtils.equals(ApplicationConstants.VARIABLE_TABLE_NAME, table.getTableName())){
+                log.debug("The table:{} already created, skip creation", table.getTableName());
+                return;
+            }
+        }
+        log.info("Creating variable DynamoDB table ...");
+        try {
+            CreateTableRequest createTableRequest = new CreateVariableTableRequest().build();
+            Table table = dynamoDB.createTable(createTableRequest);
+            table.waitForActive();
+            log.info("The variable table was successfully created");
+        } catch (InterruptedException e) {
+            log.error("Error during creation DynamoDB table:{}", ApplicationConstants.VARIABLE_TABLE_NAME);
         }
     }
 }

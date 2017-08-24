@@ -19,6 +19,7 @@ public class ApplicationConstants {
     public static final String SESSION_TABLE_NAME = "session";
     public static final String NOTE_TABLE_NAME = "note";
     public static final String TEMPLATE_TABLE_NAME = "template";
+    public static final String VARIABLE_TABLE_NAME = "variable";
 
     /** DynamoDB table throughput **/
     public static final long TENANT_TABLE_READ_CAPACITY_UNITS = 5l;
@@ -27,7 +28,9 @@ public class ApplicationConstants {
     public static final long SESSION_TABLE_WRITE_CAPACITY_UNITS = 20l;
     public static final long TEMPLATE_TABLE_READ_CAPACITY_UNITS = 3l;
     public static final long TEMPLATE_TABLE_WRITE_CAPACITY_UNITS = 3l;
-
+    public static final long VARIABLE_TABLE_READ_CAPACITY_UNITS = 10L;
+    public static final long VARIABLE_TABLE_WRITE_CAPACITY_UNITS = 10l;
+    
     /** DynamoDB global secondary indexes **/
     public static final String GSI_CLIENT_KEY = "idx_client_key";
     public static final String GSI_BASE_URL = "idx_base_url";
