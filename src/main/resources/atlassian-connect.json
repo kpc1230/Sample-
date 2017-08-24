@@ -53,6 +53,14 @@
         },
         "key": "view-session-url",
         "location": "none"
+      },
+      {
+        "url": "/projectTestSessions?projectId={project.id}&projectKey={project.key}",
+        "name": {
+          "value": "Test Sessions"
+        },
+        "key": "capture-test-sessions-url",
+        "location": "none"
       }
     ],
     "adminPages":[
@@ -154,6 +162,7 @@
         "key": "bonfire-issue-operation"
       },
       {
+        "context": "page",
         "location": "jira.project.sidebar.navigation",
         "weight": 20,
         "url": "capture-test-sessions-url",
