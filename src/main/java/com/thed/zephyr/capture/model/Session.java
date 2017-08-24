@@ -4,6 +4,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.thed.zephyr.capture.model.jira.Issue;
 import com.thed.zephyr.capture.model.jira.Project;
 import com.thed.zephyr.capture.service.db.DateTimeTypeConverter;
+import com.thed.zephyr.capture.service.db.DurationTypeConverter;
 import com.thed.zephyr.capture.service.db.SessionIssueCollectionConverter;
 import com.thed.zephyr.capture.service.db.SessionRelatedProjectTypeConverter;
 import com.thed.zephyr.capture.service.db.SessionStatusTypeConverter;
@@ -43,7 +44,7 @@ public class Session  implements Comparable<Session> {
     private DateTime timeCreated;
     @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
     private DateTime timeFinished;
-    @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
+    @DynamoDBTypeConverted(converter = DurationTypeConverter.class)
     private Duration timeLogged;
     @DynamoDBTypeConverted(converter = SessionIssueCollectionConverter.class)
     private Collection<Issue> issuesRaised;
