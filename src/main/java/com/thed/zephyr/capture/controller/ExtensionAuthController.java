@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.controller;
 
+import com.atlassian.connect.spring.IgnoreJwt;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.extension.JiraAuthService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
@@ -26,6 +27,7 @@ public class ExtensionAuthController {
     @Autowired
     DynamicProperty dynamicProperty;
 
+    @IgnoreJwt
     @RequestMapping(value = "/rest/authenticate/be", method = RequestMethod.POST)
     ResponseEntity validateCredentials(@RequestParam String username, @RequestParam String password, @RequestParam String baseUrl, @RequestHeader(value = "User-Agent") String userAgent) {
         log.debug("Validating JIRA user credentials : userAgent : " + userAgent);
