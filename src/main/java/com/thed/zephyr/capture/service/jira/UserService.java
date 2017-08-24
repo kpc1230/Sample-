@@ -13,4 +13,6 @@ public interface UserService {
     boolean deleteUserProperty(String userName, String propName);
 
     boolean createOrUpdateUserProperty(String userName, String propName, JsonNode jsonNode);
+
+    JsonNode getAssignableUserByProjectKey(String projectKey);
 }

@@ -68,5 +68,16 @@ public class ApplicationConstants {
     public static final String AUTHORIZATION = "Authorization";
     public static final String BE_ACCESS_KEY_EXPIRATION_TIME = "be.accessKey.expiration.time.milliSeconds";
 
+    /*** for MetadataField ***/
+    public static String PROJECTS = "projects";
+    public static String ALLOWED_VALUES = "allowedValues";
+    public static String FIELDS = "fields";
+    public static String ISSUE_TYPES = "issuetypes";
+    public static String ISSUE_TYPE = "issueType";
+    public static String KEY = "key";
+    public static String OPTIONS = "options";
+    public static String FIELD_LIST_BEANS = "fieldListBeans";
+    public static String FIELD_DETAILS = "fieldDetails";
+    public static String USER_BEANS = "userBeans";
 
 }

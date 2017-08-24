@@ -1,16 +1,11 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
-import com.thed.zephyr.capture.model.jira.Issue;
+import com.atlassian.jira.rest.client.api.JiraRestClient;
+import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.service.jira.IssueService;
-import com.thed.zephyr.capture.util.JiraConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
 
 /**
  * Created by Masud on 8/13/17.
@@ -22,31 +17,16 @@ public class IssueServiceImpl implements IssueService {
     private Logger log;
 
     @Autowired
-    private JwtSigningRestTemplate restTemplate;
+    private JiraRestClient jiraRestClient;
 
     @Override
     public Issue getIssueObject(Long issueId) {
-    	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-    	String uri = host.getHost().getBaseUrl()+ JiraConstants.REST_API_ISSUE+"/"+issueId;
-        return getIssue(uri);
+    	return jiraRestClient.getIssueClient().getIssue(String.valueOf(issueId)).claim();
     }
     
     @Override
     public Issue getIssueObject(String issueKey) {
-    	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-    	String uri = host.getHost().getBaseUrl() + JiraConstants.REST_API_ISSUE+"/" + issueKey;
-        return getIssue(uri);
+        return jiraRestClient.getIssueClient().getIssue(issueKey).claim();
     }
-    
-    private Issue getIssue(String uri) {
-        try {
-            Issue response = restTemplate.getForObject(uri, Issue.class);
-            return response;
-        } catch (RestClientException exception) {
-            log.error("Error during getting issue from jira.", exception);
-            throw exception;
-        }
-    }
+
 }

@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.model;
 
-import com.thed.zephyr.capture.model.jira.Project;
+
+import com.atlassian.jira.rest.client.api.domain.Project;
 
 import java.util.Map;
 

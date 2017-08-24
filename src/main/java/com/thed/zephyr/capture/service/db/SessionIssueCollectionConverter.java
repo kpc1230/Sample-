@@ -1,8 +1,7 @@
 package com.thed.zephyr.capture.service.db;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
-import com.thed.zephyr.capture.model.jira.Issue;
-import com.thed.zephyr.capture.model.jira.Project;
+import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import org.springframework.beans.factory.annotation.Autowired;
 

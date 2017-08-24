@@ -1,16 +1,15 @@
 package com.thed.zephyr.capture.validator;
 
-import java.util.Objects;
-
+import com.atlassian.jira.rest.client.api.domain.Project;
+import com.thed.zephyr.capture.model.TemplateRequest;
+import com.thed.zephyr.capture.service.jira.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
-import com.thed.zephyr.capture.model.TemplateRequest;
-import com.thed.zephyr.capture.model.jira.Project;
-import com.thed.zephyr.capture.service.jira.ProjectService;
+import java.util.Objects;
 
 /**
  * Validator Class that will be invoked for create and update methods of template API.

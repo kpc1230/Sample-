@@ -24,8 +24,9 @@ public class JiraConstants {
     public static final String REST_API_BASE_ISSUE = "/rest/api/2/issue";
     public static final String REST_API_PROJECT_VERSIONS = "/rest/api/2/issue";
     public static final String REST_API_BASE_USER_PROPERTIES = REST_API_BASE+"/user/properties";
+    public static final String REST_API_ASSIGNABLE_USER = "/rest/api/2/user/assignable/search";
     public static String REST_AUTH_CHECK_URL = "/rest/api/2/myself";
     public static String REST_API_CUSTOM_FIELD = "/rest/api/2/field";
-
+    public static String REST_API_CREATE_ISSUE_SCHEMA = "/rest/api/2/issue/createmeta";
 
 }

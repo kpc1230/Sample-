@@ -1,6 +1,6 @@
 package com.thed.zephyr.capture.model;
 
-import com.thed.zephyr.capture.model.jira.Issue;
+import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.joda.time.DateTime;
 
@@ -33,7 +33,12 @@ public class IssueUnraisedSessionActivityItem extends BaseSessionActivityItem {
 
     public Issue getParentIssue() {
         if (issue != null) {
-            return issue.getParentObject();
+            //return issue.getParentObject(); //since jira issue doesnt have parent object.
+            try {
+                throw new Exception("parent object not found");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return null;
     }

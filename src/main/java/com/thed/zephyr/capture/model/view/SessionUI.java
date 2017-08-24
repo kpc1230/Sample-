@@ -3,9 +3,9 @@ package com.thed.zephyr.capture.model.view;
 import com.opensymphony.util.TextUtils;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.SessionActivityItem;
-import com.thed.zephyr.capture.model.jira.Project;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
+import com.atlassian.jira.rest.client.api.domain.Project;
 
 import java.time.Duration;
 import java.util.List;

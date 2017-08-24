@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.jira;
 
-import com.thed.zephyr.capture.model.jira.Issue;
+
+import com.atlassian.jira.rest.client.api.domain.Issue;
 
 /**
  * Created by Masud on 8/13/17.

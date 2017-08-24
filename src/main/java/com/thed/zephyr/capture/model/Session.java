@@ -1,8 +1,8 @@
 package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
-import com.thed.zephyr.capture.model.jira.Issue;
-import com.thed.zephyr.capture.model.jira.Project;
+import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.service.db.DateTimeTypeConverter;
 import com.thed.zephyr.capture.service.db.DurationTypeConverter;
 import com.thed.zephyr.capture.service.db.SessionIssueCollectionConverter;

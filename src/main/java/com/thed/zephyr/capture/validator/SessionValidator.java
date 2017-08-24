@@ -1,22 +1,21 @@
 package com.thed.zephyr.capture.validator;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
+import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.Project;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.thed.zephyr.capture.model.SessionRequest;
+import com.thed.zephyr.capture.service.jira.IssueService;
+import com.thed.zephyr.capture.service.jira.ProjectService;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.thed.zephyr.capture.model.SessionRequest;
-import com.thed.zephyr.capture.model.jira.Issue;
-import com.thed.zephyr.capture.model.jira.Project;
-import com.thed.zephyr.capture.service.jira.IssueService;
-import com.thed.zephyr.capture.service.jira.ProjectService;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Class will be invoked when session related create and update API's are called.

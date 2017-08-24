@@ -1,9 +1,9 @@
 package com.thed.zephyr.capture.model;
 
 import com.atlassian.core.util.thumbnail.Thumbnail;
+import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.model.jira.Attachment;
-import com.thed.zephyr.capture.model.jira.Issue;
-import com.thed.zephyr.capture.model.jira.Project;
 import org.joda.time.DateTime;
 import com.google.common.collect.Lists;
 

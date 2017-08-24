@@ -1,12 +1,12 @@
 package com.thed.zephyr.capture.model;
 
-import java.util.List;
+import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.Project;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.List;
 
-import com.thed.zephyr.capture.model.jira.Issue;
-import com.thed.zephyr.capture.model.jira.Project;
 
 /**
  * Class holds session request information from ui for create and update session api.

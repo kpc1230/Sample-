@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.data.impl;
 
 import java.util.Objects;
 
+import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -17,7 +18,6 @@ import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.SessionBuilder;
 import com.thed.zephyr.capture.model.SessionRequest;
-import com.thed.zephyr.capture.model.jira.Project;
 import com.thed.zephyr.capture.repositories.SessionRepository;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.ProjectService;

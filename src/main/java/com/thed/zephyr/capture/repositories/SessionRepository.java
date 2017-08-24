@@ -1,7 +1,7 @@
 package com.thed.zephyr.capture.repositories;
 
+import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.model.jira.Project;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
