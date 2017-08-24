@@ -1,19 +1,13 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
-import com.thed.zephyr.capture.model.jira.Version;
+import com.atlassian.jira.rest.client.api.domain.Version;
+import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.VersionService;
-import com.thed.zephyr.capture.util.ApplicationConstants;
-import com.thed.zephyr.capture.util.JiraConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -26,7 +20,7 @@ public class VersionServiceImpl implements VersionService {
     private Logger log;
 
     @Autowired
-    private JwtSigningRestTemplate restTemplate;
+    private ProjectService projectService;
 
     @Override
     public List<Version> getVersionsUnreleased(Long projectId) {
@@ -39,21 +33,17 @@ public class VersionServiceImpl implements VersionService {
     }
 
     private List<Version> getVersionsByRelease(Long projectId, Boolean released) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        List<Version> versions = new ArrayList<>();
-        String uri = host.getHost().getBaseUrl()+ JiraConstants.REST_API_PROJECT+"/"+projectId
-                +"/"+ ApplicationConstants.VERSIONS;
-        try {
-            Version[] listVersion = restTemplate.getForObject(uri, Version[].class);
-            Arrays.asList(listVersion).forEach((version -> {
-                if(version.getReleased().equals(released)){
-                    versions.add(version);
-                }
-            }));
-        } catch (Exception exception) {
-            log.error("Error during getting list of {} version from jira.",released,exception);
-        }
+      List<Version> versions = new ArrayList<>();
+
+        projectService.getProjectObj(projectId).getVersions()
+                .forEach(version -> {
+                    log.info("VERSION: {}",version.getName());
+                    if(released.equals(version.isReleased())) {
+                        versions.add(version);
+                    }
+                });
+
+
         return versions;
     }
 }

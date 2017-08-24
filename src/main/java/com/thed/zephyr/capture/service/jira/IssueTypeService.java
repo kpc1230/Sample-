@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.jira;
 
-import com.thed.zephyr.capture.model.jira.IssueType;
+
+import com.atlassian.jira.rest.client.api.domain.IssueType;
 
 import java.util.List;
 

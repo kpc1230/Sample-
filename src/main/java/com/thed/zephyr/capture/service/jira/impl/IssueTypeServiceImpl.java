@@ -1,21 +1,18 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.thed.zephyr.capture.model.jira.IssueType;
+import com.atlassian.jira.rest.client.api.GetCreateIssueMetadataOptions;
+import com.atlassian.jira.rest.client.api.JiraRestClient;
+import com.atlassian.jira.rest.client.api.domain.CimProject;
+import com.atlassian.jira.rest.client.api.domain.IssueType;
+import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.service.jira.IssueTypeService;
-import com.thed.zephyr.capture.util.JiraConstants;
- import org.slf4j.Logger;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
 
+import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -28,60 +25,32 @@ public class IssueTypeServiceImpl implements IssueTypeService {
     private Logger log;
 
     @Autowired
-    private JwtSigningRestTemplate restTemplate;
-
+    private JiraRestClient jiraRestClient;
 
     @Override
     public List<IssueType> getIssueTypes() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-
-        String uri = host.getHost().getBaseUrl()+ JiraConstants.REST_API_ISSUE_TYPE;
-
-        try {
-            IssueType[] response = restTemplate.getForObject(uri, IssueType[].class);
-            return Arrays.asList(response);
-        } catch (RestClientException exception) {
-            log.error("Error during getting issue types from jira.", exception);
-            throw exception;
-        }
+        return Lists.newArrayList(jiraRestClient.getMetadataClient().getIssueTypes().claim());
     }
 
     @Override
     public IssueType getIssueType(Long id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-
-        String uri = host.getHost().getBaseUrl()+ JiraConstants.REST_API_ISSUE_TYPE+"/"+id;
-
-        try {
-            IssueType response = restTemplate.getForObject(uri, IssueType.class);
-            return response;
-        } catch (RestClientException exception) {
-            log.error("Error during getting issue type from jira.", exception);
-            throw exception;
-        }
+         return jiraRestClient.getMetadataClient().getIssueType(URI.create(String.valueOf(id))).claim();
     }
 
     @Override
     public List<IssueType> getIssueTypesByProject(Long projectId) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        List<String> expList = new ArrayList<>();
+        List<Long> prList = new ArrayList<>();
+        expList.add("issueTypes"); Iterable<String> expandos = expList;
+        prList.add(projectId); Iterable<Long> prIds = prList;
+        GetCreateIssueMetadataOptions options =
+                new GetCreateIssueMetadataOptions(expandos,null,null,null,prIds);
+        List<CimProject> projects = Lists.newArrayList(jiraRestClient.getIssueClient()
+                .getCreateIssueMetadata(options).claim());
         List<IssueType> issueTypes = new ArrayList<>();
-        String uri = host.getHost().getBaseUrl()+ JiraConstants.REST_API_PROJECT+"/"+projectId+"?expand=issueTypes";
-
-        try {
-            String response = restTemplate.getForObject(uri, String.class);
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode issueTypesNode = mapper.readTree(response).get("issueTypes");
-            if(issueTypesNode.isArray()){
-                IssueType[] issueTypesArr = new ObjectMapper().readValue(issueTypesNode.toString(),IssueType[].class);
-                issueTypes = Arrays.asList(issueTypesArr);
-            }
-            return issueTypes;
-        } catch (Exception exception) {
-            log.error("Error during getting issue types by project from jira.", exception);
-         }
+        projects.forEach(cimProject -> {
+            issueTypes.addAll((Collection<? extends IssueType>) cimProject.getIssueTypes());
+        });
          return issueTypes;
     }
 }
