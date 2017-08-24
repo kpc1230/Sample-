@@ -6,6 +6,7 @@ import com.thed.zephyr.capture.model.jira.Project;
 import com.thed.zephyr.capture.service.db.DateTimeTypeConverter;
 import com.thed.zephyr.capture.service.db.SessionIssueCollectionConverter;
 import com.thed.zephyr.capture.service.db.SessionRelatedProjectTypeConverter;
+import com.thed.zephyr.capture.service.db.SessionStatusTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
@@ -31,6 +32,7 @@ public class Session  implements Comparable<Session> {
     private String assignee;
     private String name;
     private String additionalInfo;
+    @DynamoDBTypeConverted(converter = SessionStatusTypeConverter.class)
     private Status status;
     @DynamoDBTypeConverted(converter = SessionIssueCollectionConverter.class)
     private Collection<Issue> relatedIssues;
