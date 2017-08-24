@@ -37,10 +37,8 @@ public class ExtensionAuthController {
 
                 HttpHeaders headers = new HttpHeaders();
                 String encry = AESEncryptionUtils.encrypt(buffer.toString(), dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
-                headers.add(ApplicationConstants.HEADER_PARAM_PACCESS_KEY, encry);
                 log.debug("Encrypted string....... : " + encry);
-
-                headers.add("accessKey", CaptureUtil.base64(buffer.toString()));
+                headers.add(ApplicationConstants.HEADER_PARAM_PACCESS_KEY, encry);
                 log.debug("Validating JIRA user credentials END");
                 return new ResponseEntity(headers, HttpStatus.OK);
             }
