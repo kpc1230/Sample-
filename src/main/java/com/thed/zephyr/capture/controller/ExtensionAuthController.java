@@ -33,8 +33,7 @@ public class ExtensionAuthController {
         if (success) {
             AcHostModel host = jiraAuthService.getAcHostModelbyBaseUrl(baseUrl);
             if (host.getStatus() == AcHostModel.TenantStatus.ACTIVE) {
-                StringBuffer buffer = new StringBuffer(host.getCtId()).append("_").append(username).append("_").append(userAgent);
-
+                StringBuffer buffer = new StringBuffer(host.getCtId()).append("_").append(username).append("_").append(System.currentTimeMillis()).append("_").append(userAgent);
                 HttpHeaders headers = new HttpHeaders();
                 String encry = AESEncryptionUtils.encrypt(buffer.toString(), dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
                 log.debug("Encrypted string....... : " + encry);

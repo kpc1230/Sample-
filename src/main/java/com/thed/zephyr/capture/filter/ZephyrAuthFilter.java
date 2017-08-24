@@ -48,7 +48,7 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
         Optional<String> optionalAccessKey = getAccessKeyFromHeader(request);
         if (optionalAccessKey.isPresent()) {
             boolean status = validateAccessKey(optionalAccessKey.get(), request);
-            log.debug("validation on access key : "+status);
+            log.debug("validation on access key : " + status);
             filterChain.doFilter(request, response);
 
         } else {
@@ -77,6 +77,10 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
                 if (StringUtils.endsWith(decodedKey, "_" + useragent)) {
                     String clientKey = keyParts[0];
                     String userKey = keyParts[1];
+                    String timeInMilliSec = keyParts[2];
+                    if (validateKeyExpiry(timeInMilliSec)) {
+                        return false;
+                    }
                     AcHostModel acHostModel = acHostModelRepository.findOne(clientKey);
                     JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(userKey)), new Jwt("", "", ""));
                     //Put JwtAuthentication into SecurityContext to mock JwtAuthenticationFilter behavior and allow RequireAuthenticationHandlerInterceptor pass request
@@ -87,6 +91,15 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
 
         }
         return false;
+    }
+
+    private boolean validateKeyExpiry(String timeInMilliSec) {
+        long keyGeneratedTime = Long.valueOf(timeInMilliSec);
+        long expiredin = dynamicProperty.getLongProp(ApplicationConstants.BE_ACCESS_KEY_EXPIRATION_TIME, (15 * 24 * 60 * 60 * 1000)).get();
+        if (keyGeneratedTime + expiredin >= System.currentTimeMillis()) {
+            return false;
+        }
+        return true;
     }
 
 
