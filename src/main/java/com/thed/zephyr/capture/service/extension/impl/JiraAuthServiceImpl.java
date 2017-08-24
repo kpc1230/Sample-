@@ -1,12 +1,12 @@
 package com.thed.zephyr.capture.service.extension.impl;
 
-import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.model.AcHostModel;
-import com.thed.zephyr.capture.service.extension.JiraAuthService;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import com.thed.zephyr.capture.service.extension.JiraAuthService;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.JiraConstants;
+import com.thed.zephyr.capture.util.PlainRestTemplate;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -22,7 +22,7 @@ public class JiraAuthServiceImpl implements JiraAuthService {
     private Logger log;
 
     @Autowired
-    private JwtSigningRestTemplate restTemplate;
+    private PlainRestTemplate restTemplate;
 
     @Autowired
     DynamoDBAcHostRepository dynamoDBAcHostRepository;

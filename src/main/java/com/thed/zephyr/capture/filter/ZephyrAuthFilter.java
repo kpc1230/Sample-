@@ -47,8 +47,10 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         Optional<String> optionalAccessKey = getAccessKeyFromHeader(request);
         if (optionalAccessKey.isPresent()) {
-            validateAccessKey(optionalAccessKey.get(), request);
+            boolean status = validateAccessKey(optionalAccessKey.get(), request);
+            log.debug("validation on access key : "+status);
             filterChain.doFilter(request, response);
+
         } else {
             super.doFilterInternal(request, response, filterChain);
         }
@@ -67,19 +69,22 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
     private boolean validateAccessKey(String accessKey, HttpServletRequest request) {
         if (!StringUtils.isEmpty(accessKey)) {
             String decodedKey = AESEncryptionUtils.decrypt(accessKey, dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
-            String[] keyParts = decodedKey.split("_");
-            log.debug("Decoded access key : " + decodedKey);
-            String useragent = request.getHeader(ApplicationConstants.USER_AGENT);
-            log.debug("User-Agent from request received : " + useragent);
-            if (StringUtils.endsWith(decodedKey, "_" + useragent)) {
-                String clientKey = keyParts[0];
-                String userKey = keyParts[1];
-                AcHostModel acHostModel = acHostModelRepository.findOne(clientKey);
-                JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(userKey)), new Jwt("", "", ""));
-            //Put JwtAuthentication into SecurityContext to mock JwtAuthenticationFilter behavior and allow RequireAuthenticationHandlerInterceptor pass request
-                SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
-                return true;
+            if (StringUtils.isNotBlank(decodedKey)) {
+                String[] keyParts = decodedKey.split("_");
+                log.debug("Decoded access key : " + decodedKey);
+                String useragent = request.getHeader(ApplicationConstants.USER_AGENT);
+                log.debug("User-Agent from request received : " + useragent);
+                if (StringUtils.endsWith(decodedKey, "_" + useragent)) {
+                    String clientKey = keyParts[0];
+                    String userKey = keyParts[1];
+                    AcHostModel acHostModel = acHostModelRepository.findOne(clientKey);
+                    JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(userKey)), new Jwt("", "", ""));
+                    //Put JwtAuthentication into SecurityContext to mock JwtAuthenticationFilter behavior and allow RequireAuthenticationHandlerInterceptor pass request
+                    SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
+                    return true;
+                }
             }
+
         }
         return false;
     }

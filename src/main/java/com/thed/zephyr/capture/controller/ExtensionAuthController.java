@@ -26,7 +26,7 @@ public class ExtensionAuthController {
     @Autowired
     DynamicProperty dynamicProperty;
 
-    @RequestMapping(value = "/rest/authenticate/be", method = RequestMethod.GET)
+    @RequestMapping(value = "/rest/authenticate/be", method = RequestMethod.POST)
     ResponseEntity validateCredentials(@RequestParam String username, @RequestParam String password, @RequestParam String baseUrl, @RequestHeader(value = "User-Agent") String userAgent) {
         log.debug("Validating JIRA user credentials : userAgent : " + userAgent);
         boolean success = jiraAuthService.authenticateWithJira(username, password, baseUrl);
