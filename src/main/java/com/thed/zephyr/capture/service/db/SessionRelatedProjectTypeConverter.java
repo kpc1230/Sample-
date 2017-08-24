@@ -15,7 +15,7 @@ public class SessionRelatedProjectTypeConverter implements DynamoDBTypeConverter
 
     @Override
     public Long convert(Project object) {
-        return null;
+        return object.getId();
     }
 
     @Override

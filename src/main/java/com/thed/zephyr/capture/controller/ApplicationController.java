@@ -78,4 +78,15 @@ public class ApplicationController {
         return "testingIssueView";
     }
 
+    @RequestMapping(value = "/projectTestSessions")
+    public String projectTestSessions(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
+        String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
+        log.debug("Requesting the Project Test Sessions page");
+        model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        model.addAttribute("projectKey", projectKey);
+        model.addAttribute("projectId", projectId);
+        log.debug("Ending Requesting the Project Test Sessions page");
+        return "projectTestSessions";
+    }
+
 }
