@@ -6,7 +6,7 @@ import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.service.db.DateTimeTypeConverter;
 import com.thed.zephyr.capture.service.db.DurationTypeConverter;
 import com.thed.zephyr.capture.service.db.SessionIssueCollectionConverter;
-import com.thed.zephyr.capture.service.db.SessionRelatedProjectTypeConverter;
+import com.thed.zephyr.capture.service.db.ProjectTypeConverter;
 import com.thed.zephyr.capture.service.db.SessionStatusTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -38,8 +38,8 @@ public class Session  implements Comparable<Session> {
     @DynamoDBTypeConverted(converter = SessionIssueCollectionConverter.class)
     private Collection<Issue> relatedIssues;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CLIENT_KEY)
-    @DynamoDBTypeConverted(converter = SessionRelatedProjectTypeConverter.class)
-    private Project relatedProject;
+    @DynamoDBTypeConverted(converter = ProjectTypeConverter.class)
+    private Project project;
     @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
     private DateTime timeCreated;
     @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
@@ -70,7 +70,7 @@ public class Session  implements Comparable<Session> {
                    String additionalInfo,
                    Status status,
                    List<Issue> relatedIssues,
-                   Project relatedProject,
+                   Project project,
                    DateTime timeCreated,
                    DateTime timeFinished,
                    Duration timeLogged,
@@ -91,7 +91,7 @@ public class Session  implements Comparable<Session> {
         this.additionalInfo = additionalInfo;
         this.status = status;
         this.relatedIssues = relatedIssues;
-        this.relatedProject = relatedProject;
+        this.project = project;
         this.timeCreated = timeCreated;
         this.timeFinished = timeFinished;
         this.timeLogged = timeLogged;
@@ -160,6 +160,8 @@ public class Session  implements Comparable<Session> {
         return Collections.unmodifiableList(copy);
     }
 
+
+
     public boolean isShared() {
         return shared;
     }
@@ -173,8 +175,8 @@ public class Session  implements Comparable<Session> {
         return Collections.unmodifiableMap(sessionStatusHistory);
     }
 
-    public Project getRelatedProject() {
-        return relatedProject;
+    public Project getProject() {
+        return project;
     }
 
     public Map<String, Note> getSessionNotes() {
@@ -226,7 +228,7 @@ public class Session  implements Comparable<Session> {
         if (participants != null ? !participants.equals(session.participants) : session.participants != null)
             return false;
         if (name != null ? !name.equals(session.name) : session.name != null) return false;
-        if (relatedProject != null ? !relatedProject.equals(session.relatedProject) : session.relatedProject != null)
+        if (project != null ? !project.equals(session.project) : session.project != null)
             return false;
         if (sessionActivity != null ? !sessionActivity.equals(session.sessionActivity) : session.sessionActivity != null)
             return false;
@@ -253,7 +255,7 @@ public class Session  implements Comparable<Session> {
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (additionalInfo != null ? additionalInfo.hashCode() : 0);
         result = 31 * result + (status != null ? status.hashCode() : 0);
-        result = 31 * result + (relatedProject != null ? relatedProject.hashCode() : 0);
+        result = 31 * result + (project != null ? project.hashCode() : 0);
         result = 31 * result + (timeCreated != null ? timeCreated.hashCode() : 0);
         result = 31 * result + (timeFinished != null ? timeFinished.hashCode() : 0);
         result = 31 * result + (timeLogged != null ? timeLogged.hashCode() : 0);

@@ -1,11 +1,13 @@
 package com.thed.zephyr.capture.util;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import org.apache.http.NameValuePair;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -76,5 +78,10 @@ public class CaptureUtil {
             }
             paramMap.put(name, array);
         }
+    }
+
+    public static String getCurrentClientKey(){
+        AtlassianHostUser atlassianHostUser = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return atlassianHostUser.getHost().getClientKey();
     }
 }

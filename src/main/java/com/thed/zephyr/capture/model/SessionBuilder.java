@@ -45,7 +45,7 @@ public class SessionBuilder {
         this.additionalInfo = session.getAdditionalInfo() != null ? session.getAdditionalInfo() : "";
         this.status = session.getStatus();
         this.relatedIssues = Lists.newArrayList(session.getRelatedIssues());
-        this.relatedProject = session.getRelatedProject();
+        this.relatedProject = session.getProject();
         this.timeCreated = session.getTimeCreated();
         this.timeFinished = session.getTimeFinished();
         this.timeLogged = session.getTimeLogged();
@@ -123,11 +123,11 @@ public class SessionBuilder {
         return this;
     }
 
-    public SessionBuilder setAssignee(String assigner, String assignee, String avatarUrl) {
+    public SessionBuilder setAssignee(String sessionId, String clientKey, String assigner, String assignee, String avatarUrl) {
         // Don't do redundant assigns
         if (this.assignee == null || !this.assignee.equals(assignee)) {
             this.assignee = assignee;
-            sessionActivity.add(new UserAssignedSessionActivity(this.id, new DateTime(), assigner, assignee, avatarUrl));
+            sessionActivity.add(new UserAssignedSessionActivity(sessionId, clientKey, new DateTime(), assigner, assignee, avatarUrl));
         }
         return this;
     }
@@ -182,7 +182,7 @@ public class SessionBuilder {
         return this;
     }
 
-    public SessionBuilder addParticipantLeft(String sessionId, String user, String avatarUrl) {
+    public SessionBuilder addParticipantLeft(String sessionId, String clientKey, String user, String avatarUrl) {
         DateTime now = new DateTime();
         for (Iterator<Participant> iterator = participants.iterator(); iterator.hasNext(); ) {
             Participant participant = iterator.next();
@@ -192,7 +192,7 @@ public class SessionBuilder {
 
                 participant = new ParticipantBuilder(participant).setTimeLeft(now).build();
                 participants.add(participant);
-                sessionActivity.add(new UserLeftSessionActivity(sessionId, participant, avatarUrl));
+                sessionActivity.add(new UserLeftSessionActivity(sessionId, clientKey, participant, avatarUrl));
                 break;
             }
         }
@@ -265,13 +265,13 @@ public class SessionBuilder {
         return this;
     }
 
-    public SessionBuilder addNote(String sessionId, Note note, String creator, String avatarUrl) {
+    public SessionBuilder addNote(String sessionId, String clientKey, Note note, String creator, String avatarUrl) {
         sessionNotes.put(note.getId(), note);
 
         sessionNoteIds.add(note.getId());
 
         // This is where we need the creator - this avoids us looking up the user in the UserManager again if we don't have to
-        sessionActivity.add(new NoteSessionActivity(sessionId, note.getCreatedTime(), creator, note.getId(), avatarUrl));
+        sessionActivity.add(new NoteSessionActivity(sessionId, clientKey, note.getCreatedTime(), creator, note.getId(), avatarUrl));
 
         return this;
     }
@@ -297,24 +297,24 @@ public class SessionBuilder {
         return this;
     }
 
-    public SessionBuilder addRaisedIssue(String sessionId, Issue issue, DateTime timeRaised, String creator) {
+    public SessionBuilder addRaisedIssue(String sessionId, String clientKey, Issue issue, DateTime timeRaised, String creator) {
         issuesRaised.add(issue);
 
-        sessionActivity.add(new IssueRaisedSessionActivity(sessionId, timeRaised, creator, issue));
+        sessionActivity.add(new IssueRaisedSessionActivity(sessionId, clientKey, timeRaised, creator, issue));
 
         return this;
     }
 
-    public SessionBuilder removeRaisedIssue(String sessionId, Issue issue, DateTime timeRemoved, String remover) {
+    public SessionBuilder removeRaisedIssue(String sessionId, String clientKey, Issue issue, DateTime timeRemoved, String remover) {
         issuesRaised.remove(issue);
 
-        sessionActivity.add(new IssueUnraisedSessionActivity(sessionId, timeRemoved, remover, issue.getId(), issue));
+        sessionActivity.add(new IssueUnraisedSessionActivity(sessionId, clientKey, timeRemoved, remover, issue.getId(), issue));
 
         return this;
     }
 
-    public SessionBuilder addAttachment(String sessionId, DateTime timestamp, String user, Issue issue, Attachment attachment, Thumbnail thumbnail) {
-        sessionActivity.add(new IssueAttachmentSessionActivity(sessionId, timestamp, user, issue, attachment));
+    public SessionBuilder addAttachment(String sessionId, String clientKey, DateTime timestamp, String user, Issue issue, Attachment attachment, Thumbnail thumbnail) {
+        sessionActivity.add(new IssueAttachmentSessionActivity(sessionId, clientKey, timestamp, user, issue, attachment));
 
         return this;
     }

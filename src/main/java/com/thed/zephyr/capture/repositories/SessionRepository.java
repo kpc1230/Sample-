@@ -14,5 +14,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SessionRepository extends CrudRepository<Session, String> {
 	
-	Page<Session> findByRelatedProject(Project project, Pageable pageable);
+	Page<Session> findByProject(Project project, Pageable pageable);
 }

@@ -23,17 +23,17 @@ public class CreateSessionActivityTableRequest {
                         .withReadCapacityUnits(ApplicationConstants.SESSION_ACTIVITY_TABLE_READ_CAPACITY_UNITS)
                         .withWriteCapacityUnits(ApplicationConstants.SESSION_ACTIVITY_TABLE_WRITE_CAPACITY_UNITS))
                 .withAttributeDefinitions(getAttributeDefinitions())
-                .withKeySchema(getPrimaryKey());
-            //    .withGlobalSecondaryIndexes(getGlobalSecondaryIndexes());
+                .withKeySchema(getPrimaryKey())
+                .withGlobalSecondaryIndexes(getGlobalSecondaryIndexes());
 
         return createTableRequest;
     }
 
     private List<AttributeDefinition> getAttributeDefinitions(){
         List<AttributeDefinition> attributes = Arrays.asList(
-                new AttributeDefinition("id", ScalarAttributeType.S)
-        //        new AttributeDefinition("clientKey", ScalarAttributeType.N),
-        //        new AttributeDefinition("relatedProject", ScalarAttributeType.N)
+                new AttributeDefinition("id", ScalarAttributeType.S),
+                new AttributeDefinition("sessionId", ScalarAttributeType.S),
+                new AttributeDefinition("timestamp", ScalarAttributeType.N)
         );
 
         return attributes;
@@ -48,11 +48,11 @@ public class CreateSessionActivityTableRequest {
     private List<GlobalSecondaryIndex> getGlobalSecondaryIndexes(){
         List<GlobalSecondaryIndex> globalSecondaryIndices = new ArrayList<>();
         List<KeySchemaElement> indexSchema = Arrays.asList(
-                new KeySchemaElement("clientKey" ,KeyType.HASH),
-                new KeySchemaElement("relatedProject" ,KeyType.RANGE)
+                new KeySchemaElement("sessionId" ,KeyType.HASH),
+                new KeySchemaElement("timestamp" ,KeyType.RANGE)
         );
         GlobalSecondaryIndex clientKeyIndex = new GlobalSecondaryIndex()
-                .withIndexName(ApplicationConstants.GSI_CLIENT_KEY)
+                .withIndexName(ApplicationConstants.GSI_SESSIONID_TIMESTAMP)
                 .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits((long) 1)
                         .withWriteCapacityUnits((long) 1))

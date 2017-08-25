@@ -16,8 +16,8 @@ public class UserJoinedSessionActivity extends SessionActivity {
     public UserJoinedSessionActivity() {
     }
 
-    public UserJoinedSessionActivity(String sessionId, Participant participant, String avatarUrl) {
-        super(sessionId, participant.getTimeJoined(), participant.getUser(), avatarUrl);
+    public UserJoinedSessionActivity(String sessionId, String clientKey, Participant participant, String avatarUrl) {
+        super(sessionId, clientKey, participant.getTimeJoined(), participant.getUser(), avatarUrl);
         this.participant = participant;
     }
 

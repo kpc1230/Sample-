@@ -3,13 +3,16 @@ package com.thed.zephyr.capture.service.data.impl;
 
 import java.util.Objects;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
@@ -48,7 +51,7 @@ public class SessionServiceImpl implements SessionService {
 		if(Objects.isNull(project)) {
 			throw new CaptureValidationException("Please provide a valid project key");
 		}
-		sessionsPage = sessionRepository.findByRelatedProject(project, getPageRequest(offset, limit));
+		sessionsPage = sessionRepository.findByProject(project, getPageRequest(offset, limit));
 		SessionSearchList response  = new SessionSearchList(sessionsPage.getContent(), offset, limit, sessionsPage.getTotalElements());
 
 		return response;
@@ -59,7 +62,6 @@ public class SessionServiceImpl implements SessionService {
 		SessionBuilder sessionBuilder = new SessionBuilder();
         sessionBuilder.setCreator(loggedUserKey);
         sessionBuilder.setStatus(Status.CREATED, null);
-        sessionBuilder.setAssignee(loggedUserKey, sessionRequest.getAssignee(), null);
         sessionBuilder.setName(sessionRequest.getName());
         sessionBuilder.setTimeCreated(new DateTime());
         sessionBuilder.setAdditionalInfo(sessionRequest.getAdditionalInfo());
@@ -85,11 +87,12 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public Session updateSession(String loggedUserKey, String sessionId, SessionRequest sessionRequest) throws CaptureValidationException {
 		Session session = getSession(sessionId);
+		String clientKey = CaptureUtil.getCurrentClientKey();
 		if(Objects.isNull(session)) {
 			throw new CaptureValidationException("Invalid session id");
 		}
 		SessionBuilder sessionBuilder = new SessionBuilder(session);
-        sessionBuilder.setAssignee(loggedUserKey, sessionRequest.getAssignee(), null);
+        sessionBuilder.setAssignee(sessionId, clientKey, loggedUserKey, sessionRequest.getAssignee(), null);
         sessionBuilder.setName(sessionRequest.getName());
         sessionBuilder.setAdditionalInfo(sessionRequest.getAdditionalInfo());
         sessionBuilder.setShared(sessionRequest.getShared());
@@ -116,6 +119,7 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public Session pauseSession(String loggedUserKey, Session session) {
+		String clientKey = CaptureUtil.getCurrentClientKey();
 		if(session.getAssignee().equals(loggedUserKey)) { // Pause if assignee and logged user are same.
 			SessionBuilder sessionBuilder = new SessionBuilder(session);
 			sessionBuilder.setStatus(Status.PAUSED, null);
@@ -123,7 +127,7 @@ public class SessionServiceImpl implements SessionService {
 			return sessionRepository.save(startedSession);
 		}
 		if(log.isDebugEnabled()) log.debug("Session didn't pause since assignee and logged user are different");
-		Session updatedSession = new SessionBuilder(session).addParticipantLeft(session.getId(), loggedUserKey, null).build();
+		Session updatedSession = new SessionBuilder(session).addParticipantLeft(session.getId(), clientKey, loggedUserKey, null).build();
 		if(log.isDebugEnabled()) log.debug("Session paused successfully by the user -> " + loggedUserKey);
 		return updatedSession; //Returning the same session without pausing it.
 	}

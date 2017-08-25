@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Created by aliakseimatsarski on 8/17/17.
  */
-public class SessionRelatedProjectTypeConverter implements DynamoDBTypeConverter<Long, Project> {
+public class ProjectTypeConverter implements DynamoDBTypeConverter<Long, Project> {
 
     @Autowired
     private ProjectService projectService;

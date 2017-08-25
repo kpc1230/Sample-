@@ -40,6 +40,8 @@ public class ApplicationConstants {
     public static final String GSI_CREATED_BY = "idx_created_by";
     public static final String GSI_SHARED = "idx_shared";
     public static final String GSI_PROJECTID = "idx_project_id";
+    public static final String GSI_SESSIONID_TIMESTAMP = "idx_session_id_timestamp";
+
 
     public static final String BROWSER_FIREFOX_EXTENSION_DOWNLOAD = "browser.firefox.extension.download.url";
     public static final String BROWSER_SAFARI_EXTENSION_DOWNLOAD = "browser.safari.extension.download.url";

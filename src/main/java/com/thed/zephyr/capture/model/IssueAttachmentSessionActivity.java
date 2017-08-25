@@ -23,8 +23,8 @@ public class IssueAttachmentSessionActivity extends SessionActivity {
     public IssueAttachmentSessionActivity() {
     }
 
-    public IssueAttachmentSessionActivity(String sessionId, DateTime timestamp, String user, Issue issue, Attachment attachment) {
-        super(sessionId, timestamp, user, CaptureUtil.getLargeAvatarUrl(user));
+    public IssueAttachmentSessionActivity(String sessionId, String clientKey, DateTime timestamp, String user, Issue issue, Attachment attachment) {
+        super(sessionId, clientKey, timestamp, user, CaptureUtil.getLargeAvatarUrl(user));
         this.issue = issue;
         this.attachment = attachment;
     }

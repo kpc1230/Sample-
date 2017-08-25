@@ -49,7 +49,7 @@ public class SessionUI {
         this.additionalInfoRaw = session.getAdditionalInfo();
         this.additionalInfoHtml = additionalInfoHtml;
         this.estimatedTimeSpent = estimatedTimeSpent.toString();
-        this.relatedProjectName = session.getRelatedProject().getName();
+        this.relatedProjectName = session.getProject().getName();
         this.visibleRelatedIssues = visibleRelatedIssues;
         this.possibleTimetracking = possibleTimetracking;
         this.currentBrowser = currentBrowser;
@@ -134,15 +134,15 @@ public class SessionUI {
     }
 
     public Project getRelatedProject() {
-        return session.getRelatedProject();
+        return session.getProject();
     }
 
     public Long getRelatedProjectId() {
-        return session.getRelatedProject().getId();
+        return session.getProject().getId();
     }
 
     public String getRelatedProjectKey() {
-        return session.getRelatedProject().getKey();
+        return session.getProject().getKey();
     }
 
     public boolean hasAdditionalInfo() {

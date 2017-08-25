@@ -69,7 +69,7 @@ public class SessionController {
 			SessionSearchList sessionsSearch = sessionService.getSessionsForProject(projectKey, offset, limit);
 			sessionsSearch.getContent().stream().forEach(session -> {
 				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-						session.getRelatedProject(), session.getDefaultTemplateId(), session.getAdditionalInfo(), null); //Send only what UI is required instead of whole session object.
+						session.getProject(), session.getDefaultTemplateId(), session.getAdditionalInfo(), null); //Send only what UI is required instead of whole session object.
 				sessionDtoList.add(lightSession);
 			});
 			LightSessionSearchList response = new LightSessionSearchList(sessionDtoList, sessionsSearch.getOffset(), sessionsSearch.getLimit(), sessionsSearch.getTotal());

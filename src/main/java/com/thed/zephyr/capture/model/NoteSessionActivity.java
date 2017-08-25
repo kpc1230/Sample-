@@ -12,8 +12,8 @@ public class NoteSessionActivity extends SessionActivity {
     public NoteSessionActivity() {
     }
 
-    public NoteSessionActivity(String sessionId, DateTime timestamp, String user, String noteId, String avatarUrl) {
-        super(sessionId, timestamp, user, avatarUrl);
+    public NoteSessionActivity(String sessionId, String clientKey, DateTime timestamp, String user, String noteId, String avatarUrl) {
+        super(sessionId, clientKey, timestamp, user, avatarUrl);
         this.noteId = noteId;
     }
 
