@@ -20,17 +20,20 @@ public class ApplicationConstants {
     public static final String NOTE_TABLE_NAME = "note";
     public static final String TEMPLATE_TABLE_NAME = "template";
     public static final String VARIABLE_TABLE_NAME = "variable";
+    public static final String SESSION_ACTIVITY_TABLE_NAME = "session_activity";
 
     /** DynamoDB table throughput **/
-    public static final long TENANT_TABLE_READ_CAPACITY_UNITS = 5l;
-    public static final long TENANT_TABLE_WRITE_CAPACITY_UNITS = 5l;
-    public static final long SESSION_TABLE_READ_CAPACITY_UNITS = 20l;
-    public static final long SESSION_TABLE_WRITE_CAPACITY_UNITS = 20l;
-    public static final long TEMPLATE_TABLE_READ_CAPACITY_UNITS = 3l;
-    public static final long TEMPLATE_TABLE_WRITE_CAPACITY_UNITS = 3l;
-    public static final long VARIABLE_TABLE_READ_CAPACITY_UNITS = 10L;
-    public static final long VARIABLE_TABLE_WRITE_CAPACITY_UNITS = 10l;
-    
+    public static final long TENANT_TABLE_READ_CAPACITY_UNITS = 2l;
+    public static final long TENANT_TABLE_WRITE_CAPACITY_UNITS = 2l;
+    public static final long SESSION_TABLE_READ_CAPACITY_UNITS = 2l;
+    public static final long SESSION_TABLE_WRITE_CAPACITY_UNITS = 2l;
+    public static final long TEMPLATE_TABLE_READ_CAPACITY_UNITS = 2l;
+    public static final long TEMPLATE_TABLE_WRITE_CAPACITY_UNITS = 2l;
+    public static final long SESSION_ACTIVITY_TABLE_WRITE_CAPACITY_UNITS = 2l;
+    public static final long SESSION_ACTIVITY_TABLE_READ_CAPACITY_UNITS = 2l;
+    public static final long VARIABLE_TABLE_READ_CAPACITY_UNITS = 2l;
+    public static final long VARIABLE_TABLE_WRITE_CAPACITY_UNITS = 2l;
+
     /** DynamoDB global secondary indexes **/
     public static final String GSI_CLIENT_KEY = "idx_client_key";
     public static final String GSI_BASE_URL = "idx_base_url";

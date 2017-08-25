@@ -58,8 +58,8 @@ public class CreateTemplateTableRequest {
         GlobalSecondaryIndex projectIdIndex = new GlobalSecondaryIndex()
                 .withIndexName(ApplicationConstants.GSI_PROJECTID)
                 .withProvisionedThroughput(new ProvisionedThroughput()
-                        .withReadCapacityUnits((long) 3)
-                        .withWriteCapacityUnits((long) 3))
+                        .withReadCapacityUnits((long) 1)
+                        .withWriteCapacityUnits((long) 1))
                 .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                 .withKeySchema(indexProjectIdSchema);
 
@@ -70,8 +70,8 @@ public class CreateTemplateTableRequest {
         GlobalSecondaryIndex favouriteIndex = new GlobalSecondaryIndex()
                 .withIndexName(ApplicationConstants.GSI_CREATED_BY)
                 .withProvisionedThroughput(new ProvisionedThroughput()
-                        .withReadCapacityUnits((long) 3)
-                        .withWriteCapacityUnits((long) 3))
+                        .withReadCapacityUnits((long) 1)
+                        .withWriteCapacityUnits((long) 1))
                 .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                 .withKeySchema(indexFavouriteSchema);
 
@@ -82,8 +82,8 @@ public class CreateTemplateTableRequest {
         GlobalSecondaryIndex sharedKeyIndex = new GlobalSecondaryIndex()
                 .withIndexName(ApplicationConstants.GSI_SHARED)
                 .withProvisionedThroughput(new ProvisionedThroughput()
-                        .withReadCapacityUnits((long) 3)
-                        .withWriteCapacityUnits((long) 3))
+                        .withReadCapacityUnits((long) 1)
+                        .withWriteCapacityUnits((long) 1))
                 .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                 .withKeySchema(indexSharedSchema);
 

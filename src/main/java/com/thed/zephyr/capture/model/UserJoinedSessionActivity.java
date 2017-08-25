@@ -1,31 +1,31 @@
 package com.thed.zephyr.capture.model;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import org.joda.time.DateTime;
 
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
-public class SessionLeftActivityItem extends BaseSessionActivityItem {
-    public static final String templateName = "SessionLeftActivityItem";
+public class UserJoinedSessionActivity extends SessionActivity {
 
     private Participant participant;
 
-    public SessionLeftActivityItem(Participant participant, String avatarUrl) {
-        super(participant.getTimeLeft(), participant.getUser(), avatarUrl);
+    public UserJoinedSessionActivity(String sessionId, Participant participant, String avatarUrl) {
+        super(sessionId, participant.getTimeJoined(), participant.getUser(), avatarUrl);
         this.participant = participant;
     }
 
-    public DateTime getTimeLeft() {
-        return participant.getTimeLeft();
+    @DynamoDBIgnore
+    public DateTime getTimeJoined() {
+        return participant.getTimeJoined();
     }
 
     public Participant getParticipant() {
         return participant;
     }
 
-    @Override
-    public String getTemplateName() {
-        return templateName;
+    public void setParticipant(Participant participant) {
+        this.participant = participant;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class SessionLeftActivityItem extends BaseSessionActivityItem {
             return false;
         }
 
-        SessionLeftActivityItem that = (SessionLeftActivityItem) o;
+        UserJoinedSessionActivity that = (UserJoinedSessionActivity) o;
 
         if (!participant.equals(that.participant)) {
             return false;

@@ -5,23 +5,24 @@ import org.joda.time.DateTime;
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
-public class SessionAssignedSessionActivityItem extends BaseSessionActivityItem {
-    public static final String templateLocation = "/templates/bonfire/web/stream/session-assigned.vm";
+public class UserAssignedSessionActivity extends SessionActivity {
 
-    private final String assignee;
+    private String assignee;
 
-    public SessionAssignedSessionActivityItem(DateTime timestamp, String assigner, String assignee, String avatarUrl) {
-        super(timestamp, assigner, avatarUrl);
-        this.assignee = assignee;
+    public UserAssignedSessionActivity() {
     }
 
-    @Override
-    public String getTemplateName() {
-        return templateLocation;
+    public UserAssignedSessionActivity(String sessionId, DateTime timestamp, String assigner, String assignee, String avatarUrl) {
+        super(sessionId, timestamp, assigner, avatarUrl);
+        this.assignee = assignee;
     }
 
     public String getAssignee() {
         return assignee;
+    }
+
+    public void setAssignee(String assignee) {
+        this.assignee = assignee;
     }
 
     @Override
@@ -36,7 +37,7 @@ public class SessionAssignedSessionActivityItem extends BaseSessionActivityItem 
             return false;
         }
 
-        SessionAssignedSessionActivityItem that = (SessionAssignedSessionActivityItem) o;
+        UserAssignedSessionActivity that = (UserAssignedSessionActivity) o;
 
         if (assignee != null ? !assignee.equals(that.assignee) : that.assignee != null) {
             return false;

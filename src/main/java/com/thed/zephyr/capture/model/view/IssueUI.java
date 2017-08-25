@@ -1,8 +1,6 @@
 package com.thed.zephyr.capture.model.view;
 
-import com.thed.zephyr.capture.model.jira.Issue;
-import com.thed.zephyr.capture.model.jira.IssueType;
-import com.thed.zephyr.capture.model.jira.Priority;
+import com.atlassian.jira.rest.client.api.domain.*;
 
 import static com.opensymphony.util.TextUtils.htmlEncode;
 
@@ -26,10 +24,6 @@ public class IssueUI {
         return htmlEncode(issue.getKey());
     }
 
-    public String getParentKey() {
-        return htmlEncode(issue.getParentObject() != null ? issue.getParentObject().getKey() : "");
-    }
-
     public String getSummary() {
         return issue.getSummary();
     }
@@ -38,7 +32,7 @@ public class IssueUI {
         return issue.getIssueType();
     }
 
-    public Priority getPriorityObject() {
+    public BasicPriority getPriorityObject() {
         return issue.getPriority();
     }
 

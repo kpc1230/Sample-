@@ -24,11 +24,11 @@ public class FatNote {
         this.sessionAssignee = session.getAssignee();
     }
 
-    public Long getId() {
+    public String getId() {
         return note.getId();
     }
 
-    public Long getSessionId() {
+    public String getSessionId() {
         return note.getSessionId();
     }
 

@@ -50,16 +50,16 @@ public class CreateTenantTableRequest {
         GlobalSecondaryIndex clientKeyIndex = new GlobalSecondaryIndex()
                 .withIndexName(ApplicationConstants.GSI_CLIENT_KEY)
                 .withProvisionedThroughput(new ProvisionedThroughput()
-                        .withReadCapacityUnits((long) 10)
-                        .withWriteCapacityUnits((long) 10))
+                        .withReadCapacityUnits((long) 1)
+                        .withWriteCapacityUnits((long) 1))
                 .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                 .withKeySchema(new KeySchemaElement("clientKey" ,KeyType.HASH));
 
         GlobalSecondaryIndex baseUrlIndex = new GlobalSecondaryIndex()
                 .withIndexName(ApplicationConstants.GSI_BASE_URL)
                 .withProvisionedThroughput(new ProvisionedThroughput()
-                        .withReadCapacityUnits((long) 10)
-                        .withWriteCapacityUnits((long) 10))
+                        .withReadCapacityUnits((long) 1)
+                        .withWriteCapacityUnits((long) 1))
                 .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                 .withKeySchema(new KeySchemaElement("baseUrl", KeyType.HASH));
 

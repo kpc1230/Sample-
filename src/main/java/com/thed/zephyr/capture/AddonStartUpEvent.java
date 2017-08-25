@@ -6,6 +6,8 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.TableCollection;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
+import com.thed.zephyr.capture.repositories.SessionActivityRepository;
+import com.thed.zephyr.capture.service.db.CreateSessionActivityTableRequest;
 import com.thed.zephyr.capture.service.db.CreateSessionTableRequest;
 import com.thed.zephyr.capture.service.db.CreateTemplateTableRequest;
 import com.thed.zephyr.capture.service.db.CreateTenantTableRequest;
@@ -28,15 +30,18 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
     private Logger log;
     @Autowired
     private AmazonDynamoDB amazonDynamoDB;
+    @Autowired
+    private SessionActivityRepository baseSessionActivityItemRepository;
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
         TableCollection<ListTablesResult> tables = dynamoDB.listTables();
+        createVariablesTableIfNotExist(tables, dynamoDB);
         createTenantTableIfNotExist(tables, dynamoDB);
         createSessionTableIfNotExist(tables, dynamoDB);
         createTemplateTableIfNotExist(tables, dynamoDB);
-        createVariablesTableIfNotExist(tables, dynamoDB);
+        createSessionActivityTableIfNotExist(tables, dynamoDB);
     }
 
     private void createTenantTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
@@ -93,19 +98,38 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         }
     }
 
-    private void createVariablesTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
-        for (Table table:tables){
-            if(StringUtils.equals(ApplicationConstants.VARIABLE_TABLE_NAME, table.getTableName())){
+
+    private void createSessionActivityTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
+        for (Table table : tables) {
+            if (StringUtils.equals(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME, table.getTableName())) {
                 log.debug("The table:{} already created, skip creation", table.getTableName());
                 return;
             }
         }
-        log.info("Creating variable DynamoDB table ...");
+        log.info("Creating SessionActivity DynamoDB table ...");
+        try {
+            CreateTableRequest createTableRequest = new CreateSessionActivityTableRequest().build();
+            Table table = dynamoDB.createTable(createTableRequest);
+            table.waitForActive();
+            log.info("The SessionActivity table was successfully created");
+        } catch (InterruptedException e) {
+            log.error("Error during creation DynamoDB table:{}", ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME);
+        }
+    }
+
+    private void createVariablesTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
+        for (Table table : tables) {
+            if (StringUtils.equals(ApplicationConstants.VARIABLE_TABLE_NAME, table.getTableName())) {
+                log.debug("The table:{} already created, skip creation", table.getTableName());
+                return;
+            }
+        }
+        log.info("Creating Variable DynamoDB table ...");
         try {
             CreateTableRequest createTableRequest = new CreateVariableTableRequest().build();
             Table table = dynamoDB.createTable(createTableRequest);
             table.waitForActive();
-            log.info("The variable table was successfully created");
+            log.info("The Variable table was successfully created");
         } catch (InterruptedException e) {
             log.error("Error during creation DynamoDB table:{}", ApplicationConstants.VARIABLE_TABLE_NAME);
         }

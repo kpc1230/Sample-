@@ -1,4 +1,7 @@
 package com.thed.zephyr.capture;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -91,5 +94,16 @@ public class AddonApplication {
         FilterRegistrationBean registration = new FilterRegistrationBean(filter);
         registration.setEnabled(false);
         return registration;
+    }
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
+    public DynamoDB dynamodb(AmazonDynamoDB amazonDynamoDB){
+        return new DynamoDB(amazonDynamoDB);
+    }
+
+    @Bean
+    public DynamoDBMapper dynamoDBMapper(AmazonDynamoDB amazonDynamoDB){
+        return new DynamoDBMapper(amazonDynamoDB);
     }
 }

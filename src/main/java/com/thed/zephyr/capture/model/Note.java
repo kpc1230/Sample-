@@ -1,7 +1,9 @@
 package com.thed.zephyr.capture.model;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
@@ -12,6 +14,7 @@ import java.util.Set;
 /**
  * Created by aliakseimatsarski on 8/14/17.
  */
+@DynamoDBTable(tableName = ApplicationConstants.NOTE_TABLE_NAME)
 final public class Note {
     // Serialisation parameters
     private static final String NOTE_ID = "id";
@@ -25,44 +28,44 @@ final public class Note {
     /**
      * Unique identifier for this note
      */
-    final private Long id;
+    private String id;
 
     /**
      * Session id of the session this note is a part of
      */
-    final private Long sessionId;
+    private String sessionId;
 
     /**
      * Project id of the project this note is a part of
      */
-    final private Long projectId;
+    private Long projectId;
 
     /**
      * When this note was created
      */
-    final private DateTime createdTime;
+    private DateTime createdTime;
 
     /**
      * Username of user who wrote this note
      * Not storing User here to avoid having to do UserManager lookup until we *have* to
      */
-    final private String author;
+    private String author;
 
     /**
      * Raw data of the note itself
      */
-    final private String noteData;
+    private String noteData;
 
     /**
      * Resolution for this note
      */
-    final private Resolution resolutionState;
+    private Resolution resolutionState;
 
     /**
      * List of tags for this note.
      * A note may have multiple tags, example: "#question #wtf #performance Why does this take 10 seconds?"
      */
-    final private Set<Tag> tags;
+    private Set<Tag> tags;
 
     /**
      * <p>
@@ -88,7 +91,7 @@ final public class Note {
      * @param noteData        not data
      * @param resolutionState resolution for the note
      */
-    public Note(Long id, Long sessionId, Long projectId, DateTime createdTime, String authorUsername, String noteData, Set<Tag> tags, Resolution resolutionState) {
+    public Note(String id, String sessionId, Long projectId, DateTime createdTime, String authorUsername, String noteData, Set<Tag> tags, Resolution resolutionState) {
         this.id = id;
         this.sessionId = sessionId;
         this.projectId = projectId;
@@ -110,11 +113,11 @@ final public class Note {
         }
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public Long getSessionId() {
+    public String getSessionId() {
         return sessionId;
     }
 
@@ -149,8 +152,8 @@ final public class Note {
 
     // This constructor should only be used when constructing a note from data that was stored in the property sets.
     public Note(JsonNode noteJSON, Set<Tag> tags) {
-        id = noteJSON.get(NOTE_ID).asLong();
-        sessionId = noteJSON.get(NOTE_SESSION_ID).asLong();
+        id = noteJSON.get(NOTE_ID).asText();
+        sessionId = noteJSON.get(NOTE_SESSION_ID).asText();
         projectId = noteJSON.get(NOTE_PROJECT_ID).asLong();
         createdTime = ISODateTimeFormat.dateTime().parseDateTime(noteJSON.get(NOTE_CREATED_TIME).asText());
         author = noteJSON.get(NOTE_AUTHOR).asText();

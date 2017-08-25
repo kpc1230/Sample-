@@ -51,11 +51,11 @@ public class Session  implements Comparable<Session> {
     @DynamoDBIgnore
     private Map<DateTime, Status> sessionStatusHistory;
     @DynamoDBIgnore
-    private Collection<SessionActivityItem> sessionActivity;
+    private Collection<SessionActivity> sessionActivity;
     @DynamoDBIgnore
-    private Map<Long, Note> sessionNotes;
+    private Map<String, Note> sessionNotes;
     @DynamoDBIgnore
-    private Set<Long> sessionNoteIds;
+    private Set<String> sessionNoteIds;
     private boolean shared;
     @DynamoDBIgnore
     private Collection<Participant> participants;
@@ -76,9 +76,9 @@ public class Session  implements Comparable<Session> {
                    Duration timeLogged,
                    List<Issue> issuesRaised,
                    Map<DateTime, Status> sessionStatusHistory,
-                   List<SessionActivityItem> sessionActivity,
-                   Map<Long, Note> sessionNotes,
-                   Set<Long> sessionNoteIds,
+                   List<SessionActivity> sessionActivity,
+                   Map<String, Note> sessionNotes,
+                   Set<String> sessionNoteIds,
                    boolean shared,
                    List<Participant> participants,
                    Set<Long> participantIds,
@@ -177,7 +177,7 @@ public class Session  implements Comparable<Session> {
         return relatedProject;
     }
 
-    public Map<Long, Note> getSessionNotes() {
+    public Map<String, Note> getSessionNotes() {
         return Collections.unmodifiableMap(sessionNotes);
     }
 
@@ -185,11 +185,11 @@ public class Session  implements Comparable<Session> {
         return additionalInfo;
     }
 
-    public Collection<SessionActivityItem> getSessionActivity() {
+    public Collection<SessionActivity> getSessionActivity() {
         return sessionActivity;
     }
 
-    public Collection<Long> getSessionNoteIds() {
+    public Collection<String> getSessionNoteIds() {
         return sessionNoteIds;
     }
 

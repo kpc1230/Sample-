@@ -123,7 +123,7 @@ public class SessionServiceImpl implements SessionService {
 			return sessionRepository.save(startedSession);
 		}
 		if(log.isDebugEnabled()) log.debug("Session didn't pause since assignee and logged user are different");
-		Session updatedSession = new SessionBuilder(session).addParticipantLeft(loggedUserKey, null).build();
+		Session updatedSession = new SessionBuilder(session).addParticipantLeft(session.getId(), loggedUserKey, null).build();
 		if(log.isDebugEnabled()) log.debug("Session paused successfully by the user -> " + loggedUserKey);
 		return updatedSession; //Returning the same session without pausing it.
 	}

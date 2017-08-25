@@ -8,32 +8,32 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by aliakseimatsarski on 8/17/17.
+ * Created by aliakseimatsarski on 8/23/17.
  */
-public class CreateSessionTableRequest {
+public class CreateSessionActivityTableRequest {
 
-    public CreateSessionTableRequest(){
+    public CreateSessionActivityTableRequest(){
 
     }
 
     public CreateTableRequest build(){
         CreateTableRequest createTableRequest = new CreateTableRequest()
-                .withTableName(ApplicationConstants.SESSION_TABLE_NAME)
+                .withTableName(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME)
                 .withProvisionedThroughput(new ProvisionedThroughput()
-                        .withReadCapacityUnits(ApplicationConstants.SESSION_TABLE_READ_CAPACITY_UNITS)
-                        .withWriteCapacityUnits(ApplicationConstants.SESSION_TABLE_WRITE_CAPACITY_UNITS))
+                        .withReadCapacityUnits(ApplicationConstants.SESSION_ACTIVITY_TABLE_READ_CAPACITY_UNITS)
+                        .withWriteCapacityUnits(ApplicationConstants.SESSION_ACTIVITY_TABLE_WRITE_CAPACITY_UNITS))
                 .withAttributeDefinitions(getAttributeDefinitions())
-                .withKeySchema(getPrimaryKey())
-                .withGlobalSecondaryIndexes(getGlobalSecondaryIndexes());
+                .withKeySchema(getPrimaryKey());
+            //    .withGlobalSecondaryIndexes(getGlobalSecondaryIndexes());
 
         return createTableRequest;
     }
 
     private List<AttributeDefinition> getAttributeDefinitions(){
         List<AttributeDefinition> attributes = Arrays.asList(
-                new AttributeDefinition("id", ScalarAttributeType.S),
-                new AttributeDefinition("clientKey", ScalarAttributeType.N),
-                new AttributeDefinition("relatedProject", ScalarAttributeType.N)
+                new AttributeDefinition("id", ScalarAttributeType.S)
+        //        new AttributeDefinition("clientKey", ScalarAttributeType.N),
+        //        new AttributeDefinition("relatedProject", ScalarAttributeType.N)
         );
 
         return attributes;

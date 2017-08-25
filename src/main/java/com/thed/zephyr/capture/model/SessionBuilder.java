@@ -28,9 +28,9 @@ public class SessionBuilder {
     private Duration timeLogged;
     private List<Issue> issuesRaised;
     private Map<DateTime, Session.Status> sessionStatusHistory;
-    private List<SessionActivityItem> sessionActivity;
-    private Map<Long, Note> sessionNotes;
-    private Set<Long> sessionNoteIds;
+    private List<SessionActivity> sessionActivity;
+    private Map<String, Note> sessionNotes;
+    private Set<String> sessionNoteIds;
     private boolean shared;
     private List<Participant> participants;
     private Set<Long> participantIds;
@@ -52,8 +52,8 @@ public class SessionBuilder {
         this.issuesRaised = Lists.newArrayList(session.getIssuesRaised());
         this.sessionStatusHistory = new HashMap<DateTime, Session.Status>(session.getSessionStatusHistory());
         this.sessionActivity = Lists.newArrayList(session.getSessionActivity());
-        this.sessionNoteIds = new TreeSet<>(session.getSessionNoteIds());
-        this.sessionNotes = new HashMap<Long, Note>(session.getSessionNotes());
+        this.sessionNoteIds = new TreeSet<String>(session.getSessionNoteIds());
+        this.sessionNotes = new HashMap<String, Note>(session.getSessionNotes());
         this.shared = session.isShared();
         this.participants = Lists.newArrayList(session.getParticipants());
         this.participantIds = new TreeSet<>(session.getParticipantIds());
@@ -66,7 +66,7 @@ public class SessionBuilder {
         this.issuesRaised = Lists.newArrayList();
         this.relatedIssues = Lists.newArrayList();
         this.sessionStatusHistory = new HashMap<DateTime, Session.Status>();
-        this.sessionNotes = new HashMap<Long, Note>();
+        this.sessionNotes = new HashMap<String, Note>();
         this.sessionNoteIds = new TreeSet<>();
         this.sessionActivity = Lists.newArrayList();
         this.participants = Lists.newArrayList();
@@ -77,7 +77,7 @@ public class SessionBuilder {
     	this.issuesRaised = Lists.newArrayList();
         this.relatedIssues = Lists.newArrayList();
         this.sessionStatusHistory = new HashMap<DateTime, Session.Status>();
-        this.sessionNotes = new HashMap<Long, Note>();
+        this.sessionNotes = new HashMap<String, Note>();
         this.sessionNoteIds = new TreeSet<>();
         this.sessionActivity = Lists.newArrayList();
         this.participants = Lists.newArrayList();
@@ -127,7 +127,7 @@ public class SessionBuilder {
         // Don't do redundant assigns
         if (this.assignee == null || !this.assignee.equals(assignee)) {
             this.assignee = assignee;
-            sessionActivity.add(new SessionAssignedSessionActivityItem(new DateTime(), assigner, assignee, avatarUrl));
+            sessionActivity.add(new UserAssignedSessionActivity(this.id, new DateTime(), assigner, assignee, avatarUrl));
         }
         return this;
     }
@@ -156,11 +156,6 @@ public class SessionBuilder {
         DateTime timestamp = new DateTime();
         if (status != null && this.status != status) {
             sessionStatusHistory.put(timestamp, status);
-
-            // Session Activity items
-            boolean firstStarted = (this.status == Session.Status.CREATED && status == Session.Status.STARTED);
-            sessionActivity.add(new SessionStatusSessionActivityItem(timestamp, assignee, status, firstStarted, avatarUrl));
-            this.status = status;
         }
         return this;
     }
@@ -182,12 +177,12 @@ public class SessionBuilder {
         if (!currentlyParticipating) {
             Participant participant = new ParticipantBuilder(user).setTimeJoined(now).build();
             participants.add(participant);
-            sessionActivity.add(new SessionJoinedActivityItem(participant, avatarUrl));
+         //   sessionActivity.add(new UserJoinedSessionActivity(sessionId, participant, avatarUrl));
         }
         return this;
     }
 
-    public SessionBuilder addParticipantLeft(String user, String avatarUrl) {
+    public SessionBuilder addParticipantLeft(String sessionId, String user, String avatarUrl) {
         DateTime now = new DateTime();
         for (Iterator<Participant> iterator = participants.iterator(); iterator.hasNext(); ) {
             Participant participant = iterator.next();
@@ -197,7 +192,7 @@ public class SessionBuilder {
 
                 participant = new ParticipantBuilder(participant).setTimeLeft(now).build();
                 participants.add(participant);
-                sessionActivity.add(new SessionLeftActivityItem(participant, avatarUrl));
+                sessionActivity.add(new UserLeftSessionActivity(sessionId, participant, avatarUrl));
                 break;
             }
         }
@@ -244,7 +239,7 @@ public class SessionBuilder {
         return this;
     }
 
-    public SessionBuilder setSessionActivity(List<SessionActivityItem> sessionActivity) {
+    public SessionBuilder setSessionActivity(List<SessionActivity> sessionActivity) {
         this.sessionActivity = sessionActivity;
         return this;
     }
@@ -257,7 +252,7 @@ public class SessionBuilder {
     public SessionBuilder setSessionNotes(Iterable<Note> sessionNotes) {
         // TODO We take in an Iterable here as a nod to the future
         // Once we can move to iterables instead of lists / maps here, it's another transparent change (awesome)
-        Map<Long, Note> noteMap = new HashMap<Long, Note>();
+        Map<String, Note> noteMap = new HashMap<String, Note>();
         for (Note note : sessionNotes) {
             noteMap.put(note.getId(), note);
         }
@@ -265,18 +260,18 @@ public class SessionBuilder {
         return this;
     }
 
-    public SessionBuilder setSessionNoteIds(Set<Long> sessionNoteIds) {
+    public SessionBuilder setSessionNoteIds(Set<String> sessionNoteIds) {
         this.sessionNoteIds = sessionNoteIds;
         return this;
     }
 
-    public SessionBuilder addNote(Note note, String creator, String avatarUrl) {
+    public SessionBuilder addNote(String sessionId, Note note, String creator, String avatarUrl) {
         sessionNotes.put(note.getId(), note);
 
         sessionNoteIds.add(note.getId());
 
         // This is where we need the creator - this avoids us looking up the user in the UserManager again if we don't have to
-        sessionActivity.add(new SessionNoteSessionActivityItem(note.getCreatedTime(), creator, note.getId(), avatarUrl));
+        sessionActivity.add(new NoteSessionActivity(sessionId, note.getCreatedTime(), creator, note.getId(), avatarUrl));
 
         return this;
     }
@@ -287,10 +282,10 @@ public class SessionBuilder {
         sessionNoteIds.remove(note.getId());
 
         // TODO is there a cleaner way to do this?
-        SessionActivityItem markedForDeletion = null;
-        for (SessionActivityItem item : sessionActivity) {
-            if (item instanceof SessionNoteSessionActivityItem) {
-                if (((SessionNoteSessionActivityItem) item).getNoteId().equals(note.getId())) {
+        SessionActivity markedForDeletion = null;
+        for (SessionActivity item : sessionActivity) {
+            if (item instanceof NoteSessionActivity) {
+                if (((NoteSessionActivity) item).getNoteId().equals(note.getId())) {
                     markedForDeletion = item;
                     break;
                 }
@@ -302,28 +297,24 @@ public class SessionBuilder {
         return this;
     }
 
-    public SessionBuilder addRaisedIssue(Issue issue, DateTime timeRaised, String creator) {
+    public SessionBuilder addRaisedIssue(String sessionId, Issue issue, DateTime timeRaised, String creator) {
         issuesRaised.add(issue);
 
-        sessionActivity.add(new IssueRaisedSessionActivityItem(timeRaised, creator, issue.getId(), issue));
+        sessionActivity.add(new IssueRaisedSessionActivity(sessionId, timeRaised, creator, issue));
 
         return this;
     }
 
-    public SessionBuilder removeRaisedIssue(Issue issue, DateTime timeRemoved, String remover) {
+    public SessionBuilder removeRaisedIssue(String sessionId, Issue issue, DateTime timeRemoved, String remover) {
         issuesRaised.remove(issue);
 
-        sessionActivity.add(new IssueUnraisedSessionActivityItem(timeRemoved, remover, issue.getId(), issue));
+        sessionActivity.add(new IssueUnraisedSessionActivity(sessionId, timeRemoved, remover, issue.getId(), issue));
 
         return this;
     }
 
-    public SessionBuilder addAttachment(DateTime timestamp,
-                                        String user,
-                                        Issue issue,
-                                        Attachment attachment,
-                                        Thumbnail thumbnail) {
-        sessionActivity.add(new IssueAttachmentSessionActivityItem(timestamp, user, issue.getId(), issue, attachment.getId(), attachment, thumbnail));
+    public SessionBuilder addAttachment(String sessionId, DateTime timestamp, String user, Issue issue, Attachment attachment, Thumbnail thumbnail) {
+        sessionActivity.add(new IssueAttachmentSessionActivity(sessionId, timestamp, user, issue, attachment, thumbnail));
 
         return this;
     }

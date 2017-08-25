@@ -2,7 +2,7 @@ package com.thed.zephyr.capture.model.view;
 
 import com.opensymphony.util.TextUtils;
 import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.model.SessionActivityItem;
+import com.thed.zephyr.capture.model.SessionActivity;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import com.atlassian.jira.rest.client.api.domain.Project;
@@ -16,7 +16,7 @@ import java.util.List;
 public class SessionUI {
     private Session session;
 
-    private List<SessionActivityItem> sessionActivity;
+    private List<SessionActivity> sessionActivity;
     private String timeLoggedString;
     private String additionalInfoRaw;
     private String additionalInfoHtml;
@@ -39,7 +39,7 @@ public class SessionUI {
   //  private SessionDisplayHelper displayHelper;
 
     // Constructor used for the test-session-view.vm - ugly beast
-    public SessionUI(Session session, List<SessionActivityItem> sessionActivity, Duration estimatedTimeSpent, String timeLoggedString, String additionalInfoHtml,
+    public SessionUI(Session session, List<SessionActivity> sessionActivity, Duration estimatedTimeSpent, String timeLoggedString, String additionalInfoHtml,
                      String currentBrowser, String sessionStatusPretty, String sessionStatusChange, String sessionReturnURL, List<ParticipantUI> participants,
                      List<IssueUI> visibleRelatedIssues, List<IssueUI> possibleTimetracking, String raisedIssueNavLink, List<IssueUI> visibleRaisedIssues,
                      List<IssueUI> visibleRaisedSubTasks, boolean timeTrackingOn) {
@@ -149,7 +149,7 @@ public class SessionUI {
         return StringUtils.isEmpty(session.getAdditionalInfo().trim());
     }
 
-    public List<SessionActivityItem> getSessionActivity() {
+    public List<SessionActivity> getSessionActivity() {
         return sessionActivity;
     }
 
