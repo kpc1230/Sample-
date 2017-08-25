@@ -314,7 +314,7 @@ public class SessionBuilder {
     }
 
     public SessionBuilder addAttachment(String sessionId, DateTime timestamp, String user, Issue issue, Attachment attachment, Thumbnail thumbnail) {
-        sessionActivity.add(new IssueAttachmentSessionActivity(sessionId, timestamp, user, issue, attachment, thumbnail));
+        sessionActivity.add(new IssueAttachmentSessionActivity(sessionId, timestamp, user, issue, attachment));
 
         return this;
     }

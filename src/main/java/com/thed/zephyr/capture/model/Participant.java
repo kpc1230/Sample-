@@ -9,13 +9,13 @@ import org.joda.time.DateTime;
  * Created by aliakseimatsarski on 8/15/17.
  */
 public class Participant  implements Comparable<Participant>{
-    public static final String KEY_PARTICIPANT_USER = "user";
-    public static final String KEY_PARTICIPANT_JOINED = "timeJoined";
-    public static final String KEY_PARTICIPANT_LEFT = "timeLeft";
 
-    private final String user;
-    private final DateTime timeJoined;
-    private final DateTime timeLeft;
+    private String user;
+    private DateTime timeJoined;
+    private DateTime timeLeft;
+
+    public Participant() {
+    }
 
     public Participant(String user, DateTime timeJoined, DateTime timeLeft) {
      //   this.user = notNull("user", user);
@@ -42,6 +42,18 @@ public class Participant  implements Comparable<Participant>{
 
     public boolean hasLeft() {
         return timeLeft != null;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public void setTimeJoined(DateTime timeJoined) {
+        this.timeJoined = timeJoined;
+    }
+
+    public void setTimeLeft(DateTime timeLeft) {
+        this.timeLeft = timeLeft;
     }
 
     public JsonNode toJSON() {

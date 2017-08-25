@@ -1,6 +1,8 @@
 package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
+import com.thed.zephyr.capture.service.db.SessionStatusTypeConverter;
 import org.joda.time.DateTime;
 
 /**
@@ -8,9 +10,13 @@ import org.joda.time.DateTime;
  */
 public class StatusSessionActivity extends SessionActivity {
 
+    @DynamoDBTypeConverted(converter = SessionStatusTypeConverter.class)
     private Session.Status status;
 
     private boolean firstStarted = true;
+
+    public StatusSessionActivity() {
+    }
 
     public StatusSessionActivity(String sessionId, DateTime timestamp, String user, Session.Status status, boolean firstStarted, String avatarUrl) {
         super(sessionId, timestamp, user, avatarUrl);

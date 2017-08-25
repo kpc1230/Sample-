@@ -1,8 +1,11 @@
 package com.thed.zephyr.capture.model;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.atlassian.core.util.thumbnail.Thumbnail;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.jira.Attachment;
+import com.thed.zephyr.capture.service.db.AttachmentTypeConverter;
+import com.thed.zephyr.capture.service.db.IssueTypeConverter;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.joda.time.DateTime;
 
@@ -11,34 +14,35 @@ import org.joda.time.DateTime;
  */
 public class IssueAttachmentSessionActivity extends SessionActivity {
 
-    private final Issue issue;
+    @DynamoDBTypeConverted(converter = IssueTypeConverter.class)
+    private Issue issue;
 
-    private final Attachment attachment;
+    @DynamoDBTypeConverted(converter = AttachmentTypeConverter.class)
+    private Attachment attachment;
 
-    /**
-     * Use the ThumbnailManager to get this. The thumbnail manager will check all the permissions and create a thumbnail if there isn't one. This will
-     * be null if there is no thumbnail.
-     */
-    private final Thumbnail thumbnail;
+    public IssueAttachmentSessionActivity() {
+    }
 
-    public IssueAttachmentSessionActivity(String sessionId, DateTime timestamp, String user, Issue issue, Attachment attachment,
-                                          Thumbnail thumbnail) {
+    public IssueAttachmentSessionActivity(String sessionId, DateTime timestamp, String user, Issue issue, Attachment attachment) {
         super(sessionId, timestamp, user, CaptureUtil.getLargeAvatarUrl(user));
         this.issue = issue;
         this.attachment = attachment;
-        this.thumbnail = thumbnail;
     }
 
     public Issue getIssue() {
         return issue;
     }
 
+    public void setIssue(Issue issue) {
+        this.issue = issue;
+    }
+
     public Attachment getAttachment() {
         return attachment;
     }
 
-    public Thumbnail getThumbnail() {
-        return thumbnail;
+    public void setAttachment(Attachment attachment) {
+        this.attachment = attachment;
     }
 
     @Override
@@ -59,8 +63,6 @@ public class IssueAttachmentSessionActivity extends SessionActivity {
             return false;
         }if (issue != null ? !issue.equals(that.issue) : that.issue != null) {
             return false;
-        }if (thumbnail != null ? !thumbnail.equals(that.thumbnail) : that.thumbnail != null) {
-            return false;
         }
 
         return true;
@@ -71,7 +73,6 @@ public class IssueAttachmentSessionActivity extends SessionActivity {
         int result = super.hashCode();
         result = 31 * result + (issue != null ? issue.hashCode() : 0);
         result = 31 * result + (attachment != null ? attachment.hashCode() : 0);
-        result = 31 * result + (thumbnail != null ? thumbnail.hashCode() : 0);
         return result;
     }
 }

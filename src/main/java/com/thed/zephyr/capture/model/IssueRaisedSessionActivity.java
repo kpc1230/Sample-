@@ -1,6 +1,8 @@
 package com.thed.zephyr.capture.model;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.thed.zephyr.capture.service.db.IssueTypeConverter;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.joda.time.DateTime;
 
@@ -9,7 +11,11 @@ import org.joda.time.DateTime;
  */
 public class IssueRaisedSessionActivity extends SessionActivity {
 
+    @DynamoDBTypeConverted(converter = IssueTypeConverter.class)
     private Issue issue;
+
+    public IssueRaisedSessionActivity() {
+    }
 
     public IssueRaisedSessionActivity(String sessionId, DateTime timestamp, String user, Issue issue) {
         super(sessionId, timestamp, user, CaptureUtil.getLargeAvatarUrl(user));
