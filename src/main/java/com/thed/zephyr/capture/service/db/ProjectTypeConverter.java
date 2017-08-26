@@ -14,12 +14,18 @@ public class ProjectTypeConverter implements DynamoDBTypeConverter<Long, Project
     private ProjectService projectService;
 
     @Override
-    public Long convert(Project object) {
-        return object.getId();
+    public Long convert(Project project) {
+        return project != null?project.getId():null;
     }
 
     @Override
-    public Project unconvert(Long ptojectId) {
-        return projectService.getProjectObj(ptojectId);
+    public Project unconvert(Long projectId) {
+
+        Project project = new Project(null, null, "projectKey_1", 10000l, "Test Project", null, null, null,
+                null, null,
+                null, null);
+
+    //    return projectId != null?projectService.getProjectObj(projectId):null;
+        return project;
     }
 }

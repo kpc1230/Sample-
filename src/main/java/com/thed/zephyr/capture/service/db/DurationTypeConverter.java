@@ -15,12 +15,12 @@ public class DurationTypeConverter implements DynamoDBTypeConverter<Long, Durati
 
 	@Override
 	public Long convert(Duration duration) {
-		return duration.toMillis();
+		return duration != null?duration.toMillis():null;
 	}
 
 	@Override
 	public Duration unconvert(Long millis) {
-		return Duration.ofMillis(millis);
+		return millis != null?Duration.ofMillis(millis):null;
 	}
 
 }

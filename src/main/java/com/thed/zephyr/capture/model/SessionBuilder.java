@@ -308,7 +308,7 @@ public class SessionBuilder {
     public SessionBuilder removeRaisedIssue(String sessionId, String clientKey, Issue issue, DateTime timeRemoved, String remover) {
         issuesRaised.remove(issue);
 
-        sessionActivity.add(new IssueUnraisedSessionActivity(sessionId, clientKey, timeRemoved, remover, issue.getId(), issue));
+        sessionActivity.add(new IssueUnraisedSessionActivity(sessionId, clientKey, timeRemoved, remover, issue));
 
         return this;
     }

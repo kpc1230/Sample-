@@ -19,6 +19,9 @@ public class SessionIssueCollectionConverter  implements DynamoDBTypeConverter<S
     private IssueService issueService;
     @Override
     public Set<Long> convert(Collection<Issue> issueCollection) {
+        if(issueCollection == null){
+            return null;
+        }
         Set<Long> result = new TreeSet<>();
         for (Issue issue:issueCollection){
             result.add(issue.getId());
@@ -28,6 +31,9 @@ public class SessionIssueCollectionConverter  implements DynamoDBTypeConverter<S
 
     @Override
     public Collection<Issue> unconvert(Set<Long> issueIdsSet) {
+        if(issueIdsSet == null){
+            return null;
+        }
         Collection<Issue> result = new ArrayList<>();
         for (Long issueId: issueIdsSet){
             result.add(issueService.getIssueObject(issueId));

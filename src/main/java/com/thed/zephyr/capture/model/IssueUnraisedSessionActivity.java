@@ -17,7 +17,7 @@ public class IssueUnraisedSessionActivity extends SessionActivity {
     public IssueUnraisedSessionActivity() {
     }
 
-    public IssueUnraisedSessionActivity(String sessionId, String clientKey, DateTime timestamp, String user, Long issueId, Issue issue) {
+    public IssueUnraisedSessionActivity(String sessionId, String clientKey, DateTime timestamp, String user, Issue issue) {
         super(sessionId, clientKey, timestamp, user, CaptureUtil.getLargeAvatarUrl(user));
         this.issue = issue;
     }

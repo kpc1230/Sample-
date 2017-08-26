@@ -62,6 +62,9 @@ public class Session  implements Comparable<Session> {
     private Set<Long> participantIds;
     private String defaultTemplateId;
 
+    public Session() {
+    }
+
     public Session(String id,
                    String clientKey,
                    String creator,
@@ -152,6 +155,86 @@ public class Session  implements Comparable<Session> {
 
     public Collection<Issue> getIssuesRaised() {
         return issuesRaised;
+    }
+
+    public void setClientKey(String clientKey) {
+        this.clientKey = clientKey;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setCreator(String creator) {
+        this.creator = creator;
+    }
+
+    public void setAssignee(String assignee) {
+        this.assignee = assignee;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setAdditionalInfo(String additionalInfo) {
+        this.additionalInfo = additionalInfo;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public void setRelatedIssues(Collection<Issue> relatedIssues) {
+        this.relatedIssues = relatedIssues;
+    }
+
+    public void setTimeCreated(DateTime timeCreated) {
+        this.timeCreated = timeCreated;
+    }
+
+    public void setTimeFinished(DateTime timeFinished) {
+        this.timeFinished = timeFinished;
+    }
+
+    public void setTimeLogged(Duration timeLogged) {
+        this.timeLogged = timeLogged;
+    }
+
+    public void setIssuesRaised(Collection<Issue> issuesRaised) {
+        this.issuesRaised = issuesRaised;
+    }
+
+    public void setSessionStatusHistory(Map<DateTime, Status> sessionStatusHistory) {
+        this.sessionStatusHistory = sessionStatusHistory;
+    }
+
+    public void setSessionActivity(Collection<SessionActivity> sessionActivity) {
+        this.sessionActivity = sessionActivity;
+    }
+
+    public void setSessionNotes(Map<String, Note> sessionNotes) {
+        this.sessionNotes = sessionNotes;
+    }
+
+    public void setSessionNoteIds(Set<String> sessionNoteIds) {
+        this.sessionNoteIds = sessionNoteIds;
+    }
+
+    public void setShared(boolean shared) {
+        this.shared = shared;
+    }
+
+    public void setParticipants(Collection<Participant> participants) {
+        this.participants = participants;
+    }
+
+    public void setDefaultTemplateId(String defaultTemplateId) {
+        this.defaultTemplateId = defaultTemplateId;
     }
 
     public List<Participant> getParticipants() {

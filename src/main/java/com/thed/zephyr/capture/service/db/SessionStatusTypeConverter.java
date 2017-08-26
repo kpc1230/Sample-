@@ -13,13 +13,13 @@ import com.thed.zephyr.capture.model.Session.Status;
 public class SessionStatusTypeConverter implements DynamoDBTypeConverter<String, Status> {
 
 	@Override
-	public String convert(Status object) {
-		return object.name();
+	public String convert(Status status) {
+		return status != null?status.name():null;
 	}
 
 	@Override
-	public Status unconvert(String object) {
-		return Status.valueOf(object);
+	public Status unconvert(String status) {
+		return status != null?Status.valueOf(status):null;
 	}
 
 }

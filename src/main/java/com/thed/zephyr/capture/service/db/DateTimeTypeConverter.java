@@ -16,12 +16,12 @@ public class DateTimeTypeConverter implements DynamoDBTypeConverter<Long, DateTi
 
 	@Override
 	public Long convert(DateTime dateTime) {
-		return dateTime.getMillis();
+		return dateTime != null?dateTime.getMillis():null;
 	}
 
 	@Override
 	public DateTime unconvert(Long dateTimeInMillis) {
-		return new DateTime(dateTimeInMillis);
+		return dateTimeInMillis != null?new DateTime(dateTimeInMillis):null;
 	}
 
 
