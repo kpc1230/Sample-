@@ -49,43 +49,18 @@ public class Session  implements Comparable<Session> {
     @DynamoDBTypeConverted(converter = SessionIssueCollectionConverter.class)
     private Collection<Issue> issuesRaised;
     @DynamoDBIgnore
-    private Map<DateTime, Status> sessionStatusHistory;
-    @DynamoDBIgnore
     private Collection<SessionActivity> sessionActivity;
-    @DynamoDBIgnore
-    private Map<String, Note> sessionNotes;
-    @DynamoDBIgnore
-    private Set<String> sessionNoteIds;
     private boolean shared;
     @DynamoDBIgnore
     private Collection<Participant> participants;
-    private Set<Long> participantIds;
     private String defaultTemplateId;
 
     public Session() {
     }
 
-    public Session(String id,
-                   String clientKey,
-                   String creator,
-                   String assignee,
-                   String name,
-                   String additionalInfo,
-                   Status status,
-                   List<Issue> relatedIssues,
-                   Project project,
-                   DateTime timeCreated,
-                   DateTime timeFinished,
-                   Duration timeLogged,
-                   List<Issue> issuesRaised,
-                   Map<DateTime, Status> sessionStatusHistory,
-                   List<SessionActivity> sessionActivity,
-                   Map<String, Note> sessionNotes,
-                   Set<String> sessionNoteIds,
-                   boolean shared,
-                   List<Participant> participants,
-                   Set<Long> participantIds,
-                   String defaultTemplateId) {
+    public Session(String id, String clientKey, String creator, String assignee, String name, String additionalInfo, Status status,
+                   List<Issue> relatedIssues, Project project, DateTime timeCreated, DateTime timeFinished, Duration timeLogged,
+                   List<Issue> issuesRaised, List<SessionActivity> sessionActivity, boolean shared, List<Participant> participants, String defaultTemplateId) {
         this.id = id;
         this.clientKey = clientKey;
         this.creator = creator;
@@ -99,130 +74,122 @@ public class Session  implements Comparable<Session> {
         this.timeFinished = timeFinished;
         this.timeLogged = timeLogged;
         this.issuesRaised = issuesRaised;
-        this.sessionStatusHistory = sessionStatusHistory;
         this.sessionActivity = sessionActivity;
-        this.sessionNotes = sessionNotes;
-        this.sessionNoteIds = sessionNoteIds;
         this.shared = shared;
         this.participants = participants;
-        this.participantIds = participantIds;
         this.defaultTemplateId = defaultTemplateId;
-    }
-
-    public Collection<Issue> getRelatedIssues() {
-        return relatedIssues;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public String getId() {
         return id;
     }
 
-    public String getClientKey(){
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getClientKey() {
         return clientKey;
-    }
-
-    public String getCreator() {
-        return creator;
-    }
-
-    public String getAssignee() {
-        return assignee;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public DateTime getTimeCreated() {
-        return timeCreated;
-    }
-
-    public DateTime getTimeFinished() {
-        return timeFinished;
-    }
-
-    public Duration getTimeLogged() {
-        return timeLogged;
-    }
-
-    public String getDefaultTemplateId() {
-        return defaultTemplateId;
-    }
-
-    public Collection<Issue> getIssuesRaised() {
-        return issuesRaised;
     }
 
     public void setClientKey(String clientKey) {
         this.clientKey = clientKey;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    public String getCreator() {
+        return creator;
     }
 
     public void setCreator(String creator) {
         this.creator = creator;
     }
 
+    public String getAssignee() {
+        return assignee;
+    }
+
     public void setAssignee(String assignee) {
         this.assignee = assignee;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
+    public String getAdditionalInfo() {
+        return additionalInfo;
+    }
+
     public void setAdditionalInfo(String additionalInfo) {
         this.additionalInfo = additionalInfo;
+    }
+
+    public Status getStatus() {
+        return status;
     }
 
     public void setStatus(Status status) {
         this.status = status;
     }
 
+    public Collection<Issue> getRelatedIssues() {
+        return relatedIssues;
+    }
+
     public void setRelatedIssues(Collection<Issue> relatedIssues) {
         this.relatedIssues = relatedIssues;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
+    }
+
+    public DateTime getTimeCreated() {
+        return timeCreated;
     }
 
     public void setTimeCreated(DateTime timeCreated) {
         this.timeCreated = timeCreated;
     }
 
+    public DateTime getTimeFinished() {
+        return timeFinished;
+    }
+
     public void setTimeFinished(DateTime timeFinished) {
         this.timeFinished = timeFinished;
+    }
+
+    public Duration getTimeLogged() {
+        return timeLogged;
     }
 
     public void setTimeLogged(Duration timeLogged) {
         this.timeLogged = timeLogged;
     }
 
+    public Collection<Issue> getIssuesRaised() {
+        return issuesRaised;
+    }
+
     public void setIssuesRaised(Collection<Issue> issuesRaised) {
         this.issuesRaised = issuesRaised;
     }
 
-    public void setSessionStatusHistory(Map<DateTime, Status> sessionStatusHistory) {
-        this.sessionStatusHistory = sessionStatusHistory;
+    public Collection<SessionActivity> getSessionActivity() {
+        return sessionActivity;
     }
 
     public void setSessionActivity(Collection<SessionActivity> sessionActivity) {
         this.sessionActivity = sessionActivity;
-    }
-
-    public void setSessionNotes(Map<String, Note> sessionNotes) {
-        this.sessionNotes = sessionNotes;
-    }
-
-    public void setSessionNoteIds(Set<String> sessionNoteIds) {
-        this.sessionNoteIds = sessionNoteIds;
     }
 
     public void setShared(boolean shared) {
@@ -231,6 +198,10 @@ public class Session  implements Comparable<Session> {
 
     public void setParticipants(Collection<Participant> participants) {
         this.participants = participants;
+    }
+
+    public String getDefaultTemplateId() {
+        return defaultTemplateId;
     }
 
     public void setDefaultTemplateId(String defaultTemplateId) {
@@ -243,8 +214,6 @@ public class Session  implements Comparable<Session> {
         return Collections.unmodifiableList(copy);
     }
 
-
-
     public boolean isShared() {
         return shared;
     }
@@ -254,41 +223,6 @@ public class Session  implements Comparable<Session> {
      *
      * @return Map time instant to new status
      */
-    public Map<DateTime, Status> getSessionStatusHistory() {
-        return Collections.unmodifiableMap(sessionStatusHistory);
-    }
-
-    public Project getProject() {
-        return project;
-    }
-
-    public Map<String, Note> getSessionNotes() {
-        return Collections.unmodifiableMap(sessionNotes);
-    }
-
-    public String getAdditionalInfo() {
-        return additionalInfo;
-    }
-
-    public Collection<SessionActivity> getSessionActivity() {
-        return sessionActivity;
-    }
-
-    public Collection<String> getSessionNoteIds() {
-        return sessionNoteIds;
-    }
-
-    public Note getNote(Long noteId) {
-        return sessionNotes.get(noteId);
-    }
-
-    public Set<Long> getParticipantIds() {
-        return participantIds;
-    }
-
-    public void setParticipantIds(Set<Long> participantIds) {
-        this.participantIds = participantIds;
-    }
 
     public enum Status {
         CREATED, STARTED, PAUSED, COMPLETED
@@ -315,12 +249,6 @@ public class Session  implements Comparable<Session> {
             return false;
         if (sessionActivity != null ? !sessionActivity.equals(session.sessionActivity) : session.sessionActivity != null)
             return false;
-        if (sessionNoteIds != null ? !sessionNoteIds.equals(session.sessionNoteIds) : session.sessionNoteIds != null)
-            return false;
-        if (sessionNotes != null ? !sessionNotes.equals(session.sessionNotes) : session.sessionNotes != null)
-            return false;
-        if (sessionStatusHistory != null ? !sessionStatusHistory.equals(session.sessionStatusHistory) : session.sessionStatusHistory != null)
-            return false;
         if (status != session.status) return false;
         if (timeCreated != null ? !timeCreated.equals(session.timeCreated) : session.timeCreated != null) return false;
         if (timeFinished != null ? !timeFinished.equals(session.timeFinished) : session.timeFinished != null)
@@ -344,10 +272,7 @@ public class Session  implements Comparable<Session> {
         result = 31 * result + (timeLogged != null ? timeLogged.hashCode() : 0);
         result = 31 * result + (issuesRaised != null ? issuesRaised.hashCode() : 0);
         result = 31 * result + (participants != null ? participants.hashCode() : 0);
-        result = 31 * result + (sessionStatusHistory != null ? sessionStatusHistory.hashCode() : 0);
         result = 31 * result + (sessionActivity != null ? sessionActivity.hashCode() : 0);
-        result = 31 * result + (sessionNotes != null ? sessionNotes.hashCode() : 0);
-        result = 31 * result + (sessionNoteIds != null ? sessionNoteIds.hashCode() : 0);
         return result;
     }
 

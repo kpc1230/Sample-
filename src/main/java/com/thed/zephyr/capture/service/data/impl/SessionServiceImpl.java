@@ -3,23 +3,20 @@ package com.thed.zephyr.capture.service.data.impl;
 
 import java.util.Objects;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Project;
+import com.thed.zephyr.capture.model.Participant;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
-import com.thed.zephyr.capture.util.CaptureUtil;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Session.Status;
-import com.thed.zephyr.capture.model.SessionBuilder;
 import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.repositories.SessionRepository;
 import com.thed.zephyr.capture.service.data.SessionService;
@@ -59,18 +56,17 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public Session createSession(String loggedUserKey, SessionRequest sessionRequest) {
-		SessionBuilder sessionBuilder = new SessionBuilder();
-        sessionBuilder.setCreator(loggedUserKey);
-        sessionBuilder.setStatus(Status.CREATED, null);
-        sessionBuilder.setName(sessionRequest.getName());
-        sessionBuilder.setTimeCreated(new DateTime());
-        sessionBuilder.setAdditionalInfo(sessionRequest.getAdditionalInfo());
-        sessionBuilder.setShared(sessionRequest.getShared());
-        sessionBuilder.setRelatedIssues(sessionRequest.getIssuesList());
-        sessionBuilder.setRelatedProject(sessionRequest.getProject());
-        sessionBuilder.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
-        //Generating the session object from session builder.
-        Session session = sessionBuilder.build();
+		Session session = new Session();
+		session.setCreator(loggedUserKey);
+		session.setStatus(Status.CREATED);
+		session.setName(sessionRequest.getName());
+		session.setTimeCreated(new DateTime());
+		session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
+		session.setShared(sessionRequest.getShared());
+		session.setRelatedIssues(sessionRequest.getIssuesList());
+		session.setProject(sessionRequest.getProject());
+		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
+
         Session createdSession = sessionRepository.save(session);
         if(sessionRequest.getStartNow()) { //User requested to start the session.
         	createdSession = startSession(loggedUserKey, createdSession);
@@ -87,21 +83,18 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public Session updateSession(String loggedUserKey, String sessionId, SessionRequest sessionRequest) throws CaptureValidationException {
 		Session session = getSession(sessionId);
-		String clientKey = CaptureUtil.getCurrentClientKey();
 		if(Objects.isNull(session)) {
 			throw new CaptureValidationException("Invalid session id");
 		}
-		SessionBuilder sessionBuilder = new SessionBuilder(session);
-        sessionBuilder.setAssignee(sessionId, clientKey, loggedUserKey, sessionRequest.getAssignee(), null);
-        sessionBuilder.setName(sessionRequest.getName());
-        sessionBuilder.setAdditionalInfo(sessionRequest.getAdditionalInfo());
-        sessionBuilder.setShared(sessionRequest.getShared());
-        sessionBuilder.setRelatedIssues(sessionRequest.getIssuesList());
-        sessionBuilder.setRelatedProject(sessionRequest.getProject());
-        sessionBuilder.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
-        //Generating the session object from session builder.
-        Session updatedSession = sessionBuilder.build();
-		return sessionRepository.save(updatedSession);
+		session.setAssignee(sessionRequest.getAssignee());
+		session.setName(sessionRequest.getName());
+		session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
+		session.setShared(sessionRequest.getShared());
+		session.setRelatedIssues(sessionRequest.getIssuesList());
+		session.setProject(sessionRequest.getProject());
+		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
+
+		return sessionRepository.save(session);
 	}
 
 	@Override
@@ -111,25 +104,23 @@ public class SessionServiceImpl implements SessionService {
 	
 	@Override
 	public Session startSession(String loggedUserKey, Session session){
-		SessionBuilder sessionBuilder = new SessionBuilder(session);
-		sessionBuilder.setStatus(Status.STARTED, null);
-		Session startedSession = sessionBuilder.build();
-		return sessionRepository.save(startedSession);
+		session.setStatus(Status.STARTED);
+
+		return sessionRepository.save(session);
 	}
 
 	@Override
 	public Session pauseSession(String loggedUserKey, Session session) {
-		String clientKey = CaptureUtil.getCurrentClientKey();
 		if(session.getAssignee().equals(loggedUserKey)) { // Pause if assignee and logged user are same.
-			SessionBuilder sessionBuilder = new SessionBuilder(session);
-			sessionBuilder.setStatus(Status.PAUSED, null);
-			Session startedSession = sessionBuilder.build();
-			return sessionRepository.save(startedSession);
+			session.setStatus(Status.PAUSED);
+			log.debug("Session paused successfully by the user -> {}", loggedUserKey);
+
+			return sessionRepository.save(session);
+		} else {
+			log.debug("Session didn't pause since assignee and logged user are different");
 		}
-		if(log.isDebugEnabled()) log.debug("Session didn't pause since assignee and logged user are different");
-		Session updatedSession = new SessionBuilder(session).addParticipantLeft(session.getId(), clientKey, loggedUserKey, null).build();
-		if(log.isDebugEnabled()) log.debug("Session paused successfully by the user -> " + loggedUserKey);
-		return updatedSession; //Returning the same session without pausing it.
+
+		return session; //Returning the same session without pausing it.
 	}
 
 	@Override
@@ -140,9 +131,12 @@ public class SessionServiceImpl implements SessionService {
 		if(!Status.STARTED.equals(session.getStatus())) {
 			throw new CaptureRuntimeException("Session is not started");
 		}
-		Session updatedSession = session = new SessionBuilder(session).addParticipantJoined(loggedUserKey, null).build();
-		if(log.isDebugEnabled()) log.debug("User joined the session successfully" + loggedUserKey);
-		return updatedSession;
+		Participant participant = new Participant(loggedUserKey, new DateTime(), null);
+
+		session.getParticipants().add(participant);
+		log.debug("User joined the session successfully userKey:{}", loggedUserKey);
+
+		return sessionRepository.save(session);
 	}
 
 	/**
