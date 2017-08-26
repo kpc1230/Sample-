@@ -3,11 +3,7 @@ package com.thed.zephyr.capture.model;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.Project;
-import com.thed.zephyr.capture.service.db.DateTimeTypeConverter;
-import com.thed.zephyr.capture.service.db.DurationTypeConverter;
-import com.thed.zephyr.capture.service.db.SessionIssueCollectionConverter;
-import com.thed.zephyr.capture.service.db.ProjectTypeConverter;
-import com.thed.zephyr.capture.service.db.SessionStatusTypeConverter;
+import com.thed.zephyr.capture.service.db.*;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
@@ -38,7 +34,8 @@ public class Session  implements Comparable<Session> {
     @DynamoDBTypeConverted(converter = SessionIssueCollectionConverter.class)
     private Collection<Issue> relatedIssues;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CLIENT_KEY)
-    @DynamoDBTypeConverted(converter = ProjectTypeConverter.class)
+    @DynamoDBMarshalling(marshallerClass = ProjectTypeMarshaller.class)
+  //  @DynamoDBTypeConverted(converter = ProjectTypeConverter.class)
     private Project project;
     @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
     private DateTime timeCreated;

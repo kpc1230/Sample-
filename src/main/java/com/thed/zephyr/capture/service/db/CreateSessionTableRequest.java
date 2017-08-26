@@ -33,7 +33,7 @@ public class CreateSessionTableRequest {
         List<AttributeDefinition> attributes = Arrays.asList(
                 new AttributeDefinition("id", ScalarAttributeType.S),
                 new AttributeDefinition("clientKey", ScalarAttributeType.S),
-                new AttributeDefinition("project", ScalarAttributeType.N)
+                new AttributeDefinition("project", ScalarAttributeType.S)
         );
 
         return attributes;

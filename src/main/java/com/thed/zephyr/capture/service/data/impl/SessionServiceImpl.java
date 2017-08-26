@@ -6,6 +6,7 @@ import java.util.Objects;
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.model.Participant;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,7 @@ public class SessionServiceImpl implements SessionService {
 		if(Objects.isNull(project)) {
 			throw new CaptureValidationException("Please provide a valid project key");
 		}
-		sessionsPage = sessionRepository.findByProject(project, getPageRequest(offset, limit));
+		sessionsPage = sessionRepository.queryByClientKeyAndProject(CaptureUtil.getCurrentClientKey(), project, getPageRequest(offset, limit));
 		SessionSearchList response  = new SessionSearchList(sessionsPage.getContent(), offset, limit, sessionsPage.getTotalElements());
 
 		return response;
