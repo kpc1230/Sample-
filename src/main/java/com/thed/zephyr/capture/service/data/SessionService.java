@@ -17,11 +17,11 @@ public interface SessionService {
 	/**
 	 * Fetches the list of sessions for the project.
 	 * 
-	 * @param projectKey -- Project for which the list of sessions to be fetched.
+	 * @param projectId -- Project for which the list of sessions to be fetched.
 	 * @return -- Returns the list of sessions for the project.
 	 * @throws CaptureValidationException -- Thrown in case of invalid project key.
 	 */
-	SessionSearchList getSessionsForProject(String projectKey, Integer offset, Integer limit) throws CaptureValidationException;
+	SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException;
 	
 	/**
 	 * Creates the session. 

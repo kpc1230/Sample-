@@ -1,8 +1,6 @@
 package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.service.db.*;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -31,33 +29,29 @@ public class Session  implements Comparable<Session> {
     private String additionalInfo;
     @DynamoDBTypeConverted(converter = SessionStatusTypeConverter.class)
     private Status status;
-    @DynamoDBTypeConverted(converter = SessionIssueCollectionConverter.class)
-    private Collection<Issue> relatedIssues;
+    @DynamoDBTypeConverted(converter = LongCollectionConverter.class)
+    private Collection<Long> relatedIssueIds;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CLIENT_KEY)
-    @DynamoDBMarshalling(marshallerClass = ProjectTypeMarshaller.class)
-  //  @DynamoDBTypeConverted(converter = ProjectTypeConverter.class)
-    private Project project;
+    private Long projectId;
     @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
     private DateTime timeCreated;
     @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
     private DateTime timeFinished;
     @DynamoDBTypeConverted(converter = DurationTypeConverter.class)
     private Duration timeLogged;
-    @DynamoDBTypeConverted(converter = SessionIssueCollectionConverter.class)
-    private Collection<Issue> issuesRaised;
+    @DynamoDBTypeConverted(converter = LongCollectionConverter.class)
+    private Collection<Long> issueRaisedIds;
     @DynamoDBIgnore
     private Collection<SessionActivity> sessionActivity;
     private boolean shared;
-    @DynamoDBIgnore
+    @DynamoDBTypeConverted(converter = ParticipantCollectionConverter.class)
     private Collection<Participant> participants;
     private String defaultTemplateId;
 
     public Session() {
     }
 
-    public Session(String id, String clientKey, String creator, String assignee, String name, String additionalInfo, Status status,
-                   List<Issue> relatedIssues, Project project, DateTime timeCreated, DateTime timeFinished, Duration timeLogged,
-                   List<Issue> issuesRaised, List<SessionActivity> sessionActivity, boolean shared, List<Participant> participants, String defaultTemplateId) {
+    public Session(String id, String clientKey, String creator, String assignee, String name, String additionalInfo, Status status, Collection<Long> relatedIssueIds, Long projectId, DateTime timeCreated, DateTime timeFinished, Duration timeLogged, Collection<Long> issueRaisedIds, Collection<SessionActivity> sessionActivity, boolean shared, Collection<Participant> participants, String defaultTemplateId) {
         this.id = id;
         this.clientKey = clientKey;
         this.creator = creator;
@@ -65,12 +59,12 @@ public class Session  implements Comparable<Session> {
         this.name = name;
         this.additionalInfo = additionalInfo;
         this.status = status;
-        this.relatedIssues = relatedIssues;
-        this.project = project;
+        this.relatedIssueIds = relatedIssueIds;
+        this.projectId = projectId;
         this.timeCreated = timeCreated;
         this.timeFinished = timeFinished;
         this.timeLogged = timeLogged;
-        this.issuesRaised = issuesRaised;
+        this.issueRaisedIds = issueRaisedIds;
         this.sessionActivity = sessionActivity;
         this.shared = shared;
         this.participants = participants;
@@ -133,20 +127,20 @@ public class Session  implements Comparable<Session> {
         this.status = status;
     }
 
-    public Collection<Issue> getRelatedIssues() {
-        return relatedIssues;
+    public Collection<Long> getRelatedIssueIds() {
+        return relatedIssueIds;
     }
 
-    public void setRelatedIssues(Collection<Issue> relatedIssues) {
-        this.relatedIssues = relatedIssues;
+    public void setRelatedIssueIds(Collection<Long> relatedIssueIds) {
+        this.relatedIssueIds = relatedIssueIds;
     }
 
-    public Project getProject() {
-        return project;
+    public Long getProjectId() {
+        return projectId;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 
     public DateTime getTimeCreated() {
@@ -173,12 +167,12 @@ public class Session  implements Comparable<Session> {
         this.timeLogged = timeLogged;
     }
 
-    public Collection<Issue> getIssuesRaised() {
-        return issuesRaised;
+    public Collection<Long> getIssueRaisedIds() {
+        return issueRaisedIds;
     }
 
-    public void setIssuesRaised(Collection<Issue> issuesRaised) {
-        this.issuesRaised = issuesRaised;
+    public void setIssueRaisedIds(Collection<Long> issueRaisedIds) {
+        this.issueRaisedIds = issueRaisedIds;
     }
 
     public Collection<SessionActivity> getSessionActivity() {
@@ -205,10 +199,8 @@ public class Session  implements Comparable<Session> {
         this.defaultTemplateId = defaultTemplateId;
     }
 
-    public List<Participant> getParticipants() {
-        List<Participant> copy = new ArrayList<Participant>(participants);
-        Collections.sort(copy);
-        return Collections.unmodifiableList(copy);
+    public Collection<Participant> getParticipants() {
+        return participants;
     }
 
     public boolean isShared() {
@@ -237,13 +229,9 @@ public class Session  implements Comparable<Session> {
         if (assignee != null ? !assignee.equals(session.assignee) : session.assignee != null) return false;
         if (creator != null ? !creator.equals(session.creator) : session.creator != null) return false;
         if (id != null ? !id.equals(session.id) : session.id != null) return false;
-        if (issuesRaised != null ? !issuesRaised.equals(session.issuesRaised) : session.issuesRaised != null)
-            return false;
         if (participants != null ? !participants.equals(session.participants) : session.participants != null)
             return false;
         if (name != null ? !name.equals(session.name) : session.name != null) return false;
-        if (project != null ? !project.equals(session.project) : session.project != null)
-            return false;
         if (sessionActivity != null ? !sessionActivity.equals(session.sessionActivity) : session.sessionActivity != null)
             return false;
         if (status != session.status) return false;
@@ -263,11 +251,9 @@ public class Session  implements Comparable<Session> {
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (additionalInfo != null ? additionalInfo.hashCode() : 0);
         result = 31 * result + (status != null ? status.hashCode() : 0);
-        result = 31 * result + (project != null ? project.hashCode() : 0);
         result = 31 * result + (timeCreated != null ? timeCreated.hashCode() : 0);
         result = 31 * result + (timeFinished != null ? timeFinished.hashCode() : 0);
         result = 31 * result + (timeLogged != null ? timeLogged.hashCode() : 0);
-        result = 31 * result + (issuesRaised != null ? issuesRaised.hashCode() : 0);
         result = 31 * result + (participants != null ? participants.hashCode() : 0);
         result = 31 * result + (sessionActivity != null ? sessionActivity.hashCode() : 0);
         return result;

@@ -49,10 +49,10 @@ public class SessionValidator implements Validator {
 			if(Objects.isNull(project)) {
 				errors.reject("", "Not a valid project");
 			} else {
-				sessionRequest.setProject(project);
+				sessionRequest.setProjectId(project.getId());
 			}
 			if(!Objects.isNull(sessionRequest.getRelatedIssues())) {
-				List<Issue> relatedIssues = Lists.newArrayList();
+				List<Long> relatedIssues = Lists.newArrayList();
 			    Map<String, String> duplicatePrevention = Maps.newHashMap();
  				List<String> issuesList = sessionRequest.getRelatedIssues();
 				issuesList.stream().forEach(issueKey -> {
@@ -62,11 +62,11 @@ public class SessionValidator implements Validator {
 		                    errors.reject("", "Issue with key " + issueKey + " cannot be found.");
 		                } else {
 		                	duplicatePrevention.put(issueKey, issueKey);
-	                        relatedIssues.add(issue);
+	                        relatedIssues.add(issue.getId());
 		                }
 					}
 				});
-				sessionRequest.setIssuesList(relatedIssues);
+				sessionRequest.setRelatedIssueIds(relatedIssues);
 			}
 		}
 	}

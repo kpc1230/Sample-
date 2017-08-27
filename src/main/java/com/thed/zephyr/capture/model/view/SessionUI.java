@@ -39,7 +39,7 @@ public class SessionUI {
   //  private SessionDisplayHelper displayHelper;
 
     // Constructor used for the test-session-view.vm - ugly beast
-    public SessionUI(Session session, List<SessionActivity> sessionActivity, Duration estimatedTimeSpent, String timeLoggedString, String additionalInfoHtml,
+    public SessionUI(Session session, Project project, List<SessionActivity> sessionActivity, Duration estimatedTimeSpent, String timeLoggedString, String additionalInfoHtml,
                      String currentBrowser, String sessionStatusPretty, String sessionStatusChange, String sessionReturnURL, List<ParticipantUI> participants,
                      List<IssueUI> visibleRelatedIssues, List<IssueUI> possibleTimetracking, String raisedIssueNavLink, List<IssueUI> visibleRaisedIssues,
                      List<IssueUI> visibleRaisedSubTasks, boolean timeTrackingOn) {
@@ -49,7 +49,7 @@ public class SessionUI {
         this.additionalInfoRaw = session.getAdditionalInfo();
         this.additionalInfoHtml = additionalInfoHtml;
         this.estimatedTimeSpent = estimatedTimeSpent.toString();
-        this.relatedProjectName = session.getProject().getName();
+        this.relatedProjectName = project.getName();
         this.visibleRelatedIssues = visibleRelatedIssues;
         this.possibleTimetracking = possibleTimetracking;
         this.currentBrowser = currentBrowser;
@@ -133,16 +133,8 @@ public class SessionUI {
         return session.getTimeCreated();
     }
 
-    public Project getRelatedProject() {
-        return session.getProject();
-    }
-
     public Long getRelatedProjectId() {
-        return session.getProject().getId();
-    }
-
-    public String getRelatedProjectKey() {
-        return session.getProject().getKey();
+        return session.getProjectId();
     }
 
     public boolean hasAdditionalInfo() {

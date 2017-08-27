@@ -33,7 +33,7 @@ public class CreateSessionTableRequest {
         List<AttributeDefinition> attributes = Arrays.asList(
                 new AttributeDefinition("id", ScalarAttributeType.S),
                 new AttributeDefinition("clientKey", ScalarAttributeType.S),
-                new AttributeDefinition("project", ScalarAttributeType.S)
+                new AttributeDefinition("projectId", ScalarAttributeType.N)
         );
 
         return attributes;
@@ -49,7 +49,7 @@ public class CreateSessionTableRequest {
         List<GlobalSecondaryIndex> globalSecondaryIndices = new ArrayList<>();
         List<KeySchemaElement> indexSchema = Arrays.asList(
                 new KeySchemaElement("clientKey" ,KeyType.HASH),
-                new KeySchemaElement("project" ,KeyType.RANGE)
+                new KeySchemaElement("projectId" ,KeyType.RANGE)
         );
         GlobalSecondaryIndex clientKeyIndex = new GlobalSecondaryIndex()
                 .withIndexName(ApplicationConstants.GSI_CLIENT_KEY)

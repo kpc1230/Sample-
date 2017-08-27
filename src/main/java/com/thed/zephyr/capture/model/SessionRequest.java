@@ -29,10 +29,13 @@ public class SessionRequest {
 	private String defaultTemplateId;
 	private Boolean startNow = false;
 	//Internal use only. Values are set from session validate java.
-	private Project project;
-	private List<Issue> issuesList;
-	
-	private SessionRequest(String name, String projectKey, List<String> relatedIssues, String assignee, String additionalInfo, Boolean shared, String defaultTemplateId) {
+	private Long projectId;
+	private List<Long> relatedIssueIds;
+
+	public SessionRequest() {
+	}
+
+	public SessionRequest(String name, String projectKey, List<String> relatedIssues, String assignee, String additionalInfo, Boolean shared, String defaultTemplateId, Boolean startNow, Long projectId, List<Long> relatedIssueIds) {
 		this.name = name;
 		this.projectKey = projectKey;
 		this.relatedIssues = relatedIssues;
@@ -40,10 +43,9 @@ public class SessionRequest {
 		this.additionalInfo = additionalInfo;
 		this.shared = shared;
 		this.defaultTemplateId = defaultTemplateId;
-	}
-	
-	private SessionRequest() {
-		
+		this.startNow = startNow;
+		this.projectId = projectId;
+		this.relatedIssueIds = relatedIssueIds;
 	}
 
 	public String getName() {
@@ -110,20 +112,20 @@ public class SessionRequest {
 		this.startNow = startNow;
 	}
 
-	public Project getProject() {
-		return project;
+	public Long getProjectId() {
+		return projectId;
 	}
 
-	public void setProject(Project project) {
-		this.project = project;
+	public void setProjectId(Long projectId) {
+		this.projectId = projectId;
 	}
 
-	public List<Issue> getIssuesList() {
-		return issuesList;
+	public List<Long> getRelatedIssueIds() {
+		return relatedIssueIds;
 	}
 
-	public void setIssuesList(List<Issue> issuesList) {
-		this.issuesList = issuesList;
+	public void setRelatedIssueIds(List<Long> relatedIssueIds) {
+		this.relatedIssueIds = relatedIssueIds;
 	}
 
 	@Override

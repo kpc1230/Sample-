@@ -4,8 +4,10 @@ import java.util.*;
 
 import javax.validation.Valid;
 
+import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.service.jira.ProjectService;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,13 +47,13 @@ import com.thed.zephyr.capture.validator.SessionValidator;
 public class SessionController {
 	
 	@Autowired
-    private Logger log; 
-	
+    private Logger log;
 	@Autowired
 	private SessionService sessionService;
-	
 	@Autowired
 	private SessionValidator sessionValidator;
+	@Autowired
+	private ProjectService projectService;
 	
 	@InitBinder("sessionRequest")
 	public void setupBinder(WebDataBinder binder) {
@@ -59,17 +61,18 @@ public class SessionController {
 	}
 	
 	@GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<LightSessionSearchList> getSessions(@RequestParam("projectKey") String projectKey, @RequestParam("offset") Integer offset, @RequestParam("limit") Integer limit) throws CaptureValidationException {
-		log.info("Start of getSessions() --> params " + projectKey + " " + offset + " " + limit);
-		if(StringUtils.isEmpty(projectKey)) {
+	public ResponseEntity<LightSessionSearchList> getSessions(@RequestParam("projectId") Long projectId, @RequestParam("offset") Integer offset, @RequestParam("limit") Integer limit) throws CaptureValidationException {
+		log.info("Start of getSessions() --> params " + projectId + " " + offset + " " + limit);
+		if(projectId != null) {
 			throw new CaptureValidationException("Project key is required and cannot be empty");
 		}
 		List<LightSession> sessionDtoList = new ArrayList<>();
 		try {
-			SessionSearchList sessionsSearch = sessionService.getSessionsForProject(projectKey, offset, limit);
+			Project project = projectService.getProjectObj(projectId);
+			SessionSearchList sessionsSearch = sessionService.getSessionsForProject(projectId, offset, limit);
 			sessionsSearch.getContent().stream().forEach(session -> {
 				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-						session.getProject(), session.getDefaultTemplateId(), session.getAdditionalInfo(), null); //Send only what UI is required instead of whole session object.
+						project, session.getDefaultTemplateId(), session.getAdditionalInfo(), null); //Send only what UI is required instead of whole session object.
 				sessionDtoList.add(lightSession);
 			});
 			LightSessionSearchList response = new LightSessionSearchList(sessionDtoList, sessionsSearch.getOffset(), sessionsSearch.getLimit(), sessionsSearch.getTotal());
@@ -78,7 +81,7 @@ public class SessionController {
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
-			log.error("Error during getting sessions by project:{} limit:{} offset:{}", projectKey, limit, offset, ex);
+			log.error("Error during getting sessions by project:{} limit:{} offset:{}", projectId, limit, offset, ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}

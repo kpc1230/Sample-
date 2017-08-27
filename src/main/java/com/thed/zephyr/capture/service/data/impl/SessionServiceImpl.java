@@ -43,13 +43,10 @@ public class SessionServiceImpl implements SessionService {
 	private ProjectService projectService;
 
 	@Override
-	public SessionSearchList getSessionsForProject(String projectKey, Integer offset, Integer limit) throws CaptureValidationException {
+	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
 		Page<Session> sessionsPage;
-		Project project = projectService.getProjectObjByKey(projectKey);
-		if(Objects.isNull(project)) {
-			throw new CaptureValidationException("Please provide a valid project key");
-		}
-		sessionsPage = sessionRepository.queryByClientKeyAndProject(CaptureUtil.getCurrentClientKey(), project, getPageRequest(offset, limit));
+
+		sessionsPage = sessionRepository.queryByClientKeyAndProjectId(CaptureUtil.getCurrentClientKey(), projectId, getPageRequest(offset, limit));
 		SessionSearchList response  = new SessionSearchList(sessionsPage.getContent(), offset, limit, sessionsPage.getTotalElements());
 
 		return response;
@@ -64,8 +61,8 @@ public class SessionServiceImpl implements SessionService {
 		session.setTimeCreated(new DateTime());
 		session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
 		session.setShared(sessionRequest.getShared());
-		session.setRelatedIssues(sessionRequest.getIssuesList());
-		session.setProject(sessionRequest.getProject());
+		session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
+		session.setProjectId(sessionRequest.getProjectId());
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
 
         Session createdSession = sessionRepository.save(session);
@@ -91,8 +88,8 @@ public class SessionServiceImpl implements SessionService {
 		session.setName(sessionRequest.getName());
 		session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
 		session.setShared(sessionRequest.getShared());
-		session.setRelatedIssues(sessionRequest.getIssuesList());
-		session.setProject(sessionRequest.getProject());
+		session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
+		session.setProjectId(sessionRequest.getProjectId());
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
 
 		return sessionRepository.save(session);

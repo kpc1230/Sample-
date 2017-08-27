@@ -4,6 +4,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.model.jira.Attachment;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -13,8 +14,7 @@ import java.io.IOException;
  */
 public class AttachmentTypeConverter implements DynamoDBTypeConverter<String, Attachment> {
 
-    @Autowired
-    private Logger log;
+    private static Logger log = LoggerFactory.getLogger("application");
 
     @Override
     public String convert(Attachment attachment) {
