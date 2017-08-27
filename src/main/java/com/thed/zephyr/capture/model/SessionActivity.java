@@ -1,7 +1,7 @@
 package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
-import com.thed.zephyr.capture.service.db.DateTimeTypeConverter;
+import com.thed.zephyr.capture.service.db.converter.DateTimeTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.joda.time.DateTime;
 import org.springframework.data.annotation.Id;

@@ -6,12 +6,10 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.TableCollection;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
+import com.thed.zephyr.capture.repositories.NoteRepository;
 import com.thed.zephyr.capture.repositories.SessionActivityRepository;
-import com.thed.zephyr.capture.service.db.CreateSessionActivityTableRequest;
-import com.thed.zephyr.capture.service.db.CreateSessionTableRequest;
-import com.thed.zephyr.capture.service.db.CreateTemplateTableRequest;
-import com.thed.zephyr.capture.service.db.CreateTenantTableRequest;
-import com.thed.zephyr.capture.service.db.CreateVariableTableRequest;
+import com.thed.zephyr.capture.repositories.SessionRepository;
+import com.thed.zephyr.capture.service.db.*;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -19,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
+
 
 /**
  * Created by aliakseimatsarski on 8/11/17.
@@ -31,7 +30,11 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
     @Autowired
     private AmazonDynamoDB amazonDynamoDB;
     @Autowired
-    private SessionActivityRepository baseSessionActivityItemRepository;
+    private SessionActivityRepository sessionActivityRepository;
+    @Autowired
+    private SessionRepository sessionRepository;
+    @Autowired
+    private NoteRepository noteRepository;
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
@@ -42,6 +45,7 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         createSessionTableIfNotExist(tables, dynamoDB);
         createTemplateTableIfNotExist(tables, dynamoDB);
         createSessionActivityTableIfNotExist(tables, dynamoDB);
+        createNoteTableIfNotExist(tables, dynamoDB);
     }
 
     private void createTenantTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
@@ -103,6 +107,7 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         for (Table table : tables) {
             if (StringUtils.equals(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME, table.getTableName())) {
                 log.debug("The table:{} already created, skip creation", table.getTableName());
+            //    table.delete();
                 return;
             }
         }
@@ -132,6 +137,24 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
             log.info("The Variable table was successfully created");
         } catch (InterruptedException e) {
             log.error("Error during creation DynamoDB table:{}", ApplicationConstants.VARIABLE_TABLE_NAME);
+        }
+    }
+
+    private void createNoteTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB){
+        for (Table table : tables) {
+            if (StringUtils.equals(ApplicationConstants.NOTE_TABLE_NAME, table.getTableName())) {
+                log.debug("The table:{} already created, skip creation", table.getTableName());
+                return;
+            }
+        }
+        log.info("Creating Note DynamoDB table ...");
+        try {
+            CreateTableRequest createTableRequest = new CreateNoteTableRequest().build();
+            Table table = dynamoDB.createTable(createTableRequest);
+            table.waitForActive();
+            log.info("The Note table was successfully created");
+        } catch (InterruptedException e) {
+            log.error("Error during creation DynamoDB table:{}", ApplicationConstants.NOTE_TABLE_NAME);
         }
     }
 }

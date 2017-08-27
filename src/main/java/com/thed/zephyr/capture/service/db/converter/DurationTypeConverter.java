@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.service.db;
+package com.thed.zephyr.capture.service.db.converter;
 
 import java.time.Duration;
 

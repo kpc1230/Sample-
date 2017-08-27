@@ -2,7 +2,7 @@ package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.thed.zephyr.capture.model.jira.Attachment;
-import com.thed.zephyr.capture.service.db.AttachmentTypeConverter;
+import com.thed.zephyr.capture.service.db.converter.AttachmentTypeConverter;
 
 /**
  * Created by aliakseimatsarski on 8/16/17.

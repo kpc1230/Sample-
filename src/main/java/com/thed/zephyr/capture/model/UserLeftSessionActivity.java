@@ -2,7 +2,7 @@ package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
-import com.thed.zephyr.capture.service.db.ParticipantTypeConverter;
+import com.thed.zephyr.capture.service.db.converter.ParticipantTypeConverter;
 import org.joda.time.DateTime;
 
 /**

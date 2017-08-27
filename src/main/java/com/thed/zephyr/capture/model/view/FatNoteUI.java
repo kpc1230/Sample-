@@ -39,10 +39,6 @@ public class FatNoteUI {
         return str(fatNote.getSessionId());
     }
 
-    public String getProjectId() {
-        return str(fatNote.getProjectId());
-    }
-
     public DateTime getCreatedTime() {
         return fatNote.getCreatedTime();
     }
@@ -73,7 +69,7 @@ public class FatNoteUI {
     public boolean isEditable(String currentUser) {
         if (currentUser != null) {
             // Assignee and author can edit the notes
-            return fatNote.getSessionAssignee().equals(currentUser) || currentUser.equals(fatNote.getAuthorUsername());
+            return fatNote.getSessionAssignee().equals(currentUser) || currentUser.equals(fatNote.getAuthor());
         }
         return false;
     }

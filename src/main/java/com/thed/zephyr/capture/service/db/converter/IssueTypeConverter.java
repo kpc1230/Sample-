@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.service.db;
+package com.thed.zephyr.capture.service.db.converter;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
 import com.atlassian.jira.rest.client.api.domain.Issue;

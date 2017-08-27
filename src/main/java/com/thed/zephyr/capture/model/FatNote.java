@@ -32,16 +32,12 @@ public class FatNote {
         return note.getSessionId();
     }
 
-    public Long getProjectId() {
-        return note.getProjectId();
-    }
-
     public DateTime getCreatedTime() {
         return note.getCreatedTime();
     }
 
-    public String getAuthorUsername() {
-        return note.getAuthorUsername();
+    public String getAuthor() {
+        return note.getAuthor();
     }
 
     public String getNoteData() {
