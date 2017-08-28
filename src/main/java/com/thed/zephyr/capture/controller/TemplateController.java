@@ -47,7 +47,7 @@ public class TemplateController {
 	@Autowired
 	private TemplateValidator templateValidator;
 
-	@InitBinder("templates")
+	@InitBinder("templateRequest")
 	protected void initBinder(WebDataBinder binder) {
 		binder.addValidators(templateValidator);
 	}
@@ -56,11 +56,11 @@ public class TemplateController {
 	private TemplateService templateService;
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<TemplateRequest> createTemplate(@Valid @RequestBody TemplateRequest input, Errors errors) {
-		log.info("createTemplate start for the name:" + input.getName() + input.getProjectId() + input.getIssueType());
+	public ResponseEntity<TemplateRequest> createTemplate(@Valid @RequestBody TemplateRequest templateRequest, Errors errors) {
+		log.info("createTemplate start for the name:" + templateRequest.getName() + templateRequest.getProjectId() + templateRequest.getIssueType());
 		Template template = null;
 		try {
-			template = templateService.createTemplate(input);
+			template = templateService.createTemplate(templateRequest);
 		} catch (Exception ex) {
 			log.error("Error during createTemplate.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
@@ -71,21 +71,21 @@ public class TemplateController {
 	}
 
 	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<TemplateRequest> updateTemplate(@Valid @RequestBody TemplateRequest input, Errors errors) 
+	public ResponseEntity<TemplateRequest> updateTemplate(@Valid @RequestBody TemplateRequest templateRequest, Errors errors) 
 			throws CaptureValidationException {
-		log.info("updateTemplate start for the id:{}", input.getId());
+		log.info("updateTemplate start for the id:{}", templateRequest.getId());
 		Template updated = null;
 		try {
-			updated = templateService.updateTemplate(input);
+			updated = templateService.updateTemplate(templateRequest);
 		} catch (Exception ex) {
 			log.error("Error during updateTemplate.", ex);
 //			badRequest(ex.getMessage());
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
 		if(updated == null){
-			throw new CaptureValidationException("Template can't find with id " + input.getId());
+			throw new CaptureValidationException("Template can't find with id " + templateRequest.getId());
 		}
-		log.info("updateTemplate end for the id:{}", input.getId());
+		log.info("updateTemplate end for the id:{}", templateRequest.getId());
 		return ok(TemplateBuilder.createTemplateRequest(updated));
 	}
 
