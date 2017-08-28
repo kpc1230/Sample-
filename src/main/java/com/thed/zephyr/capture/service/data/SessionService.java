@@ -2,9 +2,13 @@ package com.thed.zephyr.capture.service.data;
 
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.model.CompleteSessionRequest;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
+import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionResult;
+import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult;
 
 /**
  * Class acts as a service layer for session.
@@ -28,7 +32,7 @@ public interface SessionService {
 	 * 
 	 * @param loggedUserKey -- Logged in user key.
 	 * @param sessionRequest -- Session request object holds the information to create a session.
-	 * @return -- Returns the session object which created session id.
+	 * @return -- Returns the Session object which created session id.
 	 */
 	Session createSession(String loggedUserKey, SessionRequest sessionRequest);
 	
@@ -45,11 +49,11 @@ public interface SessionService {
 	 * Updates the session. 
 	 * 
 	 * @param loggedUserKey -- Logged in user key.
-	 * @param sessionId -- Session id to which information to be updated.
+	 * @param session -- Session to which information to be updated.
 	 * @param sessionRequest -- Session request object holds the information to update a session.
-	 * @return -- Returns the updated session object.
+	 * @return -- Returns the UpdateResult object which holds the updated session object.
 	 */
-	Session updateSession(String loggedUserKey, String sessionId, SessionRequest sessionRequest) throws CaptureValidationException;
+	UpdateResult updateSession(String loggedUserKey, Session session, SessionRequest sessionRequest);
 	
 	/**
 	 * Deletes the session.
@@ -59,31 +63,87 @@ public interface SessionService {
 	void deleteSession(String sessionId);
 	
 	/**
-	 * Start the session. 
+	 * Starts the session. 
 	 * 
 	 * @param loggedUserKey -- Logged in user key.
 	 * @param session -- Session object.
-	 * @return -- Returns the started session object.
+	 * @return -- Returns UpdateResult object which holds the started session object.
 	 */
-	Session startSession(String loggedUserKey, Session session);
+	UpdateResult startSession(String loggedUserKey, Session session);
 	
 	/**
-	 * Pause the session. 
+	 * Pauses the session. 
 	 * 
 	 * @param loggedUserKey -- Logged in user key.
 	 * @param session -- Session object.
-	 * @return -- Returns the pause session object.
+	 * @return -- Returns UpdateResult object which holds the paused session object.
 	 */
-	Session pauseSession(String loggedUserKey, Session session);
+	UpdateResult pauseSession(String loggedUserKey, Session session);
 	
 	/**
-	 * Join the session. 
+	 * Joins the session. 
 	 * 
 	 * @param loggedUserKey -- Logged in user key.
 	 * @param session -- Session object.
-	 * @return -- Returns the pause session object.
+	 * @return -- Returns UpdateResult object which holds the joined session object.
 	 */
-	Session joinSession(String loggedUserKey, Session session);
+	UpdateResult joinSession(String loggedUserKey, Session session);
+	
+	/**
+	 * Updated the session information into database.
+	 * 
+	 * @param result -- UpdateResult object holds the session object to be saved.
+	 * @return -- Returns the SessionResult object.
+	 */
+	SessionResult update(UpdateResult result);
+	
+	/**
+	 * Leaves the session. 
+	 * 
+	 * @param loggedUserKey -- Logged in user key.
+	 * @param session -- Session object.
+	 * @return -- Returns UpdateResult object which holds the leaved session object.
+	 */
+	UpdateResult leaveSession(String loggedUserKey, Session session);
+	
+	/**
+	 * Shares the session. 
+	 * 
+	 * @param loggedUserKey -- Logged in user key.
+	 * @param session -- Session object.
+	 * @return -- Returns UpdateResult object which holds the shared session object.
+	 */
+	UpdateResult shareSession(String loggedUserKey, Session session);
+	
+	/**
+	 * Unshared the session. 
+	 * 
+	 * @param loggedUserKey -- Logged in user key.
+	 * @param session -- Session object.
+	 * @return -- Returns UpdateResult object which holds the unshared session object.
+	 */
+	UpdateResult unshareSession(String loggedUserKey, Session session);
+	
+	/**
+	 * Removes the raised issue from the session.
+	 * 
+	 * @param loggedUserKey -- Logged in user key.
+	 * @param session -- Session object.
+	 * @param issueKey -- Issue to be removed from the session.
+	 * @return -- Returns UpdateResult object which holds the removed issue session object.
+	 * @throws CaptureValidationException -- Thrown while doing validation of the issue.
+	 */
+	UpdateResult removeRaisedIssue(String loggedUserKey, Session session, String issueKey) throws CaptureValidationException;
+	
+	/**
+	 * Completes the session.
+	 * 
+	 * @param loggedUserKey -- Logged in user key.
+	 * @param session -- Session object.
+	 * @param completeSessionRequest -- Request holds the time spent on the session and the number of issue links for the session.
+	 * @return -- Returns UpdateResult object which holds the completed session object.
+	 */
+	CompleteSessionResult completeSession(String loggedUserKey, Session session, CompleteSessionRequest completeSessionRequest);
 	
 }
 

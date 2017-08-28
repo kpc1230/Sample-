@@ -83,7 +83,7 @@ public class Session  implements Comparable<Session> {
         return ctId;
     }
 
-    public void setCtId(String clientKey) {
+    public void setCtId(String ctId) {
         this.ctId = ctId;
     }
 
