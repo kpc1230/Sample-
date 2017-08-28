@@ -21,7 +21,7 @@ public class LongCollectionConverter implements DynamoDBTypeConverter<Set<Long>,
         for (Long longValue:longCollection){
             result.add(longValue);
         }
-        return result;
+        return result.size() > 0 ? result : null;
     }
 
     @Override
