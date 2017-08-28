@@ -20,7 +20,7 @@ abstract public class SessionActivity {
     @DynamoDBIndexHashKey(globalSecondaryIndexName = ApplicationConstants.GSI_SESSIONID_TIMESTAMP)
     private String sessionId;
 
-    private String clientKey;
+    private String ctId;
 
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_SESSIONID_TIMESTAMP)
     @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
@@ -35,9 +35,9 @@ abstract public class SessionActivity {
     public SessionActivity() {
     }
 
-    public SessionActivity(String sessionId, String clientKey, DateTime timestamp, String user, String avatarUrl) {
+    public SessionActivity(String sessionId, String ctId, DateTime timestamp, String user, String avatarUrl) {
         this.sessionId = sessionId;
-        this.clientKey = clientKey;
+        this.ctId = ctId;
         this.timestamp = timestamp;
         this.user = user;
         this.avatarUrl = avatarUrl;
@@ -59,12 +59,12 @@ abstract public class SessionActivity {
         this.sessionId = sessionId;
     }
 
-    public String getClientKey() {
-        return clientKey;
+    public String getCtId() {
+        return ctId;
     }
 
-    public void setClientKey(String clientKey) {
-        this.clientKey = clientKey;
+    public void setCtId(String clientKey) {
+        this.ctId = ctId;
     }
 
     public DateTime getTimestamp() {
