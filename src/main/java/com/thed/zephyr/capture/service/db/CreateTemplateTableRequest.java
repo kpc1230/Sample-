@@ -33,7 +33,7 @@ public class CreateTemplateTableRequest {
     private List<AttributeDefinition> getAttributeDefinitions(){
         List<AttributeDefinition> attributes = Arrays.asList(
                 new AttributeDefinition("id", ScalarAttributeType.S),
-                new AttributeDefinition("clientKey", ScalarAttributeType.S),
+                new AttributeDefinition("ctId", ScalarAttributeType.S),
                 new AttributeDefinition("createdBy", ScalarAttributeType.S),
                 new AttributeDefinition("shared", ScalarAttributeType.N),
                 new AttributeDefinition("projectId", ScalarAttributeType.N)
@@ -52,7 +52,7 @@ public class CreateTemplateTableRequest {
         List<GlobalSecondaryIndex> globalSecondaryIndices = new ArrayList<>();
 
         List<KeySchemaElement> indexProjectIdSchema = Arrays.asList(
-                new KeySchemaElement("clientKey" ,KeyType.HASH),
+                new KeySchemaElement("ctId" ,KeyType.HASH),
                 new KeySchemaElement("projectId" ,KeyType.RANGE)
         );
         GlobalSecondaryIndex projectIdIndex = new GlobalSecondaryIndex()
@@ -64,7 +64,7 @@ public class CreateTemplateTableRequest {
                 .withKeySchema(indexProjectIdSchema);
 
         List<KeySchemaElement> indexFavouriteSchema = Arrays.asList(
-                new KeySchemaElement("clientKey" ,KeyType.HASH),
+                new KeySchemaElement("ctId" ,KeyType.HASH),
                 new KeySchemaElement("createdBy" ,KeyType.RANGE)
         );
         GlobalSecondaryIndex favouriteIndex = new GlobalSecondaryIndex()
@@ -76,7 +76,7 @@ public class CreateTemplateTableRequest {
                 .withKeySchema(indexFavouriteSchema);
 
         List<KeySchemaElement> indexSharedSchema = Arrays.asList(
-                new KeySchemaElement("clientKey" ,KeyType.HASH),
+                new KeySchemaElement("ctId" ,KeyType.HASH),
                 new KeySchemaElement("shared" ,KeyType.RANGE)
         );
         GlobalSecondaryIndex sharedKeyIndex = new GlobalSecondaryIndex()
