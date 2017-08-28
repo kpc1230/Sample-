@@ -38,6 +38,7 @@ public class ApplicationConstants {
 
     /** DynamoDB global secondary indexes **/
     public static final String GSI_CLIENT_KEY = "idx_client_key";
+    public static final String GSI_CTID_PROJECTID = "idx_ctId_projectid";
     public static final String GSI_BASE_URL = "idx_base_url";
     public static final String GSI_CREATED_BY = "idx_created_by";
     public static final String GSI_SHARED = "idx_shared";

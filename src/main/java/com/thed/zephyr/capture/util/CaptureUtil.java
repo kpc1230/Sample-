@@ -1,6 +1,10 @@
 package com.thed.zephyr.capture.util;
 
+import com.atlassian.connect.spring.AtlassianHost;
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.repositories.AcHostModelRepository;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import org.apache.http.NameValuePair;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.joda.time.DateTime;
@@ -83,5 +87,11 @@ public class CaptureUtil {
     public static String getCurrentClientKey(){
         AtlassianHostUser atlassianHostUser = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return atlassianHostUser.getHost().getClientKey();
+    }
+
+    public static String getCurrentCtId(AcHostModelRepository acHostModelRepository){
+        AtlassianHostUser atlassianHostUser = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        AcHostModel acHostModel = acHostModelRepository.findOne(atlassianHostUser.getHost().getClientKey());
+        return acHostModel.getCtId();
     }
 }

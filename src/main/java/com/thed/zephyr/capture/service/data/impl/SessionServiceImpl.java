@@ -6,6 +6,7 @@ import java.util.Objects;
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.model.Participant;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.repositories.AcHostModelRepository;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -34,19 +35,19 @@ import com.thed.zephyr.capture.service.jira.ProjectService;
 public class SessionServiceImpl implements SessionService {
 	
 	@Autowired
-    private Logger log; 
-	
+    private Logger log;
 	@Autowired
 	private SessionRepository sessionRepository;
-	
 	@Autowired
 	private ProjectService projectService;
+	@Autowired
+	private AcHostModelRepository acHostModelRepository;
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
 		Page<Session> sessionsPage;
 
-		sessionsPage = sessionRepository.queryByClientKeyAndProjectId(CaptureUtil.getCurrentClientKey(), projectId, getPageRequest(offset, limit));
+		sessionsPage = sessionRepository.queryByCtIdAndProjectId(CaptureUtil.getCurrentCtId(acHostModelRepository), projectId, getPageRequest(offset, limit));
 		SessionSearchList response  = new SessionSearchList(sessionsPage.getContent(), offset, limit, sessionsPage.getTotalElements());
 
 		return response;
