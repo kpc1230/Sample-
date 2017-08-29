@@ -9,11 +9,13 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 
 public class CaptureUtil {
@@ -91,5 +93,16 @@ public class CaptureUtil {
         AtlassianHostUser atlassianHostUser = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         AcHostModel acHostModel = (AcHostModel) dynamoDBAcHostRepository.findOne(atlassianHostUser.getHost().getClientKey());
         return acHostModel.getCtId();
+    }
+
+    /**
+     * Creates the page request object for pagination.
+     *
+     * @param offset -- Offset position to start
+     * @param limit -- Number of records to return
+     * @return -- Returns the page request object.
+     */
+    public static PageRequest getPageRequest(Integer offset, Integer limit) {
+        return new PageRequest((Objects.isNull(offset) ? 0 : offset), (Objects.isNull(limit) ? ApplicationConstants.DEFAULT_RESULT_SIZE : limit));
     }
 }

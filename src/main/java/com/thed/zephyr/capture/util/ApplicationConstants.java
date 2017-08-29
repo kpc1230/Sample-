@@ -92,5 +92,6 @@ public class ApplicationConstants {
     
     public static int MAX_NOTE_LENGTH = 2000;
     public static final int RELATED_ISSUES_LIMIT = 100;
+    public static final Integer DEFAULT_RESULT_SIZE = 20 ;
 
 }

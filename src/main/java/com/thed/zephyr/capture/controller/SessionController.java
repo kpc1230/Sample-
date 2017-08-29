@@ -14,6 +14,8 @@ import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult;
 import com.thed.zephyr.capture.service.jira.ProjectService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.validator.SessionValidator;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Class handles all the session related api request.
@@ -217,11 +220,9 @@ public class SessionController {
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult);
-
 			//Store sessionActivity
 			sessionActivityService.addParticipantJoined(updateResult.getSession(),
 					dateTime, participant,loggedUserKey,null);
-
 			log.info("End of joinSession()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {
@@ -379,5 +380,37 @@ public class SessionController {
 	 */
 	protected ResponseEntity<List<ErrorDto>> badRequest(ErrorCollection errorCollection) {		
 		return ResponseEntity.badRequest().body(errorCollection.toErrorDto());
+	}
+
+	/**
+	 * Get List of Activities by Session Id
+	 * @param sessionId
+	 * @param offset
+	 * @param limit
+	 * @return
+	 * @throws CaptureRuntimeException
+	 */
+	@GetMapping(value = "/{sessionId}/activities", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> completeSession(@PathVariable("sessionId") String sessionId,
+											 @RequestParam("offset") Optional<Integer> offset,
+											 @RequestParam("limit") Optional<Integer> limit
+	) throws CaptureValidationException {
+		log.info("Start of sessionActivities() --> params " + sessionId);
+		try {
+			offset.orElse(0); limit.orElse(ApplicationConstants.DEFAULT_RESULT_SIZE);
+			List<SessionActivity> sessionActivities = sessionActivityService.getAllSessionActivity(
+					CaptureUtil.getPageRequest(offset.get(),limit.get())
+			);
+			if (sessionActivities == null) {
+				ErrorCollection errorCollection = new ErrorCollection();
+				errorCollection.addError("Error during getting session activities");
+				return badRequest(errorCollection);
+			}
+			log.info("End of sessionActivities()");
+			return ResponseEntity.ok(sessionActivities);
+		} catch(Exception ex) {
+			log.error("Error in sessionActivities() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
 	}
 }

@@ -23,7 +23,6 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -63,7 +62,7 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
-		Page<Session> sessionsPage = sessionRepository.queryByCtIdAndProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, getPageRequest(offset, limit));
+		Page<Session> sessionsPage = sessionRepository.queryByCtIdAndProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, CaptureUtil.getPageRequest(offset, limit));
 		SessionSearchList response  = new SessionSearchList(sessionsPage.getContent(), offset, limit, sessionsPage.getTotalElements());
 		return response;
 	}
@@ -322,16 +321,7 @@ public class SessionServiceImpl implements SessionService {
         }
     }
 
-	/**
-	 * Creates the page request object for pagination.
-	 *
-	 * @param offset -- Offset position to start
-	 * @param limit -- Number of records to return
-	 * @return -- Returns the page request object.
-	 */
-	private PageRequest getPageRequest(Integer offset, Integer limit) {
-		return new PageRequest((Objects.isNull(offset) ? 0 : offset), (Objects.isNull(limit) ? 20 : limit));
-	}
+
 	
 	/**
 	 * Validates the session by the logged in user and also updates the session like status,

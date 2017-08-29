@@ -30,7 +30,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
             boolean firstStarted = (session.getStatus()
                     == Session.Status.CREATED && session.getStatus()
                     == Session.Status.STARTED);
-           SessionActivity sessionActivity =
+            StatusSessionActivity sessionActivity =
                    new StatusSessionActivity(session.getId(),
                            session.getCtId(),
                            timestamp,
@@ -55,7 +55,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
         }
         if (!currentlyParticipating) {
             participant = new ParticipantBuilder(user).setTimeJoined(timestamp).build();
-            SessionActivity sessionActivity =
+            UserJoinedSessionActivity sessionActivity =
                     new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant, avatarUrl);
             sessionActivityRepository.save(sessionActivity);
             return sessionActivity;
@@ -73,7 +73,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
                 iterator.remove();
 
                 participant = new ParticipantBuilder(participant).setTimeLeft(timestamp).build();
-                SessionActivity sessionActivity = new UserLeftSessionActivity(
+                UserLeftSessionActivity sessionActivity = new UserLeftSessionActivity(
                         session.getId(),session.getCtId(),participant, avatarUrl);
                 sessionActivityRepository.save(sessionActivity);
                 return sessionActivity;
@@ -118,7 +118,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     @Override
     public SessionActivity addRaisedIssue(Session session, Issue issue, DateTime timeRaised, String creator) {
 
-        SessionActivity sessionActivity =
+        IssueRaisedSessionActivity sessionActivity =
                 new IssueRaisedSessionActivity(
                         session.getId(),
                         session.getCtId(),
@@ -130,7 +130,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     @Override
     public SessionActivity removeRaisedIssue(Session session, Issue issue, DateTime timeRaised, String creator) {
 
-        SessionActivity sessionActivity =
+        IssueUnraisedSessionActivity sessionActivity =
                 new IssueUnraisedSessionActivity(session.getId(),
                         session.getCtId(),
                         timeRaised, creator, issue.getId());
@@ -140,7 +140,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
 
     @Override
     public SessionActivity addAttachment(Issue issue, Attachment attachment) {
-        SessionActivity sessionActivity =
+        IssueAttachmentSessionActivity sessionActivity =
                 new IssueAttachmentSessionActivity(issue.getId(), attachment);
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
