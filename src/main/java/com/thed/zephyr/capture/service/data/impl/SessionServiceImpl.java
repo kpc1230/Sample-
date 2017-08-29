@@ -497,7 +497,7 @@ public class SessionServiceImpl implements SessionService {
         
         List<String> leavers = Lists.newArrayList();
         if (!newSession.isShared()) { // If we aren't shared, we wanna kick out all the current users
-        	if(Objects.isNull(newSession.getParticipants())) {
+        	if(!Objects.isNull(newSession.getParticipants())) {
             	for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
                     addParticipantLeft(p.getUser(), newSession);
                     leavers.add(p.getUser());
