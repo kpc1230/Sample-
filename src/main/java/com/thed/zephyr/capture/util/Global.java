@@ -39,7 +39,8 @@ public class Global {
     public AcHostModel createAcHostModel() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if(auth != null) {
-            AcHostModel acHostModel = (AcHostModel) auth.getPrincipal();
+        	AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
+        	AcHostModel acHostModel = (AcHostModel) atlassianHostUser.getHost();
             if (acHostModel != null) {
                 return new AcHostModel(acHostModel);
             }

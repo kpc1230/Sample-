@@ -123,8 +123,10 @@ public class SessionServiceImpl implements SessionService {
         if (session.getId().equals(getActiveSessionIdFromCache(session.getAssignee()))) { // Clear it as assignees active session
             clearActiveSessionFromCache(session.getAssignee());
         }
-        for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) { // Clear it as all the active participants active session
-        	clearActiveSessionFromCache(p.getUser());
+        if(!Objects.isNull(session.getParticipants())) {
+        	for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) { // Clear it as all the active participants active session
+            	clearActiveSessionFromCache(p.getUser());
+            }
         }
         if(log.isDebugEnabled()) log.debug("Deleted Session -- > Session ID - " + sessionId);
 	}
