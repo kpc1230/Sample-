@@ -66,7 +66,15 @@ public class Global {
         return null;
     }
 
-    @Bean
+    /**
+     * To create POST JIRA Rest Client use as follows
+     * // @Autowired
+     * // @Qualifier("jiraRestClientPOST")
+     * // private JiraRestClient jiraRestClient;
+     *
+     * @return
+     */
+    @Bean(name = "jiraRestClientPOST")
     @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
     public JiraRestClient createPostJiraRestClient(){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

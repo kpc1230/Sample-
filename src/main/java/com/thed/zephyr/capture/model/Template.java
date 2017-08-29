@@ -20,7 +20,7 @@ public class Template {
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_PROJECTID)
     private Long projectId;
     @DynamoDBIndexHashKey(globalSecondaryIndexName = ApplicationConstants.GSI_CLIENT_KEY)
-    private String clientKey;
+    private String ctId;
     private Boolean favourite;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_SHARED)
     private Boolean shared;
@@ -32,11 +32,11 @@ public class Template {
     public Template() {
     }
 
-    public Template(String id, String name, Long projectId, String clientKey, Boolean favourite, Boolean shared, JsonNode content, String createdBy, Date createdOn) {
+    public Template(String id, String name, Long projectId, String ctId, Boolean favourite, Boolean shared, JsonNode content, String createdBy, Date createdOn) {
         this.id = id;
         this.name = name;
         this.projectId = projectId;
-        this.clientKey = clientKey;
+        this.ctId = ctId;
         this.favourite = favourite;
         this.shared = shared;
         this.content = content;
@@ -68,12 +68,12 @@ public class Template {
         this.projectId = projectId;
     }
 
-    public String getClientKey() {
-        return clientKey;
+    public String getCtId() {
+        return ctId;
     }
 
-    public void setClientKey(String clientKey) {
-        this.clientKey = clientKey;
+    public void setCtId(String clientKey) {
+        this.ctId = clientKey;
     }
 
     public Boolean getFavourite() {
