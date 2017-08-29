@@ -183,7 +183,7 @@ public class SessionController {
             }
         	sessionService.update(updateResult);
 			log.info("End of startSession()");
-			return ResponseEntity.ok().build();
+			return ResponseEntity.ok(updateResult.getSession());
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -204,7 +204,7 @@ public class SessionController {
             }
         	sessionService.update(updateResult);
 			log.info("End of pauseSession()");
-			return ResponseEntity.ok().build();
+			return ResponseEntity.ok(updateResult.getSession());
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -246,7 +246,7 @@ public class SessionController {
             }
 			sessionService.update(completeSessionResult.getSessionUpdateResult());
 			log.info("End of completeSession()");
-			return ResponseEntity.ok().build();
+			return ResponseEntity.ok(completeSessionResult.getSessionUpdateResult().getSession());
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {

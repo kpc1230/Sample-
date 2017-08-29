@@ -391,7 +391,7 @@ public class SessionServiceImpl implements SessionService {
 	private SessionResult getActiveSession(String user) {
 	    String activeSessionId = getActiveSessionIdFromCache(user);
 	    if(Objects.isNull(activeSessionId)) {
-	    	return new SessionResult(new ErrorCollection(), null);
+	    	return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
 	    }
 	    Session activeSession = sessionRepository.findOne(activeSessionId);
 	    if (Objects.isNull(activeSession)) {
@@ -466,7 +466,7 @@ public class SessionServiceImpl implements SessionService {
             if (Objects.isNull(loadedSession)) {
                 errorCollection.addError("'{0}' is not a valid session id", newSession.getId());
             } else {
-                if (!newSession.getAssignee().equals(loadedSession.getAssignee()) && Status.STARTED.equals(newSession.getStatus())) { // If the assignee has changed, then the new session should be paused
+                if (!Objects.isNull(newSession.getAssignee()) && !newSession.getAssignee().equals(loadedSession.getAssignee()) && Status.STARTED.equals(newSession.getStatus())) { // If the assignee has changed, then the new session should be paused
                     errorCollection.addError("You cannot assign an active session");
                 }
                 if (Status.COMPLETED.equals(loadedSession.getStatus()) && !Status.COMPLETED.equals(newSession.getStatus())) { // Status can't go backwards from COMPLETED
