@@ -76,7 +76,7 @@ public class ApplicationConstants {
     public static final String USER_AGENT = "User-Agent";
     public static final String AUTHORIZATION = "Authorization";
     public static final String BE_ACCESS_KEY_EXPIRATION_TIME = "be.accessKey.expiration.time.milliSeconds";
-    public static final String CREATE_ATTACHMENT_PERMISSION = "CREATE_ATTACHMENT";
+    public static final Object CREATE_ATTACHMENT_PERMISSION = "CREATE_ATTACHMENT";
 
     /*** for MetadataField ***/
     public static String PROJECTS = "projects";
@@ -90,6 +90,7 @@ public class ApplicationConstants {
     public static String FIELD_DETAILS = "fieldDetails";
     public static String USER_BEANS = "userBeans";
     
+    public static int MAX_NOTE_LENGTH = 2000;
     public static final int RELATED_ISSUES_LIMIT = 100;
 
 }
