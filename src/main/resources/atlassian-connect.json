@@ -47,7 +47,7 @@
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session"
       },
       {
-        "url": "/viewSession?sessionId={session.id}&projectId={project.id}&projectKey={project.key}",
+        "url": "/viewSession?projectId={project.id}&projectKey={project.key}",
         "name": {
           "value": "View Session"
         },

@@ -56,13 +56,12 @@ public class ApplicationController {
     }
 
     @RequestMapping(value = "/viewSession")
-    public String getViewSessionPage(@RequestParam String sessionId, @RequestParam String projectId, @RequestParam String projectKey, Model model) {
+    public String getViewSessionPage(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
         log.debug("Requesting the Session Navigator page");
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
-        model.addAttribute("sessionId", sessionId);
         log.debug("Ending Requesting the Session Navigator page");
         return "viewSession";
     }
