@@ -39,7 +39,7 @@ import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 
 /**
- * Class handles the all session related activities.
+ * Class handles all the session related activities.
  * 
  * @author manjunath
  * @see com.thed.zephyr.capture.service.data.SessionService
@@ -497,9 +497,11 @@ public class SessionServiceImpl implements SessionService {
         
         List<String> leavers = Lists.newArrayList();
         if (!newSession.isShared()) { // If we aren't shared, we wanna kick out all the current users
-            for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-                addParticipantLeft(p.getUser(), newSession);
-                leavers.add(p.getUser());
+        	if(Objects.isNull(newSession.getParticipants())) {
+            	for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
+                    addParticipantLeft(p.getUser(), newSession);
+                    leavers.add(p.getUser());
+                }
             }
         }
         return new UpdateResult(new ErrorCollection(), newSession, leavers);
