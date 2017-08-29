@@ -89,6 +89,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
 		session.setAssignee(sessionRequest.getAssignee() != null ? sessionRequest.getAssignee() : loggedUserKey);
         Session createdSession = sessionRepository.save(session);
+        setActiveSessionIdToCache(loggedUserKey, createdSession.getId());
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
 		return createdSession;
 	}
@@ -162,7 +163,6 @@ public class SessionServiceImpl implements SessionService {
             if (!Status.STARTED.equals(session.getStatus())) {
                 errorCollection.addError("The session '{0}' is paused or has not been started", session.getName());
             }
-
             SessionResult activeSessionResult = getActiveSession(loggedUserKey); // Deactivate current active session
             if (activeSessionResult.isValid()) {
                 deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), loggedUserKey);
@@ -351,7 +351,7 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private DeactivateResult validateDeactivateSession(Session session, String user, Status status, Duration timeLogged) {
         if (!Objects.isNull(session)) {
-            if (session.getAssignee().equals(user)) { // Pause if it is assigned to same user
+            if (user.equals(session.getAssignee())) { // Pause if it is assigned to same user
                 List<String> leavingUsers = new ArrayList<>();
                 for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) {
                     addParticipantLeft(p.getUser(), session);
@@ -466,6 +466,10 @@ public class SessionServiceImpl implements SessionService {
             if (Objects.isNull(loadedSession)) {
                 errorCollection.addError("'{0}' is not a valid session id", newSession.getId());
             } else {
+            	if (!newSession.getStatus().equals(loadedSession.getStatus()) &&
+            			!Objects.isNull(loadedSession.getAssignee()) && loadedSession.getAssignee().equals(updater) && !Status.COMPLETED.equals(loadedSession.getStatus())) { // If the session status is changed, we better have been allowed to do that!
+                    errorCollection.addError("You cannot assign an active session");
+                }
                 if (!Objects.isNull(newSession.getAssignee()) && !newSession.getAssignee().equals(loadedSession.getAssignee()) && Status.STARTED.equals(newSession.getStatus())) { // If the assignee has changed, then the new session should be paused
                     errorCollection.addError("You cannot assign an active session");
                 }

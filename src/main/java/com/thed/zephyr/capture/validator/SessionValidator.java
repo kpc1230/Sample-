@@ -7,12 +7,15 @@ import com.google.common.collect.Maps;
 import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
+
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,19 +48,19 @@ public class SessionValidator implements Validator {
 			if(Objects.isNull(sessionRequest.getProjectKey())) {
 				errors.reject("", "Project key cannot be empty");
 			}
-			Project project = projectService.getProjectObjByKey(sessionRequest.getProjectKey());
+			Project project = projectService.getProjectObjByKey(sessionRequest.getProjectKey()); //checking whether the project key is valid or not.
 			if(Objects.isNull(project)) {
 				errors.reject("", "Not a valid project");
 			} else {
 				sessionRequest.setProjectId(project.getId());
 			}
-			if(!Objects.isNull(sessionRequest.getRelatedIssues())) {
+			if(!Objects.isNull(sessionRequest.getRelatedIssues())) { 
 				List<Long> relatedIssues = Lists.newArrayList();
 			    Map<String, String> duplicatePrevention = Maps.newHashMap();
  				List<String> issuesList = sessionRequest.getRelatedIssues();
 				issuesList.stream().forEach(issueKey -> {
 					if (!StringUtils.isEmpty(issueKey) && !duplicatePrevention.containsKey(issueKey)) {
-						Issue issue = issueService.getIssueObject(issueKey);
+						Issue issue = issueService.getIssueObject(issueKey); //Checking whether the issues are valid or not.
 						if (Objects.isNull(issue)) {
 		                    errors.reject("", "Issue with key " + issueKey + " cannot be found.");
 		                } else {
@@ -67,6 +70,9 @@ public class SessionValidator implements Validator {
 					}
 				});
 				sessionRequest.setRelatedIssueIds(relatedIssues);
+				if (relatedIssues.size() > ApplicationConstants.RELATED_ISSUES_LIMIT) { //checking whether related issues are crossed more than the limit.
+					errors.reject("", MessageFormat.format("There are {0} related issues. This session cannot have more than {1} related issues.", relatedIssues.size(), ApplicationConstants.RELATED_ISSUES_LIMIT));
+		        }
 			}
 		}
 	}
