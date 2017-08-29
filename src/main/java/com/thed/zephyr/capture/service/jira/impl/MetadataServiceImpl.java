@@ -74,8 +74,10 @@ public class MetadataServiceImpl implements MetadataService {
                 for(final JsonNode iN: itNode){
                     Map<String, Object> iFMap = new HashMap<>();
 
-                    IssueType issueType = new ObjectMapper()
-                            .readValue(iN.toString(),IssueType.class);
+                    com.thed.zephyr.capture.model.jira
+                            .IssueType issueType = new ObjectMapper()
+                            .readValue(iN.toString(),com.thed.zephyr.capture.model.jira.
+                                    IssueType.class);
                     JsonNode fN = iN.get(FIELDS);
                     iFMap.put(FIELDS, fN);
                     iFMap.put(ISSUE_TYPE,issueType);

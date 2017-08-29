@@ -1,24 +1,23 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ExecutionException;
-
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.thed.zephyr.capture.model.CompleteSessionRequest;
+import com.thed.zephyr.capture.exception.CaptureRuntimeException;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.CompleteSessionRequest.CompleteSessionIssueLinkRequest;
-import com.thed.zephyr.capture.model.ErrorCollection;
-import com.thed.zephyr.capture.model.Participant;
+import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
 import com.thed.zephyr.capture.predicates.UserIsParticipantPredicate;
+import com.thed.zephyr.capture.repositories.SessionRepository;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
+import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.util.CaptureUtil;
-
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -27,16 +26,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import com.thed.zephyr.capture.exception.CaptureRuntimeException;
-import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.model.Session.Status;
-import com.thed.zephyr.capture.model.SessionRequest;
-import com.thed.zephyr.capture.repositories.SessionRepository;
-import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
-import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
-import com.thed.zephyr.capture.service.data.SessionService;
-import com.thed.zephyr.capture.service.jira.IssueService;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Class handles all the session related activities.
@@ -153,7 +147,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public UpdateResult joinSession(String loggedUserKey, Session session) {
+	public UpdateResult joinSession(String loggedUserKey, Session session, Participant participant) {
         ErrorCollection errorCollection = new ErrorCollection();
         DeactivateResult deactivateResult = null;
         if (!Objects.isNull(session) && !StringUtils.isEmpty(loggedUserKey)) {
@@ -170,7 +164,7 @@ public class SessionServiceImpl implements SessionService {
                     errorCollection.addAllErrors(deactivateResult.getErrorCollection());
                 }
             }
-            addParticipantJoined(loggedUserKey, session);
+            addParticipantJoined(loggedUserKey, session, participant);
         }
         if (errorCollection.hasErrors()) {
             return new UpdateResult(errorCollection, session);
@@ -507,10 +501,9 @@ public class SessionServiceImpl implements SessionService {
         return new UpdateResult(new ErrorCollection(), newSession, leavers);
     }
 	
-	protected void addParticipantJoined(String user, Session session) {
+	protected void addParticipantJoined(String user, Session session, Participant newParticipant) {
         boolean currentlyParticipating = false;
         DateTime now = new DateTime();
-        Participant newParticipant = new Participant(user, now, null);
         if(!Objects.isNull(session.getParticipants())) {
         	 for (Participant participant : session.getParticipants()) {
                  if (user.equals(participant.getUser()) && !participant.hasLeft()) {

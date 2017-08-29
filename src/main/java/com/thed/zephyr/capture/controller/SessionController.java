@@ -1,15 +1,22 @@
 package com.thed.zephyr.capture.controller;
 
-import java.util.*;
-
-import javax.validation.Valid;
-
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.google.common.collect.Lists;
+import com.thed.zephyr.capture.exception.CaptureRuntimeException;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.exception.model.ErrorDto;
+import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.service.data.SessionActivityService;
+import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
+import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult;
 import com.thed.zephyr.capture.service.jira.ProjectService;
+import com.thed.zephyr.capture.validator.SessionValidator;
 import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -17,30 +24,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
-import com.thed.zephyr.capture.exception.CaptureRuntimeException;
-import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.exception.model.ErrorDto;
-import com.thed.zephyr.capture.model.CompleteSessionRequest;
-import com.thed.zephyr.capture.model.ErrorCollection;
-import com.thed.zephyr.capture.model.LightSession;
-import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.model.SessionRequest;
-import com.thed.zephyr.capture.service.data.SessionService;
-import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
-import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult;
-import com.thed.zephyr.capture.validator.SessionValidator;
+import javax.validation.Valid;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Class handles all the session related api request.
@@ -63,7 +51,10 @@ public class SessionController {
 	
 	@Autowired
 	private ProjectService projectService;
-	
+
+	@Autowired
+	private SessionActivityService sessionActivityService;
+
 	@InitBinder("sessionRequest")
 	public void setupBinder(WebDataBinder binder) {
 	    binder.addValidators(sessionValidator);
@@ -219,11 +210,18 @@ public class SessionController {
 		try {	
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loadedSession);
+			DateTime dateTime = DateTime.now();
+			Participant participant = new Participant(loggedUserKey, dateTime, null);
+			UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loadedSession, participant);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult);
+
+			//Store sessionActivity
+			sessionActivityService.addParticipantJoined(updateResult.getSession(),
+					dateTime, participant,loggedUserKey,null);
+
 			log.info("End of joinSession()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {

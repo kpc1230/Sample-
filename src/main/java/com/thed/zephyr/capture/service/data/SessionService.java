@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.data;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.CompleteSessionRequest;
+import com.thed.zephyr.capture.model.Participant;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
@@ -87,7 +88,7 @@ public interface SessionService {
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the joined session object.
 	 */
-	UpdateResult joinSession(String loggedUserKey, Session session);
+	UpdateResult joinSession(String loggedUserKey, Session session, Participant participant);
 	
 	/**
 	 * Updated the session information into database.

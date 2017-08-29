@@ -1,6 +1,8 @@
 package com.thed.zephyr.capture.repositories;
 
 import com.thed.zephyr.capture.model.SessionActivity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,4 +15,6 @@ import java.util.List;
 public interface SessionActivityRepository extends CrudRepository<SessionActivity, String> {
 
     List<SessionActivity> findBySessionId(String sessionId);
+
+    Page<SessionActivity> findAll(Pageable pageRequest);
 }
