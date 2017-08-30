@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import com.thed.zephyr.capture.model.Template;
 import com.thed.zephyr.capture.model.TemplateBuilder;
 import com.thed.zephyr.capture.model.TemplateRequest;
+import com.thed.zephyr.capture.model.util.TemplateSearchList;
 import com.thed.zephyr.capture.repositories.TemplateRepository;
 import com.thed.zephyr.capture.service.data.TemplateService;
 
@@ -51,34 +53,34 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	@Override
-	public List<TemplateRequest> getTemplates(String userName, Integer offset, Integer limit) {
+	public TemplateSearchList getTemplates(String userName, Integer offset, Integer limit) {
 		//TODO, check condition on user who should be admin to execute this operation.
-		List<Template> list = repository.findAll(getPageRequest(offset, limit)).getContent();
-		return convert(list);
+		Page<Template> templatePage = repository.findAll(getPageRequest(offset, limit));
+		return convert(templatePage, offset, limit);
 	}
 
 	@Override
-	public List<TemplateRequest> getUserTemplates(String userName, Integer offset, Integer limit) {
-		List<Template> list = repository.findByCreatedBy(userName, getPageRequest(offset, limit)).getContent();
-		return convert(list);
+	public TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit) {
+		Page<Template> templatePage = repository.findByCreatedBy(userName, getPageRequest(offset, limit));
+		return convert(templatePage, offset, limit);
 	}
 
 	@Override
-	public List<TemplateRequest> getTemplatesByProject(Long projectId, Integer offset, Integer limit) {
-		List<Template> list = repository.findByProjectId(projectId, getPageRequest(offset, limit)).getContent();
-		return convert(list);
+	public TemplateSearchList getTemplatesByProject(Long projectId, Integer offset, Integer limit) {
+		Page<Template> templatePage = repository.findByProjectId(projectId, getPageRequest(offset, limit));
+		return convert(templatePage, offset, limit);
 	}
 
 	@Override
-	public List<TemplateRequest> getSharedTemplates(String userName, Integer offset, Integer limit) {
-		List<Template> list = repository.findBySharedAndCreatedBy(true, userName, getPageRequest(offset, limit)).getContent();
-		return convert(list);
+	public TemplateSearchList getSharedTemplates(String userName, Integer offset, Integer limit) {
+		Page<Template> templatePage = repository.findBySharedAndCreatedBy(true, userName, getPageRequest(offset, limit));
+		return convert(templatePage, offset, limit);
 	}
 
 	@Override
-	public List<TemplateRequest> getFavouriteTemplates(String owner, Integer offset, Integer limit) {
-		List<Template> list = repository.findByFavouriteAndCreatedBy(true, owner, getPageRequest(offset, limit)).getContent();
-		return convert(list);
+	public TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit) {
+		Page<Template> templatePage = repository.findByFavouriteAndCreatedBy(true, owner, getPageRequest(offset, limit));
+		return convert(templatePage, offset, limit);
 	}
 	/**
 	 * Creates the page request object for pagination.
@@ -93,18 +95,18 @@ public class TemplateServiceImpl implements TemplateService {
 
 	/**
 	 * Convert List<Template> to List<TemplateRequest>
-	 * @param list
+	 * @param templatePage
 	 * @return
 	 */
-	private List<TemplateRequest> convert(List<Template> list) {
-		if (list != null && list.size() > 0) {
-			List<TemplateRequest> returnList = new ArrayList<>();
-			list.stream().forEach(template -> {
+	private TemplateSearchList convert(Page<Template> templatePage, Integer offset, Integer limit) {
+		List<TemplateRequest> returnList = new ArrayList<>();
+		if (templatePage != null && templatePage.getContent().size() > 0) {
+			templatePage.getContent().forEach(template -> {
 				returnList.add(TemplateBuilder.createTemplateRequest(template));
 			});
-			return returnList;
+			return new TemplateSearchList(returnList, offset, limit, templatePage.getTotalElements());
 		}
-		return null;
+		return new TemplateSearchList(returnList, offset, limit, 0);
 	}
 
 }

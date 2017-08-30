@@ -1,9 +1,8 @@
 package com.thed.zephyr.capture.service.data;
 
-import java.util.List;
-
 import com.thed.zephyr.capture.model.Template;
 import com.thed.zephyr.capture.model.TemplateRequest;
+import com.thed.zephyr.capture.model.util.TemplateSearchList;
 
 /**
  * Service layer class for Template.
@@ -38,7 +37,7 @@ public interface TemplateService {
 	 * Get all the templates.
 	 * @return
 	 */
-    List<TemplateRequest> getTemplates(String userName, Integer offset, Integer limit);
+	TemplateSearchList getTemplates(String userName, Integer offset, Integer limit);
     
     /**
      * Get all the templates for the project projectId.
@@ -47,7 +46,7 @@ public interface TemplateService {
      * @param limit
      * @return - List of Template objects found for the project.
      */
-    List<TemplateRequest> getTemplatesByProject(Long projectId, Integer offset, Integer limit);
+	TemplateSearchList getTemplatesByProject(Long projectId, Integer offset, Integer limit);
     /**
      * Get all the shared templates for the user with projectId.
      * @param owner
@@ -55,8 +54,8 @@ public interface TemplateService {
      * @param limit
      * @return
      */
-	List<TemplateRequest> getSharedTemplates(String owner, Integer offset, Integer limit);
+	TemplateSearchList getSharedTemplates(String owner, Integer offset, Integer limit);
 
-	List<TemplateRequest> getFavouriteTemplates(String owner, Integer offset, Integer limit);
-	List<TemplateRequest> getUserTemplates(String userName, Integer offset, Integer limit);
+	TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit);
+	TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit);
 }

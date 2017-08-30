@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.model;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -13,7 +14,7 @@ public class TemplateRequest {
 	private String projectKey;
 	private String projectIconUrl;
 	@NotNull
-	@Max(200)
+	@Size(min = 1, max = 200)
 	private String name;
 	private String ownerName;
 	@NotNull

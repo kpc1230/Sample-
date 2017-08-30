@@ -6,7 +6,6 @@ import com.thed.zephyr.capture.service.jira.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
 import java.util.Objects;
@@ -32,15 +31,12 @@ public class TemplateValidator implements Validator {
 	public void validate(Object obj, Errors errors) {
 		if(obj instanceof TemplateRequest){
 			TemplateRequest templateReq = (TemplateRequest) obj;
-			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "", "Template name can't be empty");
-			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "ownerName", "", "Template Owner name can't be empty");
 			Project project = projectService.getProjectObj(templateReq.getProjectId());
 			if(Objects.isNull(project)) {
 				errors.reject("", "Project is not valid");
 			} else {
 				templateReq.setProjectKey(project.getKey());
 			}
-			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "issueType", "", "Issue Type can't be empty");
 		}
 	}
 
