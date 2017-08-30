@@ -15,6 +15,7 @@ import com.thed.zephyr.capture.predicates.UserIsParticipantPredicate;
 import com.thed.zephyr.capture.repositories.SessionRepository;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
+import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
@@ -65,6 +66,9 @@ public class SessionServiceImpl implements SessionService {
 	
 	@Autowired
     private DynamicProperty dynamicProperty;
+	
+	@Autowired
+	private SessionActivityService sessionActivityService;
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -168,8 +172,8 @@ public class SessionServiceImpl implements SessionService {
                     errorCollection.addAllErrors(deactivateResult.getErrorCollection());
                 }
             }
-            addParticipantJoined(loggedUserKey, session, participant);
         }
+        addParticipantToSession(loggedUserKey, session);
         if (errorCollection.hasErrors()) {
             return new UpdateResult(errorCollection, session);
         }
@@ -250,6 +254,23 @@ public class SessionServiceImpl implements SessionService {
         }        
         return new CompleteSessionResult(loggedUserKey, errorCollection, updateResult, millisecondsSpent, timeSpentRaw, issuesToLink, logTimeIssue);
 	}
+	
+	/**
+	 * Add user as participant to the request session.
+	 * 
+	 * @param user -- User requesting to join the requested session as participant.
+	 * @param session -- Request session by the user to join.
+	 */
+	private void addParticipantToSession(String user, Session session) {
+		Participant newParticipant = new ParticipantBuilder(user).setTimeJoined(new DateTime()).build();
+        if(!Objects.isNull(session.getParticipants())) {
+        	session.getParticipants().add(newParticipant);
+        } else {
+        	List<Participant> participantsList = Lists.newArrayList();
+        	participantsList.add(newParticipant);
+        	session.setParticipants(participantsList);
+        }
+    }
 	
 	/**
 	 * Validates and converts the time spent on the session.
@@ -340,10 +361,10 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private DeactivateResult validateDeactivateSession(Session session, String user, Status status, Duration timeLogged) {
         if (!Objects.isNull(session)) {
-            if (user.equals(session.getAssignee())) { // Pause if it is assigned to same user
+            if (user.equals(session.getAssignee()) && !Objects.isNull(session.getParticipants())) { // Pause if it is assigned to same user
                 List<String> leavingUsers = new ArrayList<>();
                 for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) {
-                    addParticipantLeft(p.getUser(), session);
+                	sessionActivityService.addParticipantLeft(session, new DateTime(), p.getUser(), null);
                     leavingUsers.add(p.getUser());
                 }
                 Session activeUserSession = getActiveSession(user).getSession();
@@ -354,7 +375,7 @@ public class SessionServiceImpl implements SessionService {
                 session.setTimeLogged(timeLogged);
                 return new DeactivateResult(validateUpdate(user, session), leavingUsers);
             } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user))) { // Just leave if it isn't
-                addParticipantLeft(user, session);
+                sessionActivityService.addParticipantLeft(session, new DateTime(), user, null);
             }
         }
         return new DeactivateResult(validateUpdate(user, session), user);
@@ -492,42 +513,12 @@ public class SessionServiceImpl implements SessionService {
         if (!newSession.isShared()) { // If we aren't shared, we wanna kick out all the current users
         	if(!Objects.isNull(newSession.getParticipants())) {
             	for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-                    addParticipantLeft(p.getUser(), newSession);
+                    sessionActivityService.addParticipantLeft(newSession, new DateTime(), p.getUser(), null);
                     leavers.add(p.getUser());
                 }
             }
         }
         return new UpdateResult(new ErrorCollection(), newSession, leavers);
-    }
-	
-	protected void addParticipantJoined(String user, Session session, Participant newParticipant) {
-        boolean currentlyParticipating = false;
-        if(!Objects.isNull(session.getParticipants())) {
-        	 for (Participant participant : session.getParticipants()) {
-                 if (user.equals(participant.getUser()) && !participant.hasLeft()) {
-                     currentlyParticipating = true;
-                 }
-             }
-             if (!currentlyParticipating) {
-                 session.getParticipants().add(newParticipant);
-             }
-        } else {
-        	List<Participant> participantsList = Lists.newArrayList();
-        	participantsList.add(newParticipant);
-        	session.setParticipants(participantsList);
-        }
-    }
-	
-	protected void addParticipantLeft(String user, Session session) {
-        DateTime now = new DateTime();
-        if(!Objects.isNull(session.getParticipants())) {
-        	for (Participant participant : session.getParticipants()) {
-                if (!Objects.isNull(user) && user.equals(participant.getUser()) && !participant.hasLeft()) {
-                    participant.setTimeLeft(now);
-                    break;
-                }
-            }
-        }
     }
 	
 	public class SessionResult  {

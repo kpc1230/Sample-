@@ -20,7 +20,7 @@ public interface SessionActivityService {
 
     SessionActivity addParticipantJoined(Session session, DateTime timestamp, Participant participant, String user, String avatarUrl);
 
-    SessionActivity addParticipantLeft(Session session, DateTime timestamp, Participant participant, String user, String avatarUrl);
+    SessionActivity addParticipantLeft(Session session, DateTime timestamp, String user, String avatarUrl);
 
     SessionActivity addNote(Session session, DateTime timestamp, String user, String noteId, String avatarUrl);
 

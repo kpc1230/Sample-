@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by Masud on 8/25/17.
@@ -47,10 +48,12 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     @Override
     public SessionActivity addParticipantJoined(Session session, DateTime timestamp, Participant participant, String user, String avatarUrl) {
         boolean currentlyParticipating = false;
-        for (Iterator<Participant> iterator = session.getParticipants().iterator(); iterator.hasNext(); ) {
-            Participant participant1 = iterator.next();
-            if (participant1.getUser().equals(user) && !participant1.hasLeft()) {
-                currentlyParticipating = true;
+        if(!Objects.isNull(session.getParticipants())) {
+        	for (Iterator<Participant> iterator = session.getParticipants().iterator(); iterator.hasNext(); ) {
+                Participant participant1 = iterator.next();
+                if (participant1.getUser().equals(user) && !participant1.hasLeft()) {
+                    currentlyParticipating = true;
+                }
             }
         }
         if (!currentlyParticipating) {
@@ -64,21 +67,21 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
 
     @Override
-    public SessionActivity addParticipantLeft(Session session, DateTime timestamp, Participant participant, String user, String avatarUrl) {
-
-        for (Iterator<Participant> iterator = session.getParticipants().iterator(); iterator.hasNext(); ) {
-            Participant participant1 = iterator.next();
-            if (user != null && user.equals(participant1.getUser()) && !participant1.hasLeft()) {
-                // ok we have a person how has joined but not left
-                iterator.remove();
-
-                participant = new ParticipantBuilder(participant).setTimeLeft(timestamp).build();
-                UserLeftSessionActivity sessionActivity = new UserLeftSessionActivity(
-                        session.getId(),session.getCtId(),participant, avatarUrl);
-                sessionActivityRepository.save(sessionActivity);
-                return sessionActivity;
+    public SessionActivity addParticipantLeft(Session session, DateTime timestamp, String user, String avatarUrl) {
+    	if(!Objects.isNull(session.getParticipants())) {
+    		for (Iterator<Participant> iterator = session.getParticipants().iterator(); iterator.hasNext(); ) {
+                Participant participant1 = iterator.next();
+                if (user != null && user.equals(participant1.getUser()) && !participant1.hasLeft()) {
+                	participant1 = new ParticipantBuilder(participant1).setTimeLeft(timestamp).build();
+                    // ok we have a person how has joined but not left
+                    iterator.remove();
+                    UserLeftSessionActivity sessionActivity = new UserLeftSessionActivity(
+                            session.getId(),session.getCtId(), participant1, avatarUrl);
+                    sessionActivityRepository.save(sessionActivity);
+                    return sessionActivity;
+                }
             }
-        }
+    	}
         return null;
     }
 

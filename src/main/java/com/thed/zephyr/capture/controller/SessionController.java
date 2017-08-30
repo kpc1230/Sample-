@@ -176,8 +176,12 @@ public class SessionController {
                 return badRequest(updateResult.getErrorCollection());
             }
         	sessionService.update(updateResult);
+        	Session session = updateResult.getSession();
+        	Project project = projectService.getProjectObj(session.getProjectId());
+        	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
+					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
 			log.info("End of startSession()");
-			return ResponseEntity.ok(updateResult.getSession());
+			return ResponseEntity.ok(lightSession);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -197,8 +201,12 @@ public class SessionController {
                 return badRequest(updateResult.getErrorCollection());
             }
         	sessionService.update(updateResult);
+        	Session session = updateResult.getSession();
+        	Project project = projectService.getProjectObj(session.getProjectId());
+        	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
+					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
 			log.info("End of pauseSession()");
-			return ResponseEntity.ok(updateResult.getSession());
+			return ResponseEntity.ok(lightSession);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -220,9 +228,8 @@ public class SessionController {
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult);
-			//Store sessionActivity
-			sessionActivityService.addParticipantJoined(updateResult.getSession(),
-					dateTime, participant,loggedUserKey,null);
+			//Store participant info in sessionActivity
+			sessionActivityService.addParticipantJoined(updateResult.getSession(), dateTime, participant,loggedUserKey, null);
 			log.info("End of joinSession()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {
@@ -391,15 +398,14 @@ public class SessionController {
 	 * @throws CaptureRuntimeException
 	 */
 	@GetMapping(value = "/{sessionId}/activities", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> completeSession(@PathVariable("sessionId") String sessionId,
+	public ResponseEntity<?> sessionActivities(@PathVariable("sessionId") String sessionId,
 											 @RequestParam("offset") Optional<Integer> offset,
 											 @RequestParam("limit") Optional<Integer> limit
 	) throws CaptureValidationException {
 		log.info("Start of sessionActivities() --> params " + sessionId);
 		try {
-			offset.orElse(0); limit.orElse(ApplicationConstants.DEFAULT_RESULT_SIZE);
 			List<SessionActivity> sessionActivities = sessionActivityService.getAllSessionActivity(
-					CaptureUtil.getPageRequest(offset.get(),limit.get())
+					CaptureUtil.getPageRequest(offset.orElse(0), limit.orElse(ApplicationConstants.DEFAULT_RESULT_SIZE))
 			);
 			if (sessionActivities == null) {
 				ErrorCollection errorCollection = new ErrorCollection();
