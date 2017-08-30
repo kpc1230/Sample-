@@ -102,6 +102,7 @@ public class SessionController {
                     return badRequest(updateResult.getErrorCollection());
                 }
 	        	sessionService.update(updateResult); //Updating the session object into database.
+	        	sessionActivityService.setStatus(createdSession, new DateTime(), loggedUserKey, null);
 	        }
 			log.info("End of createSession()");
 			return ResponseEntity.ok(createdSession);
@@ -178,6 +179,7 @@ public class SessionController {
             }
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
+        	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey, null);
         	Project project = projectService.getProjectObj(session.getProjectId());
         	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
@@ -203,6 +205,7 @@ public class SessionController {
             }
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
+        	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey, null);
         	Project project = projectService.getProjectObj(session.getProjectId());
         	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
@@ -251,9 +254,11 @@ public class SessionController {
 			if (!completeSessionResult.isValid()) {
                 return badRequest(completeSessionResult.getErrorCollection());
             }
+			Session session = completeSessionResult.getSessionUpdateResult().getSession();
+			sessionActivityService.setStatus(session, new DateTime(), loggedUserKey, null);
 			sessionService.update(completeSessionResult.getSessionUpdateResult());
 			log.info("End of completeSession()");
-			return ResponseEntity.ok(completeSessionResult.getSessionUpdateResult().getSession());
+			return ResponseEntity.ok(session);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
