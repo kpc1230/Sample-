@@ -11,9 +11,11 @@ import java.util.Optional;
  */
 public interface PermissionService {
 
-    Permissions getPermissionForIssue(String issueIdOrKey);
+    boolean hasCreateAttachmentPermission(Issue issue);
 
-    Permissions getPermissionForProject(String projectIdOrKey);
+    boolean hasCreateIssuePermission();
 
-    boolean canCreateAttachments(Optional<String> userKey, Issue issue);
+    boolean hasEditIssuePermission(Issue issue);
+
+    boolean hasBrowsePermission(String projectKey);
 }

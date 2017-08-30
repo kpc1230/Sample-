@@ -30,7 +30,7 @@ public interface SessionActivityService {
 
     SessionActivity removeRaisedIssue(Session session, Issue issue, DateTime timeRaised, String creator);
 
-    SessionActivity addAttachment(Issue issue, Attachment attachment);
+    SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, DateTime creationDate, String author);
 
     SessionActivity createSessionActivity(SessionActivity sessionActivity);
 

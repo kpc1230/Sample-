@@ -139,9 +139,9 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
 
     @Override
-    public SessionActivity addAttachment(Issue issue, Attachment attachment) {
-        IssueAttachmentSessionActivity sessionActivity =
-                new IssueAttachmentSessionActivity(issue.getId(), attachment);
+    public SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, DateTime creationDate, String author) {
+        SessionActivity sessionActivity =
+                new IssueAttachmentSessionActivity(session.getId(), issue.getId(), attachment, session.getCtId(), creationDate, author);
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }

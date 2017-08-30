@@ -2,13 +2,18 @@ package com.thed.zephyr.capture.service.jira.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
+import com.atlassian.jira.rest.client.api.domain.Attachment;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
 import com.atlassian.jira.rest.client.api.domain.input.AttachmentInput;
+import com.atlassian.util.concurrent.Promise;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
+import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.PermissionService;
+import com.thed.zephyr.capture.service.data.SessionActivityService;
+import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.AttachmentService;
-import com.thed.zephyr.capture.service.jira.http.CJiraRestClientFactory;
+import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.FileNameCharacterCheckerUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
@@ -18,16 +23,20 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Created by niravshah on 8/25/17.
@@ -38,32 +47,41 @@ public class AttachmentServiceImpl implements AttachmentService {
     private Logger log;
 
     @Autowired
-    private CJiraRestClientFactory cJiraRestClientFactory;
+    @Qualifier("jiraRestClientPOST")
+    private JiraRestClient postJiraRestClient;
 
     @Autowired
     private PermissionService permissionService;
 
+    @Autowired
+    private JiraRestClient getJiraRestClient;
 
     @Autowired
-    private JiraRestClient jiraRestClient;
+    private UserService userService;
+
+    @Autowired
+    private SessionActivityService sessionActivityService;
+
+    @Autowired
+    private SessionService sessionService;
 
     @Override
     public String addAttachments(MultipartFile[] multipartFiles, String issueKey) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         log.info("Attachment Upload request for Issue : {}", issueKey);
-        final Issue issue = jiraRestClient.getIssueClient().getIssue(issueKey).claim();
+        final Issue issue = getJiraRestClient.getIssueClient().getIssue(issueKey).claim();
         if (issue == null) {
             throw new CaptureRuntimeException("file.error.issue.key.invalid", issueKey);
         }
-        if (!permissionService.canCreateAttachments(host.getUserKey(), issue)) {
+        if (!permissionService.hasCreateAttachmentPermission(issue)) {
             throw new CaptureRuntimeException("file.error.attachment.permission", issueKey);
         }
         // Validate the JSON objecta
         try {
             for (MultipartFile multipartFile : multipartFiles) {
                 AttachmentInput attachmentInput = new AttachmentInput(multipartFile.getOriginalFilename(),multipartFile.getInputStream());
-                cJiraRestClientFactory.createJiraPostRestClient(host,host.getUserKey()).getIssueClient().addAttachments(issue.getAttachmentsUri(), attachmentInput).claim();
+                postJiraRestClient.getIssueClient().addAttachments(issue.getAttachmentsUri(), attachmentInput).claim();
             }
         } catch(IOException e) {
             throw new CaptureRuntimeException("rest.resource.malformed.json");
@@ -75,15 +93,13 @@ public class AttachmentServiceImpl implements AttachmentService {
     }
 
     @Override
-    public String addAttachments(String issueKey, JSONArray jsonArray) throws CaptureRuntimeException, JSONException {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+    public String addAttachments(String issueKey, String testSessionId, JSONArray jsonArray) throws CaptureRuntimeException, JSONException {
         log.info("Attachment Upload request for Issue : {}", issueKey);
-        final Issue issue = jiraRestClient.getIssueClient().getIssue(issueKey).claim();
+        final Issue issue = getJiraRestClient.getIssueClient().getIssue(issueKey).claim();
         if (issue == null) {
             throw new CaptureRuntimeException("file.error.issue.key.invalid", issueKey);
         }
-        if (!permissionService.canCreateAttachments(host.getUserKey(), issue)) {
+        if (!permissionService.hasCreateAttachmentPermission(issue)) {
             throw new CaptureRuntimeException("file.error.attachment.permission", issueKey);
         }
         JSONObject json = null;
@@ -104,14 +120,40 @@ public class AttachmentServiceImpl implements AttachmentService {
                 try {
                     imageDataTempFile = byteArrayToTempFile(filename,decodedImageData);
                     imageDataTempFile.renameTo(new File(filename));
-                    cJiraRestClientFactory.createJiraPostRestClient(host,host.getUserKey()).getIssueClient().addAttachments(issue.getAttachmentsUri(),imageDataTempFile);
+                    postJiraRestClient.getIssueClient().addAttachments(issue.getAttachmentsUri(),imageDataTempFile);
                 } catch (CaptureRuntimeException e) {
                     log.debug("Error creating temp file for attachment: " + e);
                     throw e;
                 }
             }
         }
+//        if(StringUtils.isNotBlank(testSessionId)) {
+//            Session session = sessionService.getSession(testSessionId);
+//            Promise<Issue> responsePromise = getJiraRestClient.getIssueClient().getIssue(issueKey);
+//            if(responsePromise.isDone()) {
+//                log.debug("Retrieved Issue:");
+//                Attachment jiraAttachment = getLastUploadedAttachmentByIssue(responsePromise.claim());
+//                com.thed.zephyr.capture.model.jira.Attachment attachment = new
+//                        com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
+//                        jiraAttachment.getAuthor().getName(), jiraAttachment.getCreationDate().getMillis(),
+//                        jiraAttachment.getSize(), jiraAttachment.getMimeType(),
+//                        jiraAttachment.getContentUri());
+//                sessionActivityService.addAttachment(session, responsePromise.claim(), attachment, jiraAttachment.getCreationDate(), attachment.getAuthor());
+//            }
+//        }
         return getFullIconUrl(issue);
+    }
+
+
+    private Attachment getLastUploadedAttachmentByIssue(Issue issue) throws CaptureRuntimeException {
+        if(issue.getAttachments() != null) {
+            Comparator<Attachment> attachmentComparator = Comparator.comparing(Attachment::getCreationDate);
+            List<Attachment> attachments = new ArrayList<>();
+            issue.getAttachments().forEach(attachments::add);
+            Collections.sort(attachments, attachmentComparator);
+            return attachments != null && attachments.size() > 1 ? attachments.get(0) : null;
+        }
+        return null;
     }
 
     /**
@@ -140,6 +182,7 @@ public class AttachmentServiceImpl implements AttachmentService {
             return null;
         }
     }
+
 
     /**
      * There are two cases, remote icon or within jira. The remote icon can be returned as is while the jira one will need the baseURL added to the

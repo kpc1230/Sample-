@@ -63,7 +63,6 @@ public class JiraIssueFieldServiceImpl implements JiraIssueFieldService {
             log.error("Error during getting the all custom fields.", exception);
             return null;
         }
-
     }
 
     @Override

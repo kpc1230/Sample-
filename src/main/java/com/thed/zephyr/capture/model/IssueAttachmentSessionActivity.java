@@ -3,6 +3,8 @@ package com.thed.zephyr.capture.model;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.thed.zephyr.capture.model.jira.Attachment;
 import com.thed.zephyr.capture.service.db.converter.AttachmentTypeConverter;
+import com.thed.zephyr.capture.util.CaptureUtil;
+import org.joda.time.DateTime;
 
 /**
  * Created by aliakseimatsarski on 8/16/17.
@@ -17,7 +19,8 @@ public class IssueAttachmentSessionActivity extends SessionActivity {
     public IssueAttachmentSessionActivity() {
     }
 
-    public IssueAttachmentSessionActivity(Long issueId, Attachment attachment) {
+    public IssueAttachmentSessionActivity(String sessionId, Long issueId, Attachment attachment, String clientKey, DateTime creationDate, String user) {
+        super(sessionId, clientKey, creationDate, user, CaptureUtil.getLargeAvatarUrl(user));
         this.issueId = issueId;
         this.attachment = attachment;
     }

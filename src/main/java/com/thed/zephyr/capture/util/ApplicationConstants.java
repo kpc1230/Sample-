@@ -76,7 +76,10 @@ public class ApplicationConstants {
     public static final String USER_AGENT = "User-Agent";
     public static final String AUTHORIZATION = "Authorization";
     public static final String BE_ACCESS_KEY_EXPIRATION_TIME = "be.accessKey.expiration.time.milliSeconds";
-    public static final Object CREATE_ATTACHMENT_PERMISSION = "CREATE_ATTACHMENT";
+    public static final String CREATE_ATTACHMENT_PERMISSION = "CREATE_ATTACHMENT";
+    public static final String CREATE_ISSUE_PERMISSION = "CREATE_ISSUE";
+    public static final String EDIT_ISSUE_PERMISSION = "EDIT_ISSUE";
+    public static final String BROWSE_PROJECT_PERMISSION = "BROWSE_PROJECT";
 
     /*** for MetadataField ***/
     public static String PROJECTS = "projects";
