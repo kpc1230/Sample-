@@ -226,6 +226,78 @@
         "event": "connect-addon-disabled",
         "url": "/rest/event/plugin/disabled"
       }
+    ],
+    "jiraIssueFields": [
+      {
+        "key": "zfc-issue-field-user-agent",
+        "name": {
+          "value": "ZFC Capture for JIRA user agent"
+        },
+        "description": {
+          "value": "ZFC Capture for JIRA user agent"
+        },
+        "type": "string"
+      },
+      {
+        "key": "zfc-issue-field-browser",
+        "name": {
+          "value": "ZFC Capture for JIRA browser"
+        },
+        "description": {
+          "value": "ZFC Capture for JIRA browser"
+        },
+        "type": "string"
+      },
+      {
+        "key": "zfc-issue-field-operating-system",
+        "name": {
+          "value": "ZFC Capture for JIRA operating system"
+        },
+        "description": {
+          "value": "ZFC Capture for JIRA operating system"
+        },
+        "type": "string"
+      },
+      {
+        "key": "zfc-issue-field-screen-resolution",
+        "name": {
+          "value": "ZFC Capture for JIRA screen resolution"
+        },
+        "description": {
+          "value": "ZFC Capture for JIRA screen resolution"
+        },
+        "type": "string"
+      },
+      {
+        "key": "zfc-issue-field-jquery-version",
+        "name": {
+          "value": "ZFC Capture for JIRA jQuery version"
+        },
+        "description": {
+          "value": "ZFC Capture for JIRA jQuery version"
+        },
+        "type": "string"
+      },
+      {
+        "key": "zfc-issue-field-document-mode",
+        "name": {
+          "value": "ZFC Capture for JIRA document mode"
+        },
+        "description": {
+          "value": "ZFC Capture for JIRA document mode"
+        },
+        "type": "string"
+      },
+      {
+        "key": "zfc-issue-field-url",
+        "name": {
+          "value": "ZFC Capture for JIRA URL"
+        },
+        "description": {
+          "value": "ZFC Capture for JIRA URL"
+        },
+        "type": "string"
+      }
     ]
   },
   "scopes": ["READ", "WRITE","ADMIN"]
