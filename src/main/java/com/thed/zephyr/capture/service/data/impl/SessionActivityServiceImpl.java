@@ -11,7 +11,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -157,11 +156,6 @@ public class SessionActivityServiceImpl implements SessionActivityService{
 
     @Override
     public List<SessionActivity> getAllSessionActivity(Pageable pageRequest) {
-        List<SessionActivity> sessionActivities = new ArrayList<>();
-        sessionActivityRepository.findAll()
-        .forEach(sessionActivity -> {
-            sessionActivities.add(sessionActivity);
-        });
-        return sessionActivities;
+        return sessionActivityRepository.findAll(pageRequest).getContent();
     }
 }
