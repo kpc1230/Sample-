@@ -2,8 +2,6 @@ package com.thed.zephyr.capture.controller;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-import java.util.List;
-
 import javax.validation.Valid;
 
 import org.apache.commons.lang3.StringUtils;
@@ -30,8 +28,8 @@ import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Note;
 import com.thed.zephyr.capture.model.NoteRequest;
+import com.thed.zephyr.capture.model.util.NoteSearchList;
 import com.thed.zephyr.capture.service.data.NoteService;
-import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.validator.NoteValidator;
 
 /**
@@ -153,15 +151,15 @@ public class NoteController {
 		if (StringUtils.isEmpty(sessionId)) {
 			throw new CaptureValidationException("sessionId cannot be null/empty");
 		}
-		List<Note> notes = null;
+		NoteSearchList result = null;
 		try {
-			notes = noteService.getNotesBySession(sessionId, offset, limit);
+			result = noteService.getNotesBySession(sessionId, offset, limit);
 		} catch (Exception ex) {
 			log.error("Error during getNotesBySessionId.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
 		log.debug("getNotesBySessionId end for the session:{}", sessionId);
-		return ok(notes);
+		return ResponseEntity.ok(result);
 	}
 
 	private ResponseEntity<?> ok() {
@@ -170,10 +168,6 @@ public class NoteController {
 
 	private ResponseEntity<?> ok(Note note) {
 		return ResponseEntity.ok(note);
-	}
-
-	private ResponseEntity<?> ok(List<Note> notes) {
-		return ResponseEntity.ok(notes);
 	}
 
 	private ResponseEntity<?> created(Note note) {

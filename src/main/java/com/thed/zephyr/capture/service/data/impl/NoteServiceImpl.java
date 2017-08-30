@@ -1,7 +1,6 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.joda.time.DateTime;
@@ -17,6 +16,7 @@ import com.thed.zephyr.capture.model.Note.Resolution;
 import com.thed.zephyr.capture.model.NoteRequest;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Tag;
+import com.thed.zephyr.capture.model.util.NoteSearchList;
 import com.thed.zephyr.capture.repositories.NoteRepository;
 import com.thed.zephyr.capture.repositories.SessionRepository;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
@@ -103,7 +103,7 @@ public class NoteServiceImpl implements NoteService {
 	}
 
 	@Override
-	public List<Note> getNotesBySession(String sessionId, Integer offset, Integer limit) 
+	public NoteSearchList getNotesBySession(String sessionId, Integer offset, Integer limit) 
 			throws CaptureValidationException{
 		Session session = sessionRepository.findOne(sessionId);
 		if(session == null){
@@ -111,7 +111,8 @@ public class NoteServiceImpl implements NoteService {
 		}
 		Page<Note> notes = repository.queryByCtIdAndSessionId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository)
 				, sessionId, getPageRequest(offset, limit));
-		return notes.getContent();
+		return new NoteSearchList(notes.getContent(), offset, limit, notes.getTotalElements());
+//		return notes.getContent();
 	}
 
 	private PageRequest getPageRequest(Integer offset, Integer limit) {
