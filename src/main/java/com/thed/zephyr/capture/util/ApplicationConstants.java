@@ -96,5 +96,8 @@ public class ApplicationConstants {
     public static int MAX_NOTE_LENGTH = 2000;
     public static final int RELATED_ISSUES_LIMIT = 100;
     public static final Integer DEFAULT_RESULT_SIZE = 20 ;
+    
+    public static final String RELATED_ISSUES_LIMIT_DYNAMIC_KEY = "session.issue.max.limit";
+    public static final String PARTICIPANT_LIMIT_DYNAMIC_KEY = "session.participant.limit";
 
 }

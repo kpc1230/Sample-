@@ -5,6 +5,8 @@ import com.atlassian.jira.rest.client.api.domain.Project;
 
 import java.util.Map;
 
+import org.joda.time.DateTime;
+
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
@@ -18,6 +20,7 @@ public class LightSession {
     private final Project project;
     private final String defaultTemplateId;
     private final String additionalInfo;
+    private DateTime timeCreated;
     private final Map<String, Object> rawData;
 
     public LightSession(String id,
@@ -29,6 +32,7 @@ public class LightSession {
                         Project project,
                         String defaultTemplateId,
                         String additionalInfo,
+                        DateTime timeCreated,
                         Map<String, Object> rawData) {
         this.id = id;
         this.name = name;
@@ -39,6 +43,7 @@ public class LightSession {
         this.project = project;
         this.defaultTemplateId = defaultTemplateId;
         this.additionalInfo = additionalInfo;
+        this.timeCreated = timeCreated;
         this.rawData = rawData;
     }
 
@@ -81,4 +86,12 @@ public class LightSession {
     public String getCreator() {
         return creator;
     }
+
+	public DateTime getTimeCreated() {
+		return timeCreated;
+	}
+
+	public void setTimeCreated(DateTime timeCreated) {
+		this.timeCreated = timeCreated;
+	}
 }

@@ -8,6 +8,7 @@ import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.DynamicProperty;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,9 @@ public class SessionValidator implements Validator {
 	
 	@Autowired
 	private IssueService issueService;
+	
+	@Autowired
+    private DynamicProperty dynamicProperty;
 
 	@Override
 	public boolean supports(Class<?> clazz) {
@@ -70,8 +74,9 @@ public class SessionValidator implements Validator {
 					}
 				});
 				sessionRequest.setRelatedIssueIds(relatedIssues);
-				if (relatedIssues.size() > ApplicationConstants.RELATED_ISSUES_LIMIT) { //checking whether related issues are crossed more than the limit.
-					errors.reject("", MessageFormat.format("There are {0} related issues. This session cannot have more than {1} related issues.", relatedIssues.size(), ApplicationConstants.RELATED_ISSUES_LIMIT));
+				int issueLimit = Integer.parseInt(dynamicProperty.getStringProp(ApplicationConstants.RELATED_ISSUES_LIMIT_DYNAMIC_KEY, "100").get());
+				if (relatedIssues.size() > issueLimit) { //checking whether related issues are crossed more than the limit.
+					errors.reject("", MessageFormat.format("There are {0} related issues. This session cannot have more than {1} related issues.", relatedIssues.size(), issueLimit));
 		        }
 			}
 		}

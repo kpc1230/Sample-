@@ -17,7 +17,10 @@ import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.IssueService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.DynamicProperty;
+
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -59,6 +62,9 @@ public class SessionServiceImpl implements SessionService {
 	private static final String USER_KEY = "USER_KEY_";
 	
 	private static final String TENANT_KEY = "TENANT_KEY_";
+	
+	@Autowired
+    private DynamicProperty dynamicProperty;
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -80,7 +86,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
 		session.setProjectId(sessionRequest.getProjectId());
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
-		session.setAssignee(sessionRequest.getAssignee() != null ? sessionRequest.getAssignee() : loggedUserKey);
+		session.setAssignee(!StringUtils.isBlank(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
         Session createdSession = sessionRepository.save(session);
         setActiveSessionIdToCache(loggedUserKey, createdSession.getId());
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
@@ -101,7 +107,6 @@ public class SessionServiceImpl implements SessionService {
         session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
         session.setShared(sessionRequest.getShared());
         session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
-        session.setProjectId(sessionRequest.getProjectId());
         session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
         //Generating the session object from session builder.
         return validateUpdate(loggedUserKey, session);
@@ -348,7 +353,7 @@ public class SessionServiceImpl implements SessionService {
                 session.setStatus(status);
                 session.setTimeLogged(timeLogged);
                 return new DeactivateResult(validateUpdate(user, session), leavingUsers);
-            } else if (Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user))) { // Just leave if it isn't
+            } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user))) { // Just leave if it isn't
                 addParticipantLeft(user, session);
             }
         }
@@ -475,6 +480,10 @@ public class SessionServiceImpl implements SessionService {
                 }
             }
         }
+        int participantLimit = Integer.parseInt(dynamicProperty.getStringProp(ApplicationConstants.PARTICIPANT_LIMIT_DYNAMIC_KEY, "10").get());
+        if(!Objects.isNull(newSession.getParticipants()) && newSession.getParticipants().size() > participantLimit) {
+        	errorCollection.addError("There are {0} participants. This session cannot have more than {1} participants.", newSession.getParticipants().size(), participantLimit);
+        }
         if (errorCollection.hasErrors()) {
             return new UpdateResult(errorCollection, newSession);
         }
@@ -493,7 +502,6 @@ public class SessionServiceImpl implements SessionService {
 	
 	protected void addParticipantJoined(String user, Session session, Participant newParticipant) {
         boolean currentlyParticipating = false;
-        DateTime now = new DateTime();
         if(!Objects.isNull(session.getParticipants())) {
         	 for (Participant participant : session.getParticipants()) {
                  if (user.equals(participant.getUser()) && !participant.hasLeft()) {

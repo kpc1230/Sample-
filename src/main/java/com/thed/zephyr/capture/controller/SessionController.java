@@ -75,7 +75,7 @@ public class SessionController {
 			SessionSearchList sessionsSearch = sessionService.getSessionsForProject(projectId, offset, limit);
 			sessionsSearch.getContent().stream().forEach(session -> {
 				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-						project, session.getDefaultTemplateId(), session.getAdditionalInfo(), null); //Send only what UI is required instead of whole session object.
+						project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
 				sessionDtoList.add(lightSession);
 			});
 			LightSessionSearchList response = new LightSessionSearchList(sessionDtoList, sessionsSearch.getOffset(), sessionsSearch.getLimit(), sessionsSearch.getTotal());
@@ -140,7 +140,7 @@ public class SessionController {
             }
 			sessionService.update(updateResult);
 			log.info("End of updateSession()");
-			return ResponseEntity.ok().build();
+			return ResponseEntity.ok(updateResult.getSession());
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
