@@ -234,7 +234,7 @@
           "value": "ZFC Capture for JIRA user agent"
         },
         "description": {
-          "value": "ZFC Capture for JIRA user agent"
+          "value": "This custom field is created programatically by Capture for JIRA."
         },
         "type": "string"
       },
@@ -244,7 +244,7 @@
           "value": "ZFC Capture for JIRA browser"
         },
         "description": {
-          "value": "ZFC Capture for JIRA browser"
+          "value": "This custom field is created programatically by Capture for JIRA."
         },
         "type": "string"
       },
@@ -254,7 +254,7 @@
           "value": "ZFC Capture for JIRA operating system"
         },
         "description": {
-          "value": "ZFC Capture for JIRA operating system"
+          "value": "This custom field is created programatically by Capture for JIRA."
         },
         "type": "string"
       },
@@ -264,7 +264,7 @@
           "value": "ZFC Capture for JIRA screen resolution"
         },
         "description": {
-          "value": "ZFC Capture for JIRA screen resolution"
+          "value": "This custom field is created programatically by Capture for JIRA."
         },
         "type": "string"
       },
@@ -274,7 +274,7 @@
           "value": "ZFC Capture for JIRA jQuery version"
         },
         "description": {
-          "value": "ZFC Capture for JIRA jQuery version"
+          "value": "This custom field is created programatically by Capture for JIRA."
         },
         "type": "string"
       },
@@ -284,7 +284,7 @@
           "value": "ZFC Capture for JIRA document mode"
         },
         "description": {
-          "value": "ZFC Capture for JIRA document mode"
+          "value": "This custom field is created programatically by Capture for JIRA."
         },
         "type": "string"
       },
@@ -294,7 +294,7 @@
           "value": "ZFC Capture for JIRA URL"
         },
         "description": {
-          "value": "ZFC Capture for JIRA URL"
+          "value": "This custom field is created programatically by Capture for JIRA."
         },
         "type": "string"
       }

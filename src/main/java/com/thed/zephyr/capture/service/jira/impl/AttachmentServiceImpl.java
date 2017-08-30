@@ -14,6 +14,7 @@ import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.AttachmentService;
 import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.FileNameCharacterCheckerUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
@@ -89,11 +90,13 @@ public class AttachmentServiceImpl implements AttachmentService {
            log.error("Error Adding Attachment",e);
             throw new CaptureRuntimeException("Error Adding Attachment");
         }
-        return getFullIconUrl(issue);
+        return CaptureUtil.getFullIconUrl(issue,host);
     }
 
     @Override
     public String addAttachments(String issueKey, String testSessionId, JSONArray jsonArray) throws CaptureRuntimeException, JSONException {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         log.info("Attachment Upload request for Issue : {}", issueKey);
         final Issue issue = getJiraRestClient.getIssueClient().getIssue(issueKey).claim();
         if (issue == null) {
@@ -116,32 +119,27 @@ public class AttachmentServiceImpl implements AttachmentService {
                     throw new CaptureRuntimeException("attachfile.error.invalidcharacter", filename);
                 }
                 byte[] decodedImageData = Base64.decodeBase64(imageData);
-                File imageDataTempFile;
                 try {
-                    imageDataTempFile = byteArrayToTempFile(filename,decodedImageData);
-                    imageDataTempFile.renameTo(new File(filename));
-                    postJiraRestClient.getIssueClient().addAttachments(issue.getAttachmentsUri(),imageDataTempFile);
+                    File imageDataTempFile = byteArrayToTempFile(filename,decodedImageData);
+                    postJiraRestClient.getIssueClient().addAttachments(issue.getAttachmentsUri(),imageDataTempFile).claim();
                 } catch (CaptureRuntimeException e) {
                     log.debug("Error creating temp file for attachment: " + e);
                     throw e;
                 }
             }
         }
-//        if(StringUtils.isNotBlank(testSessionId)) {
-//            Session session = sessionService.getSession(testSessionId);
-//            Promise<Issue> responsePromise = getJiraRestClient.getIssueClient().getIssue(issueKey);
-//            if(responsePromise.isDone()) {
-//                log.debug("Retrieved Issue:");
-//                Attachment jiraAttachment = getLastUploadedAttachmentByIssue(responsePromise.claim());
-//                com.thed.zephyr.capture.model.jira.Attachment attachment = new
-//                        com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
-//                        jiraAttachment.getAuthor().getName(), jiraAttachment.getCreationDate().getMillis(),
-//                        jiraAttachment.getSize(), jiraAttachment.getMimeType(),
-//                        jiraAttachment.getContentUri());
-//                sessionActivityService.addAttachment(session, responsePromise.claim(), attachment, jiraAttachment.getCreationDate(), attachment.getAuthor());
-//            }
-//        }
-        return getFullIconUrl(issue);
+        if(StringUtils.isNotBlank(testSessionId)) {
+            Session session = sessionService.getSession(testSessionId);
+            Issue updatedIssue = getJiraRestClient.getIssueClient().getIssue(issueKey).claim();
+            Attachment jiraAttachment = getLastUploadedAttachmentByIssue(updatedIssue);
+            com.thed.zephyr.capture.model.jira.Attachment attachment = new
+                    com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
+                    jiraAttachment.getAuthor().getName(), jiraAttachment.getCreationDate().getMillis(),
+                    jiraAttachment.getSize(), jiraAttachment.getMimeType(),
+                    jiraAttachment.getContentUri());
+            sessionActivityService.addAttachment(session, updatedIssue, attachment, jiraAttachment.getCreationDate(), attachment.getAuthor());
+        }
+        return CaptureUtil.getFullIconUrl(issue,host);
     }
 
 
@@ -181,22 +179,5 @@ public class AttachmentServiceImpl implements AttachmentService {
         } else {
             return null;
         }
-    }
-
-
-    /**
-     * There are two cases, remote icon or within jira. The remote icon can be returned as is while the jira one will need the baseURL added to the
-     * front
-     *
-     * @param i issue
-     * @return full url to the image
-     */
-    public String getFullIconUrl(Issue i) {
-        return getFullIconUrl(i.getIssueType());
-    }
-
-    public String getFullIconUrl(IssueType it) {
-        URI iconUrl = it.getIconUri();
-        return iconUrl.toString();
     }
 }

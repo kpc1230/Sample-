@@ -9,8 +9,10 @@ import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldVal
 import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
+import com.atlassian.jira.rest.client.internal.json.IssueJsonParser;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.Session;
+import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
@@ -21,7 +23,9 @@ import com.thed.zephyr.capture.service.jira.http.CJiraRestClientFactory;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.service.jira.issue.IssueFields;
 import com.thed.zephyr.capture.service.jira.issue.ResourceId;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -74,7 +78,7 @@ public class IssueController {
 
 
     @RequestMapping(value = "/issue-ext", method = RequestMethod.POST)
-    public ResponseEntity<BasicIssue> createIssue(final HttpServletRequest request, final @RequestParam(value = "testSessionId",required = false)  String testSessionId, @Valid @RequestBody final IssueCreateRequest createRequest) {
+    public ResponseEntity<CaptureIssue> createIssue(final HttpServletRequest request, final @RequestParam(value = "testSessionId",required = false)  String testSessionId, @Valid @RequestBody final IssueCreateRequest createRequest) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         log.info("Issue Create Request for Issue : {}", createRequest.toString());
@@ -86,6 +90,7 @@ public class IssueController {
         IssueInput issueInput = createIssueInput(issueFields);
         BasicIssue basicIssue = postJiraRestClient.getIssueClient().createIssue(issueInput).claim();
         Issue issue = issueService.getIssueObject(basicIssue.getKey());
+        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(),basicIssue.getKey(),basicIssue.getId(),CaptureUtil.getFullIconUrl(issue,host));
         //captureContextIssueFieldsService.populateContextFields(request, basicIssue.getKey(), createRequest.getContext());
         if(StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
@@ -93,7 +98,7 @@ public class IssueController {
                 sessionActivityService.addRaisedIssue(session,issue,issue.getCreationDate(),host.getUserKey().get());
             }
         }
-        return new ResponseEntity<>(basicIssue, HttpStatus.OK);
+        return new ResponseEntity<>(captureIssue, HttpStatus.OK);
     }
 
     private IssueInput createIssueInput(IssueFields issueFields) {

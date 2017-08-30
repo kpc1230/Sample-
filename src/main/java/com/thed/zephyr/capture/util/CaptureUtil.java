@@ -1,8 +1,11 @@
 package com.thed.zephyr.capture.util;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.IssueType;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.joda.time.DateTime;
@@ -104,5 +107,36 @@ public class CaptureUtil {
      */
     public static PageRequest getPageRequest(Integer offset, Integer limit) {
         return new PageRequest((Objects.isNull(offset) ? 0 : offset), (Objects.isNull(limit) ? ApplicationConstants.DEFAULT_RESULT_SIZE : limit));
+    }
+
+
+    /**
+     * There are two cases, remote icon or within jira. The remote icon can be returned as is while the jira one will need the baseURL added to the
+     * front
+     *
+     * @param issue issue
+     * @param host
+     * @return full url to the image
+     */
+    public static String getFullIconUrl(Issue issue, AtlassianHostUser host) {
+        return getFullIconUrl(issue.getIssueType(),host.getHost().getBaseUrl());
+    }
+
+
+    public static String getFullIconUrl(IssueType it, String baseUrl) {
+        String iconUrl = it.getIconUri().toString();
+        String imgSrc = "";
+        if (iconUrl.indexOf("http") >= 0) {
+            // In the case of remote issue icons
+            imgSrc = iconUrl.substring(iconUrl.indexOf("http"));
+        } else {
+            if (!StringUtils.isEmpty(iconUrl)) {
+                imgSrc = baseUrl + iconUrl;
+            } else {
+                // To prevent empty img tags
+                imgSrc = baseUrl + "/images/icons/undefined.gif";
+            }
+        }
+        return imgSrc;
     }
 }
