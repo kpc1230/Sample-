@@ -75,7 +75,7 @@ public class NoteServiceImpl implements NoteService {
 			tags = new HashSet<>();
 			tags.add(new Tag(-1l , ""));
 		}
-		Note.Resolution resol = Note.Resolution.valueOf(input.getResolutionState());
+		Note.Resolution resol = existing.getResolutionState();
 		if(toggleResolution){
 			resol = validateToggleResolution(existing.getResolutionState());
 		}
