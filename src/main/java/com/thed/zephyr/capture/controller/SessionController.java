@@ -7,6 +7,7 @@ import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.exception.model.ErrorDto;
 import com.thed.zephyr.capture.model.*;
+import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
@@ -342,6 +343,35 @@ public class SessionController {
 		} catch(Exception ex) {
 			log.error("Error in unraiseIssueSessionRequest() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+	
+	@GetMapping(value = "/filtered", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> searchSession(@RequestParam("projectFilter") Long projectId, @RequestParam("assigneeFilter") String assignee,
+			@RequestParam("statusFilter") String status, @RequestParam("searchTerm") String searchTerm, @RequestParam("sortOrder") String sortOrder,
+			@RequestParam("startAt") int startAt, @RequestParam("size") int size) throws CaptureValidationException {
+		log.info("Start of searchSession() --> params " + " projectFilter " + projectId + " assigneeFilter " + assignee + " statusFilter " + status + " searchTerm "
+			+ searchTerm + " sortOrder " + sortOrder + " startAt " + startAt + " size " + size);
+		try {		
+			validateInputParameters(projectId, status);
+			log.info("End of searchSession()");
+			return ResponseEntity.ok().build();
+		} catch(CaptureValidationException ex) {
+			throw ex;
+		} catch(Exception ex) {
+			log.error("Error in unraiseIssueSessionRequest() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+	
+	private void validateInputParameters(Long projectId, String status) throws CaptureValidationException {
+		if(!Objects.isNull(projectId)) {
+			Project project = projectService.getProjectObj(projectId);
+			if(Objects.isNull(project)) throw new CaptureValidationException("Invalid Project ID.");
+		}
+		if(!StringUtils.isBlank(status)) {
+			Status fetchedStatus = Status.valueOf(status);
+			if(Objects.isNull(fetchedStatus)) throw new CaptureValidationException("Invalid Status.");
 		}
 	}
 	

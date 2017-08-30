@@ -146,5 +146,19 @@ public interface SessionService {
 	 */
 	CompleteSessionResult completeSession(String loggedUserKey, Session session, CompleteSessionRequest completeSessionRequest);
 	
+	
+	/**
+	 * Fetches the sessions based on the input search parameters and also sorts the results based on sort order.
+	 * 
+	 * @param projectId -- Session Project ID
+	 * @param assignee -- Session Assignee
+	 * @param status -- Session Status
+	 * @param seachTerm -- User input search term
+	 * @param sotrOrder -- Sort order(ASC, DESC)
+	 * @param startAt -- Position to fetch the sessions.
+	 * @param size -- Number of sessions to fetch.
+	 * @return
+	 */
+	SessionSearchList searchSession(Long projectId, String assignee, String status, String seachTerm, String sotrOrder, int startAt, int size);
 }
 

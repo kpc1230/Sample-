@@ -476,10 +476,6 @@ public class SessionServiceImpl implements SessionService {
             if (Objects.isNull(loadedSession)) {
                 errorCollection.addError("'{0}' is not a valid session id", newSession.getId());
             } else {
-            	if (!newSession.getStatus().equals(loadedSession.getStatus()) &&
-            			!Objects.isNull(loadedSession.getAssignee()) && loadedSession.getAssignee().equals(updater) && !Status.COMPLETED.equals(loadedSession.getStatus())) { // If the session status is changed, we better have been allowed to do that!
-                    errorCollection.addError("You cannot assign an active session");
-                }
                 if (!Objects.isNull(newSession.getAssignee()) && !newSession.getAssignee().equals(loadedSession.getAssignee()) && Status.STARTED.equals(newSession.getStatus())) { // If the assignee has changed, then the new session should be paused
                     errorCollection.addError("You cannot assign an active session");
                 }
@@ -729,4 +725,11 @@ public class SessionServiceImpl implements SessionService {
             return raised;
         }
     }
+
+	@Override
+	public SessionSearchList searchSession(Long projectId, String assignee, String status, String seachTerm,
+			String sotrOrder, int startAt, int size) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
