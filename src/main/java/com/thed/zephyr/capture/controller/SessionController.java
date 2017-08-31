@@ -122,6 +122,7 @@ public class SessionController {
 		}
 		try {
 			Session session = sessionService.getSession(sessionId);
+			//SessionUI sessionUI = sessionService.constructSessionUI(session);
 			log.info("End of Create Session()");
 			return ResponseEntity.ok(session);
 		} catch(Exception ex) {
@@ -369,6 +370,34 @@ public class SessionController {
 		}
 	}
 	
+	@GetMapping(value = "/{sessionId}/activities", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> sessionActivities(@PathVariable("sessionId") String sessionId,
+											 @RequestParam("offset") Optional<Integer> offset,
+											 @RequestParam("limit") Optional<Integer> limit
+	) throws CaptureValidationException {
+		log.info("Start of sessionActivities() --> params " + sessionId);
+		try {
+			List<SessionActivity> sessionActivities = sessionActivityService.getAllSessionActivityBySession(sessionId,
+					CaptureUtil.getPageRequest(offset.orElse(0), limit.orElse(ApplicationConstants.DEFAULT_RESULT_SIZE))
+			);
+			if (sessionActivities == null) {
+				ErrorCollection errorCollection = new ErrorCollection();
+				errorCollection.addError("Error during getting session activities");
+				return badRequest(errorCollection);
+			}
+			log.info("End of sessionActivities()");
+			return ResponseEntity.ok(sessionActivities);
+		} catch(Exception ex) {
+			log.error("Error in sessionActivities() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+	
+	@GetMapping(value = "/status", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> getSessionStatuses() {
+		return ResponseEntity.ok(sessionService.getSessionStatuses());
+	}
+	
 	private void validateInputParameters(Long projectId, String status) throws CaptureValidationException {
 		if(!Objects.isNull(projectId)) {
 			Project project = projectService.getProjectObj(projectId);
@@ -423,35 +452,5 @@ public class SessionController {
 	protected ResponseEntity<List<ErrorDto>> badRequest(ErrorCollection errorCollection) {		
 		return ResponseEntity.badRequest().body(errorCollection.toErrorDto());
 	}
-
-	/**
-	 * Get List of Activities by Session Id
-	 * @param sessionId
-	 * @param offset
-	 * @param limit
-	 * @return
-	 * @throws CaptureRuntimeException
-	 */
-	@GetMapping(value = "/{sessionId}/activities", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> sessionActivities(@PathVariable("sessionId") String sessionId,
-											 @RequestParam("offset") Optional<Integer> offset,
-											 @RequestParam("limit") Optional<Integer> limit
-	) throws CaptureValidationException {
-		log.info("Start of sessionActivities() --> params " + sessionId);
-		try {
-			List<SessionActivity> sessionActivities = sessionActivityService.getAllSessionActivity(
-					CaptureUtil.getPageRequest(offset.orElse(0), limit.orElse(ApplicationConstants.DEFAULT_RESULT_SIZE))
-			);
-			if (sessionActivities == null) {
-				ErrorCollection errorCollection = new ErrorCollection();
-				errorCollection.addError("Error during getting session activities");
-				return badRequest(errorCollection);
-			}
-			log.info("End of sessionActivities()");
-			return ResponseEntity.ok(sessionActivities);
-		} catch(Exception ex) {
-			log.error("Error in sessionActivities() -> ", ex);
-			throw new CaptureRuntimeException(ex.getMessage(), ex);
-		}
-	}
+	
 }

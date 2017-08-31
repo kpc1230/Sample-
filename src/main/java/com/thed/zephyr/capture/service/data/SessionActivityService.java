@@ -33,6 +33,6 @@ public interface SessionActivityService {
     SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, DateTime creationDate, String author);
 
     SessionActivity createSessionActivity(SessionActivity sessionActivity);
-
-    List<SessionActivity> getAllSessionActivity(Pageable pageRequest);
+    
+    List<SessionActivity> getAllSessionActivityBySession(String sessionId, Pageable pageRequest);
 }

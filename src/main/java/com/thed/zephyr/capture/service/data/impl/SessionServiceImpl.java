@@ -10,6 +10,7 @@ import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.CompleteSessionRequest.CompleteSessionIssueLinkRequest;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.model.view.SessionUI;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
 import com.thed.zephyr.capture.predicates.UserIsParticipantPredicate;
 import com.thed.zephyr.capture.repositories.SessionRepository;
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -361,11 +363,13 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private DeactivateResult validateDeactivateSession(Session session, String user, Status status, Duration timeLogged) {
         if (!Objects.isNull(session)) {
-            if (user.equals(session.getAssignee()) && !Objects.isNull(session.getParticipants())) { // Pause if it is assigned to same user
+            if (user.equals(session.getAssignee())) { // Pause if it is assigned to same user
                 List<String> leavingUsers = new ArrayList<>();
-                for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) {
-                	sessionActivityService.addParticipantLeft(session, new DateTime(), p.getUser(), null);
-                    leavingUsers.add(p.getUser());
+                if(!Objects.isNull(session.getParticipants())) {
+                	for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) {
+                    	sessionActivityService.addParticipantLeft(session, new DateTime(), p.getUser(), null);
+                        leavingUsers.add(p.getUser());
+                    }
                 }
                 Session activeUserSession = getActiveSession(user).getSession();
                 if (session.getId().equals(!Objects.isNull(activeUserSession) ? activeUserSession.getId() : null)) { // If this is my active session then I want to leave it
@@ -729,7 +733,17 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public SessionSearchList searchSession(Long projectId, String assignee, String status, String seachTerm,
 			String sotrOrder, int startAt, int size) {
-		// TODO Auto-generated method stub
+		//Need to implement
 		return null;
+	}
+	
+	public List<Status> getSessionStatuses() {
+		return Arrays.asList(Status.values());
+	}
+
+	@Override
+	public SessionUI constructSessionUI(Session session) {
+		SessionUI sessionUI = new SessionUI(session);
+		return sessionUI;
 	}
 }

@@ -4,6 +4,7 @@ import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.Attachment;
 import com.thed.zephyr.capture.repositories.SessionActivityRepository;
+import com.thed.zephyr.capture.repositories.impl.SessionActivityRepositoryImpl;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public class SessionActivityServiceImpl implements SessionActivityService{
 
     @Autowired
     private SessionActivityRepository sessionActivityRepository;
+    
+    @Autowired
+    private SessionActivityRepositoryImpl sessionActivityRepositoryImpl;
 
     @Override
     public SessionActivity setStatus(Session session, DateTime timestamp, String user, String avatarUrl) {
@@ -100,7 +104,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
 
     @Override
     public SessionActivity deleteNote(Note note) {
-        List<SessionActivity> getAllSessionActivity = getAllSessionActivity(new PageRequest(0,20));
+        List<SessionActivity> getAllSessionActivity = getAllSessionActivityBySession(note.getSessionId(), new PageRequest(0,20));
         // TODO is there a cleaner way to do this?
         SessionActivity markedForDeletion = null;
         for (SessionActivity item : getAllSessionActivity) {
@@ -155,7 +159,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
 
     @Override
-    public List<SessionActivity> getAllSessionActivity(Pageable pageRequest) {
-        return sessionActivityRepository.findAll(pageRequest).getContent();
+    public List<SessionActivity> getAllSessionActivityBySession(String sessionId, Pageable pageRequest) {
+        return sessionActivityRepositoryImpl.findBySessionId(sessionId);
     }
 }

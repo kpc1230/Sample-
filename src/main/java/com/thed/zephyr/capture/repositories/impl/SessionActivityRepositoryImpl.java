@@ -8,6 +8,7 @@ import com.thed.zephyr.capture.model.SessionActivity;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.Map;
 /**
  * Created by aliakseimatsarski on 8/23/17.
  */
+@Component
 public class SessionActivityRepositoryImpl {
 
     @Autowired
