@@ -9,12 +9,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.model.Template;
 import com.thed.zephyr.capture.model.TemplateBuilder;
 import com.thed.zephyr.capture.model.TemplateRequest;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.TemplateRepository;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.TemplateService;
+import com.thed.zephyr.capture.util.CaptureUtil;
 
 /**
  * Created by Venkatareddy on 08/18/2017.
@@ -25,10 +28,14 @@ public class TemplateServiceImpl implements TemplateService {
 
     @Autowired
     private TemplateRepository repository;
-
+    
+    @Autowired
+	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+    
 	@Override
 	public Template createTemplate(TemplateRequest templateReq) {
-        Template created = repository.save(TemplateBuilder.constructTemplate(templateReq));
+        Template created = repository.save(
+        		TemplateBuilder.constructTemplate(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), templateReq));
 		return created;
 	}
 

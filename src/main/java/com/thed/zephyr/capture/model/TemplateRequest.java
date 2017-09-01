@@ -1,12 +1,11 @@
 package com.thed.zephyr.capture.model;
 
-import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 public class TemplateRequest {
+	public static String FIELD_ISSUETYPE = "issueType";
+	public static String FIELD_PROJECTID = "projectId";
 	private String id;
 	@NotNull
 	private Long projectId;
@@ -17,8 +16,6 @@ public class TemplateRequest {
 	@Size(min = 1, max = 200)
 	private String name;
 	private String ownerName;
-	@NotNull
-	private JsonNode source;
 	@NotNull
 	private Long issueType;
 	private Boolean shared;
@@ -31,7 +28,7 @@ public class TemplateRequest {
 	}
 
 	public TemplateRequest(String id, Long projectId, String projectKey, String projectIconUrl, String name,
-			String ownerName, JsonNode source, Long issueType, Boolean shared, Boolean favourited,
+			String ownerName, Long issueType, Boolean shared, Boolean favourited,
 			String ownerDisplayName, String timeCreated, String createdBy) {
 		super();
 		this.id = id;
@@ -40,7 +37,6 @@ public class TemplateRequest {
 		this.projectIconUrl = projectIconUrl;
 		this.name = name;
 		this.ownerName = ownerName;
-		this.source = source;
 		this.issueType = issueType;
 		this.shared = shared;
 		this.favourited = favourited;
@@ -97,14 +93,6 @@ public class TemplateRequest {
 		this.ownerName = ownerName;
 	}
 
-	public JsonNode getSource() {
-		return source;
-	}
-
-	public void setSource(JsonNode source) {
-		this.source = source;
-	}
-
 	public Long getIssueType() {
 		return issueType;
 	}
@@ -152,5 +140,5 @@ public class TemplateRequest {
 	public void setCreatedBy(String createdBy) {
 		this.createdBy = createdBy;
 	}
-	
+
 }

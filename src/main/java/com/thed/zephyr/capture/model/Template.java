@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.springframework.data.annotation.Id;
 
@@ -28,7 +29,7 @@ public class Template {
     private Boolean favourite;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_SHARED)
     private Boolean shared;
-    private JsonNode content;
+//    private JsonNode content;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_CREATED_BY)
     private String createdBy;
     private Date createdOn;
@@ -36,14 +37,14 @@ public class Template {
     public Template() {
     }
 
-    public Template(String id, String name, Long projectId, String ctId, Boolean favourite, Boolean shared, JsonNode content, String createdBy, Date createdOn) {
+    public Template(String id, String name, Long projectId, String ctId, Boolean favourite, Boolean shared, String createdBy, Date createdOn) {
         this.id = id;
         this.name = name;
         this.projectId = projectId;
         this.ctId = ctId;
         this.favourite = favourite;
         this.shared = shared;
-        this.content = content;
+//        this.content = content;
         this.createdBy = createdBy;
         this.createdOn = createdOn;
     }
@@ -96,14 +97,6 @@ public class Template {
         this.shared = shared;
     }
 
-    public JsonNode getContent() {
-        return content;
-    }
-
-    public void setContent(JsonNode content) {
-        this.content = content;
-    }
-
     public String getCreatedBy() {
         return createdBy;
     }
@@ -118,5 +111,12 @@ public class Template {
 
     public void setCreatedOn(Date createdOn) {
         this.createdOn = createdOn;
+    }
+   
+    public JsonNode toJSON() {
+        ObjectMapper om = new ObjectMapper();
+        JsonNode jsonNode = om.convertValue(this, JsonNode.class);
+
+        return jsonNode;
     }
 }

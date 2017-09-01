@@ -2,6 +2,8 @@ package com.thed.zephyr.capture.model;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 /**
  * Class to create Template Object from TemplateRequest and vice versa.
  * @author Venkatareddy
@@ -14,15 +16,15 @@ public final class TemplateBuilder {
 	 * @param templateRequest - Object with values of Template
 	 * @return - Template to be persisted
 	 */
-	public static Template constructTemplate(TemplateRequest templateRequest){
+	public static Template constructTemplate(String ctId, TemplateRequest templateRequest){
 		Template template = new Template();
+		template.setCtId(ctId);
 		template.setName(templateRequest.getName());
 		template.setProjectId(templateRequest.getProjectId());
 		template.setFavourite(templateRequest.getFavourited());
 		template.setShared(templateRequest.getShared());
 		template.setCreatedBy(templateRequest.getCreatedBy());
 		template.setCreatedOn(new Date());
-		template.setContent(templateRequest.getSource());
 		return template;
 	}
 	/**
@@ -38,7 +40,6 @@ public final class TemplateBuilder {
 		template.setShared(templateRequest.getShared());
 		template.setCreatedBy(templateRequest.getCreatedBy());
 		template.setCreatedOn(new Date());
-		template.setContent(templateRequest.getSource());
 		return template;
 	}
 	
@@ -56,7 +57,6 @@ public final class TemplateBuilder {
 		tr.setShared(template.getShared());
 		tr.setCreatedBy(template.getCreatedBy());
 		tr.setTimeCreated(template.getCreatedOn().toString());
-		tr.setSource(template.getContent());
 		return tr;
 	}
 }
