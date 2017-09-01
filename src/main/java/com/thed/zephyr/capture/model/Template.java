@@ -3,10 +3,13 @@ package com.thed.zephyr.capture.model;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.service.db.converter.JsonNodeTypeConverter;
+import com.thed.zephyr.capture.service.db.converter.VariableSetTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.springframework.data.annotation.Id;
 
 import java.util.Date;
+import java.util.Set;
 
 /**
  * Created by aliakseimatsarski on 8/20/17.
@@ -29,24 +32,27 @@ public class Template {
     private Boolean favourite;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_SHARED)
     private Boolean shared;
-//    private JsonNode content;
+    @DynamoDBTypeConverted(converter = JsonNodeTypeConverter.class)
+    private JsonNode content;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_CREATED_BY)
     private String createdBy;
     private Date createdOn;
+    @DynamoDBTypeConverted(converter = VariableSetTypeConverter.class)
+    private Set<Variable> variables;
 
     public Template() {
     }
 
-    public Template(String id, String name, Long projectId, String ctId, Boolean favourite, Boolean shared, String createdBy, Date createdOn) {
-        this.id = id;
+    public Template(String ctId, String name, Long projectId, Boolean favourite, Boolean shared, JsonNode content, String createdBy, Date createdOn, Set<Variable> variables) {
+        this.ctId = ctId;
         this.name = name;
         this.projectId = projectId;
-        this.ctId = ctId;
         this.favourite = favourite;
         this.shared = shared;
-//        this.content = content;
+        this.content = content;
         this.createdBy = createdBy;
         this.createdOn = createdOn;
+        this.variables = variables;
     }
 
     public String getId() {
@@ -112,7 +118,23 @@ public class Template {
     public void setCreatedOn(Date createdOn) {
         this.createdOn = createdOn;
     }
-   
+
+    public JsonNode getContent() {
+        return content;
+    }
+
+    public void setContent(JsonNode content) {
+        this.content = content;
+    }
+
+    public Set<Variable> getVariables() {
+        return variables;
+    }
+
+    public void setVariables(Set<Variable> variables) {
+        this.variables = variables;
+    }
+
     public JsonNode toJSON() {
         ObjectMapper om = new ObjectMapper();
         JsonNode jsonNode = om.convertValue(this, JsonNode.class);
