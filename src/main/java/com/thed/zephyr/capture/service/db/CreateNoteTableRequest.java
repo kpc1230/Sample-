@@ -63,10 +63,10 @@ public class CreateNoteTableRequest {
 
         List<KeySchemaElement> ctIdProjectIdindexSchema = Arrays.asList(
                 new KeySchemaElement("ctId" ,KeyType.HASH),
-                new KeySchemaElement("sessionId" ,KeyType.RANGE)
+                new KeySchemaElement("projectId" ,KeyType.RANGE)
         );
         GlobalSecondaryIndex ctIdProjectIdIndex = new GlobalSecondaryIndex()
-                .withIndexName(ApplicationConstants.GSI_CT_ID_SESSION_ID)
+                .withIndexName(ApplicationConstants.GSI_CT_ID_PROJECT_ID)
                 .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits((long) 1)
                         .withWriteCapacityUnits((long) 1))
