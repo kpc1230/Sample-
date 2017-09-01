@@ -9,18 +9,18 @@ import com.thed.zephyr.capture.model.Tag;
  */
 public class TagUI {
     private final FatNoteUI fatNoteUI;
-    private final Tag tag;
+    private final String tag;
 
-    public TagUI(final FatNoteUI fatNoteUI, final Tag tag) {
+    public TagUI(final FatNoteUI fatNoteUI, final String tag) {
         this.fatNoteUI = fatNoteUI;
         this.tag = tag;
     }
 
     public String getName() {
-        return TextUtils.htmlEncode(tag.getName());
+        return TextUtils.htmlEncode(tag);
     }
 
-    public String getId() {
-        return tag.getId();
+    public String getTag() {
+        return tag;
     }
 }

@@ -17,4 +17,6 @@ public interface TagService {
 
     Tag saveTag(Tag rowTag);
 
+    void deleteTags(String noteId);
+
 }

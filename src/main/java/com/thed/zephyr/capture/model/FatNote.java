@@ -48,7 +48,7 @@ public class FatNote {
         return note.getResolutionState();
     }
 
-    public Set<Tag> getTags() {
+    public Set<String> getTags() {
         return note.getTags();
     }
 

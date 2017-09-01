@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.data.impl;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.thed.zephyr.capture.service.data.TagService;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -32,12 +33,12 @@ public class NoteServiceImpl implements NoteService {
 
 	@Autowired
 	private NoteRepository repository;
-
 	@Autowired
 	private SessionRepository sessionRepository;
-
 	@Autowired
 	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+	@Autowired
+	private TagService tagService;
 
 	@Override
 	public Note create(NoteRequest input) throws CaptureValidationException {
@@ -45,13 +46,14 @@ public class NoteServiceImpl implements NoteService {
 		if (existing != null) {
 			throw new CaptureValidationException("Note already exists");
 		}
-		//TODO, Handle tags before the operation
-		Set<Tag> tags = new HashSet<Tag>();
-	//	tags.add(new Tag(-1l , ""));
+		Set<String> tags = tagService.parseTags(input.getNoteData());
 		Note note = new Note(null, input.getSessionId(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),
 				new DateTime(), input.getAuthor(), input.getNoteData(), tags, Resolution.valueOf(input.getResolutionState()));
 
-		return repository.save(note);
+		Note persistedNote = repository.save(note);
+		tagService.saveTags(persistedNote);
+
+		return persistedNote;
 	}
 
 	@Override
@@ -69,19 +71,17 @@ public class NoteServiceImpl implements NoteService {
 		}else if (!input.getAuthor().equals(existing.getAuthor())){
 			throw new CaptureValidationException("Note author don't match");
 		}
-		//TODO, Handle tags before the operation
-		Set<Tag> tags = existing.getTags();
-		if(tags == null){
-			tags = new HashSet<>();
-		//	tags.add(new Tag(-1l , ""));
-		}
+		Set<String> tags = tagService.parseTags(input.getNoteData());
 		Note.Resolution resol = existing.getResolutionState();
 		if(toggleResolution){
 			resol = validateToggleResolution(existing.getResolutionState());
 		}
 		Note newOne = new Note(input.getId(), existing.getSessionId(), existing.getCtId(), existing.getCreatedTime(), 
 				existing.getAuthor(), input.getNoteData(), tags, resol);
-		return repository.save(newOne);
+		Note persistedNote = repository.save(newOne);
+		tagService.saveTags(persistedNote);
+
+		return persistedNote;
 	}
 
 	@Override
@@ -91,6 +91,7 @@ public class NoteServiceImpl implements NoteService {
 			throw new CaptureValidationException("Note not exists");
 		}
 		//TODO, check if the user has permission to delete, if not throw CaptureValidationException.
+		tagService.deleteTags(noteId);
 		repository.delete(noteId);
 	}
 

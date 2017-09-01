@@ -33,7 +33,8 @@ public class CreateNoteTableRequest {
         List<AttributeDefinition> attributes = Arrays.asList(
                 new AttributeDefinition("id", ScalarAttributeType.S),
                 new AttributeDefinition("ctId", ScalarAttributeType.S),
-                new AttributeDefinition("sessionId", ScalarAttributeType.S)
+                new AttributeDefinition("sessionId", ScalarAttributeType.S),
+                new AttributeDefinition("projectId", ScalarAttributeType.N)
         );
 
         return attributes;
@@ -47,7 +48,7 @@ public class CreateNoteTableRequest {
 
     private List<GlobalSecondaryIndex> getGlobalSecondaryIndexes(){
         List<GlobalSecondaryIndex> globalSecondaryIndices = new ArrayList<>();
-        List<KeySchemaElement> indexSchema = Arrays.asList(
+        List<KeySchemaElement> ctIdSessionIdindexSchema = Arrays.asList(
                 new KeySchemaElement("ctId" ,KeyType.HASH),
                 new KeySchemaElement("sessionId" ,KeyType.RANGE)
         );
@@ -57,7 +58,23 @@ public class CreateNoteTableRequest {
                         .withReadCapacityUnits((long) 1)
                         .withWriteCapacityUnits((long) 1))
                 .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
-                .withKeySchema(indexSchema);
+                .withKeySchema(ctIdSessionIdindexSchema);
+
+
+        List<KeySchemaElement> ctIdProjectIdindexSchema = Arrays.asList(
+                new KeySchemaElement("ctId" ,KeyType.HASH),
+                new KeySchemaElement("sessionId" ,KeyType.RANGE)
+        );
+        GlobalSecondaryIndex ctIdProjectIdIndex = new GlobalSecondaryIndex()
+                .withIndexName(ApplicationConstants.GSI_CT_ID_SESSION_ID)
+                .withProvisionedThroughput(new ProvisionedThroughput()
+                        .withReadCapacityUnits((long) 1)
+                        .withWriteCapacityUnits((long) 1))
+                .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
+                .withKeySchema(ctIdProjectIdindexSchema);
+
+
+        globalSecondaryIndices.add(ctIdProjectIdIndex);
         globalSecondaryIndices.add(ctIdSessionIdIndex);
 
         return globalSecondaryIndices;

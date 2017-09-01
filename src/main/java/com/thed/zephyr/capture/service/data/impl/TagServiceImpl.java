@@ -56,6 +56,7 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public List<Tag> saveTags(Note note){
+        deleteTags(note.getId());
         Set<String> tagStringList = parseTags(note.getNoteData());
         List<Tag> result = new ArrayList<>();
         for (String tagString:tagStringList){
@@ -82,4 +83,16 @@ public class TagServiceImpl implements TagService {
         return tagRepository.save(rowTag);
     }
 
+    @Override
+    public void deleteTags(String noteId) {
+        List<Tag> tags = tagRepository.findByCtIdAndNoteIds(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), noteId);
+        for (Tag tag:tags){
+            if(tag.getNoteIds().size() == 1){
+                tagRepository.delete(tag);
+            } else {
+                tag.getNoteIds().remove(noteId);
+                tagRepository.save(tag);
+            }
+        }
+    }
 }

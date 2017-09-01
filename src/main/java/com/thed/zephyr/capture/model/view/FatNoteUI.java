@@ -75,8 +75,8 @@ public class FatNoteUI {
     }
 
     public Set<TagUI> getTags() {
-        return Sets.newHashSet(Collections2.transform(fatNote.getTags(), new Function<Tag, TagUI>() {
-            public TagUI apply(Tag from) {
+        return Sets.newHashSet(Collections2.transform(fatNote.getTags(), new Function<String, TagUI>() {
+            public TagUI apply(String from) {
                 return new TagUI(FatNoteUI.this, from);
             }
         }));

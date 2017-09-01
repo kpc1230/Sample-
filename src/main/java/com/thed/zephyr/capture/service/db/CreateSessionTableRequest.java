@@ -52,7 +52,7 @@ public class CreateSessionTableRequest {
                 new KeySchemaElement("projectId" ,KeyType.RANGE)
         );
         GlobalSecondaryIndex clientKeyIndex = new GlobalSecondaryIndex()
-                .withIndexName(ApplicationConstants.GSI_CTID_PROJECTID)
+                .withIndexName(ApplicationConstants.GSI_CT_ID_PROJECT_ID)
                 .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits((long) 1)
                         .withWriteCapacityUnits((long) 1))
