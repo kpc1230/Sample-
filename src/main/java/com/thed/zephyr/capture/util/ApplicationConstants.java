@@ -80,6 +80,10 @@ public class ApplicationConstants {
     public static final String CREATE_ISSUE_PERMISSION = "CREATE_ISSUE";
     public static final String EDIT_ISSUE_PERMISSION = "EDIT_ISSUE";
     public static final String BROWSE_PROJECT_PERMISSION = "BROWSE_PROJECT";
+    public static final String SESSION = "session";
+    public static final String RAISED_ISSUE = "raisedIssues";
+    public static final String RELATED_ISSUE = "relatedIssues";
+    public static final String SESSION_ACTIVITIES = "sessionActivities";
 
     /*** for MetadataField ***/
     public static String PROJECTS = "projects";

@@ -1,19 +1,20 @@
 package com.thed.zephyr.capture.service.data;
 
 
-import java.util.List;
-
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.CompleteSessionRequest;
 import com.thed.zephyr.capture.model.Participant;
 import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.model.Session.Status;
+import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.SessionUI;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Class acts as a service layer for session.
@@ -164,7 +165,7 @@ public interface SessionService {
 	 * @return
 	 */
 	SessionSearchList searchSession(Long projectId, String assignee, String status, String seachTerm, String sotrOrder, int startAt, int size);
-	
+
 	/**
 	 * @return -- Returns all the session statuses which are required to render in ui.
 	 */
@@ -178,5 +179,13 @@ public interface SessionService {
 	 * @return -- Returns the constructed session ui object.
 	 */
 	SessionUI constructSessionUI(Session session);
+
+	/**
+	 * Get Complete session view details
+	 *
+	 * @param session -- Session object
+	 * @return Map of related issues, raised issues and activities
+	 */
+	Map<String, Object> getCompleteSessionView(Session session);
 }
 

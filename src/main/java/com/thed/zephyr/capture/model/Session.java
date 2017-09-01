@@ -7,6 +7,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 import org.springframework.data.annotation.Id;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.*;
 
@@ -15,7 +16,7 @@ import java.util.*;
  * Created by aliakseimatsarski on 8/14/17.
  */
 @DynamoDBTable(tableName = ApplicationConstants.SESSION_TABLE_NAME)
-public class Session  implements Comparable<Session> {
+public class Session  implements Comparable<Session>, Serializable{
 
     @Id
     @DynamoDBHashKey

@@ -4,6 +4,7 @@ import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.BasicProject;
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.google.common.collect.Lists;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,20 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ArrayList<BasicProject> getProjects() {
          return Lists.newArrayList(jiraRestClient.getProjectClient().getAllProjects().claim());
+    }
+
+    /**
+     * Get serialized project
+     * @param projectId
+     * @return
+     */
+    @Override
+    public CaptureProject getCaptureProject(Long projectId) {
+        Project project = getProjectObj(projectId);
+        log.debug("PROJECT: --> {}",project.getName());
+        return new CaptureProject(project.getSelf(),
+                project.getKey(),project.getId(),
+                project.getName());
     }
 
 }

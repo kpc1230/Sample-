@@ -1,11 +1,10 @@
 package com.thed.zephyr.capture.model;
 
 
-import com.atlassian.jira.rest.client.api.domain.Project;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
+import org.joda.time.DateTime;
 
 import java.util.Map;
-
-import org.joda.time.DateTime;
 
 /**
  * Created by aliakseimatsarski on 8/15/17.
@@ -17,7 +16,7 @@ public class LightSession {
     private final String assignee;
     private final Session.Status status;
     private final boolean shared;
-    private final Project project;
+    private final CaptureProject project;
     private final String defaultTemplateId;
     private final String additionalInfo;
     private DateTime timeCreated;
@@ -29,7 +28,7 @@ public class LightSession {
                         String assignee,
                         Session.Status status,
                         boolean shared,
-                        Project project,
+                        CaptureProject project,
                         String defaultTemplateId,
                         String additionalInfo,
                         DateTime timeCreated,
@@ -67,7 +66,7 @@ public class LightSession {
         return shared;
     }
 
-    public Project getRelatedProject() {
+    public CaptureProject getProject() {
         return project;
     }
 

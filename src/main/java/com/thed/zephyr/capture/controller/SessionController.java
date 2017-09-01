@@ -1,13 +1,13 @@
 package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.jira.rest.client.api.domain.Project;
 import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.exception.model.ErrorDto;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.Session.Status;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
@@ -30,9 +30,7 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Class handles all the session related api request.
@@ -72,7 +70,7 @@ public class SessionController {
 		}
 		List<LightSession> sessionDtoList = Lists.newArrayList();
 		try {
-			Project project = projectService.getProjectObj(projectId);
+			CaptureProject project = projectService.getCaptureProject(projectId);
 			SessionSearchList sessionsSearch = sessionService.getSessionsForProject(projectId, offset, limit);
 			sessionsSearch.getContent().stream().forEach(session -> {
 				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
@@ -181,7 +179,7 @@ public class SessionController {
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
         	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey, null);
-        	Project project = projectService.getProjectObj(session.getProjectId());
+        	CaptureProject project = projectService.getCaptureProject(session.getProjectId());
         	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
 			log.info("End of startSession()");
@@ -207,7 +205,7 @@ public class SessionController {
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
         	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey, null);
-        	Project project = projectService.getProjectObj(session.getProjectId());
+        	CaptureProject project = projectService.getCaptureProject(session.getProjectId());
         	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
 			log.info("End of pauseSession()");
@@ -244,7 +242,23 @@ public class SessionController {
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
-	
+
+	@GetMapping(value = "/{sessionId}/complete/view" , produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> completeSessionView(@PathVariable("sessionId") String sessionId) throws CaptureValidationException {
+		log.info("Start of completeSessionView() --> params " + sessionId);
+		try {
+			Session loadedSession  = validateAndGetSession(sessionId);
+			Map<String, Object> map = sessionService.getCompleteSessionView(loadedSession);
+			log.info("End of completeSessionView()");
+			return ResponseEntity.ok(map);
+		} catch(CaptureValidationException ex) {
+			throw ex;
+		} catch(Exception ex) {
+			log.error("Error in completeSessionView() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+
 	@PutMapping(value = "/{sessionId}/complete", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> completeSession(@PathVariable("sessionId") String sessionId, @RequestBody CompleteSessionRequest completeSessionRequest) throws CaptureValidationException {
 		log.info("Start of completeSession() --> params " + sessionId);
@@ -400,7 +414,7 @@ public class SessionController {
 	
 	private void validateInputParameters(Long projectId, String status) throws CaptureValidationException {
 		if(!Objects.isNull(projectId)) {
-			Project project = projectService.getProjectObj(projectId);
+			CaptureProject project = projectService.getCaptureProject(projectId);
 			if(Objects.isNull(project)) throw new CaptureValidationException("Invalid Project ID.");
 		}
 		if(!StringUtils.isBlank(status)) {

@@ -3,26 +3,33 @@ package com.thed.zephyr.capture.model.jira;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.net.URI;
 
 /**
- * Created by niravshah on 8/30/17.
+ * Created by Masud on 8/14/17.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CaptureIssue implements Serializable {
+public class CaptureProject implements Serializable{
 
-    private String iconPath;
     private final URI self;
+
     private final String key;
+
+    @Nullable
     private final Long id;
 
-    public CaptureIssue(URI self, String key, Long id,String iconPath) {
-        this.iconPath = iconPath;
+    @Nullable
+    private final String name;
+
+
+    public CaptureProject(URI self, String key, Long id, String name) {
         this.self = self;
         this.key = key;
         this.id = id;
+        this.name = name;
     }
 
     public URI getSelf() {
@@ -33,16 +40,13 @@ public class CaptureIssue implements Serializable {
         return key;
     }
 
+    @Nullable
     public Long getId() {
         return id;
     }
 
-    public String getIconPath() {
-        return iconPath;
+    @Nullable
+    public String getName() {
+        return name;
     }
-
-    public void setIconPath(String iconPath) {
-        this.iconPath = iconPath;
-    }
-
 }

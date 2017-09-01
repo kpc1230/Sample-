@@ -32,7 +32,7 @@ public class JiraAuthServiceImpl implements JiraAuthService {
 
         String uri = baseURL + JiraConstants.REST_AUTH_CHECK_URL;
         try {
-            String pass = "Basic " + CaptureUtil.base64(username + ":" + CaptureUtil.decodeBase64(password));
+            String pass = "Basic " + CaptureUtil.base64(username + ":" + password);
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", pass);
             headers.set("Content-Type", MediaType.APPLICATION_JSON_VALUE);

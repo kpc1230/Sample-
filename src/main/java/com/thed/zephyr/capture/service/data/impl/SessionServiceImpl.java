@@ -22,7 +22,6 @@ import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
-
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -31,10 +30,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -58,7 +54,7 @@ public class SessionServiceImpl implements SessionService {
 	
 	@Autowired
 	private IssueService issueService;
-	
+
 	@Autowired
 	private ITenantAwareCache iTenantAwareCache;
 	
@@ -736,7 +732,7 @@ public class SessionServiceImpl implements SessionService {
 		//Need to implement
 		return null;
 	}
-	
+
 	public List<Status> getSessionStatuses() {
 		return Arrays.asList(Status.values());
 	}
@@ -745,5 +741,20 @@ public class SessionServiceImpl implements SessionService {
 	public SessionUI constructSessionUI(Session session) {
 		SessionUI sessionUI = new SessionUI(session);
 		return sessionUI;
+	}
+
+	@Override
+	public Map<String, Object> getCompleteSessionView(Session session) {
+		Map<String, Object> map = new HashMap<>();
+		map.put(ApplicationConstants.SESSION,session);
+		map.put(ApplicationConstants.RAISED_ISSUE,
+				issueService.getCaptureIssuesByIds((List<Long>) session.getIssueRaisedIds()));
+		map.put(ApplicationConstants.RELATED_ISSUE,
+				issueService.getCaptureIssuesByIds((List<Long>) session.getRelatedIssueIds()));
+		map.put(ApplicationConstants.SESSION_ACTIVITIES,
+				sessionActivityService.getAllSessionActivityBySession(session.getId(),
+						CaptureUtil.getPageRequest(0,ApplicationConstants.DEFAULT_RESULT_SIZE)
+				));
+		return map;
 	}
 }
