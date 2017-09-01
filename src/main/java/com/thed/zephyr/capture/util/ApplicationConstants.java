@@ -40,8 +40,8 @@ public class ApplicationConstants {
     public static final String GSI_CLIENT_KEY = "idx_client_key";
     public static final String GSI_CT_ID_PROJECT_ID = "idx_ctId_projectid";
     public static final String GSI_BASE_URL = "idx_base_url";
-    public static final String GSI_CREATED_BY = "idx_created_by";
-    public static final String GSI_SHARED = "idx_shared";
+    public static final String GSI_CT_ID_CREATED_BY = "idx_ct_id_created_by";
+    public static final String GSI_CT_ID_SHARED = "idx_ct_id_shared";
     public static final String GSI_PROJECTID = "idx_project_id";
     public static final String GSI_SESSIONID_TIMESTAMP = "idx_session_id_timestamp";
     public static final String GSI_CT_ID_SESSION_ID = "idx_ct_id_session_id";

@@ -56,7 +56,7 @@ public class CreateTemplateTableRequest {
                 new KeySchemaElement("projectId" ,KeyType.RANGE)
         );
         GlobalSecondaryIndex projectIdIndex = new GlobalSecondaryIndex()
-                .withIndexName(ApplicationConstants.GSI_PROJECTID)
+                .withIndexName(ApplicationConstants.GSI_CT_ID_PROJECT_ID)
                 .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits((long) 1)
                         .withWriteCapacityUnits((long) 1))
@@ -68,7 +68,7 @@ public class CreateTemplateTableRequest {
                 new KeySchemaElement("createdBy" ,KeyType.RANGE)
         );
         GlobalSecondaryIndex favouriteIndex = new GlobalSecondaryIndex()
-                .withIndexName(ApplicationConstants.GSI_CREATED_BY)
+                .withIndexName(ApplicationConstants.GSI_CT_ID_CREATED_BY)
                 .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits((long) 1)
                         .withWriteCapacityUnits((long) 1))
@@ -80,7 +80,7 @@ public class CreateTemplateTableRequest {
                 new KeySchemaElement("shared" ,KeyType.RANGE)
         );
         GlobalSecondaryIndex sharedKeyIndex = new GlobalSecondaryIndex()
-                .withIndexName(ApplicationConstants.GSI_SHARED)
+                .withIndexName(ApplicationConstants.GSI_CT_ID_SHARED)
                 .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits((long) 1)
                         .withWriteCapacityUnits((long) 1))
