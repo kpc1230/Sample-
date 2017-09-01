@@ -13,7 +13,8 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.Errors;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Variable;
@@ -56,43 +58,41 @@ public class VariableController {
 	private VariableService variableService;
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> addVariable(@Valid @RequestBody Variable input, Errors errors)
+	public ResponseEntity<?> addVariable(@Valid @RequestBody Variable variableRequest)
 			throws CaptureValidationException {
-		log.info("addVariableRequest start for the name:" + input.getName() + input.getValue());
+		log.info("addVariableRequest start for the name:" + variableRequest.getName() + variableRequest.getValue());
 		try {
-			variableService.createVariable(input);
+			variableService.createVariable(variableRequest);
 		} catch (CaptureValidationException e) {
 			throw e;
 		} catch (Exception ex) {
 			log.error("Error during addVariable.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("addVariable end for " + input.getName() + input.getValue());
+		log.info("addVariable end for " + variableRequest.getName() + variableRequest.getValue());
 		return created();
 	}
 
 	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> updateVariable(@Valid @RequestBody Variable input, Errors errors)
+	public ResponseEntity<?> updateVariable(@Valid @RequestBody Variable variableRequest)
 			throws CaptureValidationException {
-		log.info("updateVariable start for the id:{}", input.getId());
+		log.info("updateVariable start for the id:{}", variableRequest.getId());
 		try {
-			variableService.updateVariable(input);
+			variableService.updateVariable(variableRequest);
 		} catch (CaptureValidationException e) {
 			throw e;
 		} catch (Exception ex) {
 			log.error("Error during updateVariable.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("updateVariable end for the id:{}", input.getId());
+		log.info("updateVariable end for the id:{}", variableRequest.getId());
 		return created();
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getVariables(@RequestParam String ownerName) throws CaptureValidationException {
+	public ResponseEntity<?> getVariables() throws CaptureValidationException {
+		String ownerName = getUser();
 		log.info("getVariables start for ownerName:{}", ownerName);
-		if (StringUtils.isEmpty(ownerName)) {
-			throw new CaptureValidationException("ownerName cannot be null/empty");
-		}
 		List<Variable> list = null;
 		try {
 			list = variableService.getVariables(ownerName);
@@ -105,18 +105,18 @@ public class VariableController {
 	}
 
 	@DeleteMapping(consumes = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> deleteVariable(@Valid @RequestBody Variable input, Errors errors)
+	public ResponseEntity<?> deleteVariable(@Valid @RequestBody Variable variableRequest)
 			throws CaptureValidationException {
-		log.info("deleteVariable start for the id:{}", input.getId());
+		log.info("deleteVariable start for the id:{}", variableRequest.getId());
 		try {
-			variableService.deleteVariable(input);
+			variableService.deleteVariable(variableRequest);
 		} catch (CaptureValidationException e) {
 			throw e;
 		} catch (Exception ex) {
 			log.error("Error during deleteVariable.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("deleteVariable end for the id:{}", input.getId());
+		log.info("deleteVariable end for the id:{}", variableRequest.getId());
 		return ok();
 	}
 
@@ -132,5 +132,21 @@ public class VariableController {
 
 	private ResponseEntity<?> created() {
 		return ResponseEntity.status(HttpStatus.CREATED).build();
+	}
+
+	/**
+	 * Fetches the user key from the authentication object.
+	 * 
+	 * @return -- Returns the logged in user key.
+	 * @throws CaptureValidationException -- Thrown while fetching the user key.
+	 */
+	protected String getUser() throws CaptureValidationException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+		String userKey = host.getUserKey().get();
+		if(StringUtils.isBlank(userKey)) {
+			throw new CaptureValidationException("User is not logged in");
+		}
+		return userKey;
 	}
 }

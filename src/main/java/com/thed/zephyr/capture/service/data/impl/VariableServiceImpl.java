@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Variable;
-import com.thed.zephyr.capture.repositories.dynamodb.VariableRepository;
+//import com.thed.zephyr.capture.repositories.dynamodb.VariableRepository;
 import com.thed.zephyr.capture.service.data.VariableService;
 
 /**
@@ -17,8 +17,8 @@ import com.thed.zephyr.capture.service.data.VariableService;
 @Service
 public class VariableServiceImpl implements VariableService {
 
-	@Autowired
-	private VariableRepository repository;
+//	@Autowired
+//	private VariableRepository repository;
 
 	@Override
 	public void createVariable(Variable input) throws CaptureValidationException {
@@ -27,12 +27,12 @@ public class VariableServiceImpl implements VariableService {
 		if (existing != null) {
 			throw new CaptureValidationException("Variable already exists");
 		}
-		repository.save(input);
+//		repository.save(input);
 	}
 
 	@Override
 	public List<Variable> getVariables(String ownerName) {
-		return repository.findByOwnerName(ownerName);
+		return null;//repository.findByOwnerName(ownerName);
 	}
 
 	@Override
@@ -44,13 +44,13 @@ public class VariableServiceImpl implements VariableService {
 		}
 		existing.setName(input.getName());
 		existing.setValue(input.getValue());
-		repository.save(existing);
+//		repository.save(existing);
 		//TODO, templateService.updateVariable();
 	}
 
 	@Override
 	public void deleteVariable(Variable input) throws CaptureValidationException {
-		repository.delete(input.getId());
+//		repository.delete(input.getId());
 		//TODO, templateService.deleteVariable();
 	}
 
