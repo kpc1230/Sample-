@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.repositories.impl;
+package com.thed.zephyr.capture.repositories.dynamodb.impl;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.document.*;

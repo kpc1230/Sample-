@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.repositories;
+package com.thed.zephyr.capture.repositories.dynamodb;
 
 import com.thed.zephyr.capture.model.AcHostModel;
 import org.springframework.data.repository.CrudRepository;

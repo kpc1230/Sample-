@@ -20,7 +20,7 @@ public class TagUI {
         return TextUtils.htmlEncode(tag.getName());
     }
 
-    public Long getId() {
+    public String getId() {
         return tag.getId();
     }
 }

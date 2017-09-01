@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.repositories;
+package com.thed.zephyr.capture.repositories.dynamodb;
 
 import com.thed.zephyr.capture.model.Note;
 import org.springframework.data.domain.Page;

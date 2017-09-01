@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.repositories;
+package com.thed.zephyr.capture.repositories.dynamodb;
 
 import java.util.List;
 

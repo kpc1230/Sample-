@@ -70,7 +70,6 @@
             <artifactId>jwt-api</artifactId>
             <version>1.0.1</version>
         </dependency>
-
         <dependency>
             <groupId>com.atlassian.security</groupId>
             <artifactId>atlassian-secure-random</artifactId>
@@ -182,6 +181,11 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-spring</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-elasticsearch</artifactId>
+            <version>2.1.6.RELEASE</version>
         </dependency>
     </dependencies>
 

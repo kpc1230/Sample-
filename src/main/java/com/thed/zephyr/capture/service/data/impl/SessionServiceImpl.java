@@ -13,7 +13,7 @@ import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.SessionUI;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
 import com.thed.zephyr.capture.predicates.UserIsParticipantPredicate;
-import com.thed.zephyr.capture.repositories.SessionRepository;
+import com.thed.zephyr.capture.repositories.dynamodb.SessionRepository;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;

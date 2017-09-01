@@ -32,6 +32,8 @@ final public class Note {
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_SESSION_ID)
     private String sessionId;
 
+    private Long projectId;
+
     @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
     private DateTime createdTime;
 
@@ -52,7 +54,7 @@ final public class Note {
      * List of tags for this note.
      * A note may have multiple tags, example: "#question #wtf #performance Why does this take 10 seconds?"
      */
-    @DynamoDBTypeConverted(converter = TagSetConverter.class)
+    @DynamoDBIgnore
     private Set<Tag> tags;
 
     /**
@@ -166,6 +168,14 @@ final public class Note {
 
     public void setTags(Set<Tag> tags) {
         this.tags = tags;
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 
     @Override

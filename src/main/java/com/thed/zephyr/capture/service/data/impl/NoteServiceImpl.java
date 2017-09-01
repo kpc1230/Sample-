@@ -17,8 +17,8 @@ import com.thed.zephyr.capture.model.NoteRequest;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Tag;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
-import com.thed.zephyr.capture.repositories.NoteRepository;
-import com.thed.zephyr.capture.repositories.SessionRepository;
+import com.thed.zephyr.capture.repositories.dynamodb.NoteRepository;
+import com.thed.zephyr.capture.repositories.dynamodb.SessionRepository;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.NoteService;
 import com.thed.zephyr.capture.util.CaptureUtil;
@@ -47,7 +47,7 @@ public class NoteServiceImpl implements NoteService {
 		}
 		//TODO, Handle tags before the operation
 		Set<Tag> tags = new HashSet<Tag>();
-		tags.add(new Tag(-1l , ""));
+	//	tags.add(new Tag(-1l , ""));
 		Note note = new Note(null, input.getSessionId(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),
 				new DateTime(), input.getAuthor(), input.getNoteData(), tags, Resolution.valueOf(input.getResolutionState()));
 
@@ -73,7 +73,7 @@ public class NoteServiceImpl implements NoteService {
 		Set<Tag> tags = existing.getTags();
 		if(tags == null){
 			tags = new HashSet<>();
-			tags.add(new Tag(-1l , ""));
+		//	tags.add(new Tag(-1l , ""));
 		}
 		Note.Resolution resol = existing.getResolutionState();
 		if(toggleResolution){

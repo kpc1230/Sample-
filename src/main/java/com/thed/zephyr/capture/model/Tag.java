@@ -3,10 +3,18 @@ package com.thed.zephyr.capture.model;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
+@Document(indexName = "capture", type = "tag")
 public class Tag implements Comparable<Tag>{
     // Static tag types with special meanings
     public static final String QUESTION = "#?";
@@ -14,15 +22,34 @@ public class Tag implements Comparable<Tag>{
     public static final String ASSUMPTION = "#!";
     public static final String IDEA = "#i";
 
+    public static final String QUESTION_TAG_NAME = "QUESTION_TAG";
+    public static final String FOLLOWUP_TAG_NAME = "FOLLOWUP_TAG";
+    public static final String ASSUMPTION_TAG_NAME = "ASSUMPTION_TAG";
+    public static final String IDEA_TAG_NAME = "IDEA_TAG";
+
     private String name;
-    private Long id;
+
+    @Id
+    private String id;
+
+    private String ctId;
+
+    private Long projectId;
+
+    private String sessionId;
+
+    private Set<String> noteIds;
 
     public Tag() {
+        this.noteIds = new TreeSet<>();
     }
 
-    public Tag(Long id, String name) {
-        this.name = name.toLowerCase();
-        this.id = id;
+    public Tag(String name, String ctId, Long projectId, String sessionId, Set<String> noteIds) {
+        this.name = name;
+        this.ctId = ctId;
+        this.projectId = projectId;
+        this.sessionId = sessionId;
+        this.noteIds = noteIds;
     }
 
     public String getName() {
@@ -33,12 +60,44 @@ public class Tag implements Comparable<Tag>{
         this.name = name;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public Set<String> getNoteIds() {
+        return noteIds;
+    }
+
+    public void setNoteIds(Set<String> noteIds) {
+        this.noteIds = noteIds;
+    }
+
+    public String getCtId() {
+        return ctId;
+    }
+
+    public void setCtId(String ctId) {
+        this.ctId = ctId;
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.thed.zephyr.capture.repositories;
+package com.thed.zephyr.capture.repositories.dynamodb;
 
 import org.socialsignin.spring.data.dynamodb.repository.EnableScan;
 import org.socialsignin.spring.data.dynamodb.repository.EnableScanCount;

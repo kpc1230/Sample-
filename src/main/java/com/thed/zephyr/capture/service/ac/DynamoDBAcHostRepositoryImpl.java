@@ -2,7 +2,7 @@ package com.thed.zephyr.capture.service.ac;
 
 import com.atlassian.connect.spring.AtlassianHost;
 import com.thed.zephyr.capture.model.AcHostModel;
-import com.thed.zephyr.capture.repositories.AcHostModelRepository;
+import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 

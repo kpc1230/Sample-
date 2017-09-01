@@ -13,7 +13,7 @@ import com.thed.zephyr.capture.model.Template;
 import com.thed.zephyr.capture.model.TemplateBuilder;
 import com.thed.zephyr.capture.model.TemplateRequest;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
-import com.thed.zephyr.capture.repositories.TemplateRepository;
+import com.thed.zephyr.capture.repositories.dynamodb.TemplateRepository;
 import com.thed.zephyr.capture.service.data.TemplateService;
 
 /**

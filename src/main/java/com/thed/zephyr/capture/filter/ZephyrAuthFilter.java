@@ -5,7 +5,7 @@ import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
 import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthenticationFilter;
 import com.atlassian.connect.spring.internal.jwt.Jwt;
 import com.thed.zephyr.capture.model.AcHostModel;
-import com.thed.zephyr.capture.repositories.AcHostModelRepository;
+import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.security.AESEncryptionUtils;

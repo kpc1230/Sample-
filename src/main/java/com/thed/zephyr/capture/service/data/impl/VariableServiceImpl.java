@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Variable;
-import com.thed.zephyr.capture.repositories.VariableRepository;
+import com.thed.zephyr.capture.repositories.dynamodb.VariableRepository;
 import com.thed.zephyr.capture.service.data.VariableService;
 
 /**

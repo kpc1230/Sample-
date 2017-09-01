@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
  * Created by aliakseimatsarski on 8/11/17.
  */
 @Configuration
-@EnableDynamoDBRepositories(basePackages = "com.thed.zephyr.capture.repositories")
+@EnableDynamoDBRepositories(basePackages = "com.thed.zephyr.capture.repositories.dynamodb")
 public class DynamoDBConfig {
 
     @Value("${amazon.dynamodb.endpoint}")
