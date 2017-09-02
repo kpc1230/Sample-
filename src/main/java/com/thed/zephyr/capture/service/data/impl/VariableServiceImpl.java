@@ -22,7 +22,7 @@ public class VariableServiceImpl implements VariableService {
 
 	@Override
 	public void createVariable(Variable input) throws CaptureValidationException {
-		List<Variable> list = getVariables(input.getOwnerName());
+		List<Variable> list = getVariables(input.getCreatedBy());
 		Variable existing = list.stream().filter(var -> var.getName().equals(input.getName())).findFirst().orElse(null);
 		if (existing != null) {
 			throw new CaptureValidationException("Variable already exists");
@@ -37,7 +37,7 @@ public class VariableServiceImpl implements VariableService {
 
 	@Override
 	public void updateVariable(Variable input) throws CaptureValidationException {
-		List<Variable> list = getVariables(input.getOwnerName());
+		List<Variable> list = getVariables(input.getCreatedBy());
 		Variable existing = list.stream().filter(var -> var.getId().equals(input.getId())).findFirst().orElse(null);
 		if (existing == null) {
 			throw new CaptureValidationException("Variable not exists");
