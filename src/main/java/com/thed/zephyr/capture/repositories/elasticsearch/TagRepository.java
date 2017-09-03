@@ -22,4 +22,6 @@ public interface TagRepository extends ElasticsearchRepository<Tag, String> {
     Tag findByCtIdAndProjectIdAndSessionId(String ctId, Long projectId, String sessionId);
 
     Tag findByCtIdAndNameAndProjectIdAndSessionId(String ctId, String name, Long projectId, String sessionId);
+
+    Tag findByCtIdAndSessionIdAndName(String ctId, String sessionId, String name);
 }

@@ -1,8 +1,11 @@
 package com.thed.zephyr.capture.service.data.impl;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import com.thed.zephyr.capture.repositories.elasticsearch.TagRepository;
 import com.thed.zephyr.capture.service.data.TagService;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,13 +35,15 @@ import com.thed.zephyr.capture.util.CaptureUtil;
 public class NoteServiceImpl implements NoteService {
 
 	@Autowired
-	private NoteRepository repository;
+	private NoteRepository noteRepository;
 	@Autowired
 	private SessionRepository sessionRepository;
 	@Autowired
 	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
 	@Autowired
 	private TagService tagService;
+	@Autowired
+	private TagRepository tagRepository;
 
 	@Override
 	public Note create(NoteRequest input) throws CaptureValidationException {
@@ -50,7 +55,7 @@ public class NoteServiceImpl implements NoteService {
 		Note note = new Note(null, input.getSessionId(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),
 				new DateTime(), input.getAuthor(), input.getNoteData(), tags, Resolution.valueOf(input.getResolutionState()));
 
-		Note persistedNote = repository.save(note);
+		Note persistedNote = noteRepository.save(note);
 		tagService.saveTags(persistedNote);
 
 		return persistedNote;
@@ -78,10 +83,24 @@ public class NoteServiceImpl implements NoteService {
 		}
 		Note newOne = new Note(input.getId(), existing.getSessionId(), existing.getCtId(), existing.getCreatedTime(), 
 				existing.getAuthor(), input.getNoteData(), tags, resol);
-		Note persistedNote = repository.save(newOne);
+		Note persistedNote = noteRepository.save(newOne);
 		tagService.saveTags(persistedNote);
 
 		return persistedNote;
+	}
+
+	@Override
+	public NoteSearchList getNotesBySessionIdAndTagName(String sessionId, String tagName) {
+		Tag tag = tagRepository.findByCtIdAndSessionIdAndName(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), sessionId, tagName);
+		List<Note> notes = new ArrayList<>();
+		for (String noteId:tag.getNoteIds()){
+			Note note = noteRepository.findOne(noteId);
+			notes.add(note);
+		}
+		NoteSearchList noteSearchList = new NoteSearchList();
+		noteSearchList.setContent(notes);
+
+		return noteSearchList;
 	}
 
 	@Override
@@ -92,7 +111,7 @@ public class NoteServiceImpl implements NoteService {
 		}
 		//TODO, check if the user has permission to delete, if not throw CaptureValidationException.
 		tagService.deleteTags(noteId);
-		repository.delete(noteId);
+		noteRepository.delete(noteId);
 	}
 
 	@Override
@@ -100,7 +119,7 @@ public class NoteServiceImpl implements NoteService {
 		if(StringUtils.isNullOrEmpty(noteId)){
 			return null;
 		}
-		return repository.findOne(noteId);
+		return noteRepository.findOne(noteId);
 	}
 
 	@Override
@@ -110,7 +129,7 @@ public class NoteServiceImpl implements NoteService {
 		if(session == null){
 			throw new CaptureValidationException("Session not found");
 		}
-		Page<Note> notes = repository.queryByCtIdAndSessionId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository)
+		Page<Note> notes = noteRepository.queryByCtIdAndSessionId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository)
 				, sessionId, getPageRequest(offset, limit));
 		return new NoteSearchList(notes.getContent(), offset, limit, notes.getTotalElements());
 //		return notes.getContent();

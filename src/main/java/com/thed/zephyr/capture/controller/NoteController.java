@@ -4,6 +4,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import javax.validation.Valid;
 
+import com.thed.zephyr.capture.service.data.TagService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,10 +43,8 @@ public class NoteController {
 
 	@Autowired
 	private Logger log;
-
 	@Autowired
 	private NoteValidator validator;
-
 	@Autowired
 	private NoteService noteService;
 
@@ -159,6 +158,24 @@ public class NoteController {
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
 		log.debug("getNotesBySessionId end for the session:{}", sessionId);
+		return ResponseEntity.ok(result);
+	}
+
+	@GetMapping(value = "/tag/{tagName}/session/{sessionId}", produces = APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getNotesByTag(@PathVariable String sessionId, @PathVariable String tagName) throws CaptureValidationException {
+		log.debug("Getting Notes by sessionId:{} and tag name:{} start for session:{}", sessionId, tagName);
+		if (StringUtils.isEmpty(sessionId)) {
+			throw new CaptureValidationException("Session id cannot be null/empty");
+		} else if(StringUtils.isEmpty(tagName)){
+			throw new CaptureValidationException("Tag name cannot be null/empty");
+		}
+		NoteSearchList result = null;
+		try {
+			result = noteService.getNotesBySessionIdAndTagName(sessionId, tagName);
+		} catch (Exception ex) {
+			log.error("Error during getting notes by sessionId:{} and tag name:{}", sessionId, tagName, ex);
+			throw new CaptureRuntimeException(ex.getMessage());
+		}
 		return ResponseEntity.ok(result);
 	}
 
