@@ -4,7 +4,6 @@ import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.service.db.converter.JsonNodeTypeConverter;
-import com.thed.zephyr.capture.service.db.converter.VariableSetTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.springframework.data.annotation.Id;
 
@@ -37,13 +36,11 @@ public class Template {
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_CREATED_BY)
     private String createdBy;
     private Date createdOn;
-    @DynamoDBTypeConverted(converter = VariableSetTypeConverter.class)
-    private Set<Variable> variables;
 
     public Template() {
     }
 
-    public Template(String ctId, String name, Long projectId, Boolean favourite, Boolean shared, JsonNode content, String createdBy, Date createdOn, Set<Variable> variables) {
+    public Template(String ctId, String name, Long projectId, Boolean favourite, Boolean shared, JsonNode content, String createdBy, Date createdOn) {
         this.ctId = ctId;
         this.name = name;
         this.projectId = projectId;
@@ -52,7 +49,6 @@ public class Template {
         this.content = content;
         this.createdBy = createdBy;
         this.createdOn = createdOn;
-        this.variables = variables;
     }
 
     public String getId() {
@@ -127,13 +123,6 @@ public class Template {
         this.content = content;
     }
 
-    public Set<Variable> getVariables() {
-        return variables;
-    }
-
-    public void setVariables(Set<Variable> variables) {
-        this.variables = variables;
-    }
 
     public JsonNode toJSON() {
         ObjectMapper om = new ObjectMapper();
