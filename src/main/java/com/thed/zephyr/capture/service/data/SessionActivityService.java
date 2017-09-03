@@ -35,4 +35,16 @@ public interface SessionActivityService {
     SessionActivity createSessionActivity(SessionActivity sessionActivity);
     
     List<SessionActivity> getAllSessionActivityBySession(String sessionId, Pageable pageRequest);
+    
+    /**
+     * Add user assigned session activity information.
+     * 
+     * @param session -- Session to which user is assigned the session.
+     * @param assignedTime -- Time at which this activity is done.
+     * @param assigner -- User who assigning the session to assginee.
+     * @param assignee -- User to which session is assigned.
+     * @param avatarUrl -- User avatar url.
+     * @return -- Returns the saved session activity object.
+     */
+    SessionActivity addAssignee(Session session, DateTime assignedTime, String assigner, String assignee, String avatarUrl);
 }

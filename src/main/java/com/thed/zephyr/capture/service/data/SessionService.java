@@ -187,5 +187,14 @@ public interface SessionService {
 	 * @return Map of related issues, raised issues and activities
 	 */
 	Map<String, Object> getCompleteSessionView(Session session);
+	
+	/**
+	 * Assign session to the assignee. 
+	 * 
+	 * @param loggedUserKey -- Logged in user key.
+	 * @param session -- Session object.
+	 * @return -- Returns UpdateResult object which holds the unshared session object.
+	 */
+	UpdateResult assignSession(String loggedUserKey, Session session, String assignee);
 }
 

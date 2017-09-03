@@ -100,7 +100,8 @@ public class SessionController {
                     return badRequest(updateResult.getErrorCollection());
                 }
 	        	sessionService.update(updateResult); //Updating the session object into database.
-	        	sessionActivityService.setStatus(createdSession, new DateTime(), loggedUserKey, null);
+	        	//Save status changed information as activity.
+	        	sessionActivityService.setStatus(createdSession, DateTime.now(), loggedUserKey, null);
 	        }
 			log.info("End of createSession()");
 			return ResponseEntity.ok(createdSession);
@@ -178,6 +179,7 @@ public class SessionController {
             }
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
+        	//Save status changed information as activity.
         	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey, null);
         	CaptureProject project = projectService.getCaptureProject(session.getProjectId());
         	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
@@ -204,6 +206,7 @@ public class SessionController {
             }
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
+        	//Save status changed information as activity.
         	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey, null);
         	CaptureProject project = projectService.getCaptureProject(session.getProjectId());
         	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
@@ -270,6 +273,7 @@ public class SessionController {
                 return badRequest(completeSessionResult.getErrorCollection());
             }
 			Session session = completeSessionResult.getSessionUpdateResult().getSession();
+			//Save status changed information as activity.
 			sessionActivityService.setStatus(session, new DateTime(), loggedUserKey, null);
 			sessionService.update(completeSessionResult.getSessionUpdateResult());
 			log.info("End of completeSession()");
@@ -407,9 +411,35 @@ public class SessionController {
 		}
 	}
 	
+	@PutMapping(value = "/{sessionId}/assign/{assignee}", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> assignSession(@PathVariable("sessionId") String sessionId, @PathVariable("assignee") String assignee) throws CaptureValidationException {
+		log.info("Start of assignSession() --> params " + sessionId + " assignee " + assignee);
+		try {	
+			String loggedUserKey = getUser();
+			Session loadedSession  = validateAndGetSession(sessionId);
+			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loadedSession, assignee);
+			if (!updateResult.isValid()) {
+                return badRequest(updateResult.getErrorCollection());
+            }
+			sessionService.update(updateResult);
+			//Save assigned user to the session as activity.
+			sessionActivityService.addAssignee(loadedSession, DateTime.now(), loggedUserKey, assignee, null);
+			log.info("End of assignSession()");
+			return ResponseEntity.ok(loadedSession);
+		} catch(Exception ex) {
+			log.error("Error in assignSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+	
 	@GetMapping(value = "/status", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> getSessionStatuses() {
-		return ResponseEntity.ok(sessionService.getSessionStatuses());
+	public ResponseEntity<?> fetchSessionStatuses() {
+		List<Status> statusList = sessionService.getSessionStatuses();
+		List<String> convertedStatusList = new ArrayList<>(statusList.size());
+		statusList.stream().forEach(status -> {
+			convertedStatusList.add(status.name());
+		});
+		return ResponseEntity.ok(convertedStatusList);
 	}
 	
 	private void validateInputParameters(Long projectId, String status) throws CaptureValidationException {

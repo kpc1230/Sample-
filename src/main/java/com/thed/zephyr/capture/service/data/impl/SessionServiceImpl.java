@@ -757,4 +757,25 @@ public class SessionServiceImpl implements SessionService {
 				));
 		return map;
 	}
+
+	@Override
+	public UpdateResult assignSession(String loggedUserKey, Session session, String assignee) {
+		if (Status.STARTED.equals(session.getStatus())) { //If the session that is to be assigned is started, then pause it.
+			DeactivateResult pauseResult = validateDeactivateSession(session, session.getAssignee()); //Pause for current user
+			if (!pauseResult.isValid()) {
+                return new UpdateResult(pauseResult.getErrorCollection(), pauseResult.getSession());
+            }
+			if(!loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
+				session.setAssignee(assignee);
+			}
+			pauseResult = new DeactivateResult(pauseResult, session);
+			 UpdateResult result = new UpdateResult(validateUpdate(loggedUserKey, session), pauseResult, null, false, true);
+             return result;
+		}
+		if(!loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
+			session.setAssignee(assignee);
+		}
+		UpdateResult result = validateUpdate(loggedUserKey, session);
+		return result;
+	}
 }

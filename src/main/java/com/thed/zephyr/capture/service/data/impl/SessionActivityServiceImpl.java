@@ -158,4 +158,14 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     public List<SessionActivity> getAllSessionActivityBySession(String sessionId, Pageable pageRequest) {
         return sessionActivityRepository.findBySessionId(sessionId);
     }
+    
+    @Override
+    public SessionActivity addAssignee(Session session, DateTime assignedTime, String assigner, String assignee, String avatarUrl) {
+    	if(!assigner.equals(assignee)) {
+    		UserAssignedSessionActivity sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, assigner, assignee, avatarUrl);
+            sessionActivityRepository.save(sessionActivity);
+            return sessionActivity;
+    	}
+        return null;
+    }
 }
