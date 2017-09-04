@@ -6,6 +6,7 @@ import com.thed.zephyr.capture.model.ExtentionUser;
 import com.thed.zephyr.capture.service.extension.JiraAuthService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
+import com.thed.zephyr.capture.util.Global.*;
 import com.thed.zephyr.capture.util.security.AESEncryptionUtils;
 import com.thed.zephyr.capture.validator.ExtentionUserValidator;
 import org.slf4j.Logger;
@@ -37,6 +38,9 @@ public class ExtensionAuthController {
     @Autowired
     DynamicProperty dynamicProperty;
 
+    @Autowired
+    private TokenHolder tokenHolder;
+
     @InitBinder("extentionUser")
     protected void initBinder(WebDataBinder binder) {
         binder.addValidators(extentionUserValidator);
@@ -50,7 +54,11 @@ public class ExtensionAuthController {
         if (success) {
             AcHostModel host = jiraAuthService.getAcHostModelbyBaseUrl(extentionUser.getBaseUrl());
             if (host.getStatus() == AcHostModel.TenantStatus.ACTIVE) {
-                StringBuffer buffer = new StringBuffer(host.getCtId()).append("_").append(extentionUser.getUsername()).append("_").append(System.currentTimeMillis()).append("_").append(userAgent);
+                StringBuffer buffer = new StringBuffer(host.getCtId()).append("__")
+                        .append(extentionUser.getUsername())
+                        .append("__").append(System.currentTimeMillis())
+                        .append("__").append(tokenHolder.getToken())
+                                .append("__").append(userAgent);
                 HttpHeaders headers = new HttpHeaders();
                 String encry = AESEncryptionUtils.encrypt(buffer.toString(), dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
                 log.debug("Encrypted string....... : " + encry);

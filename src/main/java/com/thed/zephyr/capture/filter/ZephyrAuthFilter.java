@@ -8,6 +8,7 @@ import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
+import com.thed.zephyr.capture.util.Global.*;
 import com.thed.zephyr.capture.util.security.AESEncryptionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -35,8 +36,12 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
 
     @Autowired
     DynamicProperty dynamicProperty;
+    
     @Autowired
     private AcHostModelRepository acHostModelRepository;
+
+    @Autowired
+    private TokenHolder tokenHolder;
 
     public ZephyrAuthFilter(AuthenticationManager authenticationManager, ServerProperties serverProperties) {
         super(authenticationManager, serverProperties);
@@ -70,14 +75,16 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
         if (!StringUtils.isEmpty(accessKey)) {
             String decodedKey = AESEncryptionUtils.decrypt(accessKey, dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
             if (StringUtils.isNotBlank(decodedKey)) {
-                String[] keyParts = decodedKey.split("_");
+                String[] keyParts = decodedKey.split("__");
                 log.debug("Decoded access key : " + decodedKey);
                 String useragent = request.getHeader(ApplicationConstants.USER_AGENT);
                 log.debug("User-Agent from request received : " + useragent);
-                if (StringUtils.endsWith(decodedKey, "_" + useragent)) {
+                if (StringUtils.endsWith(decodedKey, "__" + useragent)) {
                     String clientKey = keyParts[0];
                     String userKey = keyParts[1];
                     String timeInMilliSec = keyParts[2];
+                    String jiraToken = keyParts[3];
+                    tokenHolder.setTokenKey(jiraToken);
                     if (validateKeyExpiry(timeInMilliSec)) {
                         return false;
                     }

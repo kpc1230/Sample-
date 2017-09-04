@@ -7,6 +7,7 @@ import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientF
 import com.thed.zephyr.capture.service.jira.http.CJiraRestClientFactory;
 import com.thed.zephyr.capture.service.jira.http.JwtGetAuthenticationHandler;
 import com.thed.zephyr.capture.service.jira.http.JwtPostAuthenticationHandler;
+import com.thed.zephyr.capture.util.Global.*;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,9 @@ public class CJiraRestClientFactoryImpl implements CJiraRestClientFactory {
     @Autowired
     private AddonDescriptorLoader ad;
 
+    @Autowired
+    private TokenHolder tokenHolder;
+
     @Override
     public JiraRestClient createJiraGetRestClient(AtlassianHostUser host, Optional<String> user) {
         AsynchronousJiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
@@ -38,7 +42,7 @@ public class CJiraRestClientFactoryImpl implements CJiraRestClientFactory {
     public JiraRestClient createJiraPostRestClient(AtlassianHostUser host, Optional<String> userKey) {
         AsynchronousJiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
         JiraRestClient client = factory.create(URI.create(host.getHost().getBaseUrl()),
-                new JwtPostAuthenticationHandler(host, ad));
+                new JwtPostAuthenticationHandler(host, ad, tokenHolder));
         return client;
     }
 

@@ -12,6 +12,7 @@ import com.atlassian.jwt.httpclient.CanonicalHttpUriRequest;
 import com.atlassian.jwt.writer.JwtJsonBuilder;
 import com.atlassian.jwt.writer.JwtWriterFactory;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.Global.*;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -33,20 +34,31 @@ import java.util.Map;
 public class JwtPostAuthenticationHandler implements AuthenticationHandler {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String TOKEN_HEADER = "cookie";
 
     private AtlassianHostUser host;
 
     //Addon Descriptor
     private AddonDescriptorLoader ad;
 
-    public JwtPostAuthenticationHandler(AtlassianHostUser host, AddonDescriptorLoader ad) {
+    //Jira Token
+    private TokenHolder tokenHolder;
+
+    public JwtPostAuthenticationHandler(AtlassianHostUser host,
+                                        AddonDescriptorLoader ad,
+                                        TokenHolder tokenHolder) {
         this.host = host;
         this.ad = ad;
+        this.tokenHolder = tokenHolder;
     }
 
     @Override
     public void configure(Request.Builder builder) {
-        builder.setHeader(AUTHORIZATION_HEADER, "JWT " + createJwtToken(builder.build()));
+        if(tokenHolder != null && tokenHolder.getTokenKey() != null) {
+            builder.setHeader(TOKEN_HEADER, tokenHolder.getTokenKey());
+        }else {
+            builder.setHeader(AUTHORIZATION_HEADER, "JWT " + createJwtToken(builder.build()));
+        }
     }
 
     private String createJwtToken(final Request request)  {
