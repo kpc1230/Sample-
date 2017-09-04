@@ -1,8 +1,10 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,15 +93,13 @@ public class NoteServiceImpl implements NoteService {
 	@Override
 	public NoteSearchList getNotesBySessionIdAndTagName(String sessionId, String tagName) {
 		Tag tag = tagRepository.findByCtIdAndSessionIdAndName(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), sessionId, tagName);
-		List<Note> notes = new ArrayList<>();
-		for (String noteId:tag.getNoteIds()){
+		List<NoteRequest> noteRequests = new ArrayList<>();
+		for (String noteId : tag.getNoteIds()){
 			Note note = noteRepository.findOne(noteId);
-			notes.add(note);
+			noteRequests.add(new NoteRequest(note, Arrays.asList(tag)));
 		}
-		NoteSearchList noteSearchList = new NoteSearchList();
-		noteSearchList.setContent(notes);
 
-		return noteSearchList;
+		return new NoteSearchList(noteRequests, 0, 100, noteRequests.size());
 	}
 
 	@Override
@@ -138,15 +138,16 @@ public class NoteServiceImpl implements NoteService {
 		}
 		Page<Note> notes = noteRepository.queryByCtIdAndSessionId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository)
 				, sessionId, getPageRequest(offset, limit));
-		return new NoteSearchList(notes.getContent(), offset, limit, notes.getTotalElements());
-//		return notes.getContent();
+		List<NoteRequest> noteRequests = notes.getContent().stream().map( note -> new NoteRequest(note, tagService.getTags(note.getId()))).collect(Collectors.toList());
+		return new NoteSearchList(noteRequests, offset, limit, notes.getTotalElements());
 	}
 
 	@Override
 	public NoteSearchList getNotesByProjectId(String projectId, Integer offset, Integer limit){
 		Page<Note> notes = noteRepository.queryByCtIdAndProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository)
 				, projectId, getPageRequest(offset, limit));
-		return new NoteSearchList(notes.getContent(), offset, limit, notes.getTotalElements());
+		List<NoteRequest> noteRequests = notes.getContent().stream().map( note -> new NoteRequest(note, tagService.getTags(note.getId()))).collect(Collectors.toList());
+		return new NoteSearchList(noteRequests, offset, limit, notes.getTotalElements());
 	}
 	
 	private PageRequest getPageRequest(Integer offset, Integer limit) {
