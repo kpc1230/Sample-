@@ -122,7 +122,8 @@ public class NoteServiceImpl implements NoteService {
 		return note == null ? null : new NoteRequest(note, tagService.getTags(noteId));
 	}
 
-	private Note getNoteObject(String noteId) {
+	@Override
+	public Note getNoteObject(String noteId) {
 		if(StringUtils.isNullOrEmpty(noteId)){
 			return null;
 		}

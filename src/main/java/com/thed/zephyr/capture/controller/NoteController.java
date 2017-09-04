@@ -28,9 +28,12 @@ import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Note;
 import com.thed.zephyr.capture.model.NoteRequest;
+import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
 import com.thed.zephyr.capture.service.data.NoteService;
+import com.thed.zephyr.capture.service.data.SessionActivityService;
+import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.validator.NoteValidator;
 
@@ -50,7 +53,11 @@ public class NoteController {
 	private NoteService noteService;
 	@Autowired
 	private ProjectService projectService;
-
+	@Autowired
+	private SessionActivityService sessionActivityService;
+	@Autowired
+	private SessionService sessionService;
+	
 	@InitBinder("noteRequest")
 	protected void initBinder(WebDataBinder binder) {
 		binder.addValidators(validator);
@@ -65,6 +72,8 @@ public class NoteController {
 			noteRequest.setAuthor(getUser());
 			noteRequest.setResolutionState(Note.Resolution.INITIAL.toString());
 			createdNote = noteService.create(noteRequest);
+			Session session = sessionService.getSession(createdNote.getSessionId());
+			sessionActivityService.addNote(session, createdNote.getCreatedTime(), createdNote.getAuthor(), createdNote.getId(), null);
 		} catch (CaptureValidationException e) {
 			throw e;
 		} catch (Exception ex) {
@@ -119,6 +128,8 @@ public class NoteController {
 			throws CaptureValidationException {
 		log.info("deleteNote start for the id:{}", noteId);
 		try {
+			Note note = noteService.getNoteObject(noteId);
+			sessionActivityService.deleteNote(note);
 			noteService.delete(noteId);
 		} catch (CaptureValidationException e) {
 			throw e;

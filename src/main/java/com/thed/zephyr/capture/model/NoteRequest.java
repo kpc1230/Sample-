@@ -79,9 +79,23 @@ final public class NoteRequest {
 	private String createNoteData(List<Tag> tags, String noteData) {
 		StringBuilder stringBuilder = new StringBuilder();
 		String tagData = null;
+		String cssClassUnknown = "tag-unknown";
+		if(!noteData.startsWith(Tag.HASH)){
+			if(tags.size() > 0){
+				tagData = noteData.substring(0, noteData.indexOf(Tag.HASH));
+				stringBuilder.append("<span class=\"note-tag ").append(cssClassUnknown).append("\">")
+					.append(tagData) // Tag data if present
+					.append("</span>");
+			}else{
+				stringBuilder.append("<span class=\"note-tag ").append(cssClassUnknown).append("\">")
+				.append(noteData) // Tag data if present
+				.append("</span>");
+			}
+				
+		}
 		for(Tag tag : tags){
 			tagData = null;
-            String cssClass = "tag-unknown";
+            String cssClass = cssClassUnknown;
             if (Tag.ASSUMPTION_TAG_NAME.equals(tag.getName())) {
                 cssClass = "tag-assumption";
                 tagData = getTagData(noteData, Tag.ASSUMPTION);
@@ -95,7 +109,7 @@ final public class NoteRequest {
                 cssClass = "tag-question";
                 tagData = getTagData(noteData, Tag.QUESTION);
             }
-            boolean tagIsUnknown = cssClass.equals("tag-unknown");
+            boolean tagIsUnknown = cssClass.equals(cssClassUnknown);
             if(tagIsUnknown){
             	tagData = noteData;
             }

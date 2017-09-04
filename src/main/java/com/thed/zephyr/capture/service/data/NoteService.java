@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.data;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.model.Note;
 import com.thed.zephyr.capture.model.NoteRequest;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
 
@@ -17,6 +18,8 @@ public interface NoteService {
 	void delete(String noteId) throws CaptureValidationException;
 
 	NoteRequest getNote(String noteId);
+
+	Note getNoteObject(String noteId);
 
 	NoteSearchList getNotesBySession(String sessionId, Integer offset, Integer limit) throws CaptureValidationException;
 
