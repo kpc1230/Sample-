@@ -87,7 +87,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         } catch(IOException e) {
             throw new CaptureRuntimeException("rest.resource.malformed.json");
         } catch(Exception e) {
-           log.error("Error Adding Attachment",e);
+            log.error("Error Adding Attachment",e);
             throw new CaptureRuntimeException("Error Adding Attachment");
         }
         return CaptureUtil.getFullIconUrl(issue,host);
@@ -119,12 +119,17 @@ public class AttachmentServiceImpl implements AttachmentService {
                     throw new CaptureRuntimeException("attachfile.error.invalidcharacter", filename);
                 }
                 byte[] decodedImageData = Base64.decodeBase64(imageData);
+                File imageDataTempFile = null;
                 try {
-                    File imageDataTempFile = byteArrayToTempFile(filename,decodedImageData);
+                    imageDataTempFile = byteArrayToTempFile(filename,decodedImageData);
                     postJiraRestClient.getIssueClient().addAttachments(issue.getAttachmentsUri(),imageDataTempFile).claim();
                 } catch (CaptureRuntimeException e) {
                     log.debug("Error creating temp file for attachment: " + e);
                     throw e;
+                } finally {
+                    if(imageDataTempFile != null) {
+                        imageDataTempFile.delete();
+                    }
                 }
             }
         }
@@ -164,9 +169,10 @@ public class AttachmentServiceImpl implements AttachmentService {
      */
     private File byteArrayToTempFile(String fileName, byte buffer[]) throws CaptureRuntimeException {
         if (buffer.length > 0) {
+            File file = null;
             FileOutputStream destFile = null;
             try {
-                File file = new File(fileName);
+                file = new File(fileName);
                 destFile = new FileOutputStream(file);
                 IOUtils.write(buffer,destFile);
                 return file;

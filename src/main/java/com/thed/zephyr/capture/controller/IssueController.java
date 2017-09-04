@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
+import com.atlassian.jira.rest.client.api.domain.BasicComponent;
 import com.atlassian.jira.rest.client.api.domain.BasicIssue;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.Project;
@@ -9,7 +10,6 @@ import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldVal
 import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
-import com.atlassian.jira.rest.client.internal.json.IssueJsonParser;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
@@ -18,14 +18,11 @@ import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.service.jira.IssueService;
-import com.thed.zephyr.capture.service.jira.JiraIssueFieldService;
-import com.thed.zephyr.capture.service.jira.http.CJiraRestClientFactory;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.service.jira.issue.IssueFields;
 import com.thed.zephyr.capture.service.jira.issue.ResourceId;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -37,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,9 +48,6 @@ public class IssueController {
 
     @Autowired
     private Logger log;
-
-    @Autowired
-    private JiraIssueFieldService issueFieldService;
 
     @Autowired
     private JiraRestClient getJiraRestClient;
@@ -105,15 +100,22 @@ public class IssueController {
         IssueInputBuilder issueInputBuilder = new IssueInputBuilder();
         issueInputBuilder.setIssueTypeId(Long.valueOf(issueFields.issueType().id()));
         issueInputBuilder.setAssigneeName(issueFields.assignee().id());
+        Project project = getJiraRestClient.getProjectClient().getProject(issueFields.project().id()).claim();
+        issueInputBuilder.setProject(project);
         if(issueFields.components() != null) {
-            List<String> componentNames = issueFields.components().stream().map(ResourceId::id).collect(Collectors.toList());
-            if(componentNames != null && componentNames.size() > 0) {
-                issueInputBuilder.setComponentsNames(componentNames);
+            List<String> components = issueFields.components().stream().map(ResourceId::id).collect(Collectors.toList());
+            if(components != null && components.size() > 0) {
+                List<BasicComponent> componentList = new ArrayList<>();
+                project.getComponents().forEach(component -> {
+                    if(components.contains(String.valueOf(component.getId()))) {
+                        BasicComponent basicComponent = new BasicComponent(component.getSelf(), component.getId(),component.getName(),component.getDescription());
+                        componentList.add(basicComponent);
+                    }
+                });
+                issueInputBuilder.setComponents(componentList);
             }
         }
 
-        Project project = getJiraRestClient.getProjectClient().getProject(issueFields.project().id()).claim();
-        issueInputBuilder.setProject(project);
         issueInputBuilder.setSummary(issueFields.summary());
         issueInputBuilder.setDescription(issueFields.description());
         issueInputBuilder.setPriorityId(Long.valueOf(issueFields.priority().id()));
@@ -121,7 +123,13 @@ public class IssueController {
         if(issueFields.fixVersions() != null) {
             List<String> fixVersions = issueFields.fixVersions().stream().map(ResourceId::id).collect(Collectors.toList());
             if(fixVersions != null && fixVersions.size() > 0) {
-                issueInputBuilder.setFixVersionsNames(fixVersions);
+                List<String> versionList = new ArrayList<>();
+                project.getVersions().forEach(version -> {
+                    if(fixVersions.contains(String.valueOf(version.getId()))) {
+                        versionList.add(version.getName());
+                    }
+                });
+                issueInputBuilder.setFixVersionsNames(versionList);
             }
         }
         ResourceId parentId = issueFields.parent();
