@@ -1,12 +1,9 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.thed.zephyr.capture.repositories.elasticsearch.TagRepository;
-import com.thed.zephyr.capture.service.data.TagService;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,8 +20,10 @@ import com.thed.zephyr.capture.model.Tag;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.NoteRepository;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionRepository;
+import com.thed.zephyr.capture.repositories.elasticsearch.TagRepository;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.NoteService;
+import com.thed.zephyr.capture.service.data.TagService;
 import com.thed.zephyr.capture.util.CaptureUtil;
 
 /**
@@ -46,29 +45,29 @@ public class NoteServiceImpl implements NoteService {
 	private TagRepository tagRepository;
 
 	@Override
-	public Note create(NoteRequest input) throws CaptureValidationException {
-		Note existing = getNote(input.getId());
+	public NoteRequest create(NoteRequest input) throws CaptureValidationException {
+		Note existing = getNoteObject(input.getId());
 		if (existing != null) {
 			throw new CaptureValidationException("Note already exists");
 		}
 		Set<String> tags = tagService.parseTags(input.getNoteData());
 		Note note = new Note(null, input.getSessionId(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),
-				new DateTime(), input.getAuthor(), input.getNoteData(), tags, Resolution.valueOf(input.getResolutionState()));
+				new DateTime(), input.getAuthor(), input.getNoteData(), tags, Resolution.valueOf(input.getResolutionState()), input.getProjectId());
 
 		Note persistedNote = noteRepository.save(note);
-		tagService.saveTags(persistedNote);
+		List<Tag> tagsList = tagService.saveTags(persistedNote);
 
-		return persistedNote;
+		return new NoteRequest(persistedNote, tagsList);
 	}
 
 	@Override
-	public Note update(NoteRequest input) throws CaptureValidationException{
+	public NoteRequest update(NoteRequest input) throws CaptureValidationException{
 		return update(input, false);
 	}
 
 	@Override
-	public Note update(NoteRequest input, boolean toggleResolution) throws CaptureValidationException {
-		Note existing = getNote(input.getId());
+	public NoteRequest update(NoteRequest input, boolean toggleResolution) throws CaptureValidationException {
+		Note existing = getNoteObject(input.getId());
 		if(existing == null){
 			throw new CaptureValidationException("Note not exists");
 		}else if (!input.getSessionId().equals(existing.getSessionId())){
@@ -82,11 +81,11 @@ public class NoteServiceImpl implements NoteService {
 			resol = validateToggleResolution(existing.getResolutionState());
 		}
 		Note newOne = new Note(input.getId(), existing.getSessionId(), existing.getCtId(), existing.getCreatedTime(), 
-				existing.getAuthor(), input.getNoteData(), tags, resol);
+				existing.getAuthor(), input.getNoteData(), tags, resol, input.getProjectId());
 		Note persistedNote = noteRepository.save(newOne);
-		tagService.saveTags(persistedNote);
+		List<Tag> tagsList = tagService.saveTags(persistedNote);
 
-		return persistedNote;
+		return new NoteRequest(persistedNote, tagsList);
 	}
 
 	@Override
@@ -105,7 +104,7 @@ public class NoteServiceImpl implements NoteService {
 
 	@Override
 	public void delete(String noteId) throws CaptureValidationException {
-		Note existing = getNote(noteId);
+		Note existing = getNoteObject(noteId);
 		if(existing == null){
 			throw new CaptureValidationException("Note not exists");
 		}
@@ -115,7 +114,15 @@ public class NoteServiceImpl implements NoteService {
 	}
 
 	@Override
-	public Note getNote(String noteId) {
+	public NoteRequest getNote(String noteId) {
+		if(StringUtils.isNullOrEmpty(noteId)){
+			return null;
+		}
+		Note note = getNoteObject(noteId);
+		return note == null ? null : new NoteRequest(note, tagService.getTags(noteId));
+	}
+
+	private Note getNoteObject(String noteId) {
 		if(StringUtils.isNullOrEmpty(noteId)){
 			return null;
 		}
@@ -135,6 +142,13 @@ public class NoteServiceImpl implements NoteService {
 //		return notes.getContent();
 	}
 
+	@Override
+	public NoteSearchList getNotesByProjectId(String projectId, Integer offset, Integer limit){
+		Page<Note> notes = noteRepository.queryByCtIdAndProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository)
+				, projectId, getPageRequest(offset, limit));
+		return new NoteSearchList(notes.getContent(), offset, limit, notes.getTotalElements());
+	}
+	
 	private PageRequest getPageRequest(Integer offset, Integer limit) {
 		return new PageRequest((offset == null ? 0 : offset), (limit == null ? 20 : limit));
 	}

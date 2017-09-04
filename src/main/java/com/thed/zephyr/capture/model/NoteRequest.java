@@ -1,5 +1,8 @@
 package com.thed.zephyr.capture.model;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 
@@ -18,16 +21,104 @@ final public class NoteRequest {
      * Raw data of the note itself
      */
     private String noteData;
+    private Long projectId;
+    private String rawNoteData;
 
-    /**
+    private List<LightTag> tags;
+    
+    public List<LightTag> getTags() {
+		return tags;
+	}
+
+	public void setTags(List<LightTag> tags) {
+		this.tags = tags;
+	}
+
+	/**
      * Resolution for this note
      */
     private String resolutionState;
 
     public NoteRequest() {
     }
+    
+    public NoteRequest(Note note, List<Tag> tags) {
+    	if(note != null){
+    		this.id = note.getId();
+    		this.ctId = note.getCtId();
+    		this.sessionId = note.getSessionId();
+    		this.createdTime = note.getCreatedTime();
+    		this.author = note.getAuthor();
+    		this.rawNoteData = note.getNoteData();
+    		this.resolutionState = note.getResolutionState().name();
+    		this.noteData = createNoteData(tags, note.getNoteData());
+    		this.projectId = note.getProjectId();
+    		this.tags = createLightTag(tags);
+    	}
+    }
 
-    public String getId() {
+    public NoteRequest(String id, String ctId, String sessionId, DateTime createdTime, String author,
+			String rawNoteData, String resolutionState, Long projectId, List<Tag> tags) {
+		super();
+		this.id = id;
+		this.ctId = ctId;
+		this.sessionId = sessionId;
+		this.createdTime = createdTime;
+		this.author = author;
+		this.rawNoteData = rawNoteData;
+		this.resolutionState = resolutionState;
+		this.projectId = projectId;
+		this.noteData = createNoteData(tags, rawNoteData);
+		this.tags = createLightTag(tags);
+	}
+
+	private List<LightTag> createLightTag(List<Tag> tags) {
+		return tags.stream().map( tag -> new LightTag(tag.getId(), Tag.getTagCodeByName(tag.getName()))).collect(Collectors.toList());
+	}
+
+	private String createNoteData(List<Tag> tags, String noteData) {
+		StringBuilder stringBuilder = new StringBuilder();
+		String tagData = null;
+		for(Tag tag : tags){
+			tagData = null;
+            String cssClass = "tag-unknown";
+            if (Tag.ASSUMPTION_TAG_NAME.equals(tag.getName())) {
+                cssClass = "tag-assumption";
+                tagData = getTagData(noteData, Tag.ASSUMPTION);
+            }else if (Tag.FOLLOWUP_TAG_NAME.equals(tag.getName())) {
+                cssClass = "tag-followUp";
+                tagData = getTagData(noteData, Tag.FOLLOWUP);
+            }else if (Tag.IDEA_TAG_NAME.equals(tag.getName())) {
+                cssClass = "tag-idea";
+                tagData = getTagData(noteData, Tag.IDEA);
+            }else if (Tag.QUESTION_TAG_NAME.equals(tag.getName())) {
+                cssClass = "tag-question";
+                tagData = getTagData(noteData, Tag.QUESTION);
+            }
+            boolean tagIsUnknown = cssClass.equals("tag-unknown");
+            if(tagIsUnknown){
+            	tagData = noteData;
+            }
+            
+            stringBuilder.append("<span class=\"note-tag ").append(cssClass).append("\">").append(tagIsUnknown ? tag : "")
+            	.append(tagData == null ? "" : tagData) // Tag data if present
+            	.append("</span>");
+		}
+		return stringBuilder.toString();
+	}
+
+	private String getTagData(String noteData, String tag) {
+		int beginIndex = noteData.indexOf(tag);
+		if (beginIndex == -1)
+			return null;
+		int endIndex = noteData.indexOf(Tag.HASH, beginIndex + 1);
+		if (endIndex == -1) {
+			return noteData.substring(beginIndex + tag.length());
+		}
+		return noteData.substring(beginIndex + tag.length(), endIndex);
+	}
+
+	public String getId() {
         return id;
     }
 
@@ -88,10 +179,27 @@ final public class NoteRequest {
         return ToStringBuilder.reflectionToString(this);
     }
 
-    public JsonNode toJson() {
+    public String getRawNoteData() {
+		return rawNoteData;
+	}
+
+	public void setRawNoteData(String rawNoteData) {
+		this.rawNoteData = rawNoteData;
+	}
+
+	public JsonNode toJson() {
         ObjectMapper om = new ObjectMapper();
         JsonNode jsonNode = om.convertValue(this, JsonNode.class);
 
         return jsonNode;
     }
+
+	public Long getProjectId() {
+		return projectId;
+	}
+
+	public void setProjectId(Long projectId) {
+		this.projectId = projectId;
+	}
+
 }

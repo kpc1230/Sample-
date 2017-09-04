@@ -11,4 +11,5 @@ import org.springframework.data.repository.CrudRepository;
 public interface NoteRepository extends CrudRepository<Note, String> {
 
     Page<Note> queryByCtIdAndSessionId(String ctId, String sessionId, Pageable pageable);
+    Page<Note> queryByCtIdAndProjectId(String ctId, String projectId, Pageable pageable);
 }

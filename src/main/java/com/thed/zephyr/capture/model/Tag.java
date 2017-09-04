@@ -5,9 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -21,6 +18,7 @@ public class Tag implements Comparable<Tag>{
     public static final String FOLLOWUP = "#f";
     public static final String ASSUMPTION = "#!";
     public static final String IDEA = "#i";
+    public static final String HASH = "#";
 
     public static final String QUESTION_TAG_NAME = "QUESTION_TAG";
     public static final String FOLLOWUP_TAG_NAME = "FOLLOWUP_TAG";
@@ -136,5 +134,20 @@ public class Tag implements Comparable<Tag>{
     @Override
     public int compareTo(Tag tag) {
         return  this.getName().compareTo(tag.getName());
+    }
+    
+    public static String getTagCodeByName(String tagName){
+    	switch(tagName){
+    	case QUESTION_TAG_NAME:
+    		return QUESTION;
+    	case ASSUMPTION_TAG_NAME:
+    		return ASSUMPTION;
+    	case FOLLOWUP_TAG_NAME:
+    		return FOLLOWUP;
+    	case IDEA_TAG_NAME:
+    		return IDEA;
+    	default:
+    		return null;
+    	}
     }
 }

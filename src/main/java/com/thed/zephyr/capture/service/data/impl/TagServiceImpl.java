@@ -95,4 +95,9 @@ public class TagServiceImpl implements TagService {
             }
         }
     }
+    
+    @Override
+    public List<Tag> getTags(String noteId) {
+        return tagRepository.findByCtIdAndNoteIds(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), noteId);
+    }
 }

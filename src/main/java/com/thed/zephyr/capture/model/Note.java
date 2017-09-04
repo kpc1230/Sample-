@@ -84,7 +84,7 @@ final public class Note {
      * @param noteData        not data
      * @param resolutionState resolution for the note
      */
-    public Note(String id, String sessionId, String ctId, DateTime createdTime, String author, String noteData, Set<String> tags, Resolution resolutionState) {
+    public Note(String id, String sessionId, String ctId, DateTime createdTime, String author, String noteData, Set<String> tags, Resolution resolutionState, Long projectId) {
         this.id = id;
         this.sessionId = sessionId;
         this.ctId = ctId;
@@ -92,6 +92,7 @@ final public class Note {
         this.author = author;
         this.noteData = noteData;
         this.tags = tags;
+        this.projectId = projectId;
 
         // If we have tags, take the passed resolutionState (or make it INITIAL if it was NON_ACTIONABLE)
         // Otherwise with no tags, it's NON_ACTIONABLE. And that is non-negotiable.

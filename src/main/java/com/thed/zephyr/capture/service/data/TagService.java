@@ -19,4 +19,5 @@ public interface TagService {
 
     void deleteTags(String noteId);
 
+    List<Tag> getTags(String noteId);
 }

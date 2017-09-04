@@ -46,6 +46,8 @@ public class NoteValidator implements Validator {
 				Session s = sessionService.getSession(note.getSessionId());
 				if(Objects.isNull(s)) {
 					errors.reject("", "Session is invalid for the Note");
+				}else{
+					note.setProjectId(s.getProjectId());
 				}
 			}
 		}		
