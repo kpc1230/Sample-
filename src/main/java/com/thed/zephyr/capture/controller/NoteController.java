@@ -4,7 +4,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import javax.validation.Valid;
 
-import com.thed.zephyr.capture.service.data.TagService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +28,10 @@ import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Note;
 import com.thed.zephyr.capture.model.NoteRequest;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
 import com.thed.zephyr.capture.service.data.NoteService;
+import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.validator.NoteValidator;
 
 /**
@@ -47,6 +48,8 @@ public class NoteController {
 	private NoteValidator validator;
 	@Autowired
 	private NoteService noteService;
+	@Autowired
+	private ProjectService projectService;
 
 	@InitBinder("noteRequest")
 	protected void initBinder(WebDataBinder binder) {
@@ -57,7 +60,7 @@ public class NoteController {
 	public ResponseEntity<?> createNote(@Valid @RequestBody NoteRequest noteRequest)
 			throws CaptureValidationException {
 		log.info("createNote start for the name:" + noteRequest.getNoteData());
-		Note createdNote = null;
+		NoteRequest createdNote = null;
 		try {
 			noteRequest.setAuthor(getUser());
 			noteRequest.setResolutionState(Note.Resolution.INITIAL.toString());
@@ -76,7 +79,7 @@ public class NoteController {
 	public ResponseEntity<?> updateNote(@Valid @RequestBody NoteRequest noteRequest, @PathVariable String noteId)
 			throws CaptureValidationException {
 		log.info("updateNote start for the id:{}", noteId);
-		Note updated = null;
+		NoteRequest updated = null;
 		try {
 			if(StringUtils.isEmpty(noteId)){
 				throw new CaptureRuntimeException("noteId can't be null for update operation");
@@ -100,7 +103,7 @@ public class NoteController {
 		if (StringUtils.isEmpty(noteId)) {
 			throw new CaptureValidationException("noteId cannot be null/empty");
 		}
-		Note note = null;
+		NoteRequest note = null;
 		try {
 			note = noteService.getNote(noteId);
 		} catch (Exception ex) {
@@ -130,7 +133,7 @@ public class NoteController {
     @PostMapping(value = "/{noteId}/toggleResolution", consumes = APPLICATION_JSON_VALUE)
     public ResponseEntity<?> completeNote(@PathVariable String noteId, @Valid @RequestBody NoteRequest noteRequest)
     		throws CaptureValidationException {
-    	Note updated = null;
+    	NoteRequest updated = null;
     	noteRequest.setId(noteId);
     	try {
     		updated = noteService.update(noteRequest, true);
@@ -161,6 +164,28 @@ public class NoteController {
 		return ResponseEntity.ok(result);
 	}
 
+	@GetMapping(value = "/project/{projectId}", produces = APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getNotesByProjectId(@PathVariable String projectId, 
+			@RequestParam("offset") Integer offset, @RequestParam("limit") Integer limit) throws CaptureValidationException {
+		log.info("getNotesByProjectId start for session:{}", projectId);
+		if (StringUtils.isEmpty(projectId)) {
+			throw new CaptureValidationException("projectId cannot be null/empty");
+		}
+		CaptureProject project = projectService.getCaptureProject(Long.parseLong(projectId));
+		if(project == null){
+			throw new CaptureValidationException("Project is not valid");
+		}
+		NoteSearchList result = null;
+		try {
+			result = noteService.getNotesByProjectId(projectId, offset, limit);
+		} catch (Exception ex) {
+			log.error("Error during getNotesByProjectId.", ex);
+			throw new CaptureRuntimeException(ex.getMessage());
+		}
+		log.debug("getNotesByProjectId end for the session:{}", projectId);
+		return ResponseEntity.ok(result);
+	}
+
 	@GetMapping(value = "/tag/{tagName}/session/{sessionId}", produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getNotesByTag(@PathVariable String sessionId, @PathVariable String tagName) throws CaptureValidationException {
 		log.debug("Getting Notes by sessionId:{} and tag name:{} start for session:{}", sessionId, tagName);
@@ -183,11 +208,11 @@ public class NoteController {
 		return ResponseEntity.ok().build();
 	}
 
-	private ResponseEntity<?> ok(Note note) {
+	private ResponseEntity<?> ok(NoteRequest note) {
 		return ResponseEntity.ok(note);
 	}
 
-	private ResponseEntity<?> created(Note note) {
+	private ResponseEntity<?> created(NoteRequest note) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(note);
 	}
 
