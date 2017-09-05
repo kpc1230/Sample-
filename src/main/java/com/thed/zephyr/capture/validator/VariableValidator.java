@@ -5,7 +5,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
-import com.thed.zephyr.capture.model.Variable;
+import com.thed.zephyr.capture.model.VariableRequest;
 
 /**
  * Validator Class that will be invoked for create and update methods of
@@ -19,15 +19,14 @@ public class VariableValidator implements Validator {
 
 	@Override
 	public boolean supports(Class<?> clazz) {
-		return Variable.class.equals(clazz);
+		return VariableRequest.class.equals(clazz);
 	}
 
 	@Override
 	public void validate(Object target, Errors errors) {
-		if(target instanceof Variable){
+		if(target instanceof VariableRequest){
 			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "", "Variable name can't be empty");
 			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "value", "", "Variable value can't be empty");
-			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "ownerName", "", "Variable Owner name can't be empty");
 		}		
 	}
 

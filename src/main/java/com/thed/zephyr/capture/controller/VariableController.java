@@ -2,16 +2,11 @@ package com.thed.zephyr.capture.controller;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import javax.validation.Valid;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,7 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.model.Variable;
+import com.thed.zephyr.capture.model.VariableRequest;
+import com.thed.zephyr.capture.model.util.VariableSearchList;
 import com.thed.zephyr.capture.service.data.VariableService;
 import com.thed.zephyr.capture.validator.VariableValidator;
 
@@ -58,10 +54,11 @@ public class VariableController {
 	private VariableService variableService;
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> addVariable(@Valid @RequestBody Variable variableRequest)
+	public ResponseEntity<?> addVariable(@Valid @RequestBody VariableRequest variableRequest)
 			throws CaptureValidationException {
 		log.info("addVariableRequest start for the name:" + variableRequest.getName() + variableRequest.getValue());
 		try {
+			variableRequest.setOwnerName(getUser());
 			variableService.createVariable(variableRequest);
 		} catch (CaptureValidationException e) {
 			throw e;
@@ -70,14 +67,15 @@ public class VariableController {
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
 		log.info("addVariable end for " + variableRequest.getName() + variableRequest.getValue());
-		return created();
+		return noContent();
 	}
 
 	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> updateVariable(@Valid @RequestBody Variable variableRequest)
+	public ResponseEntity<?> updateVariable(@Valid @RequestBody VariableRequest variableRequest)
 			throws CaptureValidationException {
 		log.info("updateVariable start for the id:{}", variableRequest.getId());
 		try {
+			variableRequest.setOwnerName(getUser());
 			variableService.updateVariable(variableRequest);
 		} catch (CaptureValidationException e) {
 			throw e;
@@ -86,26 +84,27 @@ public class VariableController {
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
 		log.info("updateVariable end for the id:{}", variableRequest.getId());
-		return created();
+		return noContent();
 	}
 
 	@GetMapping(produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getVariables() throws CaptureValidationException {
+	public ResponseEntity<?> getVariables(@RequestParam(required = false) Integer offset , @RequestParam(required = false) Integer limit)
+			throws CaptureValidationException {
 		String ownerName = getUser();
 		log.info("getVariables start for ownerName:{}", ownerName);
-		List<Variable> list = null;
+		VariableSearchList response = null;
 		try {
-			list = variableService.getVariables(ownerName);
+			response = variableService.getVariables(ownerName, offset, limit);
 		} catch (Exception ex) {
 			log.error("Error during getVariables.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
 		log.info("getVariables end for the ownerName:{}", ownerName);
-		return ok(list);
+		return ok(response);
 	}
 
 	@DeleteMapping(consumes = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> deleteVariable(@Valid @RequestBody Variable variableRequest)
+	public ResponseEntity<?> deleteVariable(@Valid @RequestBody VariableRequest variableRequest)
 			throws CaptureValidationException {
 		log.info("deleteVariable start for the id:{}", variableRequest.getId());
 		try {
@@ -117,21 +116,14 @@ public class VariableController {
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
 		log.info("deleteVariable end for the id:{}", variableRequest.getId());
-		return ok();
+		return noContent();
+	}
+	private ResponseEntity<?> noContent(){
+		return ResponseEntity.noContent().build();
 	}
 
-	private ResponseEntity<?> ok() {
-		return ResponseEntity.ok().build();
-	}
-
-	private ResponseEntity<?> ok(List<Variable> variables) {
-		Map<String, List<Variable>> map = new HashMap<>();
-		map.put("variables", variables);
-		return ResponseEntity.ok(map);
-	}
-
-	private ResponseEntity<?> created() {
-		return ResponseEntity.status(HttpStatus.CREATED).build();
+	private ResponseEntity<?> ok(VariableSearchList response) {
+		return ResponseEntity.ok(response);
 	}
 
 	/**
