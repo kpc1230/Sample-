@@ -151,15 +151,24 @@
       },
       {
         "location": "operations-operations",
+        "context": "addon",
         "weight": 20,
-        "url": "bonfire-issue-operation-url",
+        "url": "/createTestSessionDialog?projectId={project.id}&projectKey={project.key}",
         "name": {
           "value": "Create Test Session"
         },
         "tooltip": {
           "value": "Create Test Session"
         },
-        "key": "bonfire-issue-operation"
+        "key": "bonfire-issue-operation",
+        "target": {
+          "type": "dialog",
+          "options": {
+            "height": "440px",
+            "width": "600px",
+            "chrome": "false"
+          }
+        }
       },
       {
         "context": "page",
