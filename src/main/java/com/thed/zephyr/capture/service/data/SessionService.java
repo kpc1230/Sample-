@@ -7,6 +7,7 @@ import com.thed.zephyr.capture.model.Participant;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.SessionRequest;
+import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.SessionUI;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
@@ -15,6 +16,7 @@ import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Class acts as a service layer for session.
@@ -155,16 +157,17 @@ public interface SessionService {
 	/**
 	 * Fetches the sessions based on the input search parameters and also sorts the results based on sort order.
 	 * 
-	 * @param projectId -- Session Project ID
-	 * @param assignee -- Session Assignee
-	 * @param status -- Session Status
-	 * @param seachTerm -- User input search term
-	 * @param sotrOrder -- Sort order(ASC, DESC)
+	 * @param projectId -- Session Project ID.
+	 * @param assignee -- Session Assignee.
+	 * @param status -- Session Status.
+	 * @param seachTerm -- User input search term to filter on session name.
+	 * @param sortField -- Field to sort.
+	 * @param sotrOrder -- Boolean flag to indicate on ascending or descending.
 	 * @param startAt -- Position to fetch the sessions.
 	 * @param size -- Number of sessions to fetch.
 	 * @return
 	 */
-	SessionSearchList searchSession(Long projectId, String assignee, String status, String seachTerm, String sotrOrder, int startAt, int size);
+	LightSessionSearchList searchSession(Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
 
 	/**
 	 * @return -- Returns all the session statuses which are required to render in ui.

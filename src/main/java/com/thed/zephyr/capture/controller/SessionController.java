@@ -371,15 +371,17 @@ public class SessionController {
 	}
 	
 	@GetMapping(value = "/filtered", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> searchSession(@RequestParam("projectFilter") Long projectId, @RequestParam("assigneeFilter") String assignee,
-			@RequestParam("statusFilter") String status, @RequestParam("searchTerm") String searchTerm, @RequestParam("sortOrder") String sortOrder,
-			@RequestParam("startAt") int startAt, @RequestParam("size") int size) throws CaptureValidationException {
-		log.info("Start of searchSession() --> params " + " projectFilter " + projectId + " assigneeFilter " + assignee + " statusFilter " + status + " searchTerm "
-			+ searchTerm + " sortOrder " + sortOrder + " startAt " + startAt + " size " + size);
+	public ResponseEntity<?> searchSession(@RequestParam("projectFilter") Optional<Long> projectId, @RequestParam("assigneeFilter") Optional<String> assignee,
+			@RequestParam("statusFilter") Optional<String> status, @RequestParam("searchTerm") Optional<String> searchTerm, @RequestParam("sortOrder") Optional<String> sortOrder,
+			@RequestParam("sortField") Optional<String> sortField, @RequestParam("startAt") int startAt, @RequestParam("size") int size) throws CaptureValidationException {
+		log.info("Start of searchSession() --> params " + " projectFilter " + projectId.orElse(null) + " assigneeFilter " + assignee.orElse(null) + " statusFilter " + status.orElse(null) + " searchTerm "
+			+ searchTerm.orElse(null) + " sortOrder " + sortOrder.orElse("ASC") + " sortField " + " startAt " + startAt + " size " + size);
 		try {		
 			validateInputParameters(projectId, status);
+			boolean sortAscending = sortOrder.orElse(ApplicationConstants.SORT_ASCENDING).equalsIgnoreCase(ApplicationConstants.SORT_ASCENDING);
+			LightSessionSearchList lightSessionList = sessionService.searchSession(projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
 			log.info("End of searchSession()");
-			return ResponseEntity.ok().build();
+			return ResponseEntity.ok(lightSessionList);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -442,13 +444,13 @@ public class SessionController {
 		return ResponseEntity.ok(convertedStatusList);
 	}
 	
-	private void validateInputParameters(Long projectId, String status) throws CaptureValidationException {
-		if(!Objects.isNull(projectId)) {
-			CaptureProject project = projectService.getCaptureProject(projectId);
+	private void validateInputParameters(Optional<Long> projectId, Optional<String> status) throws CaptureValidationException {
+		if(projectId.isPresent()) {
+			CaptureProject project = projectService.getCaptureProject(projectId.get());
 			if(Objects.isNull(project)) throw new CaptureValidationException("Invalid Project ID.");
 		}
-		if(!StringUtils.isBlank(status)) {
-			Status fetchedStatus = Status.valueOf(status);
+		if(status.isPresent() && !StringUtils.isBlank(status.get())) {
+			Status fetchedStatus = Status.valueOf(status.get());
 			if(Objects.isNull(fetchedStatus)) throw new CaptureValidationException("Invalid Status.");
 		}
 	}

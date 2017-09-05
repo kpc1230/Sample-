@@ -104,5 +104,19 @@ public class ApplicationConstants {
     
     public static final String RELATED_ISSUES_LIMIT_DYNAMIC_KEY = "session.issue.max.limit";
     public static final String PARTICIPANT_LIMIT_DYNAMIC_KEY = "session.participant.limit";
+    
+    public static final String SORTFIELD_CREATED = "created";
+    public static final String SORTFIELD_SESSION_NAME = "sessionname";
+    public static final String SORTFIELD_PROJECT = "project";
+    public static final String SORTFIELD_ASSIGNEE = "assignee";
+    public static final String SORTFIELD_STATUS = "status";
+    public static final String SORTFIELD_SHARED = "shared";
+    
+    public static final String SORT_ASCENDING = "ASC";
+    public static final String TENANT_ID_FIELD = "ctId";
+    public static final String PROJECT_ID = "projectId";
+    public static final String ASSIGNEE_FIELD = "assignee";
+    public static final String STATUS_FIELD = "status";
+    public static final String SESSION_NAME_FIELD = "name";
 
 }

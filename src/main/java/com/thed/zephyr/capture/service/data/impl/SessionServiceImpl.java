@@ -4,11 +4,20 @@ package com.thed.zephyr.capture.service.data.impl;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.thed.zephyr.capture.comparators.AssigneeSessionComparator;
+import com.thed.zephyr.capture.comparators.IdSessionComparator;
+import com.thed.zephyr.capture.comparators.ProjectNameSessionComparator;
+import com.thed.zephyr.capture.comparators.SessionNameSessionComparator;
+import com.thed.zephyr.capture.comparators.SharedSessionComparator;
+import com.thed.zephyr.capture.comparators.StatusSessionComparator;
+import com.thed.zephyr.capture.comparators.TimeCreatedSessionComparator;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.CompleteSessionRequest.CompleteSessionIssueLinkRequest;
 import com.thed.zephyr.capture.model.Session.Status;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
+import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.SessionUI;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
@@ -19,6 +28,7 @@ import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.IssueService;
+import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
@@ -67,6 +77,9 @@ public class SessionServiceImpl implements SessionService {
 	
 	@Autowired
 	private SessionActivityService sessionActivityService;
+	
+	@Autowired
+	private ProjectService projectService;
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -727,12 +740,78 @@ public class SessionServiceImpl implements SessionService {
     }
 
 	@Override
-	public SessionSearchList searchSession(Long projectId, String assignee, String status, String seachTerm,
-			String sotrOrder, int startAt, int size) {
-		//Need to implement
-		return null;
+	public LightSessionSearchList searchSession(Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField,
+			boolean sortAscending, int startAt, int size) {
+		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+		List<Session> sessionsList = sessionRepository.searchSessions(ctId, projectId, assignee, status, searchTerm);
+		Comparator<Session> comparator;
+		switch(sortField.orElse(null)) {
+			case ApplicationConstants.SORTFIELD_CREATED:
+				comparator = new TimeCreatedSessionComparator(sortAscending);
+				break;
+			case ApplicationConstants.SORTFIELD_STATUS:
+				comparator = new StatusSessionComparator(sortAscending);
+				break;
+			case ApplicationConstants.SORTFIELD_SESSION_NAME:
+				comparator = new SessionNameSessionComparator(sortAscending);
+				break;
+			case ApplicationConstants.SORTFIELD_ASSIGNEE:
+				comparator = new AssigneeSessionComparator(sortAscending);
+				break;
+			case ApplicationConstants.SORTFIELD_SHARED:
+				comparator = new SharedSessionComparator(sortAscending);
+				break;
+			case ApplicationConstants.SORTFIELD_PROJECT:
+				comparator = new ProjectNameSessionComparator(sortAscending, projectService);
+				break;
+			default:
+				comparator = new IdSessionComparator(sortAscending);
+		}
+		List<LightSession> ligthSessionList = sortAndFetchLightSessions(sessionsList, startAt, size, comparator);
+		LightSessionSearchList lightSessionSearchList = new LightSessionSearchList(ligthSessionList, startAt, size, sessionsList.size());
+		return lightSessionSearchList;
 	}
-
+	
+	/**
+	 * Sorts the sessions list and returns list of light session object based on startAt and size parameters.
+	 * 
+	 * @param sessionsList -- List of sessions fetched from database.
+	 * @param startAt -- Start position
+	 * @param size -- Number of elements to fetch.
+	 * @param comparator -- Comparator can be assignee, project, session name, shared, created time etc.,
+	 * @return -- Returns the list of light session object based on startAt and size parameters.
+	 */
+	private List<LightSession> sortAndFetchLightSessions(List<Session> sessionsList, int startAt, int size, Comparator<Session> comparator) {
+		List<LightSession> lighSessionsList = new ArrayList<>(size);
+		LightSession lightSession = null;
+		Collections.sort(sessionsList, comparator); //Sort the sessions using the comparator.
+		final int actualSize = getActualSize(sessionsList.size(), startAt, size);
+        for (int i = startAt; i < startAt + actualSize; i++) {
+            Session session = sessionsList.get(i);
+            CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
+            lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
+					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
+            lighSessionsList.add(lightSession);
+        }
+		return lighSessionsList;
+	}
+	
+	/**
+	 * Calculates the actual size from the passed parameters.
+	 * 
+	 * @param maxSize -- Number of elements returned from the db.
+	 * @param startIndex -- Start position.
+	 * @param size -- Number of elements to fetch.
+	 * @return -- Returns the actual size.
+	 */
+	private int getActualSize(final int maxSize, final int startIndex, final int size) {
+        if (startIndex + size > maxSize - 1) {
+            return Math.max(maxSize - startIndex, 0);
+        }
+        return size;
+    }
+	
+	@Override
 	public List<Status> getSessionStatuses() {
 		return Arrays.asList(Status.values());
 	}
