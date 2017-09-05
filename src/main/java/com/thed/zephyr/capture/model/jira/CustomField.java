@@ -1,8 +1,13 @@
 package com.thed.zephyr.capture.model.jira;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * Created by snurulla on 8/24/2017.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class CustomField {
     private Schema schema;
     private String id;

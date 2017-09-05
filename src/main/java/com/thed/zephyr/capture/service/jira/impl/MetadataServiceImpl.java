@@ -7,10 +7,13 @@ import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.thed.zephyr.capture.model.jira.CustomField;
+import com.thed.zephyr.capture.model.jira.FieldOption;
 import com.thed.zephyr.capture.service.jira.IssueTypeService;
 import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.JiraConstants;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -84,23 +87,61 @@ public class MetadataServiceImpl implements MetadataService {
 
                     for(final JsonNode vN: fN)
                     {
-                        JsonNode options = vN.get(ALLOWED_VALUES);
-                        if(vN.has(ALLOWED_VALUES)
-                                && options != null) {
-                            String key = vN.get(KEY).asText();
-                            ObjectNode objectNode = (ObjectNode)vN;
-                            objectNode.set(OPTIONS, options);
-                            objectNode.remove(ALLOWED_VALUES);
-                            fieldValueMap.put(key, vN);
+                        JsonNode options = vN.has(ALLOWED_VALUES) ? vN.get(ALLOWED_VALUES):
+                                new ObjectMapper().createArrayNode();
+                        List<FieldOption> fieldOptions = new ArrayList<>();
+                        options.forEach(jsonNode1 -> {
+                            String name = jsonNode1.has("name") ? jsonNode1.get("name").asText():
+                                    jsonNode1.get("value").asText();
+                            String value = jsonNode1.has("id") ? jsonNode1.get("id").asText(): null;
+                            if(StringUtils.isNotEmpty(name)
+                                    && StringUtils.isNotEmpty(value)) {
+                                fieldOptions.add(new FieldOption(name,value));
+                            }
+                        });
+
+                        String key = vN.get(KEY).asText();
+                        ObjectNode objectNode = (ObjectNode)vN;
+                        objectNode.set(OPTIONS, new ObjectMapper().valueToTree(fieldOptions));
+                        CustomField customField = new ObjectMapper()
+                                .readValue(vN.toString(), CustomField.class);
+                        String typeKey = customField.getSchema() != null &&
+                                customField.getSchema().getCustom() != null ?
+                                customField.getSchema().getCustom(): customField.getSchema().getType();
+                        objectNode.put("typeKey",typeKey);
+                        boolean systemField = false;
+                        if(customField.getSchema() != null
+                           && customField.getSchema().getSystem() != null
+                           && customField.getSchema().getSystem().equals(customField.getKey())){
+                            systemField = true;
                         }
+                        objectNode.put("systemField",systemField);
+                        objectNode.remove(ALLOWED_VALUES);
+                        fieldValueMap.put(key, vN);
                     }
 
                     fieldMap.add(iFMap);
                 }
             }
+
+            JsonNode userNode = userService.getAssignableUserByProjectKey(project.getKey());
+            List<FieldOption> userBeans = new ArrayList<>();
+            userNode.forEach(jsonNode1 -> {
+//                ObjectNode objectNode = new ObjectMapper().createObjectNode();
+//                objectNode.put("text",jsonNode1.get("displayName").asText());
+//                objectNode.put("value",jsonNode1.get("key").asText());
+//                objectNode.set("children",new ObjectMapper().createArrayNode());
+//                objectNode.put("hasChildren",false);
+
+                userBeans.add(new FieldOption(
+                        jsonNode1.get("displayName").asText(),
+                        jsonNode1.get("key").asText()
+                ));
+
+            });
             resultMap.put(FIELD_LIST_BEANS,fieldMap);
             resultMap.put(FIELD_DETAILS,fieldValueMap);
-            resultMap.put(USER_BEANS, userService.getAssignableUserByProjectKey(project.getKey()));
+            resultMap.put(USER_BEANS, userBeans);
             return resultMap;
         } catch (Exception exception) {
             log.error("Error during getting issue from jira.", exception);
