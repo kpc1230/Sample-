@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.service.data;
 
+import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Template;
 import com.thed.zephyr.capture.model.TemplateRequest;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
@@ -19,8 +20,9 @@ public interface TemplateService {
 	 * Update an existing Template.
 	 * @param template - Template Object data to be updated.
 	 * @return - updated Template if an existing Template was found in persistence, otherwise null.
+	 * @throws CaptureValidationException 
 	 */
-	Template updateTemplate(TemplateRequest template);
+	Template updateTemplate(TemplateRequest template) throws CaptureValidationException;
 	/**
 	 * Delete an existing template using templateId.
 	 * @param templateId

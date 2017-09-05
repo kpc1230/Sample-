@@ -9,7 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Template;
 import com.thed.zephyr.capture.model.TemplateBuilder;
 import com.thed.zephyr.capture.model.TemplateRequest;
@@ -40,7 +40,7 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	@Override
-	public Template updateTemplate(TemplateRequest templateReq) {
+	public Template updateTemplate(TemplateRequest templateReq) throws CaptureValidationException {
 		Template existing = getTemplate(templateReq.getId());
 		if(Objects.isNull(existing)) {
 			return null;

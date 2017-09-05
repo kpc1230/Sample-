@@ -77,11 +77,13 @@ public class NoteServiceImpl implements NoteService {
 		}else if (!input.getAuthor().equals(existing.getAuthor())){
 			throw new CaptureValidationException("Note author don't match");
 		}
-		Set<String> tags = tagService.parseTags(input.getNoteData());
+		Set<String> tags = tagService.parseTags(input.getRawNoteData());
 		Note.Resolution resol = existing.getResolutionState();
 		if(toggleResolution){
 			resol = validateToggleResolution(existing.getResolutionState());
 		}
+//		List<Tag> existingTags = tagService.getTags(input.getId());
+//		Set<String> tags = existingTags.stream().map(t -> t.getName()).collect(Collectors.toSet());
 		Note newOne = new Note(input.getId(), existing.getSessionId(), existing.getCtId(), existing.getCreatedTime(), 
 				existing.getAuthor(), input.getNoteData(), tags, resol, input.getProjectId());
 		Note persistedNote = noteRepository.save(newOne);

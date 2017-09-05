@@ -43,11 +43,11 @@ public class TemplateValidator implements Validator {
 			} else {
 				templateReq.setProjectKey(project.getKey());
 			}
-			List<IssueType> issueTypes = issueTypeService.getIssueTypes();
+/*			List<IssueType> issueTypes = issueTypeService.getIssueTypes();
 			if(Objects.isNull(issueTypes) 
 					|| !issueTypes.parallelStream().filter(i -> i.getId().equals(templateReq.getIssueType())).findFirst().isPresent() ) {
 				errors.rejectValue(TemplateRequest.FIELD_ISSUETYPE, "", "IssueType is not valid");
-			}
+			}*/
 		}
 	}
 

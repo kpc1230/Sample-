@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Template;
@@ -57,18 +58,18 @@ public class TemplateController {
 	private TemplateService templateService;
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<TemplateRequest> createTemplate(@Valid @RequestBody TemplateRequest templateRequest) {
-		log.info("createTemplate start for the name:" + templateRequest.getName() + templateRequest.getProjectId() + templateRequest.getIssueType());
+	public ResponseEntity<TemplateRequest> createTemplate(@RequestBody JsonNode json) {
+		//log.info("createTemplate start for the name:" + templateRequest.getName() + templateRequest.getProjectId() + templateRequest.getIssueType());
 		Template template = null;
 		try {
-			templateRequest.setCreatedBy(getUser());
+			TemplateRequest templateRequest = TemplateBuilder.parseJson(json);
+			templateRequest.setOwnerName(getUser());
 			template = templateService.createTemplate(templateRequest);
 		} catch (Exception ex) {
 			log.error("Error during createTemplate.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
-//			badRequest(ex.getMessage());
 		}
-		log.info("createTemplate end for "+ template.getName() + template.getId());
+		log.info("createTemplate end for name:"+ template.getName() + ":" + template.getId());
 		return ok(TemplateBuilder.createTemplateRequest(template));
 	}
 

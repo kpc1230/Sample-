@@ -1,48 +1,76 @@
 package com.thed.zephyr.capture.model;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import java.util.List;
+
+import org.joda.time.DateTime;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class TemplateRequest {
 	public static String FIELD_ISSUETYPE = "issueType";
 	public static String FIELD_PROJECTID = "projectId";
-	private String id;
-	@NotNull
-	private Long projectId;
-	@NotNull
-	private String projectKey;
-	private String projectIconUrl;
-	@NotNull
-	@Size(min = 1, max = 200)
+	//For POST
 	private String name;
-	private String ownerName;
-	@NotNull
-	private Long issueType;
+//	private Boolean screenshot;
 	private Boolean shared;
 	private Boolean favourited;
-	private String ownerDisplayName;
-	private String timeCreated;
-	private String createdBy;
 
+	//For output and PUT
+	private JsonNode source;
+	private String id;
+	private Long projectId; 
+	private String projectKey;
+	private String projectIconUrl;
+	private String ownerName;
+	private DateTime timeCreated;
+	private DateTime timeUpdated;
+	private DateTime timeVariablesUpdated;
+	private DateTime timeFavourited;
+	private boolean variablesChanged;
+	private String ownerDisplayName;
+	private List<Variable> variables;
+	
 	public TemplateRequest() {
 	}
 
-	public TemplateRequest(String id, Long projectId, String projectKey, String projectIconUrl, String name,
-			String ownerName, Long issueType, Boolean shared, Boolean favourited,
-			String ownerDisplayName, String timeCreated, String createdBy) {
-		super();
-		this.id = id;
-		this.projectId = projectId;
-		this.projectKey = projectKey;
-		this.projectIconUrl = projectIconUrl;
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
 		this.name = name;
-		this.ownerName = ownerName;
-		this.issueType = issueType;
+	}
+
+/*	public Boolean getScreenshot() {
+		return screenshot;
+	}
+
+	public void setScreenshot(Boolean screenshot) {
+		this.screenshot = screenshot;
+	}*/
+
+	public Boolean getShared() {
+		return shared;
+	}
+
+	public void setShared(Boolean shared) {
 		this.shared = shared;
+	}
+
+	public Boolean getFavourited() {
+		return favourited;
+	}
+
+	public void setFavourited(Boolean favourited) {
 		this.favourited = favourited;
-		this.ownerDisplayName = ownerDisplayName;
-		this.timeCreated = timeCreated;
-		this.createdBy = createdBy;
+	}
+
+	public JsonNode getSource() {
+		return source;
+	}
+
+	public void setSource(JsonNode source) {
+		this.source = source;
 	}
 
 	public String getId() {
@@ -77,14 +105,6 @@ public class TemplateRequest {
 		this.projectIconUrl = projectIconUrl;
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
 	public String getOwnerName() {
 		return ownerName;
 	}
@@ -93,28 +113,44 @@ public class TemplateRequest {
 		this.ownerName = ownerName;
 	}
 
-	public Long getIssueType() {
-		return issueType;
+	public DateTime getTimeCreated() {
+		return timeCreated;
 	}
 
-	public void setIssueType(Long issueType) {
-		this.issueType = issueType;
+	public void setTimeCreated(DateTime timeCreated) {
+		this.timeCreated = timeCreated;
 	}
 
-	public Boolean getShared() {
-		return shared;
+	public DateTime getTimeUpdated() {
+		return timeUpdated;
 	}
 
-	public void setShared(Boolean shared) {
-		this.shared = shared;
+	public void setTimeUpdated(DateTime timeUpdated) {
+		this.timeUpdated = timeUpdated;
 	}
 
-	public Boolean getFavourited() {
-		return favourited;
+	public DateTime getTimeVariablesUpdated() {
+		return timeVariablesUpdated;
 	}
 
-	public void setFavourited(Boolean favourited) {
-		this.favourited = favourited;
+	public void setTimeVariablesUpdated(DateTime timeVariablesUpdated) {
+		this.timeVariablesUpdated = timeVariablesUpdated;
+	}
+
+	public DateTime getTimeFavourited() {
+		return timeFavourited;
+	}
+
+	public void setTimeFavourited(DateTime timeFavourited) {
+		this.timeFavourited = timeFavourited;
+	}
+
+	public boolean isVariablesChanged() {
+		return variablesChanged;
+	}
+
+	public void setVariablesChanged(boolean variablesChanged) {
+		this.variablesChanged = variablesChanged;
 	}
 
 	public String getOwnerDisplayName() {
@@ -125,20 +161,12 @@ public class TemplateRequest {
 		this.ownerDisplayName = ownerDisplayName;
 	}
 
-	public String getTimeCreated() {
-		return timeCreated;
+	public List<Variable> getVariables() {
+		return variables;
 	}
 
-	public void setTimeCreated(String timeCreated) {
-		this.timeCreated = timeCreated;
-	}
-
-	public String getCreatedBy() {
-		return createdBy;
-	}
-
-	public void setCreatedBy(String createdBy) {
-		this.createdBy = createdBy;
+	public void setVariables(List<Variable> variables) {
+		this.variables = variables;
 	}
 
 }
