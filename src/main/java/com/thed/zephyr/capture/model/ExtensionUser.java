@@ -1,6 +1,6 @@
 package com.thed.zephyr.capture.model;
 
-public class ExtentionUser {
+public class ExtensionUser {
 
 
     private String username;

@@ -2,13 +2,13 @@ package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.IgnoreJwt;
 import com.thed.zephyr.capture.model.AcHostModel;
-import com.thed.zephyr.capture.model.ExtentionUser;
+import com.thed.zephyr.capture.model.ExtensionUser;
 import com.thed.zephyr.capture.service.extension.JiraAuthService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
-import com.thed.zephyr.capture.util.Global.*;
+import com.thed.zephyr.capture.util.Global.TokenHolder;
 import com.thed.zephyr.capture.util.security.AESEncryptionUtils;
-import com.thed.zephyr.capture.validator.ExtentionUserValidator;
+import com.thed.zephyr.capture.validator.ExtensionUserValidator;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -33,7 +33,7 @@ public class ExtensionAuthController {
     private JiraAuthService jiraAuthService;
 
     @Autowired
-    ExtentionUserValidator extentionUserValidator;
+    ExtensionUserValidator extensionUserValidator;
 
     @Autowired
     DynamicProperty dynamicProperty;
@@ -41,24 +41,24 @@ public class ExtensionAuthController {
     @Autowired
     private TokenHolder tokenHolder;
 
-    @InitBinder("extentionUser")
+    @InitBinder("extensionUser")
     protected void initBinder(WebDataBinder binder) {
-        binder.addValidators(extentionUserValidator);
+        binder.addValidators(extensionUserValidator);
     }
 
     @IgnoreJwt
     @RequestMapping(value = "/rest/authenticate/be", method = RequestMethod.POST)
-    ResponseEntity validateCredentials(@Valid @RequestBody ExtentionUser extentionUser, @RequestHeader(value = "User-Agent") String userAgent, Errors errors) {
+    ResponseEntity validateCredentials(@Valid @RequestBody ExtensionUser extensionUser, @RequestHeader(value = "User-Agent") String userAgent, Errors errors) {
         log.debug("Validating JIRA user credentials : userAgent : " + userAgent);
-        boolean success = jiraAuthService.authenticateWithJira(extentionUser.getUsername(), extentionUser.getPassword(), extentionUser.getBaseUrl());
+        boolean success = jiraAuthService.authenticateWithJira(extensionUser.getUsername(), extensionUser.getPassword(), extensionUser.getBaseUrl());
         if (success) {
-            AcHostModel host = jiraAuthService.getAcHostModelbyBaseUrl(extentionUser.getBaseUrl());
+            AcHostModel host = jiraAuthService.getAcHostModelbyBaseUrl(extensionUser.getBaseUrl());
             if (host.getStatus() == AcHostModel.TenantStatus.ACTIVE) {
                 StringBuffer buffer = new StringBuffer(host.getCtId()).append("__")
-                        .append(extentionUser.getUsername())
+                        .append(extensionUser.getUsername())
                         .append("__").append(System.currentTimeMillis())
                         .append("__").append(tokenHolder.getToken())
-                                .append("__").append(userAgent);
+                        .append("__").append(userAgent);
                 HttpHeaders headers = new HttpHeaders();
                 String encry = AESEncryptionUtils.encrypt(buffer.toString(), dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
                 log.debug("Encrypted string....... : " + encry);
