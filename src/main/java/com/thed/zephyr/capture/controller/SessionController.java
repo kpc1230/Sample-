@@ -13,6 +13,7 @@ import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
+import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionExtensionResponse;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
@@ -385,7 +386,7 @@ public class SessionController {
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
-			log.error("Error in unraiseIssueSessionRequest() -> ", ex);
+			log.error("Error in searchSession() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
@@ -436,12 +437,30 @@ public class SessionController {
 	
 	@GetMapping(value = "/status", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> fetchSessionStatuses() {
+		log.info("Start of fetchSessionStatuses()");
 		List<Status> statusList = sessionService.getSessionStatuses();
 		List<String> convertedStatusList = new ArrayList<>(statusList.size());
 		statusList.stream().forEach(status -> {
 			convertedStatusList.add(status.name());
 		});
+		log.info("End of fetchSessionStatuses()");
 		return ResponseEntity.ok(convertedStatusList);
+	}
+	
+	@GetMapping(value = "/user", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> getSessionsForExtension() throws CaptureValidationException {
+		log.info("Start of getSessionsForExtension()");
+		try {
+			String loggedUserKey = getUser();
+			SessionExtensionResponse response = sessionService.getSessionsForExtension(loggedUserKey);
+			log.info("End of getSessionsForExtension()");
+			return ResponseEntity.ok(response);
+		} catch(CaptureValidationException ex) {
+			throw ex;
+		} catch(Exception ex) {
+			log.error("Error in getSessionsForExtension() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
 	}
 	
 	private void validateInputParameters(Optional<Long> projectId, Optional<String> status) throws CaptureValidationException {

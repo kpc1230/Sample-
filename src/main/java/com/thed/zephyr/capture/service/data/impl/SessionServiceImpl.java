@@ -738,6 +738,24 @@ public class SessionServiceImpl implements SessionService {
             return raised;
         }
     }
+	
+	public class SessionExtensionResponse {		
+		private List<LightSession> privateSessions;		
+		private List<LightSession> sharedSessions;
+		
+		public SessionExtensionResponse(List<LightSession> privateSessions, List<LightSession> sharedSessions) {
+			this.privateSessions = privateSessions;
+			this.sharedSessions = sharedSessions;
+		}
+		
+		public List<LightSession> getPrivateSessions() {
+            return privateSessions;
+        }
+
+        public List<LightSession> getSharedSessions() {
+            return sharedSessions;
+        }		
+	}
 
 	@Override
 	public LightSessionSearchList searchSession(Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField,
@@ -783,14 +801,18 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private List<LightSession> sortAndFetchLightSessions(List<Session> sessionsList, int startAt, int size, Comparator<Session> comparator) {
 		List<LightSession> lighSessionsList = new ArrayList<>(size);
+		Map<Long, CaptureProject> projectsMap = new HashMap<>();
 		LightSession lightSession = null;
 		Collections.sort(sessionsList, comparator); //Sort the sessions using the comparator.
 		final int actualSize = getActualSize(sessionsList.size(), startAt, size);
         for (int i = startAt; i < startAt + actualSize; i++) {
             Session session = sessionsList.get(i);
-            CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
+            if(!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
+            	CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
+            	projectsMap.put(session.getProjectId(), project);
+            }            
             lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
+            		projectsMap.get(session.getProjectId()), session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
             lighSessionsList.add(lightSession);
         }
 		return lighSessionsList;
@@ -856,5 +878,15 @@ public class SessionServiceImpl implements SessionService {
 		}
 		UpdateResult result = validateUpdate(loggedUserKey, session);
 		return result;
+	}
+
+	@Override
+	public SessionExtensionResponse getSessionsForExtension(String user) {
+		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+		List<Session> privateSessionsList = sessionRepository.fetchPrivateSessionsForUser(ctId, user);
+		List<Session> sharedSessionsList = sessionRepository.fetchSharedSessionsForUser(ctId, user);
+		List<LightSession> lightSessionPList = sortAndFetchLightSessions(privateSessionsList, 0, privateSessionsList.size(), new IdSessionComparator(true));
+		List<LightSession> lightSessionSList = sortAndFetchLightSessions(sharedSessionsList, 0, sharedSessionsList.size(), new IdSessionComparator(true));
+		return new SessionExtensionResponse(lightSessionPList, lightSessionSList);
 	}
 }

@@ -11,6 +11,7 @@ import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.SessionUI;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
+import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionExtensionResponse;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult;
 
@@ -199,5 +200,13 @@ public interface SessionService {
 	 * @return -- Returns UpdateResult object which holds the unshared session object.
 	 */
 	UpdateResult assignSession(String loggedUserKey, Session session, String assignee);
+	
+	/**
+	 * Fetch private and shared sessions for user.
+	 * 
+	 * @param user -- Logged in user
+	 * @return -- Returns the Session Extension Response object which holds the private and shared sessions for the user.
+	 */
+	SessionExtensionResponse getSessionsForExtension(String user);
 }
 
