@@ -82,11 +82,14 @@ public class IssueController {
         }
         IssueFields issueFields = createRequest.fields();
         String rid = createRequest.getRid();
-        IssueInput issueInput = createIssueInput(issueFields);
+        IssueInput issueInput = createIssueInput(issueFields,request);
         BasicIssue basicIssue = postJiraRestClient.getIssueClient().createIssue(issueInput).claim();
         Issue issue = issueService.getIssueObject(basicIssue.getKey());
+
+        //Set Context Params
+        captureContextIssueFieldsService.populateContextFields(request, issue, createRequest.getContext());
+
         CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(),basicIssue.getKey(),basicIssue.getId(),CaptureUtil.getFullIconUrl(issue,host));
-        //captureContextIssueFieldsService.populateContextFields(request, basicIssue.getKey(), createRequest.getContext());
         if(StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {
@@ -96,10 +99,12 @@ public class IssueController {
         return new ResponseEntity<>(captureIssue, HttpStatus.OK);
     }
 
-    private IssueInput createIssueInput(IssueFields issueFields) {
+    private IssueInput createIssueInput(IssueFields issueFields, HttpServletRequest request) {
         IssueInputBuilder issueInputBuilder = new IssueInputBuilder();
         issueInputBuilder.setIssueTypeId(Long.valueOf(issueFields.issueType().id()));
-        issueInputBuilder.setAssigneeName(issueFields.assignee().id());
+        if(issueFields.assignee() != null) {
+            issueInputBuilder.setAssigneeName(issueFields.assignee().id());
+        }
         Project project = getJiraRestClient.getProjectClient().getProject(issueFields.project().id()).claim();
         issueInputBuilder.setProject(project);
         if(issueFields.components() != null) {
@@ -140,6 +145,7 @@ public class IssueController {
             FieldInput parentField = new FieldInput("parent", new ComplexIssueInputFieldValue(parent));
             issueInputBuilder.setFieldInput(parentField);
         }
+
         return issueInputBuilder.build();
     }
 }

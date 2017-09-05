@@ -1,15 +1,27 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
-import com.atlassian.jira.rest.client.api.JiraRestClient;
+import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
-import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
+import com.thed.zephyr.capture.util.JiraConstants;
+import com.thed.zephyr.capture.util.UserAgentSniffer;
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.URI;
 import java.util.Map;
 
 /**
@@ -18,29 +30,23 @@ import java.util.Map;
 @Service
 public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssueFieldsService {
 
-    @Autowired
-    private IssueService issueService;
 
     @Autowired
-    private JiraRestClient jiraRestClient;
+    private JwtSigningRestTemplate restTemplate;
 
-    @Autowired
-    private CaptureCustomFieldsUtils captureCustomFieldsUtils;
 
     /**
      * Make a best effort to populate these fields for an issue. If the value for a field cannot be found, then don't fill it in.
      *
-     * @param request
+     * @param issueKey
+     * @param req
+     * @param issueInputBuilder
      */
-    public void populateContextFields(HttpServletRequest req, String issueKey, Map<String, String> context) {
-        // Get the issue from the issue key
-        Issue issue = issueService.getIssueObject(issueKey);
-        if (issue != null) {
-            populateContextFields(req, issueKey, context);
-        }
-    }
+    public void populateContextFields(HttpServletRequest req, Issue issue, Map<String, String> context) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        String baseUri = host.getHost().getBaseUrl();
 
-    private void populateContextFields(HttpServletRequest req, Issue issue, Map<String, String> context) {
         boolean sendContext = true;
         if (context != null) {
             sendContext = Boolean.valueOf(context.get("send"));
@@ -49,63 +55,78 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         if (sendContext) {
             String userAgent = req.getHeader("user-agent");
             if (StringUtils.isNotBlank(userAgent)) {
-                // Get fields
-//                CustomField userAgentField = getBonfireUserAgentCustomField();
-//                CustomField browserField = getBonfireBrowserCustomField();
-//                CustomField osField = getBonfireOSCustomField();
-//                CustomField urlField = getBonfireURLCustomField();
-//                CustomField screenResField = getBonfireScreenResCustomField();
-//                CustomField jQueryVersionField = getBonfirejQueryVersionCustomField();
-//                CustomField documentModeField = getBonfireDocumentModeCustomField();
-//
+                UserAgentSniffer.SniffedBrowser browser = UserAgentSniffer.sniffBrowser(userAgent);
+                StringBuilder sb = new StringBuilder().append(browser.browser).append(" ").append(browser.version);
+                String userAgentPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/tasks" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ","_");
+                try {
+                    setEntityProperties(sb, baseUri, userAgentPath);
 
-//                // Update user agent
-//                userAgentField.getCustomFieldType().updateValue(userAgentField, issue, userAgent);
-//
-//                testingStatusCustomFieldService.updateTestingStatus(issue);
-//
-//                // Update browser
-//                UserAgentSniffer.SniffedBrowser browser = UserAgentSniffer.sniffBrowser(userAgent);
-//                if (StringUtils.isNotBlank(browser.browser)) {
-//                    StringBuilder sb = new StringBuilder().append(browser.browser).append(" ").append(browser.version);
-//                    browserField.getCustomFieldType().updateValue(browserField, issue, sb.toString());
-//                }
-//                // Update OS
-//                UserAgentSniffer.SniffedOS os = UserAgentSniffer.sniffOS(userAgent);
-//                if (StringUtils.isNotBlank(os.OS)) {
-//                    // If we found a prettyname show that, otherwise show the raw OS string
-//                    StringBuilder sb = new StringBuilder();
-//                    if (StringUtils.isNotBlank(os.prettyName)) {
-//                        sb.append(os.prettyName);
-//                        sb.append(" (");
-//                    }
-//                    sb.append(os.OS);
-//                    if (StringUtils.isNotBlank(os.prettyName)) {
-//                        sb.append(")");
-//                    }
-//                    osField.getCustomFieldType().updateValue(osField, issue, sb.toString());
-//                }
-//                // Update context fields
-//                if (context != null) {
-//                    String url = context.get("url");
-//                    if (StringUtils.isNotBlank(url)) {
-//                        urlField.getCustomFieldType().updateValue(urlField, issue, url);
-//                    }
-//                    String screenRes = context.get("screenRes");
-//                    if (StringUtils.isNotBlank(screenRes)) {
-//                        screenResField.getCustomFieldType().updateValue(screenResField, issue, screenRes);
-//                    }
-//                    String jQueryVersion = context.get("jQueryVersion");
-//                    if (StringUtils.isNotBlank(jQueryVersion)) {
-//                        jQueryVersionField.getCustomFieldType().updateValue(jQueryVersionField, issue, jQueryVersion);
-//                    }
-//                    String documentMode = context.get("documentMode");
-//                    if (StringUtils.isNotBlank(documentMode)) {
-//                        documentModeField.getCustomFieldType().updateValue(documentModeField, issue, documentMode);
-//                    }
-//                }
+                    if (StringUtils.isNotBlank(browser.browser)) {
+                        sb = new StringBuilder().append(browser.browser).append(" ").append(browser.version);
+                        String browserPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase().replace(" ","_");
+                        setEntityProperties(sb, baseUri, browserPath);
+                    }
+                    // Update OS
+                    UserAgentSniffer.SniffedOS os = UserAgentSniffer.sniffOS(userAgent);
+                    if (StringUtils.isNotBlank(os.OS)) {
+                        sb = new StringBuilder();
+                        if (StringUtils.isNotBlank(os.prettyName)) {
+                            sb.append(os.prettyName);
+                            sb.append(" (");
+                        }
+                        sb.append(os.OS);
+                        if (StringUtils.isNotBlank(os.prettyName)) {
+                            sb.append(")");
+                        }
+
+                        String osPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase().replace(" ","_");
+                        setEntityProperties(sb, baseUri, osPath);
+                    }
+
+                    if (context != null) {
+                        String url = context.get("url");
+                        if (StringUtils.isNotBlank(url)) {
+                            String urlPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ","_");
+                            setEntityProperties(new StringBuilder(url), baseUri, urlPath);
+                        }
+                        String screenRes = context.get("screenRes");
+                        if (StringUtils.isNotBlank(screenRes)) {
+                            String screenPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase().replace(" ","_");
+                            setEntityProperties(new StringBuilder(screenRes), baseUri, screenPath);
+                        }
+                        String jQueryVersion = context.get("jQueryVersion");
+                        if (StringUtils.isNotBlank(jQueryVersion)) {
+                            String jQueryPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ","_");
+                            setEntityProperties(new StringBuilder(jQueryVersion), baseUri, jQueryPath);
+                        }
+                        String documentMode = context.get("documentMode");
+                        if (StringUtils.isNotBlank(documentMode)) {
+                            String documentPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ","_");
+                            setEntityProperties(new StringBuilder(documentPath), baseUri, documentPath);
+                        }
+                    }
+                } catch(Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
+    }
+
+    private void setEntityProperties(StringBuilder sb, String baseUrl, String path) throws JSONException {
+        URI targetUrl= UriComponentsBuilder.fromUriString(baseUrl)
+                .path(path)
+                .build()
+                .encode()
+                .toUri();
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        JSONObject request = new JSONObject();
+        request.put("content",sb.toString());
+
+        String resourceUrl = targetUrl.toString();
+        HttpEntity<String> requestUpdate = new HttpEntity<>(request.toString(),httpHeaders);
+        restTemplate.exchange(resourceUrl, HttpMethod.PUT,requestUpdate,Void.class);
     }
 
     /**
@@ -121,7 +142,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
 //        String url = getUrlValue(issue);
 //        String screenRes = getBonfireScreenResValue(issue);
 //        String jQueryVersion = getBonfirejQueryVersionValue(issue);
-
+//
 //        // Check that they exist
 //        boolean hasUserAgent = StringUtils.isNotBlank(userAgent);
 //        boolean hasBrowser = StringUtils.isNotBlank(browser);
@@ -129,7 +150,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
 //        boolean hasUrl = StringUtils.isNotBlank(url);
 //        boolean hasScreenRes = StringUtils.isNotBlank(screenRes);
 //        boolean hasjQueryVersion = StringUtils.isNotBlank(jQueryVersion);
-//
+
 //        return hasUserAgent || hasBrowser || hasOS || hasUrl || hasScreenRes || hasjQueryVersion;
     }
 
@@ -167,7 +188,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
 //        CustomField documentModeField = getBonfireDocumentModeCustomField();
 //        return documentModeField.getValueFromIssue(issue);
 //    }
-
+//
 //    private CustomField getBonfirejQueryVersionCustomField() {
 //        return getBonfireCustomField(CaptureCustomFieldsUtils.JQUERY_VERSION_METADATA, BONFIRE_JQUERY_VERSION_PROPERTY_SET_KEY);
 //    }

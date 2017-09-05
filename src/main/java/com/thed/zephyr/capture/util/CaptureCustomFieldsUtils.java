@@ -17,13 +17,22 @@ public class CaptureCustomFieldsUtils {
     private static final String CAPTURE_CUSTOM_FIELD_DESCRIPTION = "This custom field is created programatically by Capture for JIRA.";
 
     // All Environment related custom fields should be prefixed with "Bonfire"
-    public static final String CAPTURE_USERAGENT_NAME = "Zephyr Capture for JIRA user agent";
-    public static final String CAPTURE_BROWSER_NAME = "Zephyr Capture for JIRA browser";
-    public static final String CAPTURE_OS_NAME = "Zephyr Capture for JIRA operating system";
-    public static final String CAPTURE_URL_NAME = "Zephyr Capture for JIRA URL";
-    public static final String CAPTURE_SCREEN_RES_NAME = "Zephyr Capture for JIRA screen resolution";
-    public static final String CAPTURE_JQUERY_VERSION_NAME = "Zephyr Capture for JIRA jQuery version";
-    public static final String CAPTURE_DOCUMENT_MODE = "Zephyr Capture for JIRA document mode";
+
+    public static final String CAPTURE_USERAGENT_NAME = "Capture for JIRA user agent";
+    public static final String CAPTURE_BROWSER_NAME = "Capture for JIRA browser";
+    public static final String CAPTURE_OS_NAME = "Capture for JIRA operating system";
+    public static final String CAPTURE_URL_NAME = "Capture for JIRA URL";
+    public static final String CAPTURE_SCREEN_RES_NAME = "Capture for JIRA screen resolution";
+    public static final String CAPTURE_JQUERY_VERSION_NAME = "Capture for JIRA jQuery version";
+    public static final String CAPTURE_DOCUMENT_MODE = "Capture for JIRA document mode";
+
+    public static final String ENTITY_CAPTURE_USERAGENT_NAME = "captureUserAgent";
+    public static final String ENTITY_CAPTURE_BROWSER_NAME = "captureBrowserName";
+    public static final String ENTITY_CAPTUREE_OS_NAME = "captureOperatingSystem";
+    public static final String ENTITY_CAPTURE_URL_NAME = "captureJIRAUrl";
+    public static final String ENTITY_CAPTURE_SCREEN_RES_NAME = "captureScreenResolution";
+    public static final String ENTITY_CAPTURE_JQUERY_VERSION_NAME = "captureJQueryVersion";
+    public static final String ENTITY_CAPTURE_DOCUMENT_MODE = "captureDocumentMode";
 
     // IMPORTANT - if we change the plugin key, this will need to change too.
     public static final String JIRA_TEXT_FIELD_KEY = "com.atlassian.jira.plugin.system.customfieldtypes:textfield";

@@ -236,76 +236,85 @@
         "url": "/rest/event/plugin/disabled"
       }
     ],
-    "jiraIssueFields": [
+    "jiraEntityProperties": [
       {
-        "key": "zfc-issue-field-user-agent",
+        "entityType": "issue",
         "name": {
-          "value": "ZFC Capture for JIRA user agent"
+          "value": "Capture Index Document"
         },
-        "description": {
-          "value": "This custom field is created programatically by Capture for JIRA."
-        },
-        "type": "string"
-      },
-      {
-        "key": "zfc-issue-field-browser",
-        "name": {
-          "value": "ZFC Capture for JIRA browser"
-        },
-        "description": {
-          "value": "This custom field is created programatically by Capture for JIRA."
-        },
-        "type": "string"
-      },
-      {
-        "key": "zfc-issue-field-operating-system",
-        "name": {
-          "value": "ZFC Capture for JIRA operating system"
-        },
-        "description": {
-          "value": "This custom field is created programatically by Capture for JIRA."
-        },
-        "type": "string"
-      },
-      {
-        "key": "zfc-issue-field-screen-resolution",
-        "name": {
-          "value": "ZFC Capture for JIRA screen resolution"
-        },
-        "description": {
-          "value": "This custom field is created programatically by Capture for JIRA."
-        },
-        "type": "string"
-      },
-      {
-        "key": "zfc-issue-field-jquery-version",
-        "name": {
-          "value": "ZFC Capture for JIRA jQuery version"
-        },
-        "description": {
-          "value": "This custom field is created programatically by Capture for JIRA."
-        },
-        "type": "string"
-      },
-      {
-        "key": "zfc-issue-field-document-mode",
-        "name": {
-          "value": "ZFC Capture for JIRA document mode"
-        },
-        "description": {
-          "value": "This custom field is created programatically by Capture for JIRA."
-        },
-        "type": "string"
-      },
-      {
-        "key": "zfc-issue-field-url",
-        "name": {
-          "value": "ZFC Capture for JIRA URL"
-        },
-        "description": {
-          "value": "This custom field is created programatically by Capture for JIRA."
-        },
-        "type": "string"
+        "key": "jira-issue-capture-indexing",
+        "keyConfigurations": [
+          {
+            "propertyKey":"captureuseragent",
+            "extractions": [
+              {
+                "objectName": "content",
+                "type": "text",
+                "alias":"userAgent"
+              }
+            ]
+          },
+          {
+            "propertyKey":"capturebrowsername",
+            "extractions": [
+              {
+                "objectName": "content",
+                "type": "text",
+                "alias":"captureBrowser"
+              }
+            ]
+          },
+          {
+            "propertyKey":"captureoperatingsystem",
+            "extractions": [
+              {
+                "objectName": "content",
+                "type": "text",
+                "alias":"captureOS"
+              }
+            ]
+          },
+          {
+            "propertyKey":"capturejiraurl",
+            "extractions": [
+              {
+                "objectName": "content",
+                "type": "text",
+                "alias":"captureJIRAURL"
+              }
+            ]
+          },
+          {
+            "propertyKey":"capturescreenresolution",
+            "extractions": [
+              {
+                "objectName": "content",
+                "type": "text",
+                "alias":"captureScreenResolution"
+              }
+            ]
+          },
+          {
+            "propertyKey":"capturejqueryversion",
+            "extractions": [
+              {
+                "objectName": "content",
+                "type": "text",
+                "alias":"captureJQueryVersion"
+              }
+            ]
+          },
+          {
+            "propertyKey":"capturedocumentmode",
+            "extractions": [
+              {
+                "objectName": "content",
+                "type": "text",
+                "alias":"captureDocumentMode"
+              }
+            ]
+          }
+        ]
       }
     ]
   },
