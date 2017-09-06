@@ -18,6 +18,7 @@ import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Class acts as a service layer for session.
@@ -208,5 +209,10 @@ public interface SessionService {
 	 * @return -- Returns the Session Extension Response object which holds the private and shared sessions for the user.
 	 */
 	SessionExtensionResponse getSessionsForExtension(String user);
+	
+	/**
+	 * @return -- Returns the List of unique assignees for the logged in user tenant id.
+	 */
+	Set<String> fetchAllAssignees();
 }
 

@@ -4,6 +4,7 @@ import com.thed.zephyr.capture.model.Session;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,4 +24,6 @@ public interface SessionRepository extends CrudRepository<Session, String> {
 	List<Session> fetchPrivateSessionsForUser(String ctId, String user);
 	
 	List<Session> fetchSharedSessionsForUser(String ctId, String user);
+	
+	Set<String> fetchAllAssigneesForCtId(String ctId);
 }

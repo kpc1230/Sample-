@@ -889,4 +889,10 @@ public class SessionServiceImpl implements SessionService {
 		List<LightSession> lightSessionSList = sortAndFetchLightSessions(sharedSessionsList, 0, sharedSessionsList.size(), new IdSessionComparator(true));
 		return new SessionExtensionResponse(lightSessionPList, lightSessionSList);
 	}
+
+	@Override
+	public Set<String> fetchAllAssignees() {
+		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+		return sessionRepository.fetchAllAssigneesForCtId(ctId);
+	}
 }

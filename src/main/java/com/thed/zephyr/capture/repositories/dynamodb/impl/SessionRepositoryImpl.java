@@ -1,15 +1,20 @@
 package com.thed.zephyr.capture.repositories.dynamodb.impl;
 
-import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
@@ -20,8 +25,7 @@ import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.thed.zephyr.capture.exception.CaptureRuntimeException;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 
@@ -36,6 +40,9 @@ public class SessionRepositoryImpl {
 
     @Autowired
     private DynamoDB dynamodb;
+    
+    @Autowired
+    private DynamoDBMapper dynamoDBMapper;
     
     /**
      * Fetch the list of sessions based on input filters from the database.
@@ -168,6 +175,24 @@ public class SessionRepositoryImpl {
     }
     
     /**
+     * Fetch all the assignees for the logged in user tenant id.
+     * 
+     * @param ctId -- Tenant id
+     * @return -- Returns the list of assignees.
+     */
+    public Set<String> fetchAllAssigneesForCtId(String ctId) {
+    	QuerySpec querySpec = new QuerySpec();
+    	querySpec.withHashKey(new KeyAttribute(ApplicationConstants.TENANT_ID_FIELD, ctId));
+    	ItemCollection<QueryOutcome> activityItemList = fetchData(querySpec);
+    	Set<String> assigneesList = new HashSet<>(activityItemList.getAccumulatedItemCount());
+    	activityItemList.forEach(item -> {
+    		String assignee = item.getString("assignee");
+    		assigneesList.add(assignee);
+    	});
+    	return assigneesList;
+    }
+    
+    /**
      * Fetch Data using query specification which is passed as parameter against dynamodb.
      * 
      * @param querySpec -- Query Specification holds the query filters and key conditions.
@@ -187,13 +212,23 @@ public class SessionRepositoryImpl {
      * @return -- Returns the converted class object using the item data.
      */
     private Session convertItemToSession(Item item, Class<?> clazz){
-        ObjectMapper mapper = new ObjectMapper();
-        Session session = null;
-        try {
-        	session =  (Session) mapper.readValue(item.toJSON(), clazz);
-		} catch (IOException e) {
-			throw new CaptureRuntimeException("Error while converting dynamodb item to class - " + clazz.getCanonicalName(), e);
-		}
-        return session;
+	  Map<String, AttributeValue> objectMap = new LinkedHashMap<>();
+      Map<String, Object> stringObjectMap = item.asMap();
+      for (Map.Entry<String, Object> entry:stringObjectMap.entrySet()){
+          AttributeValue attributeValue = new AttributeValue();
+          if (entry.getValue() instanceof String){
+              attributeValue.setS(entry.getValue().toString());
+          } else if(entry.getValue() instanceof BigDecimal){
+              attributeValue.setN(entry.getValue().toString());
+          } else if(entry.getValue() instanceof Set) {
+        	  if(!entry.getKey().equals("participants")) {
+        		  attributeValue.setNS(item.getStringSet(entry.getKey()));
+        	  } else {
+        		  attributeValue.setSS(item.getStringSet("participants"));
+        	  }
+          }
+          objectMap.put(entry.getKey(), attributeValue);
+      }
+      return  (Session) dynamoDBMapper.marshallIntoObject(clazz, objectMap);
     }
 }

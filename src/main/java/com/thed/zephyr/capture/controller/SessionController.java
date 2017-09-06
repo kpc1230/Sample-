@@ -463,6 +463,19 @@ public class SessionController {
 		}
 	}
 	
+	@GetMapping(value = "/assignee", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> fetchAllAssignees() throws CaptureValidationException {
+		log.info("Start of fetchAllAssignees()");
+		try {
+			Set<String> assigneesList = sessionService.fetchAllAssignees();
+			log.info("End of fetchAllAssignees()");
+			return ResponseEntity.ok(assigneesList);
+		} catch(Exception ex) {
+			log.error("Error in fetchAllAssignees() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+	
 	private void validateInputParameters(Optional<Long> projectId, Optional<String> status) throws CaptureValidationException {
 		if(projectId.isPresent()) {
 			CaptureProject project = projectService.getCaptureProject(projectId.get());
