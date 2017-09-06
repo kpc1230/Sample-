@@ -15,14 +15,14 @@ public interface TemplateService {
 	 * @param template - this is a TemplateRequest object from which Template is created.
 	 * @return - Created Template object.
 	 */
-	Template createTemplate(TemplateRequest template);
+	TemplateRequest createTemplate(TemplateRequest template);
 	/**
 	 * Update an existing Template.
 	 * @param template - Template Object data to be updated.
 	 * @return - updated Template if an existing Template was found in persistence, otherwise null.
 	 * @throws CaptureValidationException 
 	 */
-	Template updateTemplate(TemplateRequest template) throws CaptureValidationException;
+	TemplateRequest updateTemplate(TemplateRequest template) throws CaptureValidationException;
 	/**
 	 * Delete an existing template using templateId.
 	 * @param templateId
@@ -33,7 +33,7 @@ public interface TemplateService {
      * @param templateId
      * @return
      */
-	Template getTemplate(String templateId);
+	TemplateRequest getTemplate(String templateId);
 	
 	/**
 	 * Get all the templates.

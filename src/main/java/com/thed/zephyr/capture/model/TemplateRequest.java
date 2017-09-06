@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.joda.time.DateTime;
@@ -28,7 +29,7 @@ public class TemplateRequest {
 	private DateTime timeFavourited;
 	private boolean variablesChanged;
 	private String ownerDisplayName;
-	private List<Variable> variables;
+	private List<Variable> variables = new ArrayList<>();
 	
 	public TemplateRequest() {
 	}

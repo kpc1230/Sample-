@@ -11,12 +11,16 @@ public class CaptureUser implements Serializable{
 
 	private static final long serialVersionUID = 1L;
 
-	private final String self;
-    private final String key;
-    private final String name;
-	private final String emailAddress;
-    private final String displayName;
-    private final Boolean active;
+	private String self;
+    private String key;
+    private String name;
+	private String emailAddress;
+    private String displayName;
+    private Boolean active;
+    
+    public CaptureUser(){
+    	
+    }
     
 	public CaptureUser(String self, String key, String name, String emailAddress, String displayName, Boolean active) {
 		super();

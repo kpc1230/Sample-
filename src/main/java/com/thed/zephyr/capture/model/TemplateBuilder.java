@@ -1,9 +1,16 @@
 package com.thed.zephyr.capture.model;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.joda.time.DateTime;
 
+import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
 
 /**
  * Class to create Template Object from TemplateRequest and vice versa.
@@ -17,7 +24,7 @@ public final class TemplateBuilder {
 	 * @param templateRequest - Object with values of Template
 	 * @return - Template to be persisted
 	 */
-	public static Template constructTemplate(String ctId, TemplateRequest templateRequest){
+	public static Template constructTemplate(String ctId, TemplateRequest templateRequest, Set<String> variables){
 		Template template = new Template();
 		DateTime created = new DateTime();
 
@@ -28,11 +35,13 @@ public final class TemplateBuilder {
 		template.setShared(templateRequest.getShared());
 		template.setContent(templateRequest.getSource());
 		template.setCreatedBy(templateRequest.getOwnerName());
+//		template.setVariables(getVariables());
 		template.setTimeCreated(created);
 		//Populate timeUpdated
 		if(templateRequest.getFavourited()){
 			template.setTimeFavourited(created);
 		}
+		template.setVariables(variables);
 		template.setTimeUpdated(created);
 		return template;
 	}
@@ -43,7 +52,7 @@ public final class TemplateBuilder {
 	 * @return - Modified Template to be persisted.
 	 * @throws CaptureValidationException 
 	 */
-	public static Template updateTemplate(Template template, TemplateRequest templateRequest) throws CaptureValidationException{
+	public static Template updateTemplate(Template template, TemplateRequest templateRequest, Set<String> variables) throws CaptureValidationException{
 		TemplateRequest newTR = parseJson(templateRequest.getSource());
 		if(newTR.getName() != null && !newTR.getName().equals(template.getName())){
 			template.setName(newTR.getName());
@@ -59,6 +68,7 @@ public final class TemplateBuilder {
 		if(!template.getFavourite() && newTR.getFavourited()){
 			templateRequest.setTimeFavourited(new DateTime());
 		}
+		template.setVariables(variables);
 		template.setTimeUpdated(new DateTime());
 		return template;
 	}
@@ -68,7 +78,7 @@ public final class TemplateBuilder {
 	 * @param template - Persisted Template Object.
 	 * @return - TemplateRequest Transfer Object created out of template.
 	 */
-	public static TemplateRequest createTemplateRequest(Template template){
+	private static TemplateRequest createTemplateRequest(Template template){
 		TemplateRequest tr = new TemplateRequest();
 		tr.setId(template.getId());
 		tr.setName(template.getName());
@@ -110,5 +120,33 @@ public final class TemplateBuilder {
 		//Populate Source (source as it is from request body)
 		templateRequest.setSource(payload);
 		return templateRequest;
+	}
+
+	/**
+	 * 
+	 * @param template
+	 * @param project
+	 * @return
+	 */
+	public static TemplateRequest createTemplateRequest(Template template, Project project, CaptureUser user, List<Variable> variables) {
+		TemplateRequest request = createTemplateRequest(template);
+		if(project != null){
+			request.setProjectKey(project.getKey());
+			//TODO, include the attributes projectIconUrl
+			//request.setProjectIconUrl(project.getSelf().toString());
+		}
+		if(user != null){
+			request.setOwnerName(project.getLead().getName());
+			request.setOwnerDisplayName(project.getLead().getDisplayName());
+		}
+		Map<String, Variable> userVariables = variables.stream().collect(Collectors.toMap(variable -> variable.getName(), variable -> variable));
+		//If template has variables, for all the variables use Varaible object
+		if(template.getVariables() != null && template.getVariables().size() > 0){
+			template.getVariables().forEach(
+					v -> request.getVariables().add(userVariables.get(v.toLowerCase()))
+					);
+		}
+		request.setVariables(variables);
+		return request;
 	}
 }

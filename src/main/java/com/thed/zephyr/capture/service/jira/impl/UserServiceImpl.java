@@ -131,18 +131,8 @@ public class UserServiceImpl implements UserService{
                 .encode()
                 .toUri();
         try {
-            String response = restTemplate.getForObject(targetUrl, String.class);
-            JsonNode nodeData = new ObjectMapper().readTree(response);
-            List<CaptureUser> userList = new ArrayList<>();
-            nodeData.forEach(jsonNode1 -> userList.add(
-            		new CaptureUser(jsonNode1.get("self").asText()
-            				,jsonNode1.get("key").asText()
-            				,jsonNode1.get("name").asText()
-            				,jsonNode1.get("emailAddress").asText()
-            				,jsonNode1.get("displayName").asText()
-            				,jsonNode1.get("active").asBoolean())
-            		));
-            return userList.size() > 0 ? userList.get(0) : null;
+        	CaptureUser[] response = restTemplate.getForObject(targetUrl, CaptureUser[].class);
+            return (response != null && response.length > 0) ? response[0] : null;  
         } catch (Exception exception) {
             log.error("Error during getting user by username from jira.", exception);
         }

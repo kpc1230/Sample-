@@ -1,13 +1,19 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Variable;
 import com.thed.zephyr.capture.model.VariableRequest;
@@ -45,6 +51,11 @@ public class VariableServiceImpl implements VariableService {
 		Variable newVariable = new Variable(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), 
 				input.getOwnerName(), input.getName(), input.getValue());
 		repository.save(newVariable);
+	}
+
+	@Override
+	public VariableSearchList getVariables(String userName){
+		return getVariables(userName, null, null);
 	}
 
 	@Override
@@ -108,6 +119,23 @@ public class VariableServiceImpl implements VariableService {
 		//TODO, templateService.deleteVariable();
 	}
 
+    @Override
+    public Set<String> parseVariables(JsonNode nodeData) {
+        Set<String> tagList = new TreeSet<>();
+        Pattern pattern = Pattern.compile("\\{(\\w+)\\}");
+        Iterator<String> iterator = nodeData.fieldNames();
+        while(iterator.hasNext()){
+        	JsonNode node = nodeData.get(iterator.next());
+	        Matcher matcher = pattern.matcher((node.isObject() ? node.get("value").asText() : node.asText()));
+	        String tagName;
+	        while (matcher.find()) {
+	            String originalMatch = matcher.group(0);
+	            tagName = originalMatch.toUpperCase();
+	            tagList.add(tagName.substring(1, tagName.length() -1 ));
+	        }
+        }
+        return tagList;
+    }
 	/**
 	 * Creates the page request object for pagination.
 	 * 

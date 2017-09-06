@@ -2,6 +2,8 @@ package com.thed.zephyr.capture.controller;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import java.util.Set;
+
 import javax.validation.Valid;
 
 import org.apache.commons.lang.StringUtils;
@@ -32,6 +34,7 @@ import com.thed.zephyr.capture.model.TemplateBuilder;
 import com.thed.zephyr.capture.model.TemplateRequest;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
 import com.thed.zephyr.capture.service.data.TemplateService;
+import com.thed.zephyr.capture.service.data.VariableService;
 import com.thed.zephyr.capture.validator.TemplateValidator;
 
 /**
@@ -57,39 +60,42 @@ public class TemplateController {
 	@Autowired
 	private TemplateService templateService;
 
+	@Autowired
+	private VariableService variableService;
+
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<TemplateRequest> createTemplate(@RequestBody JsonNode json) {
 		//log.info("createTemplate start for the name:" + templateRequest.getName() + templateRequest.getProjectId() + templateRequest.getIssueType());
-		Template template = null;
+		TemplateRequest created = null;
 		try {
+
 			TemplateRequest templateRequest = TemplateBuilder.parseJson(json);
 			templateRequest.setOwnerName(getUser());
-			template = templateService.createTemplate(templateRequest);
+			created = templateService.createTemplate(templateRequest);
 		} catch (Exception ex) {
 			log.error("Error during createTemplate.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("createTemplate end for name:"+ template.getName() + ":" + template.getId());
-		return ok(TemplateBuilder.createTemplateRequest(template));
+		log.info("createTemplate end for name:"+ created.getName() + ":" + created.getId());
+		return ok(created);
 	}
 
 	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<TemplateRequest> updateTemplate(@Valid @RequestBody TemplateRequest templateRequest) 
 			throws CaptureValidationException {
 		log.info("updateTemplate start for the id:{}", templateRequest.getId());
-		Template updated = null;
+		TemplateRequest updated = null;
 		try {
 			updated = templateService.updateTemplate(templateRequest);
 		} catch (Exception ex) {
 			log.error("Error during updateTemplate.", ex);
-//			badRequest(ex.getMessage());
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
 		if(updated == null){
 			throw new CaptureValidationException("Template can't find with id " + templateRequest.getId());
 		}
 		log.info("updateTemplate end for the id:{}", templateRequest.getId());
-		return ok(TemplateBuilder.createTemplateRequest(updated));
+		return ok(updated);
 	}
 
 	@GetMapping(value = "/{templateId}", produces = APPLICATION_JSON_VALUE)
@@ -98,7 +104,7 @@ public class TemplateController {
 		if(StringUtils.isEmpty(templateId)) {
 			throw new CaptureValidationException("TemplateId cannot be null");
 		}
-		Template template = null;
+		TemplateRequest template = null;
 		try {
 			template = templateService.getTemplate(templateId);
 		} catch (Exception ex) {
@@ -107,7 +113,7 @@ public class TemplateController {
 //			return ok(new TemplateRequest());
 		}
 		log.info("getTemplate end for the id:{}", templateId);
-		return ok(TemplateBuilder.createTemplateRequest(template));
+		return ok(template);
 	}
 
 	@SuppressWarnings({ "rawtypes" })
@@ -209,4 +215,5 @@ public class TemplateController {
 		}
 		return userKey;
 	}
+
 }

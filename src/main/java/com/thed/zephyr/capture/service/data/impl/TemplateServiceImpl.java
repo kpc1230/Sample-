@@ -1,22 +1,32 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import com.atlassian.jira.rest.client.api.domain.Project;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Template;
 import com.thed.zephyr.capture.model.TemplateBuilder;
 import com.thed.zephyr.capture.model.TemplateRequest;
+import com.thed.zephyr.capture.model.Variable;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.TemplateRepository;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.TemplateService;
+import com.thed.zephyr.capture.service.data.VariableService;
+import com.thed.zephyr.capture.service.jira.ProjectService;
+import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.CaptureUtil;
 
 /**
@@ -32,21 +42,32 @@ public class TemplateServiceImpl implements TemplateService {
     @Autowired
 	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
     
+    @Autowired
+    private ProjectService projectService;
+    
+    @Autowired
+    private UserService userService;
+
+	@Autowired
+	private VariableService variableService;
+
 	@Override
-	public Template createTemplate(TemplateRequest templateReq) {
+	public TemplateRequest createTemplate(TemplateRequest templateReq) {
+		Set<String> variables = getVariables(templateReq.getSource());
         Template created = repository.save(
-        		TemplateBuilder.constructTemplate(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), templateReq));
-		return created;
+        		TemplateBuilder.constructTemplate(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), templateReq, variables));
+		return createTemplateRequest(created);
 	}
 
 	@Override
-	public Template updateTemplate(TemplateRequest templateReq) throws CaptureValidationException {
-		Template existing = getTemplate(templateReq.getId());
+	public TemplateRequest updateTemplate(TemplateRequest templateReq) throws CaptureValidationException {
+		Template existing = getTemplateObject(templateReq.getId());
 		if(Objects.isNull(existing)) {
 			return null;
 		}
-        Template created = repository.save(TemplateBuilder.updateTemplate(existing, templateReq));
-		return created;
+		Set<String> variables = getVariables(templateReq.getSource());
+        Template created = repository.save(TemplateBuilder.updateTemplate(existing, templateReq, variables));
+		return createTemplateRequest(created);
 	}
 
 	@Override
@@ -54,9 +75,14 @@ public class TemplateServiceImpl implements TemplateService {
 		repository.delete(templateId);
 	}
 
-	@Override
-	public Template getTemplate(String templateId) {
+	protected Template getTemplateObject(String templateId) {
 		return repository.findOne(templateId);
+	}
+
+	@Override
+	public TemplateRequest getTemplate(String templateId) {
+		Template one = repository.findOne(templateId);
+		return createTemplateRequest(one);
 	}
 
 	@Override
@@ -108,12 +134,40 @@ public class TemplateServiceImpl implements TemplateService {
 	private TemplateSearchList convert(Page<Template> templatePage, Integer offset, Integer limit) {
 		List<TemplateRequest> returnList = new ArrayList<>();
 		if (templatePage != null && templatePage.getContent().size() > 0) {
+			Project project = getProject(templatePage.getContent().get(0).getProjectId());
+			Map<String, CaptureUser> userMap = getUserMap(templatePage.getContent());
 			templatePage.getContent().forEach(template -> {
-				returnList.add(TemplateBuilder.createTemplateRequest(template));
+				CaptureUser user = userMap.get(template.getCreatedBy());
+				List<Variable> variables = getUserVariables(template.getCreatedBy());
+				returnList.add(TemplateBuilder.createTemplateRequest(template, project, user, variables));
 			});
 			return new TemplateSearchList(returnList, offset, limit, templatePage.getTotalElements());
 		}
 		return new TemplateSearchList(returnList, offset, limit, 0);
 	}
+	
+	private Map<String, CaptureUser> getUserMap(List<Template> templateList) {
+		Map<String, CaptureUser> userMap = new HashMap<>();
+		templateList.forEach(t -> 
+				userMap.put(t.getCreatedBy(), userService.findUser(t.getCreatedBy())));
+		return userMap;
+	}
 
+	protected Project getProject(Long projectId){
+		return projectService.getProjectObj(projectId);
+	}
+
+	private TemplateRequest createTemplateRequest(Template created) {
+		List<Variable> variables = getUserVariables(created.getCreatedBy());
+		return TemplateBuilder.createTemplateRequest(created, getProject(created.getProjectId())
+				, userService.findUser(created.getCreatedBy()), variables);
+	}
+
+	protected Set<String> getVariables(JsonNode json){
+		return variableService.parseVariables(json);
+	}
+	
+	protected List<Variable> getUserVariables(String userName){
+		return variableService.getVariables(userName).getContent();
+	}
 }

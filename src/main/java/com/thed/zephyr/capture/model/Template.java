@@ -11,6 +11,7 @@ import org.joda.time.DateTime;
 import org.springframework.data.annotation.Id;
 
 import java.util.Date;
+import java.util.Set;
 
 /**
  * Created by aliakseimatsarski on 8/20/17.
@@ -44,11 +45,17 @@ public class Template {
     @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
     private DateTime timeFavourited;
 
+    /**
+     * List of variabels for this note.
+     * A note may have multiple variabls, example: "{url} {title} etc"
+     */
+    private Set<String> variables;
+
     public Template() {
     }
 
     public Template(String ctId, String name, Long projectId, Boolean favourite, Boolean shared, JsonNode content, String createdBy, Date createdOn
-    		, DateTime timeCreated, DateTime timeUpdated,DateTime timeFavourited) {
+    		, DateTime timeCreated, DateTime timeUpdated,DateTime timeFavourited, Set<String> variables) {
         this.ctId = ctId;
         this.name = name;
         this.projectId = projectId;
@@ -59,6 +66,7 @@ public class Template {
         this.timeCreated = timeCreated;
         this.timeUpdated = timeUpdated;
         this.timeFavourited = timeFavourited;
+        this.variables = variables;
     }
 
     public String getId() {
@@ -147,6 +155,14 @@ public class Template {
 
 	public void setTimeFavourited(DateTime timeFavourited) {
 		this.timeFavourited = timeFavourited;
+	}
+
+	public Set<String> getVariables() {
+		return variables;
+	}
+
+	public void setVariables(Set<String> variables) {
+		this.variables = variables;
 	}
 
 	public JsonNode toJSON() {
