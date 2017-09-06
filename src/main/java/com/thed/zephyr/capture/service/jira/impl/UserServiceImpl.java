@@ -4,6 +4,7 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.slf4j.Logger;
@@ -15,6 +16,8 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Masud on 8/15/17.
@@ -110,6 +113,38 @@ public class UserServiceImpl implements UserService{
             return new ObjectMapper().readTree(response);
         } catch (Exception exception) {
             log.error("Error during getting assignable user by project from jira.", exception);
+        }
+        return null;
+    }
+
+    @Override
+    public CaptureUser findUser(String username){
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+
+        String uri = host.getHost().getBaseUrl();
+        URI targetUrl= UriComponentsBuilder.fromUriString(uri)
+                .path(JiraConstants.REST_API_USER)
+                .queryParam("username", username)
+                .build()
+                .encode()
+                .toUri();
+        try {
+            String response = restTemplate.getForObject(targetUrl, String.class);
+            JsonNode nodeData = new ObjectMapper().readTree(response);
+            List<CaptureUser> userList = new ArrayList<>();
+            nodeData.forEach(jsonNode1 -> userList.add(
+            		new CaptureUser(jsonNode1.get("self").asText()
+            				,jsonNode1.get("key").asText()
+            				,jsonNode1.get("name").asText()
+            				,jsonNode1.get("emailAddress").asText()
+            				,jsonNode1.get("displayName").asText()
+            				,jsonNode1.get("active").asBoolean())
+            		));
+            return userList.size() > 0 ? userList.get(0) : null;
+        } catch (Exception exception) {
+            log.error("Error during getting user by username from jira.", exception);
         }
         return null;
     }
