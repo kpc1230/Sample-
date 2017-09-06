@@ -1,18 +1,15 @@
 package com.thed.zephyr.capture.repositories.dynamodb.impl;
 
-import java.math.BigDecimal;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
@@ -23,7 +20,8 @@ import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 
@@ -38,9 +36,6 @@ public class SessionRepositoryImpl {
 
     @Autowired
     private DynamoDB dynamodb;
-    
-    @Autowired
-    private DynamoDBMapper dynamoDBMapper;
     
     /**
      * Fetch the list of sessions based on input filters from the database.
@@ -192,17 +187,13 @@ public class SessionRepositoryImpl {
      * @return -- Returns the converted class object using the item data.
      */
     private Session convertItemToSession(Item item, Class<?> clazz){
-        Map<String, AttributeValue> objectMap = new LinkedHashMap<>();
-        Map<String, Object> stringObjectMap = item.asMap();
-        for (Map.Entry<String, Object> entry:stringObjectMap.entrySet()){
-            AttributeValue attributeValue = new AttributeValue();
-            if (entry.getValue() instanceof String){
-                attributeValue.setS(entry.getValue().toString());
-            } else if(entry.getValue() instanceof BigDecimal){
-                attributeValue.setN(entry.getValue().toString());
-            }
-            objectMap.put(entry.getKey(), attributeValue);
-        }
-        return  (Session) dynamoDBMapper.marshallIntoObject(clazz, objectMap);
+        ObjectMapper mapper = new ObjectMapper();
+        Session session = null;
+        try {
+        	session =  (Session) mapper.readValue(item.toJSON(), clazz);
+		} catch (IOException e) {
+			throw new CaptureRuntimeException("Error while converting dynamodb item to class - " + clazz.getCanonicalName(), e);
+		}
+        return session;
     }
 }
