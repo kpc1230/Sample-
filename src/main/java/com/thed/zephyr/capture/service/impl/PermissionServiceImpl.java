@@ -82,7 +82,6 @@ public class PermissionServiceImpl implements PermissionService {
         return false;
     }
 
-
     private boolean checkPermissionForType(String projectKey, Issue issue, String permissionType) {
         Permissions permissions;
         if (StringUtils.isNotBlank(projectKey)) {
@@ -93,11 +92,9 @@ public class PermissionServiceImpl implements PermissionService {
             permissions = getAllUserPermissions();
         }
         Map<String, Permission> permissionMap = permissions.getPermissionMap();
-        for (String key : permissionMap.keySet()) {
-            if (permissionMap.get(key) != null && StringUtils.equals(key, permissionType)
-                    && permissionMap.get(key).havePermission()) {
-                return true;
-            }
+
+        if (permissionMap.containsKey(permissionType) && permissionMap.get(permissionType).havePermission()) {
+            return true;
         }
         return false;
     }
@@ -142,6 +139,15 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canCreateNote(String user, Session session) {
+        boolean isParticipant = session.getParticipants() != null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user)) : false;
+        boolean isAssignee = session.getAssignee().equals(user);
+        boolean isCreator = session.getCreator().equals(user);
+        return isParticipant || isAssignee || isCreator;
+    }
+
+    @Override
+    public boolean canCreateNote(String user, String sessionId) {
+        Session session = sessionService.getSession(sessionId);
         boolean isParticipant = Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user));
         boolean isAssignee = session.getAssignee().equals(user);
         boolean isCreator = session.getCreator().equals(user);

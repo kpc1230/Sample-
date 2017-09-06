@@ -36,6 +36,8 @@ public interface PermissionService {
 
     public boolean canCreateNote(String user, Session session);
 
+    public boolean canCreateNote(String user, String sessionId);
+
     public boolean canCreateNote(String user, LightSession session);
 
     public boolean canEditNote(String user, LightSession session, Note note);
