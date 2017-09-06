@@ -763,7 +763,7 @@ public class SessionServiceImpl implements SessionService {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		List<Session> sessionsList = sessionRepository.searchSessions(ctId, projectId, assignee, status, searchTerm);
 		Comparator<Session> comparator;
-		switch(sortField.orElse(null)) {
+		switch(sortField.orElse("")) {
 			case ApplicationConstants.SORTFIELD_CREATED:
 				comparator = new TimeCreatedSessionComparator(sortAscending);
 				break;
