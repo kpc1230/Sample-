@@ -5,6 +5,7 @@ import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.extension.JiraAuthService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.Global.TokenHolder;
 import com.thed.zephyr.capture.util.JiraConstants;
 import com.thed.zephyr.capture.util.PlainRestTemplate;
@@ -45,7 +46,7 @@ public class JiraAuthServiceImpl implements JiraAuthService {
             HttpHeaders headers = new HttpHeaders();
             JSONObject request = new JSONObject();
             request.put(USERNAME, username);
-            request.put(PASSWORD, password);
+            request.put(PASSWORD, CaptureUtil.decodeBase64(password));
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<String> entity = new HttpEntity<String>(request.toString(), headers);
             ResponseEntity<JsonNode> response = restTemplate.exchange(uri, HttpMethod.POST, entity, JsonNode.class);
