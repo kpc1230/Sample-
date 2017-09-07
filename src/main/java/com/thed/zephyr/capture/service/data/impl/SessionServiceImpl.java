@@ -30,6 +30,7 @@ import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang.StringUtils;
@@ -81,6 +82,9 @@ public class SessionServiceImpl implements SessionService {
 	@Autowired
 	private ProjectService projectService;
 
+	@Autowired
+	private CaptureI18NMessageSource i18n;
+
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
 		Page<Session> sessionsPage = sessionRepository.queryByCtIdAndProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, CaptureUtil.getPageRequest(offset, limit));
@@ -131,7 +135,7 @@ public class SessionServiceImpl implements SessionService {
 	public void deleteSession(String sessionId) {
 		Session session = getSession(sessionId);
 		if(Objects.isNull(session)) {
-			throw new CaptureRuntimeException("That session does not exist or it has already been deleted.");
+			throw new CaptureRuntimeException(i18n.getMessage("session.delete.already"));
 		}
 		sessionRepository.delete(sessionId);
         if (session.getId().equals(getActiveSessionIdFromCache(session.getAssignee()))) { // Clear it as assignees active session
@@ -171,10 +175,10 @@ public class SessionServiceImpl implements SessionService {
         DeactivateResult deactivateResult = null;
         if (!Objects.isNull(session) && !StringUtils.isEmpty(loggedUserKey)) {
             if (!session.isShared()) {
-                errorCollection.addError("The session '{0}' is not shared", session.getName());
+                errorCollection.addError(i18n.getMessage("session.join.not.shared", new Object[]{session.getName()}));
             }
             if (!Status.STARTED.equals(session.getStatus())) {
-                errorCollection.addError("The session '{0}' is paused or has not been started", session.getName());
+                errorCollection.addError(i18n.getMessage("session.join.not.started" , new Object[]{session.getName()}));
             }
             SessionResult activeSessionResult = getActiveSession(loggedUserKey); // Deactivate current active session
             if (activeSessionResult.isValid()) {
@@ -230,10 +234,10 @@ public class SessionServiceImpl implements SessionService {
         ErrorCollection errorCollection = new ErrorCollection();
         Issue issue = issueService.getIssueObject(issueKey);
         if (Objects.isNull(issue)) {
-            throw new CaptureValidationException("Issue is not valid");
+            throw new CaptureValidationException(i18n.getMessage("session.issue.invalid", new Object[]{issueKey}));
         }
         if (!Objects.isNull(session.getIssueRaisedIds()) && !session.getIssueRaisedIds().contains(issue.getId())) {
-            errorCollection.addError("Issue is not related to the test session.");
+            errorCollection.addError(i18n.getMessage("validation.service.unraise.notexist"));
         }
         if (errorCollection.hasErrors()) {
             return new UpdateResult(errorCollection, null);
@@ -487,32 +491,32 @@ public class SessionServiceImpl implements SessionService {
         } else {
             loadedSession = sessionRepository.findOne(newSession.getId()); // Load in the session to check that it still exists
             if (Objects.isNull(loadedSession)) {
-                errorCollection.addError("'{0}' is not a valid session id", newSession.getId());
+                errorCollection.addError(i18n.getMessage("session.invalid.id", new Object[]{newSession.getId()}));
             } else {
                 if (!Objects.isNull(newSession.getAssignee()) && !newSession.getAssignee().equals(loadedSession.getAssignee()) && Status.STARTED.equals(newSession.getStatus())) { // If the assignee has changed, then the new session should be paused
-                    errorCollection.addError("You cannot assign an active session");
+                    errorCollection.addError(i18n.getMessage("session.assigning.active.session.violation"));
                 }
                 if (Status.COMPLETED.equals(loadedSession.getStatus()) && !Status.COMPLETED.equals(newSession.getStatus())) { // Status can't go backwards from COMPLETED
-                    errorCollection.addError("You cannot change the status of a completed session");
+                    errorCollection.addError(i18n.getMessage("session.reopen.completed.violation"));
                 }
                 if (!newSession.getCreator().equals(loadedSession.getCreator())) { // Check that certain fields haven't changed - creator + time created (paranoid check)
-                    errorCollection.addError("You cannot change the creator.");
+                    errorCollection.addError(i18n.getMessage("session.change.creator.violation"));
                 }
                 if (!loadedSession.getTimeCreated().equals(newSession.getTimeCreated())) {
-                    errorCollection.addError("You cannot change the time created.");
+                    errorCollection.addError(i18n.getMessage("session.change.timecreated.violation"));
                 }
             }
             if (!newSession.getStatus().equals(loadedSession.getStatus()) && Status.COMPLETED.equals(newSession.getStatus())) { // If we just completed the session, we want to update the time finished
                 if (newSession.getTimeFinished() == null) {
                 	newSession.setTimeFinished(new DateTime());
                 } else {
-                    errorCollection.addError("You cannot change the time finished.");
+                    errorCollection.addError(i18n.getMessage("session.change.timefinished.violation"));
                 }
             }
         }
         int participantLimit = Integer.parseInt(dynamicProperty.getStringProp(ApplicationConstants.PARTICIPANT_LIMIT_DYNAMIC_KEY, "10").get());
         if(!Objects.isNull(newSession.getParticipants()) && newSession.getParticipants().size() > participantLimit) {
-        	errorCollection.addError("There are {0} participants. This session cannot have more than {1} participants.", newSession.getParticipants().size(), participantLimit);
+        	errorCollection.addError(i18n.getMessage("session.relatedissues.exceed", new Object[]{newSession.getParticipants().size(), participantLimit}));
         }
         if (errorCollection.hasErrors()) {
             return new UpdateResult(errorCollection, newSession);

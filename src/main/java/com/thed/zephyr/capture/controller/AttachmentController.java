@@ -3,6 +3,8 @@ package com.thed.zephyr.capture.controller;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.service.jira.AttachmentService;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.slf4j.Logger;
@@ -26,6 +28,9 @@ public class AttachmentController {
     @Autowired
     private AttachmentService attachmentService;
 
+    @Autowired
+    private CaptureI18NMessageSource i18n;
+
     @RequestMapping(value = "/issue-attach-new", method = RequestMethod.POST)
     public ResponseEntity<String> uploadAttachments(final @RequestParam("issueKey") String issueKey,
                                            @RequestParam("files") MultipartFile[] multipartFiles) {
@@ -44,7 +49,7 @@ public class AttachmentController {
             String fullIconUrl = attachmentService.addAttachments(issueKey,testSessionId,json);
             return new ResponseEntity<>(new AttachmentResponse(fullIconUrl),HttpStatus.OK);
         } catch (JSONException e) {
-            throw new CaptureRuntimeException("rest.resource.malformed.json",e);
+            throw new CaptureRuntimeException(i18n.getMessage("rest.resource.malformed.json"),e);
         }
     }
 

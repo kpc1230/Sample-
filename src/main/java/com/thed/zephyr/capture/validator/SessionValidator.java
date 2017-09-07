@@ -8,6 +8,7 @@ import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.DynamicProperty;
 
 import org.apache.commons.lang.StringUtils;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
-import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,6 +40,9 @@ public class SessionValidator implements Validator {
 	@Autowired
     private DynamicProperty dynamicProperty;
 
+	@Autowired
+	private CaptureI18NMessageSource i18n;
+
 	@Override
 	public boolean supports(Class<?> clazz) {
 		return SessionRequest.class.isAssignableFrom(clazz);
@@ -50,11 +53,11 @@ public class SessionValidator implements Validator {
 		if(target  instanceof SessionRequest) {
 			SessionRequest sessionRequest = (SessionRequest) target;
 			if(Objects.isNull(sessionRequest.getProjectKey())) {
-				errors.reject("", "Project key cannot be empty");
+				errors.reject("", i18n.getMessage("session.project.key.needed"));
 			}
 			Project project = projectService.getProjectObjByKey(sessionRequest.getProjectKey()); //checking whether the project key is valid or not.
 			if(Objects.isNull(project)) {
-				errors.reject("", "Not a valid project");
+				errors.reject("", i18n.getMessage("session.project.key.invalid", new Object[]{sessionRequest.getProjectKey()}));
 			} else {
 				sessionRequest.setProjectId(project.getId());
 			}
@@ -66,7 +69,7 @@ public class SessionValidator implements Validator {
 					if (!StringUtils.isEmpty(issueKey) && !duplicatePrevention.containsKey(issueKey)) {
 						Issue issue = issueService.getIssueObject(issueKey); //Checking whether the issues are valid or not.
 						if (Objects.isNull(issue)) {
-		                    errors.reject("", "Issue with key " + issueKey + " cannot be found.");
+		                    errors.reject("", i18n.getMessage("session.issue.key.invalid", new Object[]{issueKey}));
 		                } else {
 		                	duplicatePrevention.put(issueKey, issueKey);
 	                        relatedIssues.add(issue.getId());
@@ -76,7 +79,7 @@ public class SessionValidator implements Validator {
 				sessionRequest.setRelatedIssueIds(relatedIssues);
 				int issueLimit = Integer.parseInt(dynamicProperty.getStringProp(ApplicationConstants.RELATED_ISSUES_LIMIT_DYNAMIC_KEY, "100").get());
 				if (relatedIssues.size() > issueLimit) { //checking whether related issues are crossed more than the limit.
-					errors.reject("", MessageFormat.format("There are {0} related issues. This session cannot have more than {1} related issues.", relatedIssues.size(), issueLimit));
+					errors.reject("", i18n.getMessage("session.relatedissues.excee", new Object[]{relatedIssues.size(), issueLimit}));
 		        }
 			}
 		}

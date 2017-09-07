@@ -42,7 +42,7 @@ import com.thed.zephyr.capture.validator.NoteSessionActivityValidator;
  */
 @RestController
 @RequestMapping("/session/note")
-public class NoteController {
+public class NoteController extends CaptureAbstractController{
 
 	@Autowired
 	private Logger log;
@@ -87,7 +87,7 @@ public class NoteController {
 		NoteSessionActivity updated = null;
 		try {
 			if(StringUtils.isEmpty(noteActivityId)){
-				throw new CaptureRuntimeException("Note Session Activity Id can't be null for update operation");
+				throw new CaptureValidationException(i18n.getMessage("note.invalid.id" , new Object[]{noteActivityId}));
 			}
 			noteSessionActivityRequest.setId(noteActivityId);
 			noteSessionActivityRequest.setUser(hostUser.getUserKey().get());
@@ -139,11 +139,11 @@ public class NoteController {
 												 @RequestParam("page") Integer page, @RequestParam("limit") Integer limit, @RequestBody NoteFilter noteFilter) throws CaptureValidationException {
 		log.info("getNotesByProjectId start for session:{}", projectId);
 		if (StringUtils.isEmpty(projectId)) {
-			throw new CaptureValidationException("projectId cannot be null/empty");
+			throw new CaptureValidationException(i18n.getMessage("session.project.key.needed"));
 		}
 		CaptureProject project = projectService.getCaptureProject(Long.parseLong(projectId));
 		if(project == null){
-			throw new CaptureValidationException("Project is not valid");
+			throw new CaptureValidationException(i18n.getMessage("session.project.id.invalid"));
 		}
 		NoteSearchList result = null;
 		try {
@@ -155,8 +155,6 @@ public class NoteController {
 		log.debug("getNotesByProjectId end for the session:{}", projectId);
 		return ResponseEntity.ok(result);
 	}
-
-
 
 	private ResponseEntity<?> ok() {
 		return ResponseEntity.ok().build();

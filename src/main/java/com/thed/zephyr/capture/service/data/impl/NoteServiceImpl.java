@@ -9,6 +9,7 @@ import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.NoteRepository;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,8 @@ public class NoteServiceImpl implements NoteService {
 	private SessionActivityRepository sessionActivityRepository;
 	@Autowired
 	private NoteRepository noteRepository;
+	@Autowired
+	private CaptureI18NMessageSource i18n;
 
 	@Override
 	public NoteSessionActivity create(NoteSessionActivity noteSessionActivityRequest) throws CaptureValidationException {
@@ -69,11 +72,11 @@ public class NoteServiceImpl implements NoteService {
 	public NoteSessionActivity update(NoteSessionActivity noteSessionActivityRequest, boolean toggleResolution) throws CaptureValidationException {
 		SessionActivity existing = sessionActivityRepository.findOne(noteSessionActivityRequest.getId());
 		if(existing instanceof NoteSessionActivity){
-			throw new CaptureValidationException("SessionActivity is not NoteSessionActivity");
+			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteSessionActivityRequest.getId()}));
 		} else if(existing == null){
-			throw new CaptureValidationException("Note not exists");
+			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteSessionActivityRequest.getId()}));
 		}else if (!noteSessionActivityRequest.getSessionId().equals(existing.getSessionId())){
-			throw new CaptureValidationException("Note sessionId don't match");
+			throw new CaptureValidationException("Note sessionId don't match");//TODO
 		}else if (!noteSessionActivityRequest.getUser().equals(existing.getUser())){
 			throw new CaptureValidationException("Note author don't match");
 		}
@@ -152,7 +155,7 @@ public class NoteServiceImpl implements NoteService {
 		case INVALID:
 			return NoteSessionActivity.Resolution.INITIAL;
 		default:
-			throw new CaptureValidationException("Invalid resolution state");
+			throw new CaptureValidationException("Invalid resolution state");//TODO
 		}
 	}
 

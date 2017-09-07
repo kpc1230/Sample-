@@ -14,6 +14,7 @@ import com.thed.zephyr.capture.model.NoteRequest;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 
 /**
  * Validator Class that will be invoked for create and update methods of
@@ -27,7 +28,10 @@ public class NoteSessionActivityValidator implements Validator {
 
 	@Autowired
 	private SessionService sessionService;
-	
+
+	@Autowired
+	private CaptureI18NMessageSource i18n;
+
 	@Override
 	public boolean supports(Class<?> clazz) {
 		return NoteRequest.class.equals(clazz);
@@ -37,16 +41,17 @@ public class NoteSessionActivityValidator implements Validator {
 	public void validate(Object target, Errors errors) {
 		if(target instanceof NoteSessionActivity){
 			NoteSessionActivity noteSessionActivity = (NoteSessionActivity) target;
-			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "noteData", "", "Note data can't be empty");
-			if (noteSessionActivity.getNoteData() != null && noteSessionActivity.getNoteData().length() > ApplicationConstants.MAX_NOTE_LENGTH) {
-                errors.reject("", "Notedata can't be greater than the size:" + ApplicationConstants.MAX_NOTE_LENGTH) ;
+			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "noteData", "", i18n.getMessage("note.create.empty"));
+			int noteLength = noteSessionActivity.getNoteData().length();
+			if (noteSessionActivity.getNoteData() != null && noteLength > ApplicationConstants.MAX_NOTE_LENGTH) {
+                errors.reject("", i18n.getMessage("note.exceed.limit", new Object[]{noteLength, ApplicationConstants.MAX_NOTE_LENGTH}));
             }
 
-			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "sessionId", "", "Note sessionId can't be empty");
+			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "sessionId", "", i18n.getMessage("session.invalid.id", new Object[]{noteSessionActivity.getSessionId()}));
 			if(!StringUtils.isNullOrEmpty(noteSessionActivity.getSessionId())){
 				Session s = sessionService.getSession(noteSessionActivity.getSessionId());
 				if(Objects.isNull(s)) {
-					errors.reject("", "Session is invalid for the Note");
+					errors.reject("", i18n.getMessage("session.invalid", new Object[]{noteSessionActivity.getSessionId()}));
 				}else{
 					noteSessionActivity.setProjectId(s.getProjectId());
 				}
