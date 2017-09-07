@@ -104,6 +104,8 @@ public class SessionServiceImpl implements SessionService {
         Session createdSession = sessionRepository.save(session);
         setActiveSessionIdToCache(loggedUserKey, createdSession.getId());
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
+		sessionESRepository.save(createdSession);
+
 		return createdSession;
 	}
 
@@ -133,6 +135,7 @@ public class SessionServiceImpl implements SessionService {
 			throw new CaptureRuntimeException(i18n.getMessage("session.delete.already"));
 		}
 		sessionRepository.delete(sessionId);
+		sessionESRepository.delete(sessionId);
         if (session.getId().equals(getActiveSessionIdFromCache(session.getAssignee()))) { // Clear it as assignees active session
             clearActiveSessionFromCache(session.getAssignee());
         }
@@ -469,8 +472,9 @@ public class SessionServiceImpl implements SessionService {
      * @param leavers -- List of users leaving the session which needs to updated into session.
      */
     private void save(Session session, List<String> leavers) {
-        sessionRepository.save(session);
-        for (String leaver : leavers) {
+		Session savedSession = sessionRepository.save(session);
+		sessionESRepository.save(savedSession);
+		for (String leaver : leavers) {
             clearActiveSessionFromCache(leaver);
         }
     }
