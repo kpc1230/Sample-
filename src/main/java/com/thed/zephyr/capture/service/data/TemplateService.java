@@ -29,10 +29,11 @@ public interface TemplateService {
 	void deleteTemplate(String templateId);
     /**
      * Get template using the templateId.
+	 * @param user
      * @param templateId
      * @return
      */
-	TemplateRequest getTemplate(String templateId);
+	TemplateRequest getTemplate(String user,String templateId);
 	
 	/**
 	 * Get all the templates.

@@ -6,6 +6,8 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
+import com.thed.zephyr.capture.service.PermissionService;
+import com.thed.zephyr.capture.service.jira.ProjectService;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +50,7 @@ public class TemplateController {
 
 	@Autowired
 	private Logger log;
-	
+
 	@Autowired
 	private TemplateValidator templateValidator;
 
@@ -63,6 +65,12 @@ public class TemplateController {
 	@Autowired
 	private VariableService variableService;
 
+	@Autowired
+	PermissionService permissionService;
+
+	@Autowired
+	ProjectService projectService;
+
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<TemplateRequest> createTemplate(@RequestBody JsonNode json) {
 		//log.info("createTemplate start for the name:" + templateRequest.getName() + templateRequest.getProjectId() + templateRequest.getIssueType());
@@ -71,6 +79,9 @@ public class TemplateController {
 
 			TemplateRequest templateRequest = TemplateBuilder.parseJson(json);
 			templateRequest.setOwnerName(getUser());
+			if (!permissionService.canCreateTemplate(getUser(), projectService.getCaptureProject(templateRequest.getProjectId()))) {
+                throw new CaptureValidationException("template.validate.create.cannot.create.issue");
+			}
 			created = templateService.createTemplate(templateRequest);
 		} catch (Exception ex) {
 			log.error("Error during createTemplate.", ex);
@@ -81,12 +92,15 @@ public class TemplateController {
 	}
 
 	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<TemplateRequest> updateTemplate(@Valid @RequestBody TemplateRequest templateRequest) 
+	public ResponseEntity<TemplateRequest> updateTemplate(@Valid @RequestBody TemplateRequest templateRequest)
 			throws CaptureValidationException {
 		log.info("updateTemplate start for the id:{}", templateRequest.getId());
 		TemplateRequest updated = null;
 		try {
-			updated = templateService.updateTemplate(templateRequest);
+            if (!permissionService.canEditTemplate(getUser(), projectService.getCaptureProject(templateRequest.getProjectId()))) {
+                throw new CaptureValidationException("template.validate.create.cannot.create.issue");
+            }
+            updated = templateService.updateTemplate(templateRequest);
 		} catch (Exception ex) {
 			log.error("Error during updateTemplate.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
@@ -106,7 +120,7 @@ public class TemplateController {
 		}
 		TemplateRequest template = null;
 		try {
-			template = templateService.getTemplate(templateId);
+			template = templateService.getTemplate(getUser(),templateId);
 		} catch (Exception ex) {
 			log.error("Error during getTemplate.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
@@ -162,7 +176,7 @@ public class TemplateController {
 		log.info("getFavouriteTemplates end for the user: {}");
 		return ok(result);
 	}
-	
+
 	@GetMapping(value = "/admin")
 	public ResponseEntity<?> getAllTemplates(@RequestParam Integer offset, @RequestParam Integer limit){
 		log.info("getAllTemplates start.");
@@ -202,7 +216,7 @@ public class TemplateController {
 	}
 	/**
 	 * Fetches the user key from the authentication object.
-	 * 
+	 *
 	 * @return -- Returns the logged in user key.
 	 * @throws CaptureValidationException -- Thrown while fetching the user key.
 	 */

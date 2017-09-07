@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.thed.zephyr.capture.service.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -52,6 +53,9 @@ public class TemplateServiceImpl implements TemplateService {
 	@Autowired
 	private VariableService variableService;
 
+	@Autowired
+	PermissionService permissionService;
+
 	@Override
 	public TemplateRequest createTemplate(TemplateRequest templateReq) {
 		//Set<String> variables = getVariables(templateReq.getSource(), templateReq.getOwnerName());
@@ -81,8 +85,11 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	@Override
-	public TemplateRequest getTemplate(String templateId) {
+	public TemplateRequest getTemplate(String user,String templateId) {
 		Template one = repository.findOne(templateId);
+		if(one!=null&&!permissionService.canUseTemplate(user, one.getProjectId())){
+			return null;
+		}
 		return createTemplateRequest(one);
 	}
 
@@ -144,7 +151,9 @@ public class TemplateServiceImpl implements TemplateService {
 			Map<String, CaptureUser> userMap = getUserMap(templatePage.getContent());
 			templatePage.getContent().forEach(template -> {
 				CaptureUser user = userMap.get(template.getCreatedBy());
-				returnList.add(TemplateBuilder.createTemplateRequest(template, project, user));
+				if(permissionService.canUseTemplate(user.getKey(), template.getProjectId())){
+					returnList.add(TemplateBuilder.createTemplateRequest(template, project, user));
+				}
 			});
 			return new TemplateSearchList(returnList, offset, limit, templatePage.getTotalElements());
 		}
