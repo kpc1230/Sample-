@@ -23,6 +23,10 @@ import com.thed.zephyr.capture.service.jira.issue.IssueFields;
 import com.thed.zephyr.capture.service.jira.issue.ResourceId;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -34,10 +38,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -123,7 +126,46 @@ public class IssueController {
 
         issueInputBuilder.setSummary(issueFields.summary());
         issueInputBuilder.setDescription(issueFields.description());
-        issueInputBuilder.setPriorityId(Long.valueOf(issueFields.priority().id()));
+        if(issueFields.priority() != null) {
+            issueInputBuilder.setPriorityId(Long.valueOf(issueFields.priority().id()));
+        }
+
+        if(issueFields.environment() != null) {
+            issueInputBuilder.setFieldValue("environment",issueFields.getEnvironment());
+        }
+
+        if(issueFields.labels() != null) {
+
+            List<String> labels = new ArrayList<>();
+            issueFields.labels().stream().forEach(label -> {
+                labels.add(label.trim());
+            });
+            issueInputBuilder.setFieldValue("labels",labels);
+        }
+
+
+        if(issueFields.customFields() != null) {
+            for(Long custId : issueFields.customFields().keySet()) {
+                String[] values = issueFields.customFields().get(custId);
+                Map<String, Object> valueMap = new HashMap<>();
+                valueMap.put("values", values);
+                FieldInput parentField = new FieldInput(String.valueOf(custId), new ComplexIssueInputFieldValue(valueMap));
+                issueInputBuilder.setFieldInput(parentField);
+            }
+        }
+
+        if(issueFields.versions() != null) {
+            List<String> affectVersions = issueFields.versions().stream().map(ResourceId::id).collect(Collectors.toList());
+            if(affectVersions != null && affectVersions.size() > 0) {
+                List<String> versionList = new ArrayList<>();
+                project.getVersions().forEach(version -> {
+                    if(affectVersions.contains(String.valueOf(version.getId()))) {
+                        versionList.add(version.getName());
+                    }
+                });
+                issueInputBuilder.setAffectedVersionsNames(versionList);
+            }
+        }
 
         if(issueFields.fixVersions() != null) {
             List<String> fixVersions = issueFields.fixVersions().stream().map(ResourceId::id).collect(Collectors.toList());
@@ -137,6 +179,23 @@ public class IssueController {
                 issueInputBuilder.setFixVersionsNames(versionList);
             }
         }
+
+        if(issueFields.getWorklog() != null) {
+            issueInputBuilder.setFieldValue("worklog",issueFields.getWorklog());
+        }
+
+        if(issueFields.getTimetracking() != null) {
+            Map<String, Object> timeTracking = new HashMap<>();
+            timeTracking.put("originalEstimate", issueFields.getTimetracking().getOriginalEstimate());
+            issueInputBuilder.setFieldValue("timetracking",new ComplexIssueInputFieldValue(timeTracking));
+        }
+
+        if(issueFields.getDuedate() != null) {
+            DateTimeFormatter inFormatter = DateTimeFormat.forPattern("d/MMM/yy");
+            DateTime dateTime = inFormatter.parseDateTime(issueFields.getDuedate());
+            issueInputBuilder.setDueDate(dateTime.toDateTime(DateTimeZone.UTC));
+        }
+
         ResourceId parentId = issueFields.parent();
         if(parentId != null) {
             Issue issue = issueService.getIssueObject(parentId.id());
