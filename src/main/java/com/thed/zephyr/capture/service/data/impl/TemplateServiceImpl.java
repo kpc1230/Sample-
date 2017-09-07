@@ -138,8 +138,7 @@ public class TemplateServiceImpl implements TemplateService {
 			Map<String, CaptureUser> userMap = getUserMap(templatePage.getContent());
 			templatePage.getContent().forEach(template -> {
 				CaptureUser user = userMap.get(template.getCreatedBy());
-				List<Variable> variables = getUserVariables(template.getCreatedBy());
-				returnList.add(TemplateBuilder.createTemplateRequest(template, project, user, variables));
+				returnList.add(TemplateBuilder.createTemplateRequest(template, project, user));
 			});
 			return new TemplateSearchList(returnList, offset, limit, templatePage.getTotalElements());
 		}
@@ -158,9 +157,8 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	private TemplateRequest createTemplateRequest(Template created) {
-		List<Variable> variables = getUserVariables(created.getCreatedBy());
 		return TemplateBuilder.createTemplateRequest(created, getProject(created.getProjectId())
-				, userService.findUser(created.getCreatedBy()), variables);
+				, userService.findUser(created.getCreatedBy()));
 	}
 
 	protected Set<String> getVariables(JsonNode json){

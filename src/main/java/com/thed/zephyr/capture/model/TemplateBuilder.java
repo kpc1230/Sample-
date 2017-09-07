@@ -41,7 +41,6 @@ public final class TemplateBuilder {
 		if(templateRequest.getFavourited()){
 			template.setTimeFavourited(created);
 		}
-		template.setVariables(variables);
 		template.setTimeUpdated(created);
 		return template;
 	}
@@ -68,7 +67,6 @@ public final class TemplateBuilder {
 		if(!template.getFavourite() && newTR.getFavourited()){
 			templateRequest.setTimeFavourited(new DateTime());
 		}
-		template.setVariables(variables);
 		template.setTimeUpdated(new DateTime());
 		return template;
 	}
@@ -128,7 +126,7 @@ public final class TemplateBuilder {
 	 * @param project
 	 * @return
 	 */
-	public static TemplateRequest createTemplateRequest(Template template, Project project, CaptureUser user, List<Variable> variables) {
+	public static TemplateRequest createTemplateRequest(Template template, Project project, CaptureUser user) {
 		TemplateRequest request = createTemplateRequest(template);
 		if(project != null){
 			request.setProjectKey(project.getKey());
@@ -139,14 +137,7 @@ public final class TemplateBuilder {
 			request.setOwnerName(project.getLead().getName());
 			request.setOwnerDisplayName(project.getLead().getDisplayName());
 		}
-		Map<String, Variable> userVariables = variables.stream().collect(Collectors.toMap(variable -> variable.getName(), variable -> variable));
-		//If template has variables, for all the variables use Varaible object
-		if(template.getVariables() != null && template.getVariables().size() > 0){
-			template.getVariables().forEach(
-					v -> request.getVariables().add(userVariables.get(v.toLowerCase()))
-					);
-		}
-		request.setVariables(variables);
+
 		return request;
 	}
 }
