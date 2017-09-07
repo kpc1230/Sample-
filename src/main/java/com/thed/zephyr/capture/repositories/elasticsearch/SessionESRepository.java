@@ -13,4 +13,6 @@ import org.springframework.stereotype.Repository;
 public interface SessionESRepository extends ElasticsearchRepository<Session, String> {
 
     Page<Session> findByCtIdAndProjectIdAndIssueRaisedIds(String ctId, Long projectId, Long raisedIssueId, Pageable pageable);
+
+    Page<Session> findByCtIdAndProjectIdAndRelatedIssueIds(String ctId, Long projectId, Long relatedIssueId, Pageable pageable);
 }

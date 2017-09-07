@@ -216,5 +216,7 @@ public interface SessionService {
 	Set<String> fetchAllAssignees();
 
 	SessionSearchList getSessionByRaisedIssueId(String ctId, Long projectId, Long raisedIssueId);
+
+	SessionSearchList getSessionByRelatedIssueId(String ctId, Long projectId, Long relatedIssueId);
 }
 

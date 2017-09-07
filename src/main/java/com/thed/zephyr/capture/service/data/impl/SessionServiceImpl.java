@@ -371,7 +371,18 @@ public class SessionServiceImpl implements SessionService {
 
 		return result;
 	}
-	
+
+	@Override
+	public SessionSearchList getSessionByRelatedIssueId(String ctId, Long projectId, Long relatedIssueId) {
+		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(ctId, projectId, relatedIssueId, CaptureUtil.getPageRequest(0, 1000));
+		List<Session> content = sessions != null?sessions.getContent():new ArrayList<>();
+		SessionSearchList result = new SessionSearchList();
+		result.setContent(content);
+		result.setTotal(content.size());
+
+		return result;
+	}
+
 	/**
 	 * Add user as participant to the request session.
 	 * 
