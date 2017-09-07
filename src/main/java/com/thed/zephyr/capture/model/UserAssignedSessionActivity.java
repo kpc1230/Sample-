@@ -2,6 +2,8 @@ package com.thed.zephyr.capture.model;
 
 import org.joda.time.DateTime;
 
+import java.util.Date;
+
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
@@ -12,7 +14,7 @@ public class UserAssignedSessionActivity extends SessionActivity {
     public UserAssignedSessionActivity() {
     }
 
-    public UserAssignedSessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId, String assignee) {
+    public UserAssignedSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, String assignee) {
         super(sessionId, ctId, timestamp, user, projectId);
         this.assignee = assignee;
     }

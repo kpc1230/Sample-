@@ -1,14 +1,15 @@
 package com.thed.zephyr.capture.model;
 
-import org.joda.time.DateTime;
+
+import java.util.Date;
 
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
 public class ParticipantBuilder {
     private String user;
-    private DateTime timeJoined;
-    private DateTime timeLeft;
+    private Date timeJoined;
+    private Date timeLeft;
 
     public ParticipantBuilder(String user) {
      //   this.user = notNull("user", user);
@@ -26,12 +27,12 @@ public class ParticipantBuilder {
         return this;
     }
 
-    public ParticipantBuilder setTimeJoined(DateTime timeJoined) {
+    public ParticipantBuilder setTimeJoined(Date timeJoined) {
         this.timeJoined = timeJoined;
         return this;
     }
 
-    public ParticipantBuilder setTimeLeft(DateTime timeLeft) {
+    public ParticipantBuilder setTimeLeft(Date timeLeft) {
         this.timeLeft = timeLeft;
         return this;
     }

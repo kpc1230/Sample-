@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.model;
 
 import org.joda.time.DateTime;
 
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -32,7 +33,7 @@ public class FatNote {
         return note.getSessionId();
     }
 
-    public DateTime getCreatedTime() {
+    public Date getCreatedTime() {
         return note.getCreatedTime();
     }
 

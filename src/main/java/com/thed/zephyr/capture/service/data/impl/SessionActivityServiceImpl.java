@@ -14,10 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by Masud on 8/25/17.
@@ -31,7 +28,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     private TagService tagService;
 
     @Override
-    public SessionActivity setStatus(Session session, DateTime timestamp, String user) {
+    public SessionActivity setStatus(Session session, Date timestamp, String user) {
         if (session.getStatus() != null) {
             boolean firstStarted = (session.getStatus()
                     == Session.Status.CREATED && session.getStatus()
@@ -53,7 +50,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
 
     @Override
-    public SessionActivity addParticipantJoined(Session session, DateTime timestamp, Participant participant, String user) {
+    public SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user) {
         boolean currentlyParticipating = false;
         if(!Objects.isNull(session.getParticipants())) {
         	for (Iterator<Participant> iterator = session.getParticipants().iterator(); iterator.hasNext(); ) {
@@ -74,7 +71,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
 
     @Override
-    public SessionActivity addParticipantLeft(Session session, DateTime timestamp, String user) {
+    public SessionActivity addParticipantLeft(Session session, Date timestamp, String user) {
     	if(!Objects.isNull(session.getParticipants())) {
     		for (Iterator<Participant> iterator = session.getParticipants().iterator(); iterator.hasNext(); ) {
                 Participant participant1 = iterator.next();
@@ -93,7 +90,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
 
     @Override
-    public SessionActivity addRaisedIssue(Session session, Issue issue, DateTime timeRaised, String creator) {
+    public SessionActivity addRaisedIssue(Session session, Issue issue, Date timeRaised, String creator) {
 
         IssueRaisedSessionActivity sessionActivity =
                 new IssueRaisedSessionActivity(
@@ -105,7 +102,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
 
     @Override
-    public SessionActivity removeRaisedIssue(Session session, Issue issue, DateTime timeRaised, String creator) {
+    public SessionActivity removeRaisedIssue(Session session, Issue issue, Date timeRaised, String creator) {
 
         IssueUnraisedSessionActivity sessionActivity =
                 new IssueUnraisedSessionActivity(session.getId(),
@@ -116,7 +113,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
 
     @Override
-    public SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, DateTime creationDate, String author) {
+    public SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author) {
         SessionActivity sessionActivity =
                 new IssueAttachmentSessionActivity(session.getId(), session.getCtId(), creationDate, author, session.getProjectId(), issue.getId(), attachment);
         sessionActivityRepository.save(sessionActivity);
@@ -135,7 +132,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
     
     @Override
-    public SessionActivity addAssignee(Session session, DateTime assignedTime, String assigner, String assignee) {
+    public SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignee) {
     	if(!assigner.equals(assignee)) {
     		UserAssignedSessionActivity sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, assigner, session.getProjectId(), assignee);
             sessionActivityRepository.save(sessionActivity);

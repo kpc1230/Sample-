@@ -6,6 +6,7 @@ import com.thed.zephyr.capture.model.jira.Attachment;
 import org.joda.time.DateTime;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -13,19 +14,19 @@ import java.util.List;
  */
 public interface SessionActivityService {
 
-    SessionActivity setStatus(Session session, DateTime timestamp, String user);
+    SessionActivity setStatus(Session session, Date timestamp, String user);
 
-    SessionActivity addParticipantJoined(Session session, DateTime timestamp, Participant participant, String user);
+    SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user);
 
-    SessionActivity addParticipantLeft(Session session, DateTime timestamp, String user);
+    SessionActivity addParticipantLeft(Session session, Date timestamp, String user);
 
    // Boolean deleteNote(String noteSessionActivityId);
 
-    SessionActivity addRaisedIssue(Session session, Issue issue, DateTime timeRaised, String creator);
+    SessionActivity addRaisedIssue(Session session, Issue issue, Date timeRaised, String creator);
 
-    SessionActivity removeRaisedIssue(Session session, Issue issue, DateTime timeRaised, String creator);
+    SessionActivity removeRaisedIssue(Session session, Issue issue, Date timeRaised, String creator);
 
-    SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, DateTime creationDate, String author);
+    SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author);
 
     SessionActivity createSessionActivity(SessionActivity sessionActivity);
     
@@ -40,5 +41,5 @@ public interface SessionActivityService {
      * @param assignee -- User to which session is assigned.
      * @return -- Returns the saved session activity object.
      */
-    SessionActivity addAssignee(Session session, DateTime assignedTime, String assigner, String assignee);
+    SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignee);
 }

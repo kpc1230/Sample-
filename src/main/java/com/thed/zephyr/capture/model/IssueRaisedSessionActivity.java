@@ -4,6 +4,8 @@ import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.joda.time.DateTime;
 
+import java.util.Date;
+
 /**
  * Created by aliakseimatsarski on 8/16/17.
  */
@@ -14,7 +16,7 @@ public class IssueRaisedSessionActivity extends SessionActivity {
     public IssueRaisedSessionActivity() {
     }
 
-    public IssueRaisedSessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId, Long issueId) {
+    public IssueRaisedSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, Long issueId) {
         super(sessionId, ctId, timestamp, user, projectId);
         this.issueId = issueId;
     }

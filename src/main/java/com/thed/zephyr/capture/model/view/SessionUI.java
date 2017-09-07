@@ -8,6 +8,7 @@ import org.joda.time.DateTime;
 import com.atlassian.jira.rest.client.api.domain.Project;
 
 import java.time.Duration;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -129,7 +130,7 @@ public class SessionUI {
         return session.getTimeLogged();
     }
 
-    public DateTime getTimeStarted() {
+    public Date getTimeStarted() {
         return session.getTimeCreated();
     }
 

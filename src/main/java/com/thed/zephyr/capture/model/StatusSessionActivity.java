@@ -5,6 +5,8 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.thed.zephyr.capture.service.db.converter.SessionStatusTypeConverter;
 import org.joda.time.DateTime;
 
+import java.util.Date;
+
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
@@ -18,7 +20,7 @@ public class StatusSessionActivity extends SessionActivity {
     public StatusSessionActivity() {
     }
 
-    public StatusSessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId, Session.Status status, boolean firstStarted) {
+    public StatusSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, Session.Status status, boolean firstStarted) {
         super(sessionId, ctId, timestamp, user, projectId);
         this.status = status;
         this.firstStarted = firstStarted;

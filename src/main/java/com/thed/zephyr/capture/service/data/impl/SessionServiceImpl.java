@@ -23,6 +23,7 @@ import com.thed.zephyr.capture.model.view.SessionUI;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
 import com.thed.zephyr.capture.predicates.UserIsParticipantPredicate;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionRepository;
+import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
@@ -53,37 +54,31 @@ import java.util.concurrent.ExecutionException;
  */
 @Service
 public class SessionServiceImpl implements SessionService {
-	
-	@Autowired
-    private Logger log;
-	
-	@Autowired
-	private SessionRepository sessionRepository;
-	
-	@Autowired
-	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
-	
-	@Autowired
-	private IssueService issueService;
 
-	@Autowired
-	private ITenantAwareCache iTenantAwareCache;
-	
 	private static final String USER_KEY = "USER_KEY_";
-	
+
 	private static final String TENANT_KEY = "TENANT_KEY_";
 	
 	@Autowired
+    private Logger log;
+	@Autowired
+	private SessionRepository sessionRepository;
+	@Autowired
+	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+	@Autowired
+	private IssueService issueService;
+	@Autowired
+	private ITenantAwareCache iTenantAwareCache;
+	@Autowired
     private DynamicProperty dynamicProperty;
-	
 	@Autowired
 	private SessionActivityService sessionActivityService;
-	
 	@Autowired
 	private ProjectService projectService;
-
 	@Autowired
 	private CaptureI18NMessageSource i18n;
+	@Autowired
+	private SessionESRepository sessionESRepository;
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -99,7 +94,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setCtId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository));
 		session.setStatus(Status.CREATED);
 		session.setName(sessionRequest.getName());
-		session.setTimeCreated(new DateTime());
+		session.setTimeCreated(new Date());
 		session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
 		session.setShared(sessionRequest.getShared());
 		session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
@@ -269,6 +264,113 @@ public class SessionServiceImpl implements SessionService {
         }        
         return new CompleteSessionResult(loggedUserKey, errorCollection, updateResult, millisecondsSpent, timeSpentRaw, issuesToLink, logTimeIssue);
 	}
+
+	@Override
+	public SessionExtensionResponse getSessionsForExtension(String user) {
+		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+		List<Session> privateSessionsList = sessionRepository.fetchPrivateSessionsForUser(ctId, user);
+		List<Session> sharedSessionsList = sessionRepository.fetchSharedSessionsForUser(ctId, user);
+		List<LightSession> lightSessionPList = sortAndFetchLightSessions(privateSessionsList, 0, privateSessionsList.size(), new IdSessionComparator(true));
+		List<LightSession> lightSessionSList = sortAndFetchLightSessions(sharedSessionsList, 0, sharedSessionsList.size(), new IdSessionComparator(true));
+		return new SessionExtensionResponse(lightSessionPList, lightSessionSList);
+	}
+
+	@Override
+	public Set<String> fetchAllAssignees() {
+		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+		return sessionRepository.fetchAllAssigneesForCtId(ctId);
+	}
+
+	@Override
+	public LightSessionSearchList searchSession(Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField,
+												boolean sortAscending, int startAt, int size) {
+		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+		List<Session> sessionsList = sessionRepository.searchSessions(ctId, projectId, assignee, status, searchTerm);
+		Comparator<Session> comparator;
+		switch(sortField.orElse("")) {
+			case ApplicationConstants.SORTFIELD_CREATED:
+				comparator = new TimeCreatedSessionComparator(sortAscending);
+				break;
+			case ApplicationConstants.SORTFIELD_STATUS:
+				comparator = new StatusSessionComparator(sortAscending);
+				break;
+			case ApplicationConstants.SORTFIELD_SESSION_NAME:
+				comparator = new SessionNameSessionComparator(sortAscending);
+				break;
+			case ApplicationConstants.SORTFIELD_ASSIGNEE:
+				comparator = new AssigneeSessionComparator(sortAscending);
+				break;
+			case ApplicationConstants.SORTFIELD_SHARED:
+				comparator = new SharedSessionComparator(sortAscending);
+				break;
+			case ApplicationConstants.SORTFIELD_PROJECT:
+				comparator = new ProjectNameSessionComparator(sortAscending, projectService);
+				break;
+			default:
+				comparator = new IdSessionComparator(sortAscending);
+		}
+		List<LightSession> ligthSessionList = sortAndFetchLightSessions(sessionsList, startAt, size, comparator);
+		LightSessionSearchList lightSessionSearchList = new LightSessionSearchList(ligthSessionList, startAt, size, sessionsList.size());
+		return lightSessionSearchList;
+	}
+
+	@Override
+	public List<Status> getSessionStatuses() {
+		return Arrays.asList(Status.values());
+	}
+
+	@Override
+	public SessionUI constructSessionUI(Session session) {
+		SessionUI sessionUI = new SessionUI(session);
+		return sessionUI;
+	}
+
+	@Override
+	public Map<String, Object> getCompleteSessionView(Session session) {
+		Map<String, Object> map = new HashMap<>();
+		map.put(ApplicationConstants.SESSION,session);
+		map.put(ApplicationConstants.RAISED_ISSUE,
+				issueService.getCaptureIssuesByIds((List<Long>) session.getIssueRaisedIds()));
+		map.put(ApplicationConstants.RELATED_ISSUE,
+				issueService.getCaptureIssuesByIds((List<Long>) session.getRelatedIssueIds()));
+		map.put(ApplicationConstants.SESSION_ACTIVITIES,
+				sessionActivityService.getAllSessionActivityBySession(session.getId(),
+						CaptureUtil.getPageRequest(0,ApplicationConstants.DEFAULT_RESULT_SIZE)
+				));
+		return map;
+	}
+
+	@Override
+	public UpdateResult assignSession(String loggedUserKey, Session session, String assignee) {
+		if (Status.STARTED.equals(session.getStatus())) { //If the session that is to be assigned is started, then pause it.
+			DeactivateResult pauseResult = validateDeactivateSession(session, session.getAssignee()); //Pause for current user
+			if (!pauseResult.isValid()) {
+				return new UpdateResult(pauseResult.getErrorCollection(), pauseResult.getSession());
+			}
+			if(!loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
+				session.setAssignee(assignee);
+			}
+			pauseResult = new DeactivateResult(pauseResult, session);
+			UpdateResult result = new UpdateResult(validateUpdate(loggedUserKey, session), pauseResult, null, false, true);
+			return result;
+		}
+		if(!loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
+			session.setAssignee(assignee);
+		}
+		UpdateResult result = validateUpdate(loggedUserKey, session);
+		return result;
+	}
+
+	@Override
+	public SessionSearchList getSessionByRaisedIssueId(String ctId, Long projectId, Long raisedIssueId) {
+		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndIssueRaisedIds(ctId, projectId, raisedIssueId, CaptureUtil.getPageRequest(0, 1000));
+		List<Session> content = sessions != null?sessions.getContent():new ArrayList<>();
+		SessionSearchList result = new SessionSearchList();
+		result.setContent(content);
+		result.setTotal(content.size());
+
+		return result;
+	}
 	
 	/**
 	 * Add user as participant to the request session.
@@ -277,7 +379,7 @@ public class SessionServiceImpl implements SessionService {
 	 * @param session -- Request session by the user to join.
 	 */
 	private void addParticipantToSession(String user, Session session) {
-		Participant newParticipant = new ParticipantBuilder(user).setTimeJoined(new DateTime()).build();
+		Participant newParticipant = new ParticipantBuilder(user).setTimeJoined(new Date()).build();
         if(!Objects.isNull(session.getParticipants())) {
         	session.getParticipants().add(newParticipant);
         } else {
@@ -380,7 +482,7 @@ public class SessionServiceImpl implements SessionService {
                 List<String> leavingUsers = new ArrayList<>();
                 if(!Objects.isNull(session.getParticipants())) {
                 	for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) {
-                    	sessionActivityService.addParticipantLeft(session, new DateTime(), p.getUser());
+                    	sessionActivityService.addParticipantLeft(session, new Date(), p.getUser());
                         leavingUsers.add(p.getUser());
                     }
                 }
@@ -392,7 +494,7 @@ public class SessionServiceImpl implements SessionService {
                 session.setTimeLogged(timeLogged);
                 return new DeactivateResult(validateUpdate(user, session), leavingUsers);
             } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user))) { // Just leave if it isn't
-                sessionActivityService.addParticipantLeft(session, new DateTime(), user);
+                sessionActivityService.addParticipantLeft(session, new Date(), user);
             }
         }
         return new DeactivateResult(validateUpdate(user, session), user);
@@ -508,7 +610,7 @@ public class SessionServiceImpl implements SessionService {
             }
             if (!newSession.getStatus().equals(loadedSession.getStatus()) && Status.COMPLETED.equals(newSession.getStatus())) { // If we just completed the session, we want to update the time finished
                 if (newSession.getTimeFinished() == null) {
-                	newSession.setTimeFinished(new DateTime());
+                	newSession.setTimeFinished(new Date());
                 } else {
                     errorCollection.addError(i18n.getMessage("session.change.timefinished.violation"));
                 }
@@ -526,7 +628,7 @@ public class SessionServiceImpl implements SessionService {
         if (!newSession.isShared()) { // If we aren't shared, we wanna kick out all the current users
         	if(!Objects.isNull(newSession.getParticipants())) {
             	for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-                    sessionActivityService.addParticipantLeft(newSession, new DateTime(), p.getUser());
+                    sessionActivityService.addParticipantLeft(newSession, new Date(), p.getUser());
                     leavers.add(p.getUser());
                 }
             }
@@ -761,42 +863,9 @@ public class SessionServiceImpl implements SessionService {
         }		
 	}
 
-	@Override
-	public LightSessionSearchList searchSession(Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField,
-			boolean sortAscending, int startAt, int size) {
-		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		List<Session> sessionsList = sessionRepository.searchSessions(ctId, projectId, assignee, status, searchTerm);
-		Comparator<Session> comparator;
-		switch(sortField.orElse("")) {
-			case ApplicationConstants.SORTFIELD_CREATED:
-				comparator = new TimeCreatedSessionComparator(sortAscending);
-				break;
-			case ApplicationConstants.SORTFIELD_STATUS:
-				comparator = new StatusSessionComparator(sortAscending);
-				break;
-			case ApplicationConstants.SORTFIELD_SESSION_NAME:
-				comparator = new SessionNameSessionComparator(sortAscending);
-				break;
-			case ApplicationConstants.SORTFIELD_ASSIGNEE:
-				comparator = new AssigneeSessionComparator(sortAscending);
-				break;
-			case ApplicationConstants.SORTFIELD_SHARED:
-				comparator = new SharedSessionComparator(sortAscending);
-				break;
-			case ApplicationConstants.SORTFIELD_PROJECT:
-				comparator = new ProjectNameSessionComparator(sortAscending, projectService);
-				break;
-			default:
-				comparator = new IdSessionComparator(sortAscending);
-		}
-		List<LightSession> ligthSessionList = sortAndFetchLightSessions(sessionsList, startAt, size, comparator);
-		LightSessionSearchList lightSessionSearchList = new LightSessionSearchList(ligthSessionList, startAt, size, sessionsList.size());
-		return lightSessionSearchList;
-	}
-	
 	/**
 	 * Sorts the sessions list and returns list of light session object based on startAt and size parameters.
-	 * 
+	 *
 	 * @param sessionsList -- List of sessions fetched from database.
 	 * @param startAt -- Start position
 	 * @param size -- Number of elements to fetch.
@@ -809,94 +878,31 @@ public class SessionServiceImpl implements SessionService {
 		LightSession lightSession = null;
 		Collections.sort(sessionsList, comparator); //Sort the sessions using the comparator.
 		final int actualSize = getActualSize(sessionsList.size(), startAt, size);
-        for (int i = startAt; i < startAt + actualSize; i++) {
-            Session session = sessionsList.get(i);
-            if(!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
-            	CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
-            	projectsMap.put(session.getProjectId(), project);
-            }            
-            lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-            		projectsMap.get(session.getProjectId()), session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
-            lighSessionsList.add(lightSession);
-        }
+		for (int i = startAt; i < startAt + actualSize; i++) {
+			Session session = sessionsList.get(i);
+			if(!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
+				CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
+				projectsMap.put(session.getProjectId(), project);
+			}
+			lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
+					projectsMap.get(session.getProjectId()), session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
+			lighSessionsList.add(lightSession);
+		}
 		return lighSessionsList;
 	}
-	
+
 	/**
 	 * Calculates the actual size from the passed parameters.
-	 * 
+	 *
 	 * @param maxSize -- Number of elements returned from the db.
 	 * @param startIndex -- Start position.
 	 * @param size -- Number of elements to fetch.
 	 * @return -- Returns the actual size.
 	 */
 	private int getActualSize(final int maxSize, final int startIndex, final int size) {
-        if (startIndex + size > maxSize - 1) {
-            return Math.max(maxSize - startIndex, 0);
-        }
-        return size;
-    }
-	
-	@Override
-	public List<Status> getSessionStatuses() {
-		return Arrays.asList(Status.values());
-	}
-
-	@Override
-	public SessionUI constructSessionUI(Session session) {
-		SessionUI sessionUI = new SessionUI(session);
-		return sessionUI;
-	}
-
-	@Override
-	public Map<String, Object> getCompleteSessionView(Session session) {
-		Map<String, Object> map = new HashMap<>();
-		map.put(ApplicationConstants.SESSION,session);
-		map.put(ApplicationConstants.RAISED_ISSUE,
-				issueService.getCaptureIssuesByIds((List<Long>) session.getIssueRaisedIds()));
-		map.put(ApplicationConstants.RELATED_ISSUE,
-				issueService.getCaptureIssuesByIds((List<Long>) session.getRelatedIssueIds()));
-		map.put(ApplicationConstants.SESSION_ACTIVITIES,
-				sessionActivityService.getAllSessionActivityBySession(session.getId(),
-						CaptureUtil.getPageRequest(0,ApplicationConstants.DEFAULT_RESULT_SIZE)
-				));
-		return map;
-	}
-
-	@Override
-	public UpdateResult assignSession(String loggedUserKey, Session session, String assignee) {
-		if (Status.STARTED.equals(session.getStatus())) { //If the session that is to be assigned is started, then pause it.
-			DeactivateResult pauseResult = validateDeactivateSession(session, session.getAssignee()); //Pause for current user
-			if (!pauseResult.isValid()) {
-                return new UpdateResult(pauseResult.getErrorCollection(), pauseResult.getSession());
-            }
-			if(!loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
-				session.setAssignee(assignee);
-			}
-			pauseResult = new DeactivateResult(pauseResult, session);
-			 UpdateResult result = new UpdateResult(validateUpdate(loggedUserKey, session), pauseResult, null, false, true);
-             return result;
+		if (startIndex + size > maxSize - 1) {
+			return Math.max(maxSize - startIndex, 0);
 		}
-		if(!loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
-			session.setAssignee(assignee);
-		}
-		UpdateResult result = validateUpdate(loggedUserKey, session);
-		return result;
-	}
-
-	@Override
-	public SessionExtensionResponse getSessionsForExtension(String user) {
-		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		List<Session> privateSessionsList = sessionRepository.fetchPrivateSessionsForUser(ctId, user);
-		List<Session> sharedSessionsList = sessionRepository.fetchSharedSessionsForUser(ctId, user);
-		List<LightSession> lightSessionPList = sortAndFetchLightSessions(privateSessionsList, 0, privateSessionsList.size(), new IdSessionComparator(true));
-		List<LightSession> lightSessionSList = sortAndFetchLightSessions(sharedSessionsList, 0, sharedSessionsList.size(), new IdSessionComparator(true));
-		return new SessionExtensionResponse(lightSessionPList, lightSessionSList);
-	}
-
-	@Override
-	public Set<String> fetchAllAssignees() {
-		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		return sessionRepository.fetchAllAssigneesForCtId(ctId);
+		return size;
 	}
 }

@@ -32,8 +32,8 @@ public class TimeCreatedSessionComparator implements Comparator<Session> {
         if (Objects.isNull(second)) {
             return ascending ? 1 : -1;
         }
-        Long firstCreated = first.getTimeCreated().getMillis();
-        Long secondCreated = second.getTimeCreated().getMillis();
+        Long firstCreated = first.getTimeCreated().getTime();
+        Long secondCreated = second.getTimeCreated().getTime();
         
         if (Objects.isNull(firstCreated) && Objects.isNull(secondCreated)) {
             return 0;

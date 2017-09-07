@@ -4,6 +4,7 @@ package com.thed.zephyr.capture.model;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import org.joda.time.DateTime;
 
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -19,7 +20,7 @@ public class LightSession {
     private final CaptureProject project;
     private final String defaultTemplateId;
     private final String additionalInfo;
-    private DateTime timeCreated;
+    private Date timeCreated;
     private final Map<String, Object> rawData;
 
     public LightSession(String id,
@@ -31,7 +32,7 @@ public class LightSession {
                         CaptureProject project,
                         String defaultTemplateId,
                         String additionalInfo,
-                        DateTime timeCreated,
+                        Date timeCreated,
                         Map<String, Object> rawData) {
         this.id = id;
         this.name = name;
@@ -86,11 +87,11 @@ public class LightSession {
         return creator;
     }
 
-	public DateTime getTimeCreated() {
+	public Date getTimeCreated() {
 		return timeCreated;
 	}
 
-	public void setTimeCreated(DateTime timeCreated) {
+	public void setTimeCreated(Date timeCreated) {
 		this.timeCreated = timeCreated;
 	}
 }

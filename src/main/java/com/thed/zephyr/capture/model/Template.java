@@ -3,7 +3,7 @@ package com.thed.zephyr.capture.model;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.thed.zephyr.capture.service.db.converter.DateTimeTypeConverter;
+import com.thed.zephyr.capture.service.db.converter.DateTypeConverter;
 import com.thed.zephyr.capture.service.db.converter.JsonNodeTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 
@@ -38,11 +38,11 @@ public class Template {
     private JsonNode content;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_CREATED_BY)
     private String createdBy;
-    @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
+    @DynamoDBTypeConverted(converter = DateTypeConverter.class)
     private DateTime timeCreated;
-    @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
+    @DynamoDBTypeConverted(converter = DateTypeConverter.class)
     private DateTime timeUpdated;
-    @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
+    @DynamoDBTypeConverted(converter = DateTypeConverter.class)
     private DateTime timeFavourited;
 
     public Template() {

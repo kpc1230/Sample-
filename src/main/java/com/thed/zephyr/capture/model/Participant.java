@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.joda.time.DateTime;
 
+import java.util.Date;
+
 
 /**
  * Created by aliakseimatsarski on 8/15/17.
@@ -11,13 +13,13 @@ import org.joda.time.DateTime;
 public class Participant  implements Comparable<Participant>{
 
     private String user;
-    private DateTime timeJoined;
-    private DateTime timeLeft;
+    private Date timeJoined;
+    private Date timeLeft;
 
     public Participant() {
     }
 
-    public Participant(String user, DateTime timeJoined, DateTime timeLeft) {
+    public Participant(String user, Date timeJoined, Date timeLeft) {
      //   this.user = notNull("user", user);
      //   this.timeJoined = notNull("timeJoined", timeJoined);
         this.user = user;
@@ -29,14 +31,14 @@ public class Participant  implements Comparable<Participant>{
         return user;
     }
 
-    public DateTime getTimeJoined() {
+    public Date getTimeJoined() {
         return timeJoined;
     }
 
     /**
      * @return the time they left a session or null if they have not yet left
      */
-    public DateTime getTimeLeft() {
+    public Date getTimeLeft() {
         return timeLeft;
     }
 
@@ -48,11 +50,11 @@ public class Participant  implements Comparable<Participant>{
         this.user = user;
     }
 
-    public void setTimeJoined(DateTime timeJoined) {
+    public void setTimeJoined(Date timeJoined) {
         this.timeJoined = timeJoined;
     }
 
-    public void setTimeLeft(DateTime timeLeft) {
+    public void setTimeLeft(Date timeLeft) {
         this.timeLeft = timeLeft;
     }
 

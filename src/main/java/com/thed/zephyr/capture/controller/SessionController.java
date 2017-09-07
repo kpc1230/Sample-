@@ -121,7 +121,7 @@ public class SessionController extends CaptureAbstractController{
                 }
 	        	sessionService.update(updateResult); //Updating the session object into database.
 	        	//Save status changed information as activity.
-	        	sessionActivityService.setStatus(createdSession, DateTime.now(), loggedUserKey);
+	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
 	        }
 			log.info("End of createSession()");
 			return ResponseEntity.ok(createdSession);
@@ -223,7 +223,7 @@ public class SessionController extends CaptureAbstractController{
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
-        	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey);
+        	sessionActivityService.setStatus(session, new Date(), loggedUserKey);
         	CaptureProject project = projectService.getCaptureProject(session.getProjectId());
         	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
@@ -255,7 +255,7 @@ public class SessionController extends CaptureAbstractController{
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
-        	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey);
+        	sessionActivityService.setStatus(session, new Date(), loggedUserKey);
         	CaptureProject project = projectService.getCaptureProject(session.getProjectId());
         	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
@@ -275,7 +275,7 @@ public class SessionController extends CaptureAbstractController{
 		try {
 			String loggedUserKey = hostUser.getUserKey().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			DateTime dateTime = DateTime.now();
+			Date dateTime = new Date();
 			Participant participant = new Participant(loggedUserKey, dateTime, null);
 			SessionServiceImpl.UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loadedSession, participant);
 			if (!updateResult.isValid()) {
@@ -330,7 +330,7 @@ public class SessionController extends CaptureAbstractController{
             }
 			Session session = completeSessionResult.getSessionUpdateResult().getSession();
 			//Save status changed information as activity.
-			sessionActivityService.setStatus(session, new DateTime(), loggedUserKey);
+			sessionActivityService.setStatus(session, new Date(), loggedUserKey);
 			sessionService.update(completeSessionResult.getSessionUpdateResult());
 			log.info("End of completeSession()");
 			return ResponseEntity.ok(session);
@@ -489,7 +489,7 @@ public class SessionController extends CaptureAbstractController{
             }
 			sessionService.update(updateResult);
 			//Save assigned user to the session as activity.
-			sessionActivityService.addAssignee(loadedSession, DateTime.now(), loggedUserKey, assignee);
+			sessionActivityService.addAssignee(loadedSession, new Date(), loggedUserKey, assignee);
 			log.info("End of assignSession()");
 			return ResponseEntity.ok(loadedSession);
 		} catch(Exception ex) {

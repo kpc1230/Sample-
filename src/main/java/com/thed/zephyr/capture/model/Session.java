@@ -4,8 +4,8 @@ import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.thed.zephyr.capture.service.db.converter.*;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.DateTime;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -15,6 +15,7 @@ import java.util.*;
 /**
  * Created by aliakseimatsarski on 8/14/17.
  */
+@Document(indexName = "capture", type = "session")
 @DynamoDBTable(tableName = ApplicationConstants.SESSION_TABLE_NAME)
 public class Session  implements Comparable<Session>, Serializable{
 
@@ -30,18 +31,18 @@ public class Session  implements Comparable<Session>, Serializable{
     private String additionalInfo;
     @DynamoDBTypeConverted(converter = SessionStatusTypeConverter.class)
     private Status status;
-    @DynamoDBTypeConverted(converter = LongCollectionConverter.class)
-    private Collection<Long> relatedIssueIds;
+    //@DynamoDBTypeConverted(converter = LongCollectionConverter.class)
+    private Set<Long> relatedIssueIds;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_PROJECT_ID)
     private Long projectId;
-    @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
-    private DateTime timeCreated;
-    @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
-    private DateTime timeFinished;
+    @DynamoDBTypeConverted(converter = DateTypeConverter.class)
+    private Date timeCreated;
+    @DynamoDBTypeConverted(converter = DateTypeConverter.class)
+    private Date timeFinished;
     @DynamoDBTypeConverted(converter = DurationTypeConverter.class)
     private Duration timeLogged;
-    @DynamoDBTypeConverted(converter = LongCollectionConverter.class)
-    private Collection<Long> issueRaisedIds;
+    //@DynamoDBTypeConverted(converter = LongCollectionConverter.class)
+    private Set<Long> issueRaisedIds;
     @DynamoDBIgnore
     private Collection<SessionActivity> sessionActivity;
     private boolean shared;
@@ -52,7 +53,7 @@ public class Session  implements Comparable<Session>, Serializable{
     public Session() {
     }
 
-    public Session(String id, String ctId, String creator, String assignee, String name, String additionalInfo, Status status, Collection<Long> relatedIssueIds, Long projectId, DateTime timeCreated, DateTime timeFinished, Duration timeLogged, Collection<Long> issueRaisedIds, Collection<SessionActivity> sessionActivity, boolean shared, Collection<Participant> participants, String defaultTemplateId) {
+    public Session(String id, String ctId, String creator, String assignee, String name, String additionalInfo, Status status, Set<Long> relatedIssueIds, Long projectId, Date timeCreated, Date timeFinished, Duration timeLogged, Set<Long> issueRaisedIds, Collection<SessionActivity> sessionActivity, boolean shared, Collection<Participant> participants, String defaultTemplateId) {
         this.id = id;
         this.ctId = ctId;
         this.creator = creator;
@@ -128,11 +129,11 @@ public class Session  implements Comparable<Session>, Serializable{
         this.status = status;
     }
 
-    public Collection<Long> getRelatedIssueIds() {
+    public Set<Long> getRelatedIssueIds() {
         return relatedIssueIds;
     }
 
-    public void setRelatedIssueIds(Collection<Long> relatedIssueIds) {
+    public void setRelatedIssueIds(Set<Long> relatedIssueIds) {
         this.relatedIssueIds = relatedIssueIds;
     }
 
@@ -144,19 +145,19 @@ public class Session  implements Comparable<Session>, Serializable{
         this.projectId = projectId;
     }
 
-    public DateTime getTimeCreated() {
+    public Date getTimeCreated() {
         return timeCreated;
     }
 
-    public void setTimeCreated(DateTime timeCreated) {
+    public void setTimeCreated(Date timeCreated) {
         this.timeCreated = timeCreated;
     }
 
-    public DateTime getTimeFinished() {
+    public Date getTimeFinished() {
         return timeFinished;
     }
 
-    public void setTimeFinished(DateTime timeFinished) {
+    public void setTimeFinished(Date timeFinished) {
         this.timeFinished = timeFinished;
     }
 
@@ -168,11 +169,11 @@ public class Session  implements Comparable<Session>, Serializable{
         this.timeLogged = timeLogged;
     }
 
-    public Collection<Long> getIssueRaisedIds() {
+    public Set<Long> getIssueRaisedIds() {
         return issueRaisedIds;
     }
 
-    public void setIssueRaisedIds(Collection<Long> issueRaisedIds) {
+    public void setIssueRaisedIds(Set<Long> issueRaisedIds) {
         this.issueRaisedIds = issueRaisedIds;
     }
 

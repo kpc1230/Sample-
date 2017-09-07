@@ -96,7 +96,7 @@ public class IssueController {
         if(StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {
-                sessionActivityService.addRaisedIssue(session,issue,issue.getCreationDate(),host.getUserKey().get());
+                sessionActivityService.addRaisedIssue(session, issue, new Date(issue.getCreationDate().getMillis()),host.getUserKey().get());
             }
         }
         return new ResponseEntity<>(captureIssue, HttpStatus.OK);

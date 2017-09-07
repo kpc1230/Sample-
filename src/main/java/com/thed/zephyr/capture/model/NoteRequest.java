@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.model;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,7 +15,7 @@ final public class NoteRequest {
     private String id;
     private String ctId;
     private String sessionId;
-    private DateTime createdTime;
+    private Date createdTime;
     private String author;
 
     /**
@@ -57,7 +58,7 @@ final public class NoteRequest {
     	}
     }
 
-    public NoteRequest(String id, String ctId, String sessionId, DateTime createdTime, String author,
+    public NoteRequest(String id, String ctId, String sessionId, Date createdTime, String author,
 			String rawNoteData, String resolutionState, Long projectId, List<Tag> tags) {
 		super();
 		this.id = id;
@@ -156,11 +157,11 @@ final public class NoteRequest {
         this.sessionId = sessionId;
     }
 
-    public DateTime getCreatedTime() {
+    public Date getCreatedTime() {
         return createdTime;
     }
 
-    public void setCreatedTime(DateTime createdTime) {
+    public void setCreatedTime(Date createdTime) {
         this.createdTime = createdTime;
     }
 

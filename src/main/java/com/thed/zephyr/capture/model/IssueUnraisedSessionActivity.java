@@ -3,6 +3,8 @@ package com.thed.zephyr.capture.model;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.joda.time.DateTime;
 
+import java.util.Date;
+
 /**
  * Created by aliakseimatsarski on 8/16/17.
  */
@@ -13,7 +15,7 @@ public class IssueUnraisedSessionActivity extends SessionActivity {
     public IssueUnraisedSessionActivity() {
     }
 
-    public IssueUnraisedSessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId, Long issueId) {
+    public IssueUnraisedSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, Long issueId) {
         super(sessionId, ctId, timestamp, user, projectId);
         this.issueId = issueId;
     }

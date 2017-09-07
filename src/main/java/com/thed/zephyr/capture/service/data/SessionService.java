@@ -214,5 +214,7 @@ public interface SessionService {
 	 * @return -- Returns the List of unique assignees for the logged in user tenant id.
 	 */
 	Set<String> fetchAllAssignees();
+
+	SessionSearchList getSessionByRaisedIssueId(String ctId, Long projectId, Long raisedIssueId);
 }
 

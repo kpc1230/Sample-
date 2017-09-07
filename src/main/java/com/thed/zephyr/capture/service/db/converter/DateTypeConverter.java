@@ -1,8 +1,8 @@
 package com.thed.zephyr.capture.service.db.converter;
 
-import org.joda.time.DateTime;
-
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
+
+import java.util.Date;
 
 /**
  * Converts DateTime object into milliseconds while saving into database.
@@ -12,16 +12,16 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
  * @see com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter
  *
  */
-public class DateTimeTypeConverter implements DynamoDBTypeConverter<Long, DateTime>{
+public class DateTypeConverter implements DynamoDBTypeConverter<Long, Date>{
 
 	@Override
-	public Long convert(DateTime dateTime) {
-		return dateTime != null?dateTime.getMillis():null;
+	public Long convert(Date dateTime) {
+		return dateTime != null?dateTime.getTime():null;
 	}
 
 	@Override
-	public DateTime unconvert(Long dateTimeInMillis) {
-		return dateTimeInMillis != null?new DateTime(dateTimeInMillis):null;
+	public Date unconvert(Long dateTimeInMillis) {
+		return dateTimeInMillis != null?new Date(dateTimeInMillis):null;
 	}
 
 

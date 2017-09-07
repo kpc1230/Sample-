@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -27,7 +28,7 @@ final public class Note {
 
     private Long projectId;
 
-    private DateTime createdTime;
+    private Date createdTime;
 
     private String author;
 
@@ -73,11 +74,11 @@ final public class Note {
         this.sessionId = sessionId;
     }
 
-    public DateTime getCreatedTime() {
+    public Date getCreatedTime() {
         return createdTime;
     }
 
-    public void setCreatedTime(DateTime createdTime) {
+    public void setCreatedTime(Date createdTime) {
         this.createdTime = createdTime;
     }
 

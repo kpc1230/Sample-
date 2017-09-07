@@ -49,7 +49,7 @@ public class NoteServiceImpl implements NoteService {
 				new NoteSessionActivity(
 						noteSessionActivityRequest.getId(),
 						noteSessionActivityRequest.getCtId(),
-						new DateTime(),
+						new Date(),
 						noteSessionActivityRequest.getUser(),
 						noteSessionActivityRequest.getProjectId(),
 						noteSessionActivityRequest.getNoteData(),

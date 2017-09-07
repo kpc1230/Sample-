@@ -9,6 +9,10 @@ import java.util.List;
  */
 public class SessionSearchList extends SearchList<Session> {
 
+    public SessionSearchList() {
+        super();
+    }
+
     public SessionSearchList(List<Session> content, int offset, int limit, long total) {
         super(content, offset, limit, total);
     }

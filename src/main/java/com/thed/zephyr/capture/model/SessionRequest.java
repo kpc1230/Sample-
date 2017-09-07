@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.model;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -18,7 +19,7 @@ public class SessionRequest {
 	private String name;
 	@NotNull
 	private String projectKey;
-	private List<String> relatedIssues;
+	private Set<String> relatedIssues;
 	private String assignee;
 	@Size(min = 0, max = 5000)
 	private String additionalInfo;
@@ -27,12 +28,12 @@ public class SessionRequest {
 	private Boolean startNow = false;
 	//Internal use only. Values are set from session validate java.
 	private Long projectId;
-	private List<Long> relatedIssueIds;
+	private Set<Long> relatedIssueIds;
 
 	public SessionRequest() {
 	}
 
-	public SessionRequest(String name, String projectKey, List<String> relatedIssues, String assignee, String additionalInfo, Boolean shared, String defaultTemplateId, Boolean startNow, Long projectId, List<Long> relatedIssueIds) {
+	public SessionRequest(String name, String projectKey, Set<String> relatedIssues, String assignee, String additionalInfo, Boolean shared, String defaultTemplateId, Boolean startNow, Long projectId, Set<Long> relatedIssueIds) {
 		this.name = name;
 		this.projectKey = projectKey;
 		this.relatedIssues = relatedIssues;
@@ -61,11 +62,11 @@ public class SessionRequest {
 		this.projectKey = projectKey;
 	}
 
-	public List<String> getRelatedIssues() {
+	public Set<String> getRelatedIssues() {
 		return relatedIssues;
 	}
 
-	public void setRelatedIssues(List<String> relatedIssues) {
+	public void setRelatedIssues(Set<String> relatedIssues) {
 		this.relatedIssues = relatedIssues;
 	}
 
@@ -117,11 +118,11 @@ public class SessionRequest {
 		this.projectId = projectId;
 	}
 
-	public List<Long> getRelatedIssueIds() {
+	public Set<Long> getRelatedIssueIds() {
 		return relatedIssueIds;
 	}
 
-	public void setRelatedIssueIds(List<Long> relatedIssueIds) {
+	public void setRelatedIssueIds(Set<Long> relatedIssueIds) {
 		this.relatedIssueIds = relatedIssueIds;
 	}
 

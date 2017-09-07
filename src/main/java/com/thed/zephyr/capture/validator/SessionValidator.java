@@ -17,9 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Class will be invoked when session related create and update API's are called.
@@ -61,10 +59,10 @@ public class SessionValidator implements Validator {
 			} else {
 				sessionRequest.setProjectId(project.getId());
 			}
-			if(!Objects.isNull(sessionRequest.getRelatedIssues())) { 
-				List<Long> relatedIssues = Lists.newArrayList();
+			if(!Objects.isNull(sessionRequest.getRelatedIssues())) {
+				Set<Long> relatedIssues = new TreeSet<>();
 			    Map<String, String> duplicatePrevention = Maps.newHashMap();
- 				List<String> issuesList = sessionRequest.getRelatedIssues();
+				Set<String> issuesList = sessionRequest.getRelatedIssues();
 				issuesList.stream().forEach(issueKey -> {
 					if (!StringUtils.isEmpty(issueKey) && !duplicatePrevention.containsKey(issueKey)) {
 						Issue issue = issueService.getIssueObject(issueKey); //Checking whether the issues are valid or not.

@@ -7,6 +7,7 @@ import com.thed.zephyr.capture.model.Note;
 import com.thed.zephyr.capture.model.NoteSessionActivity;
 import org.joda.time.DateTime;
 
+import java.util.Date;
 import java.util.Set;
 import com.google.common.base.Function;;
 
@@ -39,7 +40,7 @@ public class FatNoteUI {
         return str(fatNote.getSessionId());
     }
 
-    public DateTime getCreatedTime() {
+    public Date getCreatedTime() {
         return fatNote.getCreatedTime();
     }
 

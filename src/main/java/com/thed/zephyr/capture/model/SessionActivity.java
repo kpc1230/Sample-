@@ -1,10 +1,12 @@
 package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
-import com.thed.zephyr.capture.service.db.converter.DateTimeTypeConverter;
+import com.thed.zephyr.capture.service.db.converter.DateTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.joda.time.DateTime;
 import org.springframework.data.annotation.Id;
+
+import java.util.Date;
 
 /**
  * Created by aliakseimatsarski on 8/15/17.
@@ -23,8 +25,8 @@ abstract public class SessionActivity {
     private String ctId;
 
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_SESSIONID_TIMESTAMP)
-    @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
-    private DateTime timestamp;
+    @DynamoDBTypeConverted(converter = DateTypeConverter.class)
+    private Date timestamp;
 
     private String user;
 
@@ -36,7 +38,7 @@ abstract public class SessionActivity {
         this.clazz = this.getClass().getCanonicalName();
     }
 
-    public SessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId) {
+    public SessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId) {
         this.sessionId = sessionId;
         this.ctId = ctId;
         this.timestamp = timestamp;
@@ -69,11 +71,11 @@ abstract public class SessionActivity {
         this.ctId = ctId;
     }
 
-    public DateTime getTimestamp() {
+    public Date getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(DateTime time) {
+    public void setTimestamp(Date time) {
         this.timestamp = time;
     }
 

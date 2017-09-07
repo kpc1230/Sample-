@@ -34,10 +34,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by niravshah on 8/25/17.
@@ -142,7 +139,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                     jiraAttachment.getAuthor().getName(), jiraAttachment.getCreationDate().getMillis(),
                     jiraAttachment.getSize(), jiraAttachment.getMimeType(),
                     jiraAttachment.getContentUri());
-            sessionActivityService.addAttachment(session, updatedIssue, attachment, jiraAttachment.getCreationDate(), attachment.getAuthor());
+            sessionActivityService.addAttachment(session, updatedIssue, attachment, new Date(jiraAttachment.getCreationDate().getMillis()), attachment.getAuthor());
         }
         return CaptureUtil.getFullIconUrl(issue,host);
     }

@@ -4,6 +4,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.thed.zephyr.capture.service.db.converter.ResolutionTypeConverter;
 import org.joda.time.DateTime;
 
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -21,7 +22,7 @@ public class NoteSessionActivity extends SessionActivity {
     public NoteSessionActivity() {
     }
 
-    public NoteSessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId, String noteData, Resolution resolutionState, Set<String> tags) {
+    public NoteSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, String noteData, Resolution resolutionState, Set<String> tags) {
         super(sessionId, ctId, timestamp, user, projectId);
         this.noteData = noteData;
         this.resolutionState = resolutionState;

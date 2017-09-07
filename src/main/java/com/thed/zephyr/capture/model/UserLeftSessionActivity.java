@@ -5,6 +5,8 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.thed.zephyr.capture.service.db.converter.ParticipantTypeConverter;
 import org.joda.time.DateTime;
 
+import java.util.Date;
+
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
@@ -17,13 +19,13 @@ public class UserLeftSessionActivity extends SessionActivity {
     }
 
 
-    public UserLeftSessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId, Participant participant) {
+    public UserLeftSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, Participant participant) {
         super(sessionId, ctId, timestamp, user, projectId);
         this.participant = participant;
     }
 
     @DynamoDBIgnore
-    public DateTime getTimeLeft() {
+    public Date getTimeLeft() {
         return participant.getTimeLeft();
     }
 
