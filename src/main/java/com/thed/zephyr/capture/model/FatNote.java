@@ -44,7 +44,7 @@ public class FatNote {
         return note.getNoteData();
     }
 
-    public Note.Resolution getResolutionState() {
+    public NoteSessionActivity.Resolution getResolutionState() {
         return note.getResolutionState();
     }
 

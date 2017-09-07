@@ -18,7 +18,6 @@ import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Variable;
 import com.thed.zephyr.capture.model.VariableRequest;
 import com.thed.zephyr.capture.model.util.VariableSearchList;
-import com.thed.zephyr.capture.repositories.dynamodb.TemplateRepository;
 import com.thed.zephyr.capture.repositories.dynamodb.VariableRepository;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.VariableService;
@@ -34,9 +33,6 @@ public class VariableServiceImpl implements VariableService {
 
 	@Autowired
 	private VariableRepository repository;
-
-	@Autowired
-	private TemplateRepository templateRepository;
 
     @Autowired
 	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
@@ -84,7 +80,7 @@ public class VariableServiceImpl implements VariableService {
 	}
 
 	/**
-	 * Create default Varable s using the predefined key-value pair and store them in database.
+	 * Create default Variable s using the predefined key-value pair and store them in database.
 	 * @param ownerName
 	 * @return
 	 */
@@ -94,7 +90,6 @@ public class VariableServiceImpl implements VariableService {
             Variable var = new Variable(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), ownerName, name, 
             		DefaultVariables.DEFAULT_VARIABLES.get(name));
             repository.save(var);
-//            templateRepository.variableUpdated(var, ownerName);
             variableList.add(var);
         }
 		return variableList;
@@ -110,18 +105,17 @@ public class VariableServiceImpl implements VariableService {
 		existing.setName(input.getName());
 		existing.setValue(input.getValue());
 		repository.save(existing);
-		//TODO, templateService.updateVariable();
 	}
 
 	@Override
 	public void deleteVariable(VariableRequest input) throws CaptureValidationException {
-		repository.delete(input.getId());
-		//TODO, templateService.deleteVariable();
+		Variable var = findVariable(input.getId());
+		repository.delete(var);
 	}
 
     @Override
     public Set<String> parseVariables(JsonNode nodeData) {
-        Set<String> tagList = new TreeSet<>();
+        Set<String> variableList = new TreeSet<>();
         Pattern pattern = Pattern.compile("\\{(\\w+)\\}");
         Iterator<String> iterator = nodeData.fieldNames();
         while(iterator.hasNext()){
@@ -131,10 +125,14 @@ public class VariableServiceImpl implements VariableService {
 	        while (matcher.find()) {
 	            String originalMatch = matcher.group(0);
 	            tagName = originalMatch.toUpperCase();
-	            tagList.add(tagName.substring(1, tagName.length() -1 ));
+	            variableList.add(tagName.substring(1, tagName.length() -1 ));
 	        }
         }
-        return tagList;
+        return variableList;
+    }
+    
+    private Variable findVariable(String id){
+    	return repository.findOne(id);
     }
 	/**
 	 * Creates the page request object for pagination.

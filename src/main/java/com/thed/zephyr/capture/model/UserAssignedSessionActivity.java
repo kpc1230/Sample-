@@ -12,8 +12,8 @@ public class UserAssignedSessionActivity extends SessionActivity {
     public UserAssignedSessionActivity() {
     }
 
-    public UserAssignedSessionActivity(String sessionId, String clientKey, DateTime timestamp, String assigner, String assignee, String avatarUrl) {
-        super(sessionId, clientKey, timestamp, assigner, avatarUrl);
+    public UserAssignedSessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId, String assignee) {
+        super(sessionId, ctId, timestamp, user, projectId);
         this.assignee = assignee;
     }
 

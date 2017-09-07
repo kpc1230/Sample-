@@ -1,10 +1,7 @@
 package com.thed.zephyr.capture.service.data;
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.thed.zephyr.capture.model.Note;
-import com.thed.zephyr.capture.model.Participant;
-import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.model.SessionActivity;
+import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.Attachment;
 import org.joda.time.DateTime;
 import org.springframework.data.domain.Pageable;
@@ -16,15 +13,13 @@ import java.util.List;
  */
 public interface SessionActivityService {
 
-    SessionActivity setStatus(Session session, DateTime timestamp, String user, String avatarUrl);
+    SessionActivity setStatus(Session session, DateTime timestamp, String user);
 
-    SessionActivity addParticipantJoined(Session session, DateTime timestamp, Participant participant, String user, String avatarUrl);
+    SessionActivity addParticipantJoined(Session session, DateTime timestamp, Participant participant, String user);
 
-    SessionActivity addParticipantLeft(Session session, DateTime timestamp, String user, String avatarUrl);
+    SessionActivity addParticipantLeft(Session session, DateTime timestamp, String user);
 
-    SessionActivity addNote(Session session, DateTime timestamp, String user, String noteId, String avatarUrl);
-
-    SessionActivity deleteNote(Note note);
+   // Boolean deleteNote(String noteSessionActivityId);
 
     SessionActivity addRaisedIssue(Session session, Issue issue, DateTime timeRaised, String creator);
 
@@ -43,8 +38,7 @@ public interface SessionActivityService {
      * @param assignedTime -- Time at which this activity is done.
      * @param assigner -- User who assigning the session to assginee.
      * @param assignee -- User to which session is assigned.
-     * @param avatarUrl -- User avatar url.
      * @return -- Returns the saved session activity object.
      */
-    SessionActivity addAssignee(Session session, DateTime assignedTime, String assigner, String assignee, String avatarUrl);
+    SessionActivity addAssignee(Session session, DateTime assignedTime, String assigner, String assignee);
 }

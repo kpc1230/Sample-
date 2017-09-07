@@ -18,8 +18,8 @@ public class StatusSessionActivity extends SessionActivity {
     public StatusSessionActivity() {
     }
 
-    public StatusSessionActivity(String sessionId, String clientKey, DateTime timestamp, String user, Session.Status status, boolean firstStarted, String avatarUrl) {
-        super(sessionId, clientKey, timestamp, user, avatarUrl);
+    public StatusSessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId, Session.Status status, boolean firstStarted) {
+        super(sessionId, ctId, timestamp, user, projectId);
         this.status = status;
         this.firstStarted = firstStarted;
     }

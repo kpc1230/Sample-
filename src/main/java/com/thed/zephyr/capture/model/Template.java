@@ -45,12 +45,6 @@ public class Template {
     @DynamoDBTypeConverted(converter = DateTimeTypeConverter.class)
     private DateTime timeFavourited;
 
-    /**
-     * List of variabels for this note.
-     * A note may have multiple variabls, example: "{url} {title} etc"
-     */
-    private Set<String> variables;
-
     public Template() {
     }
 
@@ -66,7 +60,6 @@ public class Template {
         this.timeCreated = timeCreated;
         this.timeUpdated = timeUpdated;
         this.timeFavourited = timeFavourited;
-        this.variables = variables;
     }
 
     public String getId() {
@@ -157,13 +150,6 @@ public class Template {
 		this.timeFavourited = timeFavourited;
 	}
 
-	public Set<String> getVariables() {
-		return variables;
-	}
-
-	public void setVariables(Set<String> variables) {
-		this.variables = variables;
-	}
 
 	public JsonNode toJSON() {
         ObjectMapper om = new ObjectMapper();

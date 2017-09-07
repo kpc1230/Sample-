@@ -1,10 +1,13 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.thed.zephyr.capture.exception.CaptureRuntimeException;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.Attachment;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
+import com.thed.zephyr.capture.service.data.TagService;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Created by Masud on 8/25/17.
@@ -23,21 +27,25 @@ public class SessionActivityServiceImpl implements SessionActivityService{
 
     @Autowired
     private SessionActivityRepository sessionActivityRepository;
+    @Autowired
+    private TagService tagService;
 
     @Override
-    public SessionActivity setStatus(Session session, DateTime timestamp, String user, String avatarUrl) {
+    public SessionActivity setStatus(Session session, DateTime timestamp, String user) {
         if (session.getStatus() != null) {
             boolean firstStarted = (session.getStatus()
                     == Session.Status.CREATED && session.getStatus()
                     == Session.Status.STARTED);
             StatusSessionActivity sessionActivity =
-                   new StatusSessionActivity(session.getId(),
+                   new StatusSessionActivity(
+                           session.getId(),
                            session.getCtId(),
                            timestamp,
                            user,
+                           session.getProjectId(),
                            session.getStatus(),
-                           firstStarted,
-                           avatarUrl);
+                           firstStarted
+                           );
            sessionActivityRepository.save(sessionActivity);
            return sessionActivity;
         }
@@ -45,7 +53,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
 
     @Override
-    public SessionActivity addParticipantJoined(Session session, DateTime timestamp, Participant participant, String user, String avatarUrl) {
+    public SessionActivity addParticipantJoined(Session session, DateTime timestamp, Participant participant, String user) {
         boolean currentlyParticipating = false;
         if(!Objects.isNull(session.getParticipants())) {
         	for (Iterator<Participant> iterator = session.getParticipants().iterator(); iterator.hasNext(); ) {
@@ -58,7 +66,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
         if (!currentlyParticipating) {
             participant = new ParticipantBuilder(user).setTimeJoined(timestamp).build();
             UserJoinedSessionActivity sessionActivity =
-                    new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant, avatarUrl);
+                    new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), user, session.getProjectId(), participant);
             sessionActivityRepository.save(sessionActivity);
             return sessionActivity;
         }
@@ -66,7 +74,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
 
     @Override
-    public SessionActivity addParticipantLeft(Session session, DateTime timestamp, String user, String avatarUrl) {
+    public SessionActivity addParticipantLeft(Session session, DateTime timestamp, String user) {
     	if(!Objects.isNull(session.getParticipants())) {
     		for (Iterator<Participant> iterator = session.getParticipants().iterator(); iterator.hasNext(); ) {
                 Participant participant1 = iterator.next();
@@ -75,45 +83,12 @@ public class SessionActivityServiceImpl implements SessionActivityService{
                     // ok we have a person how has joined but not left
                     iterator.remove();
                     UserLeftSessionActivity sessionActivity = new UserLeftSessionActivity(
-                            session.getId(),session.getCtId(), participant1, avatarUrl);
+                            session.getId(),session.getCtId(), participant1.getTimeLeft(), participant1.getUser(), session.getProjectId(), participant1);
                     sessionActivityRepository.save(sessionActivity);
                     return sessionActivity;
                 }
             }
     	}
-        return null;
-    }
-
-    @Override
-    public SessionActivity addNote(Session session, DateTime timestamp, String user, String noteId, String avatarUrl) {
-       SessionActivity sessionActivity =
-               new NoteSessionActivity(session.getId(),
-                       session.getCtId(),
-                       timestamp,
-                       user,
-                       noteId,
-                       avatarUrl
-                       );
-        sessionActivityRepository.save(sessionActivity);
-        return sessionActivity;
-    }
-
-    @Override
-    public SessionActivity deleteNote(Note note) {
-        List<SessionActivity> getAllSessionActivity = getAllSessionActivityBySession(note.getSessionId(), new PageRequest(0,20));
-        // TODO is there a cleaner way to do this?
-        SessionActivity markedForDeletion = null;
-        for (SessionActivity item : getAllSessionActivity) {
-            if (item instanceof NoteSessionActivity) {
-                if (((NoteSessionActivity) item).getNoteId().equals(note.getId())) {
-                    markedForDeletion = item;
-                    break;
-                }
-            }
-        }
-        if(markedForDeletion != null){
-            sessionActivityRepository.delete(markedForDeletion);
-        }
         return null;
     }
 
@@ -124,7 +99,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
                 new IssueRaisedSessionActivity(
                         session.getId(),
                         session.getCtId(),
-                        timeRaised, creator, issue.getId());
+                        timeRaised, creator, session.getProjectId(), issue.getId());
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }
@@ -135,7 +110,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
         IssueUnraisedSessionActivity sessionActivity =
                 new IssueUnraisedSessionActivity(session.getId(),
                         session.getCtId(),
-                        timeRaised, creator, issue.getId());
+                        timeRaised, creator, session.getProjectId(), issue.getId());
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }
@@ -143,7 +118,7 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     @Override
     public SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, DateTime creationDate, String author) {
         SessionActivity sessionActivity =
-                new IssueAttachmentSessionActivity(session.getId(), issue.getId(), attachment, session.getCtId(), creationDate, author);
+                new IssueAttachmentSessionActivity(session.getId(), session.getCtId(), creationDate, author, session.getProjectId(), issue.getId(), attachment);
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }
@@ -160,9 +135,9 @@ public class SessionActivityServiceImpl implements SessionActivityService{
     }
     
     @Override
-    public SessionActivity addAssignee(Session session, DateTime assignedTime, String assigner, String assignee, String avatarUrl) {
+    public SessionActivity addAssignee(Session session, DateTime assignedTime, String assigner, String assignee) {
     	if(!assigner.equals(assignee)) {
-    		UserAssignedSessionActivity sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, assigner, assignee, avatarUrl);
+    		UserAssignedSessionActivity sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, assigner, session.getProjectId(), assignee);
             sessionActivityRepository.save(sessionActivity);
             return sessionActivity;
     	}

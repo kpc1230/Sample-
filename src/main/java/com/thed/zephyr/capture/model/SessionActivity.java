@@ -28,19 +28,21 @@ abstract public class SessionActivity {
 
     private String user;
 
-    private String avatarUrl;
-
     private String clazz;
 
+    private Long projectId;
+
     public SessionActivity() {
+        this.clazz = this.getClass().getCanonicalName();
     }
 
-    public SessionActivity(String sessionId, String ctId, DateTime timestamp, String user, String avatarUrl) {
+    public SessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId) {
         this.sessionId = sessionId;
         this.ctId = ctId;
         this.timestamp = timestamp;
         this.user = user;
-        this.avatarUrl = avatarUrl;
+        this.projectId = projectId;
+        this.clazz = this.getClass().getCanonicalName();
     }
 
     public String getId() {
@@ -83,20 +85,20 @@ abstract public class SessionActivity {
         this.user = user;
     }
 
-    public String getAvatarUrl() {
-        return avatarUrl;
-    }
-
-    public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;
-    }
-
     public String getClazz() {
         return this.getClass().getCanonicalName();
     }
 
     public void setClazz(String clazz) {
         this.clazz = this.getClass().getCanonicalName();
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 
     @Override
@@ -122,8 +124,13 @@ abstract public class SessionActivity {
 
     @Override
     public int hashCode() {
-        int result = timestamp != null ? timestamp.hashCode() : 0;
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (sessionId != null ? sessionId.hashCode() : 0);
+        result = 31 * result + (ctId != null ? ctId.hashCode() : 0);
+        result = 31 * result + (timestamp != null ? timestamp.hashCode() : 0);
         result = 31 * result + (user != null ? user.hashCode() : 0);
+        result = 31 * result + (clazz != null ? clazz.hashCode() : 0);
+        result = 31 * result + (projectId != null ? projectId.hashCode() : 0);
         return result;
     }
 }

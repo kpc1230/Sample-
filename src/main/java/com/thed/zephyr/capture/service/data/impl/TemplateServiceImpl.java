@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.thed.zephyr.capture.service.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -51,11 +53,14 @@ public class TemplateServiceImpl implements TemplateService {
 	@Autowired
 	private VariableService variableService;
 
+	@Autowired
+	PermissionService permissionService;
+
 	@Override
 	public TemplateRequest createTemplate(TemplateRequest templateReq) {
-		Set<String> variables = getVariables(templateReq.getSource());
+		//Set<String> variables = getVariables(templateReq.getSource(), templateReq.getOwnerName());
         Template created = repository.save(
-        		TemplateBuilder.constructTemplate(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), templateReq, variables));
+        		TemplateBuilder.constructTemplate(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), templateReq));
 		return createTemplateRequest(created);
 	}
 
@@ -65,8 +70,8 @@ public class TemplateServiceImpl implements TemplateService {
 		if(Objects.isNull(existing)) {
 			return null;
 		}
-		Set<String> variables = getVariables(templateReq.getSource());
-        Template created = repository.save(TemplateBuilder.updateTemplate(existing, templateReq, variables));
+//		Set<String> variables = getVariables(templateReq.getSource(), existing.getCreatedBy());
+        Template created = repository.save(TemplateBuilder.updateTemplate(existing, templateReq));
 		return createTemplateRequest(created);
 	}
 
@@ -80,8 +85,11 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	@Override
-	public TemplateRequest getTemplate(String templateId) {
+	public TemplateRequest getTemplate(String user,String templateId) {
 		Template one = repository.findOne(templateId);
+		if(one!=null&&!permissionService.canUseTemplate(user, one.getProjectId())){
+			return null;
+		}
 		return createTemplateRequest(one);
 	}
 
@@ -115,6 +123,11 @@ public class TemplateServiceImpl implements TemplateService {
 		Page<Template> templatePage = repository.findByFavouriteAndCreatedBy(true, owner, getPageRequest(offset, limit));
 		return convert(templatePage, offset, limit);
 	}
+
+	protected Page<Template> getUserTemplateObjects(String userName, Integer offset, Integer limit) {
+		return repository.findByCreatedBy(userName, getPageRequest(offset, limit));
+	}
+
 	/**
 	 * Creates the page request object for pagination.
 	 * 
@@ -138,8 +151,9 @@ public class TemplateServiceImpl implements TemplateService {
 			Map<String, CaptureUser> userMap = getUserMap(templatePage.getContent());
 			templatePage.getContent().forEach(template -> {
 				CaptureUser user = userMap.get(template.getCreatedBy());
-				List<Variable> variables = getUserVariables(template.getCreatedBy());
-				returnList.add(TemplateBuilder.createTemplateRequest(template, project, user, variables));
+				if(permissionService.canUseTemplate(user.getKey(), template.getProjectId())){
+					returnList.add(TemplateBuilder.createTemplateRequest(template, project, user));
+				}
 			});
 			return new TemplateSearchList(returnList, offset, limit, templatePage.getTotalElements());
 		}
@@ -158,16 +172,22 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	private TemplateRequest createTemplateRequest(Template created) {
-		List<Variable> variables = getUserVariables(created.getCreatedBy());
 		return TemplateBuilder.createTemplateRequest(created, getProject(created.getProjectId())
-				, userService.findUser(created.getCreatedBy()), variables);
+				, userService.findUser(created.getCreatedBy()));
 	}
 
-	protected Set<String> getVariables(JsonNode json){
-		return variableService.parseVariables(json);
+	protected Set<String> getVariables(JsonNode json, String userName){
+		Set<String> variableNames = variableService.parseVariables(json);
+		List<Variable> variableList = variableService.getVariables(userName).getContent();
+		return variableList
+				.stream()
+				.filter( var -> variableNames.contains(var.getName().toLowerCase()))
+				.map( var -> var.getId())
+				.collect(Collectors.toSet());
 	}
 	
 	protected List<Variable> getUserVariables(String userName){
 		return variableService.getVariables(userName).getContent();
 	}
+
 }

@@ -16,8 +16,9 @@ public class UserLeftSessionActivity extends SessionActivity {
     public UserLeftSessionActivity() {
     }
 
-    public UserLeftSessionActivity(String sessionId, String clientKey, Participant participant, String avatarUrl) {
-        super(sessionId, clientKey, participant.getTimeLeft(), participant.getUser(), avatarUrl);
+
+    public UserLeftSessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId, Participant participant) {
+        super(sessionId, ctId, timestamp, user, projectId);
         this.participant = participant;
     }
 

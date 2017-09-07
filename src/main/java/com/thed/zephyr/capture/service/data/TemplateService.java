@@ -1,7 +1,6 @@
 package com.thed.zephyr.capture.service.data;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.model.Template;
 import com.thed.zephyr.capture.model.TemplateRequest;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
 
@@ -30,10 +29,11 @@ public interface TemplateService {
 	void deleteTemplate(String templateId);
     /**
      * Get template using the templateId.
+	 * @param user
      * @param templateId
      * @return
      */
-	TemplateRequest getTemplate(String templateId);
+	TemplateRequest getTemplate(String user,String templateId);
 	
 	/**
 	 * Get all the templates.

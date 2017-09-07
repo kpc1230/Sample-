@@ -376,7 +376,7 @@ public class SessionServiceImpl implements SessionService {
                 List<String> leavingUsers = new ArrayList<>();
                 if(!Objects.isNull(session.getParticipants())) {
                 	for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) {
-                    	sessionActivityService.addParticipantLeft(session, new DateTime(), p.getUser(), null);
+                    	sessionActivityService.addParticipantLeft(session, new DateTime(), p.getUser());
                         leavingUsers.add(p.getUser());
                     }
                 }
@@ -388,7 +388,7 @@ public class SessionServiceImpl implements SessionService {
                 session.setTimeLogged(timeLogged);
                 return new DeactivateResult(validateUpdate(user, session), leavingUsers);
             } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user))) { // Just leave if it isn't
-                sessionActivityService.addParticipantLeft(session, new DateTime(), user, null);
+                sessionActivityService.addParticipantLeft(session, new DateTime(), user);
             }
         }
         return new DeactivateResult(validateUpdate(user, session), user);
@@ -522,7 +522,7 @@ public class SessionServiceImpl implements SessionService {
         if (!newSession.isShared()) { // If we aren't shared, we wanna kick out all the current users
         	if(!Objects.isNull(newSession.getParticipants())) {
             	for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-                    sessionActivityService.addParticipantLeft(newSession, new DateTime(), p.getUser(), null);
+                    sessionActivityService.addParticipantLeft(newSession, new DateTime(), p.getUser());
                     leavers.add(p.getUser());
                 }
             }

@@ -22,7 +22,7 @@ public class SessionRequest {
 	private String assignee;
 	@Size(min = 0, max = 5000)
 	private String additionalInfo;
-	private Boolean shared;
+	private Boolean shared = false;
 	private String defaultTemplateId;
 	private Boolean startNow = false;
 	//Internal use only. Values are set from session validate java.

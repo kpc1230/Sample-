@@ -148,7 +148,7 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public boolean canCreateNote(String user, String sessionId) {
         Session session = sessionService.getSession(sessionId);
-        boolean isParticipant = Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user));
+        boolean isParticipant = session.getParticipants() != null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user)) : false;
         boolean isAssignee = session.getAssignee().equals(user);
         boolean isCreator = session.getCreator().equals(user);
         return isParticipant || isAssignee || isCreator;
@@ -157,7 +157,7 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public boolean canCreateNote(String user, LightSession session) {
         Collection<Participant> participants = sessionService.getSession(session.getId()).getParticipants();
-        boolean isParticipant = Iterables.any(participants, new UserIsParticipantPredicate(user));
+        boolean isParticipant = participants != null ? Iterables.any(participants, new UserIsParticipantPredicate(user)) : false;
         boolean isAssignee = session.getAssignee().equals(user);
         boolean isCreator = session.getCreator().equals(user);
         return isParticipant || isAssignee || isCreator;
@@ -187,7 +187,8 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canEditSession(String user, Session session) {
-        return session.getAssignee().equals(user) && !session.getStatus().equals(Session.Status.COMPLETED);
+        return checkPermissionForType(projectService.getProjectObj(session.getProjectId()).getKey(), null, ApplicationConstants.PROJECT_ADMIN)
+                || session.getAssignee().equals(user) || session.getCreator().equals(user);
     }
 
     @Override
