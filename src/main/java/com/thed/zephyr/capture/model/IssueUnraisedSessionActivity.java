@@ -13,8 +13,8 @@ public class IssueUnraisedSessionActivity extends SessionActivity {
     public IssueUnraisedSessionActivity() {
     }
 
-    public IssueUnraisedSessionActivity(String sessionId, String clientKey, DateTime timestamp, String user, Long issueId) {
-        super(sessionId, clientKey, timestamp, user, CaptureUtil.getLargeAvatarUrl(user));
+    public IssueUnraisedSessionActivity(String sessionId, String ctId, DateTime timestamp, String user, Long projectId, Long issueId) {
+        super(sessionId, ctId, timestamp, user, projectId);
         this.issueId = issueId;
     }
 

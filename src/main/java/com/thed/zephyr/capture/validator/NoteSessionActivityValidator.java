@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.validator;
 
 import java.util.Objects;
 
+import com.thed.zephyr.capture.model.NoteSessionActivity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
@@ -22,7 +23,7 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
  *
  */
 @Component
-public class NoteValidator implements Validator {
+public class NoteSessionActivityValidator implements Validator {
 
 	@Autowired
 	private SessionService sessionService;
@@ -34,20 +35,20 @@ public class NoteValidator implements Validator {
 
 	@Override
 	public void validate(Object target, Errors errors) {
-		if(target instanceof NoteRequest){
-			NoteRequest note = (NoteRequest) target;
+		if(target instanceof NoteSessionActivity){
+			NoteSessionActivity noteSessionActivity = (NoteSessionActivity) target;
 			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "noteData", "", "Note data can't be empty");
-			if (note.getNoteData() != null && note.getNoteData().length() > ApplicationConstants.MAX_NOTE_LENGTH) {
+			if (noteSessionActivity.getNoteData() != null && noteSessionActivity.getNoteData().length() > ApplicationConstants.MAX_NOTE_LENGTH) {
                 errors.reject("", "Notedata can't be greater than the size:" + ApplicationConstants.MAX_NOTE_LENGTH) ;
             }
 
 			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "sessionId", "", "Note sessionId can't be empty");
-			if(!StringUtils.isNullOrEmpty(note.getSessionId())){
-				Session s = sessionService.getSession(note.getSessionId());
+			if(!StringUtils.isNullOrEmpty(noteSessionActivity.getSessionId())){
+				Session s = sessionService.getSession(noteSessionActivity.getSessionId());
 				if(Objects.isNull(s)) {
 					errors.reject("", "Session is invalid for the Note");
 				}else{
-					note.setProjectId(s.getProjectId());
+					noteSessionActivity.setProjectId(s.getProjectId());
 				}
 			}
 		}		

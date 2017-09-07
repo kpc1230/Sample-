@@ -12,6 +12,7 @@ import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionExtensionResponse;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult;
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -102,7 +104,7 @@ public class SessionController {
                 }
 	        	sessionService.update(updateResult); //Updating the session object into database.
 	        	//Save status changed information as activity.
-	        	sessionActivityService.setStatus(createdSession, DateTime.now(), loggedUserKey, null);
+	        	sessionActivityService.setStatus(createdSession, DateTime.now(), loggedUserKey);
 	        }
 			log.info("End of createSession()");
 			return ResponseEntity.ok(createdSession);
@@ -181,7 +183,7 @@ public class SessionController {
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
-        	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey, null);
+        	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey);
         	CaptureProject project = projectService.getCaptureProject(session.getProjectId());
         	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
@@ -208,7 +210,7 @@ public class SessionController {
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
-        	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey, null);
+        	sessionActivityService.setStatus(session, new DateTime(), loggedUserKey);
         	CaptureProject project = projectService.getCaptureProject(session.getProjectId());
         	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
@@ -221,22 +223,22 @@ public class SessionController {
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
-	
+
 	@PutMapping(value = "/{sessionId}/participate", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> joinSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException {
+	public ResponseEntity<?> joinSession(@AuthenticationPrincipal AtlassianHostUser hostUser, @PathVariable("sessionId") String sessionId) throws CaptureValidationException {
 		log.info("Start of joinSession() --> params " + sessionId);
-		try {	
-			String loggedUserKey = getUser();
+		try {
+			String loggedUserKey = hostUser.getUserKey().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			DateTime dateTime = DateTime.now();
 			Participant participant = new Participant(loggedUserKey, dateTime, null);
-			UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loadedSession, participant);
+			SessionServiceImpl.UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loadedSession, participant);
 			if (!updateResult.isValid()) {
-                return badRequest(updateResult.getErrorCollection());
-            }
+				return badRequest(updateResult.getErrorCollection());
+			}
 			sessionService.update(updateResult);
 			//Store participant info in sessionActivity
-			sessionActivityService.addParticipantJoined(updateResult.getSession(), dateTime, participant,loggedUserKey, null);
+			sessionActivityService.addParticipantJoined(updateResult.getSession(), dateTime, participant,loggedUserKey);
 			log.info("End of joinSession()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {
@@ -275,7 +277,7 @@ public class SessionController {
             }
 			Session session = completeSessionResult.getSessionUpdateResult().getSession();
 			//Save status changed information as activity.
-			sessionActivityService.setStatus(session, new DateTime(), loggedUserKey, null);
+			sessionActivityService.setStatus(session, new DateTime(), loggedUserKey);
 			sessionService.update(completeSessionResult.getSessionUpdateResult());
 			log.info("End of completeSession()");
 			return ResponseEntity.ok(session);
@@ -426,7 +428,7 @@ public class SessionController {
             }
 			sessionService.update(updateResult);
 			//Save assigned user to the session as activity.
-			sessionActivityService.addAssignee(loadedSession, DateTime.now(), loggedUserKey, assignee, null);
+			sessionActivityService.addAssignee(loadedSession, DateTime.now(), loggedUserKey, assignee);
 			log.info("End of assignSession()");
 			return ResponseEntity.ok(loadedSession);
 		} catch(Exception ex) {

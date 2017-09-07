@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 import com.thed.zephyr.capture.model.Note;
+import com.thed.zephyr.capture.model.NoteSessionActivity;
 import com.thed.zephyr.capture.model.Tag;
 import com.thed.zephyr.capture.repositories.elasticsearch.TagRepository;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
@@ -55,17 +56,17 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public List<Tag> saveTags(Note note){
-        deleteTags(note.getId());
-        Set<String> tagStringList = parseTags(note.getNoteData());
+    public List<Tag> saveTags(NoteSessionActivity noteSessionActivity){
+        deleteTags(noteSessionActivity.getId());
+        Set<String> tagStringList = parseTags(noteSessionActivity.getNoteData());
         List<Tag> result = new ArrayList<>();
         for (String tagString:tagStringList){
             Tag tag = new Tag();
-            tag.setCtId(note.getCtId());
-            tag.setProjectId(note.getProjectId());
-            tag.setSessionId(note.getSessionId());
+            tag.setCtId(noteSessionActivity.getCtId());
+            tag.setProjectId(noteSessionActivity.getProjectId());
+            tag.setSessionId(noteSessionActivity.getSessionId());
             tag.setName(tagString);
-            tag.getNoteIds().add(note.getId());
+            tag.getNoteIds().add(noteSessionActivity.getId());
             result.add(saveTag(tag));
         }
 
@@ -84,20 +85,20 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public void deleteTags(String noteId) {
-        List<Tag> tags = tagRepository.findByCtIdAndNoteIds(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), noteId);
+    public void deleteTags(String noteSessionActivityId) {
+        List<Tag> tags = tagRepository.findByCtIdAndNoteIds(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), noteSessionActivityId);
         for (Tag tag:tags){
             if(tag.getNoteIds().size() == 1){
                 tagRepository.delete(tag);
             } else {
-                tag.getNoteIds().remove(noteId);
+                tag.getNoteIds().remove(noteSessionActivityId);
                 tagRepository.save(tag);
             }
         }
     }
     
     @Override
-    public List<Tag> getTags(String noteId) {
-        return tagRepository.findByCtIdAndNoteIds(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), noteId);
+    public List<Tag> getTags(String noteSessionActivityId) {
+        return tagRepository.findByCtIdAndNoteIds(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), noteSessionActivityId);
     }
 }

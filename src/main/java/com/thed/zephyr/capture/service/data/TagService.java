@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.data;
 
 import com.thed.zephyr.capture.model.Note;
+import com.thed.zephyr.capture.model.NoteSessionActivity;
 import com.thed.zephyr.capture.model.Tag;
 
 import java.util.List;
@@ -13,11 +14,11 @@ public interface TagService {
 
     Set<String> parseTags(String noteData);
 
-    List<Tag> saveTags(Note note);
+    List<Tag> saveTags(NoteSessionActivity noteSessionActivity);
 
     Tag saveTag(Tag rowTag);
 
-    void deleteTags(String noteId);
+    void deleteTags(String noteSessionActivityId);
 
-    List<Tag> getTags(String noteId);
+    List<Tag> getTags(String noteSessionActivityId);
 }

@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.data;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Note;
 import com.thed.zephyr.capture.model.NoteRequest;
+import com.thed.zephyr.capture.model.NoteSessionActivity;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
 
 /**
@@ -11,21 +12,12 @@ import com.thed.zephyr.capture.model.util.NoteSearchList;
  */
 public interface NoteService {
 
-	NoteRequest create(NoteRequest input) throws CaptureValidationException;
+	NoteSessionActivity create(NoteSessionActivity noteSessionActivity) throws CaptureValidationException;
 
-	NoteRequest update(NoteRequest input) throws CaptureValidationException;
+	NoteSessionActivity update(NoteSessionActivity noteSessionActivity) throws CaptureValidationException;
 
-	void delete(String noteId) throws CaptureValidationException;
+	NoteSessionActivity update(NoteSessionActivity noteSessionActivityRequest, boolean toggleResolution) throws CaptureValidationException;
 
-	NoteRequest getNote(String noteId);
+	Boolean delete(String noteSessionActivityId) throws CaptureValidationException;
 
-	Note getNoteObject(String noteId);
-
-	NoteSearchList getNotesBySession(String sessionId, Integer offset, Integer limit) throws CaptureValidationException;
-
-	NoteRequest update(NoteRequest noteRequest, boolean toggleResolution) throws CaptureValidationException;
-
-	NoteSearchList getNotesBySessionIdAndTagName(String sessionId, String tagName);
-	
-	NoteSearchList getNotesByProjectId(String projectId, Integer offset, Integer limit);
 }
