@@ -37,7 +37,6 @@ import java.util.Locale;
 
 import javax.servlet.Filter;
 
-
 @SpringBootApplication
 @EnableCaching
 public class AddonApplication {
@@ -129,7 +128,8 @@ public class AddonApplication {
         return lci;
     }
 
-    @Bean
+    @Bean(name = "captureI18NMessageSource")
+    @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
     public CaptureI18NMessageSource messageSource() {
         CaptureI18NMessageSource source = new CaptureI18NMessageSource();
         source.setBasenames("i18n/capture-i18n"); // name of the resource bundle

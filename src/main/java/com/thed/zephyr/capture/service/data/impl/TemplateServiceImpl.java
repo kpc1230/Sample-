@@ -87,9 +87,6 @@ public class TemplateServiceImpl implements TemplateService {
 	@Override
 	public TemplateRequest getTemplate(String user,String templateId) {
 		Template one = repository.findOne(templateId);
-		if(one!=null&&!permissionService.canUseTemplate(user, one.getProjectId())){
-			return null;
-		}
 		return createTemplateRequest(one);
 	}
 

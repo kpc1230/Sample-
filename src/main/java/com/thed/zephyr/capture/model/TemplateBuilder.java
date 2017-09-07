@@ -90,7 +90,7 @@ public final class TemplateBuilder {
 	 * @return - parsed data as TemplateRequest
 	 * @throws CaptureValidationException - If some mandatory input is not present.
 	 */
-	public static TemplateRequest parseJson(JsonNode payload) throws CaptureValidationException{
+	public static TemplateRequest parseJson(JsonNode payload) {
 		TemplateRequest templateRequest = new TemplateRequest();
 		templateRequest.setName(payload.path("name").asText());
 		//Populate project
@@ -98,7 +98,7 @@ public final class TemplateBuilder {
 		if(!jsonProject.isMissingNode()){
 			templateRequest.setProjectId(jsonProject.path("value").asLong());			
 		}else{
-			throw new CaptureValidationException("ProjectId is not present");
+			templateRequest.setProjectId(null); // case handled in controller
 		}
 		//Populate timeCreated
 		templateRequest.setVariablesChanged(false);

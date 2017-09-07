@@ -2,23 +2,18 @@ package com.thed.zephyr.capture.controller;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-import java.util.Set;
-
-import javax.validation.Valid;
+import java.util.Objects;
 
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
+
 import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -27,17 +22,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.model.Template;
 import com.thed.zephyr.capture.model.TemplateBuilder;
 import com.thed.zephyr.capture.model.TemplateRequest;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
 import com.thed.zephyr.capture.service.data.TemplateService;
-import com.thed.zephyr.capture.service.data.VariableService;
-import com.thed.zephyr.capture.validator.TemplateValidator;
 
 /**
  * Controller class for implementing templates.
@@ -45,25 +37,13 @@ import com.thed.zephyr.capture.validator.TemplateValidator;
  */
 @RestController
 @RequestMapping("/templates")
-@Validated
-public class TemplateController {
+public class TemplateController extends CaptureAbstractController{
 
 	@Autowired
 	private Logger log;
 
 	@Autowired
-	private TemplateValidator templateValidator;
-
-	@InitBinder("templateRequest")
-	protected void initBinder(WebDataBinder binder) {
-		binder.addValidators(templateValidator);
-	}
-
-	@Autowired
 	private TemplateService templateService;
-
-	@Autowired
-	private VariableService variableService;
 
 	@Autowired
 	PermissionService permissionService;
@@ -72,17 +52,15 @@ public class TemplateController {
 	ProjectService projectService;
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<TemplateRequest> createTemplate(@RequestBody JsonNode json) {
-		//log.info("createTemplate start for the name:" + templateRequest.getName() + templateRequest.getProjectId() + templateRequest.getIssueType());
+	public ResponseEntity<TemplateRequest> createTemplate(@RequestBody JsonNode json) throws CaptureValidationException {
+		log.info("createTemplate start...");
 		TemplateRequest created = null;
 		try {
-
-			TemplateRequest templateRequest = TemplateBuilder.parseJson(json);
-			templateRequest.setOwnerName(getUser());
-			if (!permissionService.canCreateTemplate(getUser(), projectService.getCaptureProject(templateRequest.getProjectId()))) {
-                throw new CaptureValidationException("template.validate.create.cannot.create.issue");
-			}
+			TemplateRequest templateRequest = parseAndValidate(json, true);
 			created = templateService.createTemplate(templateRequest);
+		} catch (CaptureValidationException ex) {
+			log.error("Error during createTemplate.", ex);
+			throw ex;
 		} catch (Exception ex) {
 			log.error("Error during createTemplate.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
@@ -92,60 +70,55 @@ public class TemplateController {
 	}
 
 	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<TemplateRequest> updateTemplate(@Valid @RequestBody TemplateRequest templateRequest)
+	public ResponseEntity<TemplateRequest> updateTemplate(@RequestBody JsonNode json)
 			throws CaptureValidationException {
-		log.info("updateTemplate start for the id:{}", templateRequest.getId());
+		log.info("updateTemplate start...");
 		TemplateRequest updated = null;
 		try {
-            if (!permissionService.canEditTemplate(getUser(), projectService.getCaptureProject(templateRequest.getProjectId()))) {
-                throw new CaptureValidationException("template.validate.create.cannot.create.issue");
-            }
+			TemplateRequest templateRequest = parseAndValidate(json, false);
             updated = templateService.updateTemplate(templateRequest);
+		} catch (CaptureValidationException ex) {
+			log.error("Error during createTemplate.", ex);
+			throw ex;
 		} catch (Exception ex) {
 			log.error("Error during updateTemplate.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		if(updated == null){
-			throw new CaptureValidationException("Template can't find with id " + templateRequest.getId());
-		}
-		log.info("updateTemplate end for the id:{}", templateRequest.getId());
+		log.info("updateTemplate end for the id:{}", updated.getId());
 		return ok(updated);
 	}
 
 	@GetMapping(value = "/{templateId}", produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<TemplateRequest> getTemplate(@PathVariable String templateId) throws CaptureValidationException {
 		log.info("getTemplate start for the id:{}", templateId);
-		if(StringUtils.isEmpty(templateId)) {
-			throw new CaptureValidationException("TemplateId cannot be null");
-		}
 		TemplateRequest template = null;
-		try {
-			template = templateService.getTemplate(getUser(),templateId);
-		} catch (Exception ex) {
-			log.error("Error during getTemplate.", ex);
-			throw new CaptureRuntimeException(ex.getMessage());
-//			return ok(new TemplateRequest());
+		if(!StringUtils.isEmpty(templateId)) {
+			try {
+				template = templateService.getTemplate(getUser(),templateId);
+			} catch (Exception ex) {
+				log.error("Error during getTemplate.", ex);
+				throw new CaptureRuntimeException(ex.getMessage());
+			}
+		}
+		if(template == null || !canUse(template) ){
+			throw new CaptureValidationException(i18n.getMessage("template.validate.update.not.exist"));			
 		}
 		log.info("getTemplate end for the id:{}", templateId);
 		return ok(template);
 	}
 
-	@SuppressWarnings({ "rawtypes" })
-	@DeleteMapping(value = "/{templateId}")
-	public ResponseEntity deleteTemplate(@PathVariable String templateId) throws CaptureValidationException {
-		log.info("deleteTemplate start for the id:{}", templateId);
-		if(StringUtils.isEmpty(templateId)) {
-			throw new CaptureValidationException("TemplateId cannot be null");
-		}
+	@DeleteMapping
+	public ResponseEntity<?> deleteTemplate(@RequestBody JsonNode json) throws CaptureValidationException {
+		log.info("deleteTemplate start ");
+		TemplateRequest templateReq = validateDelete(json);
 		try {
-			templateService.deleteTemplate(templateId);
+			templateService.deleteTemplate(templateReq.getId());
 		} catch (Exception ex) {
 			log.error("Error during deleteTemplate.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
-//			return badRequest(ex.getMessage());
 		}
-		log.info("deleteTemplate end for the id:{}", templateId);
-		return ok();
+		log.info("deleteTemplate end for the id:{}", templateReq.getId());
+		return ok(templateReq);
 	}
 
 	@GetMapping(value = "/shared")
@@ -208,26 +181,107 @@ public class TemplateController {
 	private ResponseEntity<TemplateRequest> ok(TemplateRequest template) {
 		return ResponseEntity.ok(template);
 	}
-	private ResponseEntity<Template> ok() {
-		return ResponseEntity.ok().build();
-	}
 	private ResponseEntity<?> ok(TemplateSearchList templates) {
 		return ResponseEntity.ok(templates);
 	}
+
 	/**
-	 * Fetches the user key from the authentication object.
-	 *
-	 * @return -- Returns the logged in user key.
-	 * @throws CaptureValidationException -- Thrown while fetching the user key.
+	 * Parse the json and validate the json for both Create and Update template API.
+	 * @param json - input json
+	 * @param create - true for create API and false for update API
+	 * @return - parsed json as TemplateRequest
+	 * @throws CaptureValidationException
 	 */
-	protected String getUser() throws CaptureValidationException {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-		String userKey = host.getUserKey().get();
-		if(StringUtils.isBlank(userKey)) {
-			throw new CaptureValidationException("User is not logged in");
+	private TemplateRequest parseAndValidate(JsonNode json, boolean create) throws CaptureValidationException {
+		TemplateRequest templateRequest = TemplateBuilder.parseJson(json);
+		templateRequest.setOwnerName(getUser());
+		validateTemplate(templateRequest, create);
+		return templateRequest;
+	}
+
+	private void validateTemplate(final TemplateRequest templateReqUI, boolean create) throws CaptureValidationException{
+		if(StringUtils.isEmpty(templateReqUI.getName())){
+			throw new CaptureValidationException(i18n.getMessage("template.validate.create.empty.name"));
 		}
-		return userKey;
+		//Check if project exists or not.
+		CaptureProject project = (templateReqUI.getProjectId() == null ? null : projectService.getCaptureProject(templateReqUI.getProjectId()));
+		if(Objects.isNull(project)) {
+			throw new CaptureValidationException(i18n.getMessage("template.validate.create.cannot.browse.project"));
+		}
+
+		if(create){
+			if (!permissionService.canCreateTemplate(getUser(), project)) {
+				throw new CaptureValidationException(i18n.getMessage("template.validate.create.cannot.create.issue"));
+			}
+		}else {
+			TemplateRequest existing = getTemplate(templateReqUI.getOwnerName(), templateReqUI.getId());
+			if(existing == null){
+				throw new CaptureValidationException(i18n.getMessage("template.validate.update.not.exist"));
+			}
+			if (!permissionService.canEditTemplate(getUser(), project)) {
+				throw new CaptureValidationException(i18n.getMessage("template.validate.update.permission"));
+			}
+			templateReqUI.setProjectKey(project.getKey());
+	        checkUpdateTime(templateReqUI.getTimeUpdated(), existing.getTimeUpdated());
+		}
+	}
+
+	/**
+	 * Validate operation for Delete API call.
+	 * @param json
+	 * @return
+	 * @throws CaptureValidationException
+	 */
+	private TemplateRequest validateDelete(JsonNode json) throws CaptureValidationException{
+		TemplateRequest templateReq = TemplateBuilder.parseJson(json);
+		templateReq.setOwnerName(getUser());
+		validateDelete(templateReq);
+		return templateReq;
+	}
+
+	private void validateDelete(TemplateRequest templateReqUI) throws CaptureValidationException{
+		TemplateRequest existing = getTemplate(templateReqUI.getOwnerName(), templateReqUI.getId());
+		if(existing == null){
+			throw new CaptureValidationException(i18n.getMessage("template.validate.delete.not.exist"));
+		}
+		CaptureProject project = projectService.getCaptureProject(existing.getProjectId());
+        if (project == null) {
+        	throw new CaptureValidationException(i18n.getMessage("template.validate.delete.cannot.browse.project"));
+        } else {
+            if (!canModifyTemplate(templateReqUI.getOwnerName(), existing, project)) {
+            	throw new CaptureValidationException(i18n.getMessage("template.validate.delete.permission.fail"));
+            }
+        }
+        checkUpdateTime(templateReqUI.getTimeUpdated(), existing.getTimeUpdated());
+	}
+
+	/**
+	 * Common method for Update and Delete operation to check whether the user
+	 * is performing the operation on latest template.
+	 * @param timeUpdated
+	 * @param timeUpdated2
+	 * @throws CaptureValidationException
+	 */
+    private void checkUpdateTime(DateTime timeUpdated, DateTime timeUpdated2) throws CaptureValidationException{
+		if(timeUpdated.getMillis() != timeUpdated2.getMillis()){
+			throw new CaptureValidationException(i18n.getMessage("template.validate.update.time.created.mismatch"));
+		}
+	}
+
+	private boolean canModifyTemplate(String user, TemplateRequest existing, CaptureProject project) {
+        return user.equals(existing.getOwnerName()) || (permissionService.canEditTemplate(user, project));
+    }
+    
+	private TemplateRequest getTemplate(String user, String templateId){
+		return StringUtils.isEmpty(templateId) ? null :
+			templateService.getTemplate(user, templateId);
+	}
+	
+	private boolean canUse(TemplateRequest templateReq) throws CaptureValidationException{
+		return
+				templateReq.getShared() || 
+				canModifyTemplate(getUser(), templateReq, projectService.getCaptureProject(templateReq.getProjectId()))
+				;
 	}
 
 }

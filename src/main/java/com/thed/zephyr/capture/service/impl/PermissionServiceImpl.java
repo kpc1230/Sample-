@@ -278,14 +278,17 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canUseTemplate(String user, Long projectId) {
-        Project project = projectService.getProjectObj(projectId);
+        return canUseTemplate(user, projectService.getCaptureProject(projectId));
+    }
+
+    @Override
+    public boolean canUseTemplate(String user, CaptureProject project) {
         if (project == null) {
             return false;
         }
-        boolean canEdit = (checkPermissionForType(project.getKey(), null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
-        return canEdit;
+        boolean canUse = (checkPermissionForType(project.getKey(), null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
+        return canUse;
     }
-
     private boolean isReporter(Issue issue, String user) {
         return user.equals(issue.getReporter());
     }

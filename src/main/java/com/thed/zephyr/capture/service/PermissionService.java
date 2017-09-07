@@ -76,4 +76,6 @@ public interface PermissionService {
     public boolean canEditTemplate(String user, CaptureProject project);
 
     public boolean canUseTemplate(String user, Long projectId);
+
+	public boolean canUseTemplate(String user, CaptureProject project);
 }
