@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
@@ -10,12 +11,14 @@ import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionExtensionResponse;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult;
+import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
@@ -60,6 +63,12 @@ public class SessionController {
 	@Autowired
 	private SessionActivityService sessionActivityService;
 
+	@Autowired
+	private PermissionService permissionService;
+
+	@Autowired
+	private IssueService issueService;
+
 	@InitBinder("sessionRequest")
 	public void setupBinder(WebDataBinder binder) {
 	    binder.addValidators(sessionValidator);
@@ -96,6 +105,16 @@ public class SessionController {
 		log.info("Start of createSession() --> params " + sessionRequest.toString());
 		try {
 			String loggedUserKey = getUser();
+			CaptureProject captureProject = projectService.getCaptureProject(sessionRequest.getProjectId());
+			if (captureProject != null) {
+				// Check that the creator and assignee have assign issue permissions in the project
+				if (loggedUserKey != null && !permissionService.canCreateSession(loggedUserKey, captureProject)) {
+					throw new CaptureRuntimeException("session.creator.fail.permissions");
+				}
+				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), captureProject)) {
+					throw new CaptureRuntimeException("session.assignee.fail.permissions", sessionRequest.getAssignee());
+				}
+			}
 			Session createdSession = sessionService.createSession(loggedUserKey, sessionRequest);
 	        if(sessionRequest.getStartNow()) { //User requested to start the session.
 	        	UpdateResult updateResult = sessionService.startSession(loggedUserKey, createdSession);
@@ -124,6 +143,9 @@ public class SessionController {
 		}
 		try {
 			Session session = sessionService.getSession(sessionId);
+			if (session != null && !permissionService.canSeeSession(getUser(), session)) {
+				throw new CaptureRuntimeException("Session is not permitted to view");
+			}
 			//SessionUI sessionUI = sessionService.constructSessionUI(session);
 			log.info("End of Create Session()");
 			return ResponseEntity.ok(session);
@@ -139,6 +161,15 @@ public class SessionController {
 		try {
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
+		    if (loadedSession != null) {
+				if (!permissionService.canEditSession(loggedUserKey, loadedSession)) {
+					throw new CaptureValidationException("session.update.not.editable");
+				}
+				CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
+				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), captureProject)) {
+					throw new CaptureValidationException("validation.service.user.not.assignable", sessionRequest.getAssignee());
+				}
+			}
 			UpdateResult updateResult = sessionService.updateSession(loggedUserKey, loadedSession, sessionRequest);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
@@ -161,6 +192,12 @@ public class SessionController {
 			throw new CaptureValidationException("Session id cannot be null");
 		}
 		try {
+			String loggedUserKey = getUser();
+			Session loadedSession  = validateAndGetSession(sessionId);
+			if (loadedSession != null && !permissionService.canEditSession(loggedUserKey, loadedSession)) {
+				throw new CaptureValidationException("session.delete.permission.fail");
+			}
+
 			sessionService.deleteSession(sessionId);
 			log.info("End of deleteSession()");
 			return ResponseEntity.ok().build();
@@ -176,6 +213,11 @@ public class SessionController {
 		try {		
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
+			// If the session status is changed, we better have been allowed to do that!
+			if (!Status.STARTED.equals(loadedSession.getStatus())
+					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
+				throw new CaptureValidationException("session.status.change.permissions.violation");
+			}
 			UpdateResult updateResult = sessionService.startSession(loggedUserKey, loadedSession);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
@@ -207,6 +249,11 @@ public class SessionController {
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
+			// If the session status is changed, we better have been allowed to do that!
+			if (!Status.PAUSED.equals(loadedSession.getStatus())
+					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
+				throw new CaptureValidationException("session.status.change.permissions.violation");
+			}
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
@@ -238,6 +285,9 @@ public class SessionController {
 			}
 			sessionService.update(updateResult);
 			//Store participant info in sessionActivity
+			if (loadedSession != null && !permissionService.canJoinSession(loggedUserKey, loadedSession)) {
+				throw new CaptureValidationException("session.join.no.permission", loadedSession.getName());
+			}
 			sessionActivityService.addParticipantJoined(updateResult.getSession(), dateTime, participant,loggedUserKey);
 			log.info("End of joinSession()");
 			return ResponseEntity.ok().build();
@@ -271,6 +321,11 @@ public class SessionController {
 		try {	
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
+			// If the session status is changed, we better have been allowed to do that!
+			if (!Status.COMPLETED.equals(loadedSession.getStatus())
+					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
+				throw new CaptureValidationException("session.status.change.permissions.violation");
+			}
 			CompleteSessionResult completeSessionResult = sessionService.completeSession(loggedUserKey, loadedSession, completeSessionRequest);
 			if (!completeSessionResult.isValid()) {
                 return badRequest(completeSessionResult.getErrorCollection());
@@ -358,6 +413,10 @@ public class SessionController {
 		try {		
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
+			Issue issue = issueService.getIssueObject(issueKey);
+			if (issue != null && !permissionService.canUnraiseIssueInSession(loggedUserKey, issue)) {
+				throw new CaptureValidationException("validation.service.unraise.permission");
+			}
 			UpdateResult updateResult = sessionService.removeRaisedIssue(loggedUserKey, loadedSession, issueKey);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
@@ -422,6 +481,10 @@ public class SessionController {
 		try {	
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
+			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
+			if (assignee != null && !permissionService.canBeAssignedSession(assignee, captureProject)) {
+				throw new CaptureValidationException("validation.service.user.not.assignable", assignee);
+			}
 			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loadedSession, assignee);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
