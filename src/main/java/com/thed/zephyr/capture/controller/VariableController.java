@@ -4,12 +4,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import javax.validation.Valid;
 
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.VariableRequest;
@@ -37,7 +33,7 @@ import com.thed.zephyr.capture.validator.VariableValidator;
 @RestController
 @RequestMapping("/variables")
 @Validated
-public class VariableController {
+public class VariableController extends CaptureAbstractController{
 
 	@Autowired
 	private Logger log;
@@ -124,21 +120,5 @@ public class VariableController {
 
 	private ResponseEntity<?> ok(VariableSearchList response) {
 		return ResponseEntity.ok(response);
-	}
-
-	/**
-	 * Fetches the user key from the authentication object.
-	 * 
-	 * @return -- Returns the logged in user key.
-	 * @throws CaptureValidationException -- Thrown while fetching the user key.
-	 */
-	protected String getUser() throws CaptureValidationException {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-		String userKey = host.getUserKey().get();
-		if(StringUtils.isBlank(userKey)) {
-			throw new CaptureValidationException("User is not logged in");
-		}
-		return userKey;
 	}
 }

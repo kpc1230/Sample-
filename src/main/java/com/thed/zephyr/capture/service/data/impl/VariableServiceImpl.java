@@ -21,6 +21,7 @@ import com.thed.zephyr.capture.model.util.VariableSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.VariableRepository;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.VariableService;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DefaultVariables;
 
@@ -36,13 +37,16 @@ public class VariableServiceImpl implements VariableService {
 
     @Autowired
 	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+    
+    @Autowired
+    private CaptureI18NMessageSource i18n;
 
 	@Override
 	public void createVariable(VariableRequest input) throws CaptureValidationException {
 		List<Variable> list = getVariableObjects(input.getOwnerName(), null, null).getContent();
 		Variable existing = list.stream().filter(var -> var.getName().equals(input.getName())).findFirst().orElse(null);
 		if (existing != null) {
-			throw new CaptureValidationException("Variable already exists");
+			throw new CaptureValidationException(i18n.getMessage("variable.already.present"));
 		}
 		Variable newVariable = new Variable(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), 
 				input.getOwnerName(), input.getName(), input.getValue());
@@ -100,7 +104,7 @@ public class VariableServiceImpl implements VariableService {
 		List<Variable> list = getVariableObjects(input.getOwnerName(), null, null).getContent();
 		Variable existing = list.stream().filter(var -> var.getId().equals(input.getId())).findFirst().orElse(null);
 		if (existing == null) {
-			throw new CaptureValidationException("Variable not exists");
+			throw new CaptureValidationException(i18n.getMessage("variable.not.present"));
 		}
 		existing.setName(input.getName());
 		existing.setValue(input.getValue());
