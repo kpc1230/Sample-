@@ -1,4 +1,5 @@
 package com.thed.zephyr.capture;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -11,6 +12,8 @@ import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.addon.impl.AddonInfoServiceImpl;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepositoryImpl;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +29,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.env.Environment;
+import org.springframework.web.servlet.LocaleResolver;
+import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
+import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+
+import java.util.Locale;
 
 import javax.servlet.Filter;
 
@@ -105,5 +113,27 @@ public class AddonApplication {
     @Bean
     public DynamoDBMapper dynamoDBMapper(AmazonDynamoDB amazonDynamoDB){
         return new DynamoDBMapper(amazonDynamoDB);
+    }
+
+    @Bean(name = "localeResolver")
+    public LocaleResolver localeResolver() {
+        AcceptHeaderLocaleResolver ahlr = new AcceptHeaderLocaleResolver();
+        ahlr.setDefaultLocale(Locale.US);
+        return ahlr;
+    }
+
+    @Bean
+    public LocaleChangeInterceptor localeChangeInterceptor() {
+        LocaleChangeInterceptor lci = new LocaleChangeInterceptor();
+        lci.setParamName("locale");
+        return lci;
+    }
+
+    @Bean
+    public CaptureI18NMessageSource messageSource() {
+        CaptureI18NMessageSource source = new CaptureI18NMessageSource();
+        source.setBasenames("i18n/capture-i18n"); // name of the resource bundle
+        source.setUseCodeAsDefaultMessage(true);
+        return source;
     }
 }
