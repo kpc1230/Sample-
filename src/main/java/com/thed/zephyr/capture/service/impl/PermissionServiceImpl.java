@@ -263,7 +263,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canCreate = (checkPermissionForType(null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
+        boolean canCreate = (checkPermissionForType(project.getKey(), null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
         return canCreate;
     }
 
@@ -272,7 +272,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canEdit = (checkPermissionForType(null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
+        boolean canEdit = (checkPermissionForType(project.getKey(), null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
         return canEdit;
     }
 
@@ -282,7 +282,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canEdit = (checkPermissionForType(null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
+        boolean canEdit = (checkPermissionForType(project.getKey(), null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
         return canEdit;
     }
 
