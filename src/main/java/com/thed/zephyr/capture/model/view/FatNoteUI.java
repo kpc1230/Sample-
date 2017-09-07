@@ -4,7 +4,7 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Sets;
 import com.thed.zephyr.capture.model.FatNote;
 import com.thed.zephyr.capture.model.Note;
-import com.thed.zephyr.capture.model.Tag;
+import com.thed.zephyr.capture.model.NoteSessionActivity;
 import org.joda.time.DateTime;
 
 import java.util.Set;
@@ -53,16 +53,16 @@ public class FatNoteUI {
     }
 
 
-    public Note.Resolution getResolutionState() {
+    public NoteSessionActivity.Resolution getResolutionState() {
         return fatNote.getResolutionState();
     }
 
     public boolean isCompleted() {
-        return fatNote.getResolutionState().equals(Note.Resolution.COMPLETED);
+        return fatNote.getResolutionState().equals(NoteSessionActivity.Resolution.COMPLETED);
     }
 
     public boolean isActionable(String currentUser) {
-        boolean actionable = !getResolutionState().equals(Note.Resolution.NON_ACTIONABLE);
+        boolean actionable = !getResolutionState().equals(NoteSessionActivity.Resolution.NON_ACTIONABLE);
         return actionable && isEditable(currentUser);
     }
 

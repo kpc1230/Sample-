@@ -71,6 +71,7 @@ public class NoteController {
 		try {
 			noteSessionActivityRequest.setUser(hostUser.getUserKey().get());
 			noteSessionActivity = noteService.create(noteSessionActivityRequest);
+			noteSessionActivity.setCtId(hostUser.getHost().getClientKey());
 		} catch (Exception ex) {
 			log.error("Error during createNote.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
@@ -132,6 +133,29 @@ public class NoteController {
 		}
     	return ok(updated);
     }
+
+	@GetMapping(value = "/project/{projectId}", produces = APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getNotesByProjectId(@AuthenticationPrincipal AtlassianHostUser hostUser, @PathVariable String projectId,
+												 @RequestParam("page") Integer page, @RequestParam("limit") Integer limit, @RequestBody NoteFilter noteFilter) throws CaptureValidationException {
+		log.info("getNotesByProjectId start for session:{}", projectId);
+		if (StringUtils.isEmpty(projectId)) {
+			throw new CaptureValidationException("projectId cannot be null/empty");
+		}
+		CaptureProject project = projectService.getCaptureProject(Long.parseLong(projectId));
+		if(project == null){
+			throw new CaptureValidationException("Project is not valid");
+		}
+		NoteSearchList result = null;
+		try {
+			result = noteService.getNotesByProjectId(hostUser.getHost().getClientKey(), projectId, noteFilter, page, limit);
+		} catch (Exception ex) {
+			log.error("Error during getNotesByProjectId.", ex);
+			throw new CaptureRuntimeException(ex.getMessage());
+		}
+		log.debug("getNotesByProjectId end for the session:{}", projectId);
+		return ResponseEntity.ok(result);
+	}
+
 
 
 	private ResponseEntity<?> ok() {
