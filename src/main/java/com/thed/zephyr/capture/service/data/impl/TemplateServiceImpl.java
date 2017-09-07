@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -53,9 +54,9 @@ public class TemplateServiceImpl implements TemplateService {
 
 	@Override
 	public TemplateRequest createTemplate(TemplateRequest templateReq) {
-		Set<String> variables = getVariables(templateReq.getSource());
+		//Set<String> variables = getVariables(templateReq.getSource(), templateReq.getOwnerName());
         Template created = repository.save(
-        		TemplateBuilder.constructTemplate(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), templateReq, variables));
+        		TemplateBuilder.constructTemplate(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), templateReq));
 		return createTemplateRequest(created);
 	}
 
@@ -65,8 +66,8 @@ public class TemplateServiceImpl implements TemplateService {
 		if(Objects.isNull(existing)) {
 			return null;
 		}
-		Set<String> variables = getVariables(templateReq.getSource());
-        Template created = repository.save(TemplateBuilder.updateTemplate(existing, templateReq, variables));
+//		Set<String> variables = getVariables(templateReq.getSource(), existing.getCreatedBy());
+        Template created = repository.save(TemplateBuilder.updateTemplate(existing, templateReq));
 		return createTemplateRequest(created);
 	}
 
@@ -115,6 +116,11 @@ public class TemplateServiceImpl implements TemplateService {
 		Page<Template> templatePage = repository.findByFavouriteAndCreatedBy(true, owner, getPageRequest(offset, limit));
 		return convert(templatePage, offset, limit);
 	}
+
+	protected Page<Template> getUserTemplateObjects(String userName, Integer offset, Integer limit) {
+		return repository.findByCreatedBy(userName, getPageRequest(offset, limit));
+	}
+
 	/**
 	 * Creates the page request object for pagination.
 	 * 
@@ -161,11 +167,18 @@ public class TemplateServiceImpl implements TemplateService {
 				, userService.findUser(created.getCreatedBy()));
 	}
 
-	protected Set<String> getVariables(JsonNode json){
-		return variableService.parseVariables(json);
+	protected Set<String> getVariables(JsonNode json, String userName){
+		Set<String> variableNames = variableService.parseVariables(json);
+		List<Variable> variableList = variableService.getVariables(userName).getContent();
+		return variableList
+				.stream()
+				.filter( var -> variableNames.contains(var.getName().toLowerCase()))
+				.map( var -> var.getId())
+				.collect(Collectors.toSet());
 	}
 	
 	protected List<Variable> getUserVariables(String userName){
 		return variableService.getVariables(userName).getContent();
 	}
+
 }

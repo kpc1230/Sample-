@@ -1,7 +1,6 @@
 package com.thed.zephyr.capture.service.data;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.model.Template;
 import com.thed.zephyr.capture.model.TemplateRequest;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
 

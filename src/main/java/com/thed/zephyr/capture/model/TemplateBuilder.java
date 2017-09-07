@@ -1,10 +1,5 @@
 package com.thed.zephyr.capture.model;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.joda.time.DateTime;
 
 import com.atlassian.jira.rest.client.api.domain.Project;
@@ -24,7 +19,7 @@ public final class TemplateBuilder {
 	 * @param templateRequest - Object with values of Template
 	 * @return - Template to be persisted
 	 */
-	public static Template constructTemplate(String ctId, TemplateRequest templateRequest, Set<String> variables){
+	public static Template constructTemplate(String ctId, TemplateRequest templateRequest){
 		Template template = new Template();
 		DateTime created = new DateTime();
 
@@ -35,7 +30,6 @@ public final class TemplateBuilder {
 		template.setShared(templateRequest.getShared());
 		template.setContent(templateRequest.getSource());
 		template.setCreatedBy(templateRequest.getOwnerName());
-//		template.setVariables(getVariables());
 		template.setTimeCreated(created);
 		//Populate timeUpdated
 		if(templateRequest.getFavourited()){
@@ -51,7 +45,7 @@ public final class TemplateBuilder {
 	 * @return - Modified Template to be persisted.
 	 * @throws CaptureValidationException 
 	 */
-	public static Template updateTemplate(Template template, TemplateRequest templateRequest, Set<String> variables) throws CaptureValidationException{
+	public static Template updateTemplate(Template template, TemplateRequest templateRequest) throws CaptureValidationException{
 		TemplateRequest newTR = parseJson(templateRequest.getSource());
 		if(newTR.getName() != null && !newTR.getName().equals(template.getName())){
 			template.setName(newTR.getName());
