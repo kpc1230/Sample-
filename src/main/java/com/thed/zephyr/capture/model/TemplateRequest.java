@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.model;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.joda.time.DateTime;
@@ -23,10 +24,10 @@ public class TemplateRequest {
 	private String projectKey;
 	private String projectIconUrl;
 	private String ownerName;
-	private DateTime timeCreated;
-	private DateTime timeUpdated;
-	private DateTime timeVariablesUpdated;
-	private DateTime timeFavourited;
+	private Date timeCreated;
+	private Date timeUpdated;
+	private Date timeVariablesUpdated;
+	private Date timeFavourited;
 	private boolean variablesChanged;
 	private String ownerDisplayName;
 	private List<Variable> variables = new ArrayList<>();
@@ -114,35 +115,35 @@ public class TemplateRequest {
 		this.ownerName = ownerName;
 	}
 
-	public DateTime getTimeCreated() {
+	public Date getTimeCreated() {
 		return timeCreated;
 	}
 
-	public void setTimeCreated(DateTime timeCreated) {
+	public void setTimeCreated(Date timeCreated) {
 		this.timeCreated = timeCreated;
 	}
 
-	public DateTime getTimeUpdated() {
+	public Date getTimeUpdated() {
 		return timeUpdated;
 	}
 
-	public void setTimeUpdated(DateTime timeUpdated) {
+	public void setTimeUpdated(Date timeUpdated) {
 		this.timeUpdated = timeUpdated;
 	}
 
-	public DateTime getTimeVariablesUpdated() {
+	public Date getTimeVariablesUpdated() {
 		return timeVariablesUpdated;
 	}
 
-	public void setTimeVariablesUpdated(DateTime timeVariablesUpdated) {
+	public void setTimeVariablesUpdated(Date timeVariablesUpdated) {
 		this.timeVariablesUpdated = timeVariablesUpdated;
 	}
 
-	public DateTime getTimeFavourited() {
+	public Date getTimeFavourited() {
 		return timeFavourited;
 	}
 
-	public void setTimeFavourited(DateTime timeFavourited) {
+	public void setTimeFavourited(Date timeFavourited) {
 		this.timeFavourited = timeFavourited;
 	}
 

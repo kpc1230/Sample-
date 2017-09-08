@@ -39,17 +39,17 @@ public class Template {
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_CREATED_BY)
     private String createdBy;
     @DynamoDBTypeConverted(converter = DateTypeConverter.class)
-    private DateTime timeCreated;
+    private Date timeCreated;
     @DynamoDBTypeConverted(converter = DateTypeConverter.class)
-    private DateTime timeUpdated;
+    private Date timeUpdated;
     @DynamoDBTypeConverted(converter = DateTypeConverter.class)
-    private DateTime timeFavourited;
+    private Date timeFavourited;
 
     public Template() {
     }
 
     public Template(String ctId, String name, Long projectId, Boolean favourite, Boolean shared, JsonNode content, String createdBy, Date createdOn
-    		, DateTime timeCreated, DateTime timeUpdated,DateTime timeFavourited, Set<String> variables) {
+    		, Date timeCreated, Date timeUpdated, Date timeFavourited, Set<String> variables) {
         this.ctId = ctId;
         this.name = name;
         this.projectId = projectId;
@@ -126,27 +126,27 @@ public class Template {
         this.content = content;
     }
 
-    public DateTime getTimeCreated() {
+    public Date getTimeCreated() {
 		return timeCreated;
 	}
 
-	public void setTimeCreated(DateTime timeCreated) {
+	public void setTimeCreated(Date timeCreated) {
 		this.timeCreated = timeCreated;
 	}
 
-	public DateTime getTimeUpdated() {
+	public Date getTimeUpdated() {
 		return timeUpdated;
 	}
 
-	public void setTimeUpdated(DateTime timeUpdated) {
+	public void setTimeUpdated(Date timeUpdated) {
 		this.timeUpdated = timeUpdated;
 	}
 
-	public DateTime getTimeFavourited() {
+	public Date getTimeFavourited() {
 		return timeFavourited;
 	}
 
-	public void setTimeFavourited(DateTime timeFavourited) {
+	public void setTimeFavourited(Date timeFavourited) {
 		this.timeFavourited = timeFavourited;
 	}
 

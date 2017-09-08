@@ -1,6 +1,6 @@
 package com.thed.zephyr.capture.model;
 
-import org.joda.time.DateTime;
+import java.util.Date;
 
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -21,7 +21,7 @@ public final class TemplateBuilder {
 	 */
 	public static Template constructTemplate(String ctId, TemplateRequest templateRequest){
 		Template template = new Template();
-		DateTime created = new DateTime();
+		Date created = new Date();
 
 		template.setCtId(ctId);
 		template.setName(templateRequest.getName());
@@ -59,9 +59,9 @@ public final class TemplateBuilder {
 		template.setShared(newTR.getShared());
 		template.setContent(templateRequest.getSource());
 		if(!template.getFavourite() && newTR.getFavourited()){
-			templateRequest.setTimeFavourited(new DateTime());
+			templateRequest.setTimeFavourited(new Date());
 		}
-		template.setTimeUpdated(new DateTime());
+		template.setTimeUpdated(new Date());
 		return template;
 	}
 	
