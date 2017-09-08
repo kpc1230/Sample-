@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.service.extension.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.extension.JiraAuthService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
@@ -72,5 +73,26 @@ public class JiraAuthServiceImpl implements JiraAuthService {
     @Override
     public AcHostModel getAcHostModelbyBaseUrl(String baseUrl) {
         return (AcHostModel) dynamoDBAcHostRepository.findFirstByBaseUrl(baseUrl).get();
+    }
+
+    @Override
+    public CaptureUser getUserDetails(String username, String password, String baseURL) {
+        CaptureUser user = null;
+        String uri = baseURL + JiraConstants.REST_USER_MYSELF;
+        try {
+            String pass = "Basic " + CaptureUtil.base64(username + ":" + CaptureUtil.decodeBase64(password));
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", pass);
+            headers.set("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+            HttpEntity<String> entity = new HttpEntity<String>("parameters", headers);
+            ResponseEntity<CaptureUser> response = restTemplate.exchange(uri, HttpMethod.GET, entity, CaptureUser.class);
+            log.debug("Getting the user details from JIRA : Result - status (" + response.getStatusCode() + ") has body: " + response.hasBody());
+            if (response != null && response.getStatusCode() == HttpStatus.OK) {
+                user = response.getBody();
+            }
+        } catch (Exception exception) {
+            log.error("Error during getting the user details from JIRA ", exception);
+        }
+        return user;
     }
 }
