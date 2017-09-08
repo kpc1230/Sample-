@@ -41,7 +41,7 @@ import com.thed.zephyr.capture.validator.NoteSessionActivityValidator;
  * @author Venkatareddy on 8/28/2017.
  */
 @RestController
-@RequestMapping("/session/note")
+@RequestMapping("/session")
 public class NoteController extends CaptureAbstractController{
 
 	@Autowired
@@ -64,7 +64,7 @@ public class NoteController extends CaptureAbstractController{
 		binder.addValidators(validator);
 	}
 
-	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/note", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> createNote(@AuthenticationPrincipal AtlassianHostUser hostUser, @Valid @RequestBody NoteSessionActivity noteSessionActivityRequest) throws CaptureValidationException {
 		log.info("createNote start for the name:" + noteSessionActivityRequest.getNoteData());
 		NoteSessionActivity noteSessionActivity = null;
@@ -81,15 +81,30 @@ public class NoteController extends CaptureAbstractController{
 		return created(noteSessionActivity);
 	}
 
-	@PutMapping(value = "/{noteActivityId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> updateNote(@AuthenticationPrincipal AtlassianHostUser hostUser, @Valid @RequestBody NoteSessionActivity noteSessionActivityRequest, @PathVariable String noteActivityId) throws CaptureValidationException {
-		log.info("updateNote start for the id:{}", noteActivityId);
+	@GetMapping(value = "/note/{noteSessionActivityId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getNoteSessionActivity(@AuthenticationPrincipal AtlassianHostUser hostUser,
+													@PathVariable String noteSessionActivityId) throws CaptureValidationException {
+		log.info("Getting noteSessionActivity id:{}", noteSessionActivityId);
+		NoteSessionActivity noteSessionActivity = null;
+		try {
+			noteSessionActivity = noteService.getNoteSessionActivity(noteSessionActivityId);
+		} catch (Exception ex) {
+			log.error("Error during getting note session activity.", ex);
+			throw new CaptureRuntimeException(ex.getMessage());
+		}
+
+		return ResponseEntity.ok(noteSessionActivity);
+	}
+
+	@PutMapping(value = "/note/{noteSessionActivityId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> updateNote(@AuthenticationPrincipal AtlassianHostUser hostUser, @Valid @RequestBody NoteSessionActivity noteSessionActivityRequest, @PathVariable String noteSessionActivityId) throws CaptureValidationException {
+		log.info("updateNote start for the id:{}", noteSessionActivityId);
 		NoteSessionActivity updated = null;
 		try {
-			if(StringUtils.isEmpty(noteActivityId)){
-				throw new CaptureValidationException(i18n.getMessage("note.invalid.id" , new Object[]{noteActivityId}));
+			if(StringUtils.isEmpty(noteSessionActivityId)){
+				throw new CaptureValidationException(i18n.getMessage("note.invalid.id" , new Object[]{noteSessionActivityId}));
 			}
-			noteSessionActivityRequest.setId(noteActivityId);
+			noteSessionActivityRequest.setId(noteSessionActivityId);
 			noteSessionActivityRequest.setUser(hostUser.getUserKey().get());
 			updated = noteService.update(noteSessionActivityRequest);
 		} catch (CaptureValidationException e) {
@@ -98,12 +113,12 @@ public class NoteController extends CaptureAbstractController{
 			log.error("Error during updateNote.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.debug("updateNote end for the id:{}", noteActivityId);
+		log.debug("updateNote end for the id:{}", noteSessionActivityId);
 		return created(updated);
 	}
 
 
-	@DeleteMapping(value = "/{noteSessionActivityId}", consumes = APPLICATION_JSON_VALUE)
+	@DeleteMapping(value = "/note/{noteSessionActivityId}", consumes = APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> deleteNote(@PathVariable String noteSessionActivityId) throws CaptureValidationException {
 		log.info("Delete NoteSessionActivity start for the id:{}", noteSessionActivityId);
 		try {
@@ -118,7 +133,7 @@ public class NoteController extends CaptureAbstractController{
 		return ok();
 	}
 
-    @PostMapping(value = "/{noteSessionActivityId}/toggleResolution", consumes = APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/note/{noteSessionActivityId}/toggleResolution", consumes = APPLICATION_JSON_VALUE)
     public ResponseEntity<?> completeNote(@PathVariable String noteId, @Valid @RequestBody NoteSessionActivity noteSessionActivityRequest)
     		throws CaptureValidationException {
 		NoteSessionActivity updated = null;
@@ -134,14 +149,14 @@ public class NoteController extends CaptureAbstractController{
     	return ok(updated);
     }
 
-	@GetMapping(value = "/project/{projectId}", produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getNotesByProjectId(@AuthenticationPrincipal AtlassianHostUser hostUser, @PathVariable String projectId,
+	@GetMapping(value = "/notes/project/{projectId}", produces = APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getNotesByProjectId(@AuthenticationPrincipal AtlassianHostUser hostUser, @PathVariable Long projectId,
 												 @RequestParam("page") Integer page, @RequestParam("limit") Integer limit, @RequestBody NoteFilter noteFilter) throws CaptureValidationException {
 		log.info("getNotesByProjectId start for session:{}", projectId);
-		if (StringUtils.isEmpty(projectId)) {
+		if (projectId != null) {
 			throw new CaptureValidationException(i18n.getMessage("session.project.key.needed"));
 		}
-		CaptureProject project = projectService.getCaptureProject(Long.parseLong(projectId));
+		CaptureProject project = projectService.getCaptureProject(projectId);
 		if(project == null){
 			throw new CaptureValidationException(i18n.getMessage("session.project.id.invalid"));
 		}
@@ -153,6 +168,27 @@ public class NoteController extends CaptureAbstractController{
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
 		log.debug("getNotesByProjectId end for the session:{}", projectId);
+		return ResponseEntity.ok(result);
+	}
+
+	@GetMapping(value = "/{sessionId}/notes", produces = APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getNotesBySessionId(@AuthenticationPrincipal AtlassianHostUser hostUser,
+												 @PathVariable String sessionId,
+												 @RequestParam("page") Integer page,
+												 @RequestParam("limit") Integer limit) throws CaptureValidationException {
+		log.info("Getting notes by sessionId:{}", sessionId);
+		if (StringUtils.isEmpty(sessionId)) {
+			throw new CaptureValidationException(i18n.getMessage("session.project.key.needed"));
+		}
+
+		NoteSearchList result = null;
+		try {
+			result = noteService.getNotesBySessionId(hostUser.getHost().getClientKey(), sessionId, page, limit);
+		} catch (Exception ex) {
+			log.error("Error during getNotesByProjectId.", ex);
+			throw new CaptureRuntimeException(ex.getMessage());
+		}
+
 		return ResponseEntity.ok(result);
 	}
 

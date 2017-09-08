@@ -64,6 +64,15 @@ public class NoteServiceImpl implements NoteService {
 	}
 
 	@Override
+	public NoteSessionActivity getNoteSessionActivity(String noteSessionActivityId) throws CaptureValidationException {
+		SessionActivity noteSessionActivity = sessionActivityRepository.findOne(noteSessionActivityId);
+		if(!(noteSessionActivity instanceof NoteSessionActivity)){
+			throw new CaptureRuntimeException("This id do not belong to NoteSessionActivity");
+		}
+		return (NoteSessionActivity)noteSessionActivity;
+	}
+
+	@Override
 	public NoteSessionActivity update(NoteSessionActivity noteSessionActivityRequest) throws CaptureValidationException{
 		return update(noteSessionActivityRequest, false);
 	}
@@ -120,7 +129,7 @@ public class NoteServiceImpl implements NoteService {
 	}
 
 	@Override
-	public NoteSearchList getNotesByProjectId(String ctId, String projectId, NoteFilter noteFilter, Integer page, Integer limit) {
+	public NoteSearchList getNotesByProjectId(String ctId, Long projectId, NoteFilter noteFilter, Integer page, Integer limit) {
 		Pageable pageable = CaptureUtil.getPageRequest(page, limit);
 		Page<Note> notes = null;
 		if(noteFilter.getTags() == null && noteFilter.getResolution() == null){
@@ -132,6 +141,17 @@ public class NoteServiceImpl implements NoteService {
 		} else if(noteFilter.getTags() == null && noteFilter.getResolution() != null){
 			notes = noteRepository.findByCtIdAndProjectIdAndResolutionState(ctId, projectId, noteFilter.getResolution(), pageable);
 		}
+		List<Note> content = notes != null?notes.getContent():new ArrayList<>();
+		Long total = notes != null?notes.getTotalElements():0;
+		NoteSearchList result = new NoteSearchList(content, page, limit, total);
+
+		return result;
+	}
+
+	@Override
+	public NoteSearchList getNotesBySessionId(String ctId, String sessionId, Integer page, Integer limit) {
+		Pageable pageable = CaptureUtil.getPageRequest(page, limit);
+		Page<Note> notes = noteRepository.findByCtIdAndSessionId(ctId, sessionId, pageable);
 		List<Note> content = notes != null?notes.getContent():new ArrayList<>();
 		Long total = notes != null?notes.getTotalElements():0;
 		NoteSearchList result = new NoteSearchList(content, page, limit, total);

@@ -17,12 +17,14 @@ public interface NoteRepository extends ElasticsearchRepository<Note, String> {
 
     Note findByCtIdAndNoteSessionActivityId(String ctId, String noteSessionActivityId);
 
-    Page<Note> findByCtIdAndProjectId(String ctId, String projectId, Pageable pageable);
+    Page<Note> findByCtIdAndProjectId(String ctId, Long projectId, Pageable pageable);
 
-    Page<Note> findByCtIdAndProjectIdAndResolutionStateAndTags(String ctId, String projectId, NoteSessionActivity.Resolution resolution, Set<String> tags, Pageable pageable);
+    Page<Note> findByCtIdAndProjectIdAndResolutionStateAndTags(String ctId, Long projectId, NoteSessionActivity.Resolution resolution, Set<String> tags, Pageable pageable);
 
-    Page<Note> findByCtIdAndProjectIdAndTags(String ctId, String projectId, Set<String> tags, Pageable pageable);
+    Page<Note> findByCtIdAndProjectIdAndTags(String ctId, Long projectId, Set<String> tags, Pageable pageable);
 
-    Page<Note> findByCtIdAndProjectIdAndResolutionState(String ctId, String projectId, NoteSessionActivity.Resolution resolution, Pageable pageable);
+    Page<Note> findByCtIdAndProjectIdAndResolutionState(String ctId, Long projectId, NoteSessionActivity.Resolution resolution, Pageable pageable);
+
+    Page<Note> findByCtIdAndSessionId(String ctId, String sessionId, Pageable pageable);
 
 }
