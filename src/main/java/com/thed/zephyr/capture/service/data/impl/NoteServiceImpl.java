@@ -80,7 +80,7 @@ public class NoteServiceImpl implements NoteService {
 	@Override
 	public NoteSessionActivity update(NoteSessionActivity noteSessionActivityRequest, boolean toggleResolution) throws CaptureValidationException {
 		SessionActivity existing = sessionActivityRepository.findOne(noteSessionActivityRequest.getId());
-		if(existing instanceof NoteSessionActivity){
+		if(!(existing instanceof NoteSessionActivity)){
 			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteSessionActivityRequest.getId()}));
 		} else if(existing == null){
 			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteSessionActivityRequest.getId()}));
