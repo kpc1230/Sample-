@@ -142,9 +142,11 @@ public class NoteController extends CaptureAbstractController{
     	return ok(updated);
     }
 
-	@PostMapping(value = "/notes/project/{projectId}", produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getNotesByProjectId(@AuthenticationPrincipal AtlassianHostUser hostUser, @PathVariable Long projectId,
-												 @RequestParam("page") Integer page, @RequestParam("limit") Integer limit, @RequestBody NoteFilter noteFilter) throws CaptureValidationException {
+	@PostMapping(value = "/notes/project/{projectId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getNotesByProjectId(@PathVariable Long projectId,
+												 @RequestParam("page") Integer page,
+												 @RequestParam("limit") Integer limit,
+												 @RequestBody NoteFilter noteFilter) throws CaptureValidationException {
 		log.info("getNotesByProjectId start for session:{}", projectId);
 		if (projectId == null) {
 			throw new CaptureValidationException(i18n.getMessage("session.project.id.needed"));
@@ -155,7 +157,7 @@ public class NoteController extends CaptureAbstractController{
 		}
 		NoteSearchList result = null;
 		try {
-			result = noteService.getNotesByProjectId(hostUser.getHost().getClientKey(), projectId, noteFilter, page, limit);
+			result = noteService.getNotesByProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, noteFilter, page, limit);
 		} catch (Exception ex) {
 			log.error("Error during getNotesByProjectId.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());

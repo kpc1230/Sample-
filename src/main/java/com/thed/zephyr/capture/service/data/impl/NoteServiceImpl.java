@@ -132,6 +132,9 @@ public class NoteServiceImpl implements NoteService {
 	public NoteSearchList getNotesByProjectId(String ctId, Long projectId, NoteFilter noteFilter, Integer page, Integer limit) {
 		Pageable pageable = CaptureUtil.getPageRequest(page, limit);
 		Page<Note> notes = null;
+		if (noteFilter.getTags().size() == 0){
+			noteFilter.setTags(null);
+		}
 		if(noteFilter.getTags() == null && noteFilter.getResolution() == null){
 			notes = noteRepository.findByCtIdAndProjectId(ctId, projectId, pageable);
 		} else if(noteFilter.getTags() != null && noteFilter.getResolution() != null){
