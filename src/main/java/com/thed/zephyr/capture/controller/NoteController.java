@@ -4,6 +4,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import javax.validation.Valid;
 
+import com.atlassian.connect.spring.IgnoreJwt;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import org.apache.commons.lang3.StringUtils;
@@ -117,8 +118,7 @@ public class NoteController extends CaptureAbstractController{
 		return created(updated);
 	}
 
-
-	@DeleteMapping(value = "/note/{noteSessionActivityId}", consumes = APPLICATION_JSON_VALUE)
+	@DeleteMapping(value = "/note/{noteSessionActivityId}")
 	public ResponseEntity<?> deleteNote(@PathVariable String noteSessionActivityId) throws CaptureValidationException {
 		log.info("Delete NoteSessionActivity start for the id:{}", noteSessionActivityId);
 		try {
@@ -149,7 +149,7 @@ public class NoteController extends CaptureAbstractController{
     	return ok(updated);
     }
 
-	@GetMapping(value = "/notes/project/{projectId}", produces = APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/notes/project/{projectId}", produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getNotesByProjectId(@AuthenticationPrincipal AtlassianHostUser hostUser, @PathVariable Long projectId,
 												 @RequestParam("page") Integer page, @RequestParam("limit") Integer limit, @RequestBody NoteFilter noteFilter) throws CaptureValidationException {
 		log.info("getNotesByProjectId start for session:{}", projectId);

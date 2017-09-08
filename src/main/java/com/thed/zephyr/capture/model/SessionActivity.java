@@ -67,7 +67,7 @@ abstract public class SessionActivity {
         return ctId;
     }
 
-    public void setCtId(String clientKey) {
+    public void setCtId(String ctId) {
         this.ctId = ctId;
     }
 

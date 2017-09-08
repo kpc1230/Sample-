@@ -38,6 +38,9 @@ final public class Note {
 
     private Set<String> tags;
 
+    public Note() {
+    }
+
     public Note(NoteSessionActivity noteSessionActivity) {
         this.noteSessionActivityId = noteSessionActivity.getId();
         this.sessionId = noteSessionActivity.getSessionId();
@@ -120,6 +123,14 @@ final public class Note {
 
     public void setProjectId(Long projectId) {
         this.projectId = projectId;
+    }
+
+    public String getNoteSessionActivityId() {
+        return noteSessionActivityId;
+    }
+
+    public void setNoteSessionActivityId(String noteSessionActivityId) {
+        this.noteSessionActivityId = noteSessionActivityId;
     }
 
     @Override

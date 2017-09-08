@@ -47,7 +47,7 @@ public class NoteServiceImpl implements NoteService {
 		NoteSessionActivity.Resolution resolution = tags.size() > 0?NoteSessionActivity.Resolution.INITIAL:NoteSessionActivity.Resolution.NON_ACTIONABLE;
 		SessionActivity sessionActivity =
 				new NoteSessionActivity(
-						noteSessionActivityRequest.getId(),
+						noteSessionActivityRequest.getSessionId(),
 						noteSessionActivityRequest.getCtId(),
 						new Date(),
 						noteSessionActivityRequest.getUser(),
