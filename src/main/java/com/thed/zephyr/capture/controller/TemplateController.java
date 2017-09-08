@@ -2,13 +2,13 @@ package com.thed.zephyr.capture.controller;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import java.util.Date;
 import java.util.Objects;
 
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 
 import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -262,8 +262,8 @@ public class TemplateController extends CaptureAbstractController{
 	 * @param timeUpdated2
 	 * @throws CaptureValidationException
 	 */
-    private void checkUpdateTime(DateTime timeUpdated, DateTime timeUpdated2) throws CaptureValidationException{
-		if(timeUpdated.getMillis() != timeUpdated2.getMillis()){
+    private void checkUpdateTime(Date timeUpdated, Date timeUpdated2) throws CaptureValidationException{
+		if(timeUpdated.getTime() != timeUpdated2.getTime()){
 			throw new CaptureValidationException(i18n.getMessage("template.validate.update.time.created.mismatch"));
 		}
 	}
