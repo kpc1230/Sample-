@@ -5,7 +5,8 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import javax.validation.Valid;
 
 import com.thed.zephyr.capture.model.*;
-import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +31,6 @@ import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
 import com.thed.zephyr.capture.service.data.NoteService;
-import com.thed.zephyr.capture.service.data.SessionActivityService;
-import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.validator.NoteSessionActivityValidator;
 
@@ -52,11 +51,7 @@ public class NoteController extends CaptureAbstractController{
 	@Autowired
 	private ProjectService projectService;
 	@Autowired
-	private SessionActivityService sessionActivityService;
-	@Autowired
-	private SessionService sessionService;
-	@Autowired
-	private SessionActivityRepository sessionActivityRepository;
+	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
 	
 	@InitBinder("noteRequest")
 	protected void initBinder(WebDataBinder binder) {
@@ -170,8 +165,7 @@ public class NoteController extends CaptureAbstractController{
 	}
 
 	@GetMapping(value = "/{sessionId}/notes", produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getNotesBySessionId(@AuthenticationPrincipal AtlassianHostUser hostUser,
-												 @PathVariable String sessionId,
+	public ResponseEntity<?> getNotesBySessionId(@PathVariable String sessionId,
 												 @RequestParam("page") Integer page,
 												 @RequestParam("limit") Integer limit) throws CaptureValidationException {
 		log.info("Getting notes by sessionId:{}", sessionId);
@@ -181,7 +175,7 @@ public class NoteController extends CaptureAbstractController{
 
 		NoteSearchList result = null;
 		try {
-			result = noteService.getNotesBySessionId(hostUser.getHost().getClientKey(), sessionId, page, limit);
+			result = noteService.getNotesBySessionId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), sessionId, page, limit);
 		} catch (Exception ex) {
 			log.error("Error during getNotesByProjectId.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
