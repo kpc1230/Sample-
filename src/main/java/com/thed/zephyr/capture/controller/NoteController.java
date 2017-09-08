@@ -4,11 +4,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import javax.validation.Valid;
 
-import com.atlassian.connect.spring.IgnoreJwt;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import org.apache.commons.lang3.StringUtils;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -153,8 +151,8 @@ public class NoteController extends CaptureAbstractController{
 	public ResponseEntity<?> getNotesByProjectId(@AuthenticationPrincipal AtlassianHostUser hostUser, @PathVariable Long projectId,
 												 @RequestParam("page") Integer page, @RequestParam("limit") Integer limit, @RequestBody NoteFilter noteFilter) throws CaptureValidationException {
 		log.info("getNotesByProjectId start for session:{}", projectId);
-		if (projectId != null) {
-			throw new CaptureValidationException(i18n.getMessage("session.project.key.needed"));
+		if (projectId == null) {
+			throw new CaptureValidationException(i18n.getMessage("session.project.id.needed"));
 		}
 		CaptureProject project = projectService.getCaptureProject(projectId);
 		if(project == null){
