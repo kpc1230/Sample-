@@ -14,31 +14,19 @@ import java.util.TreeSet;
 /**
  * Created by aliakseimatsarski on 8/27/17.
  */
-public class TagSetConverter implements DynamoDBTypeConverter<Set<String>, Set<Tag>> {
+public class TagSetConverter implements DynamoDBTypeConverter<Set<String>, Set<String>> {
 
     private static Logger log = LoggerFactory.getLogger("application");
 
     @Override
-    public Set<String> convert(Set<Tag> tags) {
-        Set<String> result = new TreeSet<>();
-        for (Tag tag : tags) {
-            result.add(tag.toJson().toString());
-        }
-        return result;
+    public Set<String> convert(Set<String> tags) {
+
+        return tags.size()>0?tags:null;
     }
 
     @Override
-    public Set<Tag> unconvert(Set<String> tagStringList) {
-        Set<Tag> result = new TreeSet<>();
-        ObjectMapper om = new ObjectMapper();
-        for (String jsonStr:tagStringList){
-            try {
-                Tag tag = om.readValue(jsonStr, Tag.class);
-                result.add(tag);
-            } catch (IOException e) {
-                log.error("Error during parsing Tag object.", e);
-            }
-        }
-        return result;
+    public Set<String> unconvert(Set<String> tags) {
+
+        return tags != null?tags:new TreeSet<>();
     }
 }

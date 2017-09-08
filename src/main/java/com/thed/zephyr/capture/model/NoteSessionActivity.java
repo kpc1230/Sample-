@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.thed.zephyr.capture.service.db.converter.ResolutionTypeConverter;
+import com.thed.zephyr.capture.service.db.converter.TagSetConverter;
 import org.joda.time.DateTime;
 
 import java.util.Date;
@@ -17,6 +18,7 @@ public class NoteSessionActivity extends SessionActivity {
     @DynamoDBTypeConverted(converter = ResolutionTypeConverter.class)
     private Resolution resolutionState;
 
+    @DynamoDBTypeConverted(converter =  TagSetConverter.class)
     private Set<String> tags;
 
     public NoteSessionActivity() {
