@@ -8,6 +8,7 @@ import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.service.data.InviteService;
 import com.thed.zephyr.capture.service.email.AmazonSEService;
 import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +16,14 @@ import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.apache.velocity.app.VelocityEngine;
+import org.springframework.ui.velocity.VelocityEngineUtils;
+
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Masud on 8/17/17.
@@ -36,6 +42,12 @@ public class InviteServiceImpl implements InviteService{
 
     @Autowired
     private AmazonSEService amazonSEService;
+
+    @Autowired
+    private VelocityEngine engine;
+
+    @Autowired
+    private CaptureI18NMessageSource i18n;
 
     @Override
     public void sendInviteToSession(Session session, InviteSessionRequest inviteSessionRequest) throws Exception {
@@ -61,26 +73,24 @@ public class InviteServiceImpl implements InviteService{
         String SESSION_LINK = host.getHost().getBaseUrl()+"/plugins/servlet/ac/capture-cloud/view-session-url?session.id="+session.getId()+"&origin=nav&invite=true";
 
         //subject
-        String subject = "[JIRA] "+loggedUser.getDisplayName()+" just invited you to participate in \""+session.getName()+"\"";
+        String subject = "[JIRA] "+i18n.getMessage("capture.session.invite.subject",new Object[]{loggedUser.getDisplayName(),session.getName()});
 
         //note
         String NOTE = inviteSessionRequest.getMessage() != null ?
-                "<p>"+ inviteSessionRequest.getMessage()+"</p>": "<p>Please come to join.</p>";
+                 inviteSessionRequest.getMessage(): "Please come to join.";
 
-        //body
-        String BODY = String.join(
-                System.getProperty("line.separator"),
-                "<div style=\"border: 1px solid #EEE;\n" +
-                        "    padding: 5px;\n" +
-                        "    background: #EFEFEF;\n" +
-                        "    border-radius: 5px;\""+
-                        "<p><strong>"+loggedUser.getDisplayName()+"</strong> just invited you to participate in a test session</p>" +
-                        "<p>Click here to visit the session: "+ SESSION_LINK + " .</p>" +
-                        NOTE,
-                "<p>-This message was sent by <strong>Zephyr</strong>, Capture for Jira Cloud.</p>"+
-                        "</div>"
+        Map<String, Object> model = new HashMap<>();
+        model.put("fullname",loggedUser.getDisplayName());
+        model.put("sessionlink",SESSION_LINK);
+        model.put("sessionid",session.getId());
+        model.put("firstline",i18n.getMessage("capture.session.invite.body.firstline", new Object[]{loggedUser.getDisplayName()}));
+        model.put("secondline",i18n.getMessage("capture.session.invite.body.link",new Object[]{SESSION_LINK}));
+        model.put("note",NOTE);
 
-        );
+        String BODY = VelocityEngineUtils.mergeTemplateIntoString(this.engine, "email/body.vm", "UTF-8", model);
+
+        log.debug("Email subject: {}", subject);
+        log.debug("Email body: {}", BODY);
 
         Mail mail = new Mail();
 
