@@ -187,6 +187,11 @@
             <artifactId>spring-data-elasticsearch</artifactId>
             <version>2.1.6.RELEASE</version>
         </dependency>
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+            <version>1.4.5</version>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>

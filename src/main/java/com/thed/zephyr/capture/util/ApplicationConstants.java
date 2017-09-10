@@ -122,5 +122,17 @@ public class ApplicationConstants {
     public static final String STATUS_FIELD = "status";
     public static final String SESSION_NAME_FIELD = "name";
     public static final String SHARED_FIELD = "shared";
-    
+
+    /** email fields **/
+    public static final String FROM_EMAIL = "aws.ses.from";
+    public static final String AWS_SES_REGION = "aws.ses.region";
+    public static final String AWS_SMTP_USERNAME = "aws.smtp.username";
+    public static final String AWS_SMTP_PASSWORD = "aws.smtp.password";
+    public static final String AWS_SMTP_PORT = "aws.smtp.port";
+    public static final String DEFAULT_EMAIL_FROM = "masudur.rahman@getzephyr.com";
+    public static final String DEFAULT_SMTP_USERNAME = "AKIAJJVT37JAF3R6VJ4Q";
+    public static final String DEFAULT_SMTP_PASSWORD = "ApnTtFsyojiOKBMfDGj8+cPlw7eISDrYIEwQQ6ulXmI1";
+    public static final int DEFAULT_SMTP_PORT = 465;
+    public static final String DEFAULT_SES_REGION = "us-west-2";
+
 }

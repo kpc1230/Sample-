@@ -228,11 +228,11 @@
     ],
     "webhooks":[
       {
-        "event": "connect-addon-enabled",
+        "event": "connect_addon_enabled",
         "url": "/rest/event/plugin/enabled"
       },
       {
-        "event": "connect-addon-disabled",
+        "event": "connect_addon_disabled",
         "url": "/rest/event/plugin/disabled"
       }
     ],

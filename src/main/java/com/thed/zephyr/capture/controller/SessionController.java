@@ -12,6 +12,7 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.service.PermissionService;
+import com.thed.zephyr.capture.service.data.InviteService;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
@@ -24,7 +25,6 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.validator.SessionValidator;
 import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -66,6 +66,9 @@ public class SessionController extends CaptureAbstractController{
 
 	@Autowired
 	private IssueService issueService;
+
+	@Autowired
+	private InviteService inviteService;
 
 	@InitBinder("sessionRequest")
 	public void setupBinder(WebDataBinder binder) {
@@ -538,7 +541,26 @@ public class SessionController extends CaptureAbstractController{
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
-	
+
+	@PostMapping(value = "/invite", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> sessionActivities(@Valid @RequestBody InviteSessionRequest inviteSessionRequest) throws CaptureValidationException {
+		log.info("Start of inviteSession() ");
+		try {
+			Session loadedSession  = validateAndGetSession(inviteSessionRequest.getSessionId());
+			if (loadedSession == null) {
+				ErrorCollection errorCollection = new ErrorCollection();
+				errorCollection.addError("Error during invite session");
+				return badRequest(errorCollection);
+			}
+			inviteService.sendInviteToSession(loadedSession,inviteSessionRequest);
+			log.info("End of inviteSession()");
+			return ResponseEntity.ok(inviteSessionRequest);
+		} catch(Exception ex) {
+			log.error("Error in inviteSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+
 	private void validateInputParameters(Optional<Long> projectId, Optional<String> status) throws CaptureValidationException {
 		if(projectId.isPresent()) {
 			CaptureProject project = projectService.getCaptureProject(projectId.get());
