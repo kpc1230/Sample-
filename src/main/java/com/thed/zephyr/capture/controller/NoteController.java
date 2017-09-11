@@ -69,10 +69,10 @@ public class NoteController extends CaptureAbstractController{
 		log.info("createNote start for the name:" + noteSessionActivityRequest.getNoteData());
 		NoteSessionActivity noteSessionActivity = null;
 		try {
-			Session session = sessionService.getSession(noteSessionActivity.getSessionId());
+		/*	Session session = sessionService.getSession(noteSessionActivity.getSessionId());
 			if (session != null && !permissionService.canCreateNote(getUser(), session)) {
 				throw new CaptureValidationException(i18n.getMessage("note.create.permission.violation"));
-			}
+			}*/
 
 			noteSessionActivityRequest.setUser(hostUser.getUserKey().get());
 			noteSessionActivity = noteService.create(noteSessionActivityRequest);
@@ -111,9 +111,6 @@ public class NoteController extends CaptureAbstractController{
 			if(StringUtils.isEmpty(noteSessionActivityId)){
 				throw new CaptureValidationException(i18n.getMessage("note.invalid.id" , new Object[]{noteSessionActivityId}));
 			}
-			if (!permissionService.canEditNote(getUser(), updated.getSessionId(), updated)) {
-				throw new CaptureValidationException(i18n.getMessage("note.update.permission.violation"));
-			}
 			noteSessionActivityRequest.setId(noteSessionActivityId);
 			noteSessionActivityRequest.setUser(hostUser.getUserKey().get());
 			updated = noteService.update(noteSessionActivityRequest);
@@ -131,10 +128,10 @@ public class NoteController extends CaptureAbstractController{
 	public ResponseEntity<?> deleteNote(@PathVariable String noteSessionActivityId) throws CaptureValidationException {
 		log.info("Delete NoteSessionActivity start for the id:{}", noteSessionActivityId);
 		try {
-			NoteSessionActivity noteSessionActivity = noteService.getNoteSessionActivity(noteSessionActivityId);
+			/*NoteSessionActivity noteSessionActivity = noteService.getNoteSessionActivity(noteSessionActivityId);
 			if (!permissionService.canEditNote(getUser(), noteSessionActivity.getUser(), noteSessionActivity)) {
 				throw new CaptureRuntimeException(i18n.getMessage("note.delete.permission.violation"));
-			}
+			}*/
 			noteService.delete(noteSessionActivityId);
 		}catch (CaptureValidationException e) {
 			throw e;
@@ -153,18 +150,13 @@ public class NoteController extends CaptureAbstractController{
     		throws CaptureValidationException {
 		NoteSessionActivity updated = null;
 		noteSessionActivityRequest.setId(noteId);
-    	try {
-			if (!permissionService.canEditNote(getUser(), noteSessionActivityRequest.getSessionId(), noteSessionActivityRequest)) {
-				throw new CaptureRuntimeException(i18n.getMessage("note.update.permission.violation"));
-			}
-    		updated = noteService.update(noteSessionActivityRequest, true);
-		} catch (CaptureValidationException e) {
-			throw e;
-		} catch(Exception ex){
+		try {
+			updated = noteService.update(noteSessionActivityRequest, true);
+		} catch (Exception ex) {
 			log.error("Error during completeNote.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-    	return ok(updated);
+		return ok(updated);
     }
 
 	@PostMapping(value = "/notes/project/{projectId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)

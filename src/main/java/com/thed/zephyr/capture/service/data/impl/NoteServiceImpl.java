@@ -9,6 +9,7 @@ import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.NoteRepository;
+import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.joda.time.DateTime;
@@ -40,6 +41,8 @@ public class NoteServiceImpl implements NoteService {
 	private NoteRepository noteRepository;
 	@Autowired
 	private CaptureI18NMessageSource i18n;
+	@Autowired
+	PermissionService permissionService;
 
 	@Override
 	public NoteSessionActivity create(NoteSessionActivity noteSessionActivityRequest) throws CaptureValidationException {
@@ -88,6 +91,9 @@ public class NoteServiceImpl implements NoteService {
 			throw new CaptureValidationException("Note sessionId don't match");//TODO
 		}else if (!noteSessionActivityRequest.getUser().equals(existing.getUser())){
 			throw new CaptureValidationException("Note author don't match");
+		}
+		if (!permissionService.canEditNote(noteSessionActivityRequest.getUser(), noteSessionActivityRequest.getSessionId(), (NoteSessionActivity)existing)) {
+			throw new CaptureValidationException(i18n.getMessage("note.update.permission.violation"));
 		}
 		((NoteSessionActivity)existing).setNoteData(noteSessionActivityRequest.getNoteData());
 		Set<String> tags = tagService.parseTags(noteSessionActivityRequest.getNoteData());
