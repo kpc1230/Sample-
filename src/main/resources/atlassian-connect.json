@@ -316,6 +316,20 @@
           }
         ]
       }
+    ],
+    "jiraDashboardItems": [
+      {
+        "name": {
+          "value": "Test sessions"
+        },
+        "url": "/public/html/gadget?dashboardView={dashboardItem.viewType}&dashboardId={dashboard.id}&dashboardItem={dashboardItem.id}&gadgetType=testSessions",
+        "key": "test-sessions-gadget",
+        "description": {
+          "value": "View a list of test sessions"
+        },
+        "thumbnailUrl": "${baseUrl}${server.contextPath}/images/gadgets/capture-sessions-screenshot.jpg",
+        "configurable": true
+      }
     ]
   },
   "scopes": ["READ", "WRITE","ADMIN"]
