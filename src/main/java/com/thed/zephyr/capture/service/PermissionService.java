@@ -3,7 +3,7 @@ package com.thed.zephyr.capture.service;
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.LightSession;
-import com.thed.zephyr.capture.model.Note;
+import com.thed.zephyr.capture.model.NoteSessionActivity;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.SessionActivity;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
@@ -40,11 +40,11 @@ public interface PermissionService {
 
     public boolean canCreateNote(String user, LightSession session);
 
-    public boolean canEditNote(String user, LightSession session, Note note);
+    public boolean canEditNote(String user, LightSession session, NoteSessionActivity note);
 
-    public boolean canEditNote(String user, Long sessionId, Note note);
+    public boolean canEditNote(String user, Long sessionId, NoteSessionActivity note);
 
-    public boolean canEditNote(String user, String assignee, Note note);
+    public boolean canEditNote(String user, String assignee, NoteSessionActivity note);
 
     public boolean canEditSession(String user, Session session);
 
