@@ -105,11 +105,6 @@ public class SessionRepositoryImpl {
     	QuerySpec querySpec = new QuerySpec();
     	querySpec.withHashKey(new KeyAttribute(ApplicationConstants.TENANT_ID_FIELD, ctId));
     	querySpec.withMaxResultSize(50);//fetch only 50 sessions for the user.
-    	
-    	//check if the session is shared == false
-    	QueryFilter sharedQueryFilter = new QueryFilter(ApplicationConstants.SHARED_FIELD);
-    	sharedQueryFilter.eq(0);
-		queryFilters.add(sharedQueryFilter);
 		
 		//check if the session is assigned to same user
     	QueryFilter assigneeQueryFilter = new QueryFilter(ApplicationConstants.ASSIGNEE_FIELD);
