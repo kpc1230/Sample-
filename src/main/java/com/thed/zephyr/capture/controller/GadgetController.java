@@ -6,19 +6,30 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.DynamicProperty;
+import org.springframework.core.env.Environment;
 
 @Controller
 public class GadgetController {
     @Autowired
     private Logger log;
 
+    @Autowired
+    private DynamicProperty dynamicProperty;
+
+     @Autowired
+    private Environment env;
+
     @RequestMapping(value = "/public/html/gadget")
     public String renderGagdets(@RequestParam String dashboardView, @RequestParam String dashboardId, @RequestParam String dashboardItem, @RequestParam String gadgetType, @RequestParam String xdm_e, @RequestParam String cp, Model model) {
         log.debug("Render Gagdets method is called with Params dashboardView : " + dashboardView + " dashboardId: " + dashboardId + " dashboardItem: " + dashboardItem + " gadgetType: " + gadgetType + " xdm_e: " + xdm_e + " cp:" + cp);
+        String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
         model.addAttribute("dashboardView", dashboardView);
         model.addAttribute("dashboardId", dashboardId);
         model.addAttribute("dashboardItem", dashboardItem);
         model.addAttribute("gadgetType", gadgetType);
+        model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("xdm_e", xdm_e);
         model.addAttribute("cp", cp);
         log.debug("Render Gadge method ended");
