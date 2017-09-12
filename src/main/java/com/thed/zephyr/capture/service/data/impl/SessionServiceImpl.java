@@ -388,49 +388,28 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public void updateSessionWithIssue(String ctId, Long projectId, String user, Long issueId) {
-
-        Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndStatusAndAssignee(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-        List<Session> listOfSessionsCreated = sessions != null ? sessions.getContent() : new ArrayList<>();
-        listOfSessionsCreated.forEach(session -> {
-            if (session.getIssueRaisedIds() != null) {
-                session.getIssueRaisedIds().add(issueId);
-            } else {
-                Set<Long> set = new TreeSet<>();
-                set.add(issueId);
-                session.setIssueRaisedIds(set);
-            }
-            save(session, new ArrayList<>());
-        });
-
-        Page<Session> sessions2 = sessionESRepository.findByCtIdAndProjectIdAndStatusAndCreator(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-        List<Session> listOfSessionsAssignee = sessions != null ? sessions.getContent() : new ArrayList<>();
-
-        listOfSessionsAssignee.forEach(session -> {
-            if (session.getIssueRaisedIds() != null) {
-                session.getIssueRaisedIds().add(issueId);
-            } else {
-                Set<Long> set = new TreeSet<>();
-                set.add(issueId);
-                session.setIssueRaisedIds(set);
-            }
-            save(session, new ArrayList<>());
-        });
-
-        Page<Session> sessions3 = sessionESRepository.findByCtIdAndProjectIdAndStatusAndParticipants(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-        List<Session> listOfSessionsAsParticipant = sessions != null ? sessions.getContent() : new ArrayList<>();
-
-        listOfSessionsAsParticipant.forEach(session -> {
-            if (session.getIssueRaisedIds() != null) {
-                session.getIssueRaisedIds().add(issueId);
-            } else {
-                Set<Long> set = new TreeSet<>();
-                set.add(issueId);
-                session.setIssueRaisedIds(set);
-            }
-            save(session, new ArrayList<>());
-        });
+		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndStatusAndAssignee(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+		updateSessionWithIssueId(sessions, issueId);
+		Page<Session> sessions2 = sessionESRepository.findByCtIdAndProjectIdAndStatusAndCreator(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+		updateSessionWithIssueId(sessions2, issueId);
+		Page<Session> sessions3 = sessionESRepository.findByCtIdAndProjectIdAndStatusAndParticipants(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+		updateSessionWithIssueId(sessions3, issueId);
 
     }
+
+	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId) {
+		List<Session> listOfSessionsAsParticipant = sessions != null ? sessions.getContent() : new ArrayList<>();
+		listOfSessionsAsParticipant.forEach(session -> {
+			if (session.getIssueRaisedIds() != null) {
+				session.getIssueRaisedIds().add(issueId);
+			} else {
+				Set<Long> set = new TreeSet<>();
+				set.add(issueId);
+				session.setIssueRaisedIds(set);
+			}
+			save(session, new ArrayList<>());
+		});
+	}
 
 	/**
 	 * Add user as participant to the request session.
