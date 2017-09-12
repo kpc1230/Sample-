@@ -13,8 +13,9 @@ import com.thed.zephyr.capture.addon.impl.AddonInfoServiceImpl;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepositoryImpl;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
-
 import org.apache.commons.lang3.StringUtils;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.exception.VelocityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,13 +30,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.env.Environment;
+import org.springframework.ui.velocity.VelocityEngineFactory;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 
-import java.util.Locale;
-
 import javax.servlet.Filter;
+import java.io.IOException;
+import java.util.Locale;
+import java.util.Properties;
 
 @SpringBootApplication
 @EnableCaching
@@ -135,5 +138,15 @@ public class AddonApplication {
         source.setBasenames("i18n/capture-i18n"); // name of the resource bundle
         source.setUseCodeAsDefaultMessage(true);
         return source;
+    }
+
+    @Bean
+    public VelocityEngine getVelocityEngine() throws VelocityException, IOException{
+        VelocityEngineFactory factory = new VelocityEngineFactory();
+        Properties props = new Properties();
+        props.put("resource.loader", "class");
+        props.put("class.resource.loader.class", "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
+        factory.setVelocityProperties(props);
+        return factory.createVelocityEngine();
     }
 }

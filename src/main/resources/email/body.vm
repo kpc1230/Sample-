@@ -1,0 +1,7 @@
+<div style="border: 1px solid #EEE;padding: 5px;background: #EFEFEF;border-radius: 5px;">
+    #parse("email/header.vm")
+    <p>$firstline</p>
+    <p>$secondline</p>
+    <p>$note</p>
+    #parse("email/footer.vm")
+</div>

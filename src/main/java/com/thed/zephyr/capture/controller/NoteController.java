@@ -5,7 +5,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import javax.validation.Valid;
 
 import com.thed.zephyr.capture.model.*;
+import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -52,6 +54,10 @@ public class NoteController extends CaptureAbstractController{
 	private ProjectService projectService;
 	@Autowired
 	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+	@Autowired
+	private SessionService sessionService;
+	@Autowired
+	private PermissionService permissionService;
 	
 	@InitBinder("noteRequest")
 	protected void initBinder(WebDataBinder binder) {
@@ -63,9 +69,16 @@ public class NoteController extends CaptureAbstractController{
 		log.info("createNote start for the name:" + noteSessionActivityRequest.getNoteData());
 		NoteSessionActivity noteSessionActivity = null;
 		try {
+		/*	Session session = sessionService.getSession(noteSessionActivity.getSessionId());
+			if (session != null && !permissionService.canCreateNote(getUser(), session)) {
+				throw new CaptureValidationException(i18n.getMessage("note.create.permission.violation"));
+			}*/
+
 			noteSessionActivityRequest.setUser(hostUser.getUserKey().get());
 			noteSessionActivity = noteService.create(noteSessionActivityRequest);
 			noteSessionActivity.setCtId(hostUser.getHost().getClientKey());
+		} catch (CaptureValidationException e) {
+			throw e;
 		} catch (Exception ex) {
 			log.error("Error during createNote.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
@@ -115,7 +128,13 @@ public class NoteController extends CaptureAbstractController{
 	public ResponseEntity<?> deleteNote(@PathVariable String noteSessionActivityId) throws CaptureValidationException {
 		log.info("Delete NoteSessionActivity start for the id:{}", noteSessionActivityId);
 		try {
+			/*NoteSessionActivity noteSessionActivity = noteService.getNoteSessionActivity(noteSessionActivityId);
+			if (!permissionService.canEditNote(getUser(), noteSessionActivity.getUser(), noteSessionActivity)) {
+				throw new CaptureRuntimeException(i18n.getMessage("note.delete.permission.violation"));
+			}*/
 			noteService.delete(noteSessionActivityId);
+		}catch (CaptureValidationException e) {
+			throw e;
 		} catch (CaptureRuntimeException exception){
 			throw exception;
 		} catch (Exception exception) {
@@ -131,15 +150,13 @@ public class NoteController extends CaptureAbstractController{
     		throws CaptureValidationException {
 		NoteSessionActivity updated = null;
 		noteSessionActivityRequest.setId(noteId);
-    	try {
-    		updated = noteService.update(noteSessionActivityRequest, true);
-		} catch (CaptureValidationException e) {
-			throw e;
-		} catch(Exception ex){
+		try {
+			updated = noteService.update(noteSessionActivityRequest, true);
+		} catch (Exception ex) {
 			log.error("Error during completeNote.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-    	return ok(updated);
+		return ok(updated);
     }
 
 	@PostMapping(value = "/notes/project/{projectId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)

@@ -228,11 +228,11 @@
     ],
     "webhooks":[
       {
-        "event": "connect-addon-enabled",
+        "event": "connect_addon_enabled",
         "url": "/rest/event/plugin/enabled"
       },
       {
-        "event": "connect-addon-disabled",
+        "event": "connect_addon_disabled",
         "url": "/rest/event/plugin/disabled"
       }
     ],
@@ -315,6 +315,20 @@
             ]
           }
         ]
+      }
+    ],
+    "jiraDashboardItems": [
+      {
+        "name": {
+          "value": "Test sessions"
+        },
+        "url": "/public/html/gadget?dashboardView={dashboardItem.viewType}&dashboardId={dashboard.id}&dashboardItem={dashboardItem.id}&gadgetType=testSessions",
+        "key": "test-sessions-gadget",
+        "description": {
+          "value": "View a list of test sessions"
+        },
+        "thumbnailUrl": "${baseUrl}${server.contextPath}/images/gadgets/capture-sessions-screenshot.jpg",
+        "configurable": true
       }
     ]
   },

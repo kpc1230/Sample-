@@ -1,18 +1,28 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.thed.zephyr.capture.model.InviteSessionRequest;
+import com.thed.zephyr.capture.model.Mail;
 import com.thed.zephyr.capture.model.Session;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.service.data.InviteService;
-import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.service.email.AmazonSEService;
+import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.apache.velocity.app.VelocityEngine;
+import org.springframework.ui.velocity.VelocityEngineUtils;
 
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,32 +37,71 @@ public class InviteServiceImpl implements InviteService{
     @Autowired
     private Environment env;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private AmazonSEService amazonSEService;
+
+    @Autowired
+    private VelocityEngine engine;
+
+    @Autowired
+    private CaptureI18NMessageSource i18n;
+
     @Override
-    public void sendInviteToSession(Session session, String emailAddress, String message) throws Exception {
-        //impl of send email.
-        Map<String, Object> params = getContextParams(session,message);
-        String subject = getRenderedTemplate("templates/email/invite-session.vm", params);
-        String body = getRenderedTemplate("templates/email/invite-body.vm", params);
+    public void sendInviteToSession(Session session, InviteSessionRequest inviteSessionRequest) throws Exception {
 
-        log.debug("We are trying to send to email {} {}",emailAddress, message);
-
-        throw new Exception("Email(sendEmail()) need to implement here.");
-    }
-
-    private String getRenderedTemplate(String templatePath, Map<String, Object> contextParams) throws Exception{
-         throw new Exception("Render template to string");
-    }
-
-    private Map<String, Object> getContextParams(Session session, String message) {
-        Map<String, Object> context = new HashMap<>();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        String userKey = host.getUserKey().get();
+        CaptureUser loggedUser = userService.findUser(userKey);
 
-        context.put("remoteUser", host.getUserKey().get());
-        context.put("session", session);
-        context.put("message", message);
-        context.put("i18n", LocaleContextHolder.getLocale());
-        context.put("baseurl", env.getProperty(ApplicationConstants.CAPTURE_BASEURL));
-        return context;
+        List<String> toEmails = inviteSessionRequest.getEmails() != null ?
+                inviteSessionRequest.getEmails(): new ArrayList<>();
+
+        if(inviteSessionRequest.getUsernames() != null){
+            inviteSessionRequest.getUsernames()
+                    .forEach(username -> {
+                        CaptureUser captureUser =
+                                userService.findUser(username);
+                        toEmails.add(captureUser.getEmailAddress());
+                    });
+        }
+
+        //session link
+        String SESSION_LINK = host.getHost().getBaseUrl()+"/plugins/servlet/ac/capture-cloud/view-session-url?session.id="+session.getId()+"&origin=nav&invite=true";
+
+        //subject
+        String subject = "[JIRA] "+i18n.getMessage("capture.session.invite.subject",new Object[]{loggedUser.getDisplayName(),session.getName()});
+
+        //note
+        String NOTE = inviteSessionRequest.getMessage() != null ?
+                 inviteSessionRequest.getMessage(): "Please come to join.";
+
+        Map<String, Object> model = new HashMap<>();
+        model.put("fullname",loggedUser.getDisplayName());
+        model.put("sessionlink",SESSION_LINK);
+        model.put("sessionid",session.getId());
+        model.put("firstline",i18n.getMessage("capture.session.invite.body.firstline", new Object[]{loggedUser.getDisplayName()}));
+        model.put("secondline",i18n.getMessage("capture.session.invite.body.link",new Object[]{SESSION_LINK}));
+        model.put("note",NOTE);
+
+        String BODY = VelocityEngineUtils.mergeTemplateIntoString(this.engine, "email/body.vm", "UTF-8", model);
+
+        log.debug("Email subject: {}", subject);
+        log.debug("Email body: {}", BODY);
+
+        Mail mail = new Mail();
+
+        mail.setToList(toEmails);
+        mail.setSubject(subject);
+        mail.setText(BODY);
+
+        if(amazonSEService.sendMail(mail)){
+         log.info("Successfully sent email to : {}", StringUtils.join(toEmails,","));
+        }
+
     }
+
 }

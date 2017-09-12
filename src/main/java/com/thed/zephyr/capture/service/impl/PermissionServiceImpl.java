@@ -164,7 +164,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public boolean canEditNote(String user, LightSession session, Note note) {
+    public boolean canEditNote(String user, LightSession session, NoteSessionActivity note) {
         if (session == null) {
             return false;
         }
@@ -172,17 +172,17 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public boolean canEditNote(String user, Long sessionId, Note note) {
+    public boolean canEditNote(String user, Long sessionId, NoteSessionActivity note) {
         Session session = sessionService.getSession(Long.toString(sessionId));
         return canEditNote(user, session.getAssignee(), note);
     }
 
     @Override
-    public boolean canEditNote(String user, String assignee, Note note) {
+    public boolean canEditNote(String user, String assignee, NoteSessionActivity note) {
         if (user == null || assignee == null || note == null) {
             return false;
         }
-        return user.equals(assignee) || user.equals(note.getAuthor());
+        return user.equals(assignee) || user.equals(note.getUser());
     }
 
     @Override
