@@ -193,7 +193,12 @@ public class TemplateController extends CaptureAbstractController{
 	 * @throws CaptureValidationException
 	 */
 	private TemplateRequest parseAndValidate(JsonNode json, boolean create) throws CaptureValidationException {
-		TemplateRequest templateRequest = TemplateBuilder.parseJson(json);
+		TemplateRequest templateRequest = null;
+		if(create) {
+			templateRequest = TemplateBuilder.parseJson(json);
+		} else {
+			templateRequest = TemplateBuilder.parseUpdateJson(json);
+		}		
 		templateRequest.setOwnerName(getUser());
 		validateTemplate(templateRequest, create);
 		return templateRequest;

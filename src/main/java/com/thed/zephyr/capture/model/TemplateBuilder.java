@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.model;
 
 import java.util.Date;
+import java.util.Objects;
 
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -46,7 +47,7 @@ public final class TemplateBuilder {
 	 * @throws CaptureValidationException 
 	 */
 	public static Template updateTemplate(Template template, TemplateRequest templateRequest) throws CaptureValidationException{
-		TemplateRequest newTR = parseJson(templateRequest.getSource());
+		TemplateRequest newTR = parseUpdateJson(templateRequest.getSource());
 		if(newTR.getName() != null && !newTR.getName().equals(template.getName())){
 			template.setName(newTR.getName());
 		}
@@ -108,6 +109,33 @@ public final class TemplateBuilder {
 
 		//Populate favourited
 		templateRequest.setFavourited(payload.path("favourited").isMissingNode() ? false : payload.path("favourited").asBoolean());
+
+		//Populate Source (source as it is from request body)
+		templateRequest.setSource(payload);
+		return templateRequest;
+	}
+	
+	public static TemplateRequest parseUpdateJson(JsonNode payload) {
+		JsonNode updatedJson = (JsonNode)payload.get("source"); //fetching only the updated values;
+		TemplateRequest templateRequest = new TemplateRequest();
+		templateRequest.setName(updatedJson.path("name").asText());
+		templateRequest.setId(payload.path("id").asText());
+		//Populate project
+		JsonNode jsonProject = updatedJson.get("project").get("value");
+		if(Objects.nonNull(jsonProject) && !jsonProject.isMissingNode()){
+			templateRequest.setProjectId(Long.valueOf(jsonProject.asText()));				
+		}
+		//Populate timeCreated
+		templateRequest.setVariablesChanged(false);
+		
+		//settimeupdated
+		templateRequest.setTimeUpdated(new Date(payload.path("timeUpdated").asLong()));
+
+		//Populate shared
+		templateRequest.setShared(updatedJson.path("shared").isMissingNode() ? false : updatedJson.path("shared").asBoolean());
+
+		//Populate favourited
+		templateRequest.setFavourited(updatedJson.path("favourited").isMissingNode() ? false : updatedJson.path("favourited").get("value").asBoolean());
 
 		//Populate Source (source as it is from request body)
 		templateRequest.setSource(payload);
