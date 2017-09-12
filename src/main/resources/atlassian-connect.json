@@ -234,6 +234,10 @@
       {
         "event": "connect_addon_disabled",
         "url": "/rest/event/plugin/disabled"
+      },
+      {
+        "event": "jira:issue_created",
+        "url": "/rest/event/issue/created"
       }
     ],
     "jiraEntityProperties": [
