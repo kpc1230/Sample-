@@ -2,7 +2,6 @@ package com.thed.zephyr.capture.validator;
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.Project;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.service.jira.IssueService;
@@ -74,7 +73,7 @@ public class SessionValidator implements Validator {
 		                }
 					}
 				});
-				sessionRequest.setRelatedIssueIds(relatedIssues);
+				sessionRequest.setRelatedIssueIds(relatedIssues.size() > 0 ? relatedIssues : null);
 				int issueLimit = Integer.parseInt(dynamicProperty.getStringProp(ApplicationConstants.RELATED_ISSUES_LIMIT_DYNAMIC_KEY, "100").get());
 				if (relatedIssues.size() > issueLimit) { //checking whether related issues are crossed more than the limit.
 					errors.reject("", i18n.getMessage("session.relatedissues.excee", new Object[]{relatedIssues.size(), issueLimit}));
