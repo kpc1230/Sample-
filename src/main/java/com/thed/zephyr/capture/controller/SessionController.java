@@ -11,6 +11,7 @@ import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.InviteService;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
@@ -143,13 +144,16 @@ public class SessionController extends CaptureAbstractController{
 			throw new CaptureValidationException(i18n.getMessage("session.invalid.id", new Object[]{sessionId}));
 		}
 		try {
+			String user = getUser();
 			Session session = sessionService.getSession(sessionId);
-			if (session != null && !permissionService.canSeeSession(getUser(), session)) {
+			if (session != null && !permissionService.canSeeSession(user, session)) {
 				throw new CaptureRuntimeException(i18n.getMessage("session.update.not.editable"));
+			} else if(Objects.isNull(session)) {
+				throw new CaptureValidationException(i18n.getMessage("session.not.exist.message"));
 			}
-			//SessionUI sessionUI = sessionService.constructSessionUI(session);
+			SessionDto sessionDto = sessionService.constructSessionDto(user, session);
 			log.info("End of Create Session()");
-			return ResponseEntity.ok(session);
+			return ResponseEntity.ok(sessionDto);
 		} catch(Exception ex) {
 			log.error("Error in getSession() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);

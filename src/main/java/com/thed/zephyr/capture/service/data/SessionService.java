@@ -9,7 +9,7 @@ import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
-import com.thed.zephyr.capture.model.view.SessionUI;
+import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionExtensionResponse;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionResult;
@@ -178,12 +178,13 @@ public interface SessionService {
 	
 	
 	/**
-	 * Constructs the session ui object for the request session.
+	 * Constructs the session data transfer object for the request session.
 	 * 
+	 * @param loggedInUser -- Logged in user.
 	 * @param session -- Session object requested by the user.
-	 * @return -- Returns the constructed session ui object.
+	 * @return -- Returns the constructed session dto object.
 	 */
-	SessionUI constructSessionUI(Session session);
+	SessionDto constructSessionDto(String loggedInUser, Session session);
 
 	/**
 	 * Get Complete session view details

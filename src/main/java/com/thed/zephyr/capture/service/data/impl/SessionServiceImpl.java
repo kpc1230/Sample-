@@ -16,14 +16,18 @@ import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.CompleteSessionRequest.CompleteSessionIssueLinkRequest;
 import com.thed.zephyr.capture.model.Session.Status;
+import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
-import com.thed.zephyr.capture.model.view.SessionUI;
+import com.thed.zephyr.capture.model.view.ParticipantDto;
+import com.thed.zephyr.capture.model.view.SessionDisplayDto;
+import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
 import com.thed.zephyr.capture.predicates.UserIsParticipantPredicate;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
+import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
@@ -35,7 +39,6 @@ import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -79,6 +82,8 @@ public class SessionServiceImpl implements SessionService {
 	private CaptureI18NMessageSource i18n;
 	@Autowired
 	private SessionESRepository sessionESRepository;
+	@Autowired
+	private PermissionService permissionService;
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -323,11 +328,14 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionUI constructSessionUI(Session session) {
-		SessionUI sessionUI = new SessionUI(session);
-		return sessionUI;
+	public SessionDto constructSessionDto(String loggedInUser, Session session) {
+		CaptureProject project = projectService.getCaptureProject(session.getProjectId());
+		String activeSessionId = getActiveSessionIdFromCache(loggedInUser);
+		boolean isActive = session.getId().equals(activeSessionId);
+		return createSessionDto(loggedInUser, session, isActive, project);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Map<String, Object> getCompleteSessionView(Session session) {
 		Map<String, Object> map = new HashMap<>();
@@ -944,5 +952,65 @@ public class SessionServiceImpl implements SessionService {
 			return Math.max(maxSize - startIndex, 0);
 		}
 		return size;
+	}
+	
+	private SessionDisplayDto getDisplayHelper(String user, Session session) {
+        boolean isSessionEditable = permissionService.canEditSession(user, session);
+        boolean isStatusEditable = permissionService.canEditSessionStatus(user, session);
+        boolean canCreateNote = permissionService.canCreateNote(user, session);
+        boolean canJoin = permissionService.canJoinSession(user, session);
+        Collection<Participant> participant = session.getParticipants();
+        boolean isJoined = Objects.nonNull(participant) ? Iterables.any(participant, new UserIsParticipantPredicate(user)) : false;
+        boolean hasActive = Objects.nonNull(participant) ? Iterables.any(participant, new ActiveParticipantPredicate()) : false;
+        CaptureProject project = projectService.getCaptureProject(session.getProjectId());
+        boolean canCreateSession = permissionService.canCreateSession(user, project);
+        boolean isAssignee = session.getAssignee().equals(user);
+        boolean showInvite = isAssignee && session.isShared();
+        boolean canAssign = permissionService.canAssignSession(user, project);
+        boolean isComplete = false;
+        boolean isCreated = false;
+        boolean isStarted = false;
+        if (Session.Status.STARTED.equals(session.getStatus())) {
+            isStarted = true;
+        } else if (Session.Status.CREATED.equals(session.getStatus())) {
+            isCreated = true;
+        } else if (Session.Status.COMPLETED.equals(session.getStatus())) {
+            isComplete = true;
+        }
+        return new SessionDisplayDto(isSessionEditable, isStatusEditable, canCreateNote, canJoin, isJoined, hasActive,
+                isStarted, canCreateSession, isAssignee, isComplete, isCreated, showInvite, canAssign);
+    }
+	
+	private SessionDto createSessionDto(String loggedUser, Session session, boolean isActive, CaptureProject project) {
+		SessionDisplayDto permissions = getDisplayHelper(loggedUser, session);
+		Integer activeParticipantCount = 0;
+		if (Status.STARTED.equals(session.getStatus())) {
+            // If started then add the assignee
+            activeParticipantCount++;
+        }
+		List<CaptureIssue> relatedIssues = Lists.newArrayList();
+		if(Objects.nonNull(session.getIssueRaisedIds())) {
+			for(Long issueId : session.getIssueRaisedIds()) {
+				CaptureIssue issue = issueService.getCaptureIssue(issueId);
+				relatedIssues.add(issue);
+			}
+		}
+		List<CaptureIssue> raisedIssues = Lists.newArrayList();
+		if(Objects.nonNull(session.getIssueRaisedIds())) {
+			for(Long issueId : session.getIssueRaisedIds()) {
+				CaptureIssue issue = issueService.getCaptureIssue(issueId);
+				raisedIssues.add(issue);
+			}
+		}
+		List<ParticipantDto> activeParticipants = Lists.newArrayList();
+		if(Objects.nonNull(session.getParticipants())) {
+			for(Participant p : session.getParticipants()) {
+				activeParticipants.add(new ParticipantDto(p));
+				activeParticipantCount++;
+			}
+		}
+		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
+				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
+		return new SessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, null, permissions, null);
 	}
 }
