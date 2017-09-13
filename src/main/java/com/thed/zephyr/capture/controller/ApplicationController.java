@@ -1,16 +1,24 @@
 package com.thed.zephyr.capture.controller;
 
+import com.atlassian.connect.spring.IgnoreJwt;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.core.env.Environment;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import com.thed.zephyr.capture.util.DynamicProperty;
-import org.springframework.core.env.Environment;
-import com.thed.zephyr.capture.util.ApplicationConstants;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Created by snurulla on 8/16/2017.
@@ -28,6 +36,9 @@ public class ApplicationController {
 
     @Autowired
     private Environment env;
+
+    @Autowired
+    private CaptureI18NMessageSource i18n;
 
     @RequestMapping(value = "/adminGenConf")
     public String getGeneralConfigurationPage(@RequestParam String user_id, Model model) {
@@ -88,6 +99,7 @@ public class ApplicationController {
         log.debug("Ending Requesting the Project Test Sessions page");
         return "projectTestSessions";
     }
+
     @RequestMapping(value = "/createTestSessionDialog")
     public String createTestSessionDialog(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -97,6 +109,16 @@ public class ApplicationController {
         model.addAttribute("projectId", projectId);
         log.debug("Ending Requesting the Project Test Sessions page");
         return "createTestSessionDialog";
+    }
+
+    @RequestMapping(value = "/capture-i18n")
+    @ResponseBody
+    @IgnoreJwt
+    public ResponseEntity getI18NMessages() {
+        Locale locale = LocaleContextHolder.getLocale();
+        String basename = "i18n/capture-i18n";
+        Map<String, String> messages = i18n.getKeyValues(basename, locale);
+        return ResponseEntity.ok(messages);
     }
 
 }
