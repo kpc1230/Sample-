@@ -114,7 +114,6 @@ public class SessionServiceImpl implements SessionService {
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
 		session.setAssignee(!StringUtils.isBlank(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
         Session createdSession = sessionRepository.save(session);
-        setActiveSessionIdToCache(loggedUserKey, createdSession.getId());
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
 		sessionESRepository.save(createdSession);
 
@@ -170,7 +169,7 @@ public class SessionServiceImpl implements SessionService {
             }
         }
         session.setStatus(Status.STARTED);
-        return validateUpdate(loggedUserKey, session);
+        return new UpdateResult(validateUpdate(loggedUserKey, session), deactivateResult, loggedUserKey, true, false);
 	}
 
 	@Override
