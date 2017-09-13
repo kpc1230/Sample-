@@ -47,20 +47,19 @@ public final class TemplateBuilder {
 	 * @throws CaptureValidationException 
 	 */
 	public static Template updateTemplate(Template template, TemplateRequest templateRequest) throws CaptureValidationException{
-		TemplateRequest newTR = parseUpdateJson(templateRequest.getSource());
-		if(newTR.getName() != null && !newTR.getName().equals(template.getName())){
-			template.setName(newTR.getName());
+		if(templateRequest.getName() != null && !templateRequest.getName().equals(template.getName())){
+			template.setName(templateRequest.getName());
 		}
 
-		if(newTR.getProjectId() != null && newTR.getProjectId().longValue() != template.getProjectId().longValue()){
-			template.setProjectId(newTR.getProjectId());
+		if(templateRequest.getProjectId() != null && templateRequest.getProjectId().longValue() != template.getProjectId().longValue()){
+			template.setProjectId(templateRequest.getProjectId());
 		}
 
-		template.setFavourite(newTR.getFavourited());
-		template.setShared(newTR.getShared());
+		template.setFavourite(templateRequest.getFavourited());
+		template.setShared(templateRequest.getShared());
 		template.setContent(templateRequest.getSource());
-		if(!template.getFavourite() && newTR.getFavourited()){
-			templateRequest.setTimeFavourited(new Date());
+		if(!template.getFavourite() && templateRequest.getFavourited()){
+			template.setTimeFavourited(new Date());
 		}
 		template.setTimeUpdated(new Date());
 		return template;
@@ -121,7 +120,7 @@ public final class TemplateBuilder {
 		templateRequest.setName(updatedJson.path("name").asText());
 		templateRequest.setId(payload.path("id").asText());
 		//Populate project
-		JsonNode jsonProject = updatedJson.get("project").get("value");
+		JsonNode jsonProject = updatedJson.path("project").get("value");
 		if(Objects.nonNull(jsonProject) && !jsonProject.isMissingNode()){
 			templateRequest.setProjectId(Long.valueOf(jsonProject.asText()));				
 		}
@@ -138,7 +137,7 @@ public final class TemplateBuilder {
 		templateRequest.setFavourited(updatedJson.path("favourited").isMissingNode() ? false : updatedJson.path("favourited").get("value").asBoolean());
 
 		//Populate Source (source as it is from request body)
-		templateRequest.setSource(payload);
+		templateRequest.setSource(updatedJson);
 		return templateRequest;
 	}
 

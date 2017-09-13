@@ -238,7 +238,7 @@ public class TemplateController extends CaptureAbstractController{
 	 * @throws CaptureValidationException
 	 */
 	private TemplateRequest validateDelete(JsonNode json) throws CaptureValidationException{
-		TemplateRequest templateReq = TemplateBuilder.parseJson(json);
+		TemplateRequest templateReq = TemplateBuilder.parseUpdateJson(json);
 		templateReq.setOwnerName(getUser());
 		validateDelete(templateReq);
 		return templateReq;
