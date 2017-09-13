@@ -989,8 +989,8 @@ public class SessionServiceImpl implements SessionService {
             activeParticipantCount++;
         }
 		List<CaptureIssue> relatedIssues = Lists.newArrayList();
-		if(Objects.nonNull(session.getIssueRaisedIds())) {
-			for(Long issueId : session.getIssueRaisedIds()) {
+		if(Objects.nonNull(session.getRelatedIssueIds())) {
+			for(Long issueId : session.getRelatedIssueIds()) {
 				CaptureIssue issue = issueService.getCaptureIssue(issueId);
 				relatedIssues.add(issue);
 			}
