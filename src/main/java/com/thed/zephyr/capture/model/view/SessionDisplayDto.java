@@ -1,5 +1,7 @@
 package com.thed.zephyr.capture.model.view;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * <p>Helper object that wraps a bunch of booleans that we normally need when showing the session. Wrapped for readability and re-usability. This class
  * can also be used for rest responses. Rename things at your own risk.</p>
@@ -9,26 +11,33 @@ package com.thed.zephyr.capture.model.view;
  */
 public class SessionDisplayDto {
 	
+	@JsonProperty(value="isSessionEditable")
     private final boolean isSessionEditable;
-
+	
+	@JsonProperty(value="isStatusEditable")
     private final boolean isStatusEditable;
-
+	
     private final boolean canCreateNote;
 
     private final boolean canJoin;
-
+	
+	@JsonProperty(value="isJoined")
     private final boolean isJoined;
-
+	
     private final boolean hasActive;
-
+    
+    @JsonProperty(value="isStarted")
     private final boolean isStarted;
 
     private final boolean canCreateSession;
-
+    
+    @JsonProperty(value="isAssignee")
     private final boolean isAssignee;
- 
+    
+    @JsonProperty(value="isComplete")
     private final boolean isComplete;
-
+    
+    @JsonProperty(value="isCreated")
     private final boolean isCreated;
 
     private final boolean showInvite;

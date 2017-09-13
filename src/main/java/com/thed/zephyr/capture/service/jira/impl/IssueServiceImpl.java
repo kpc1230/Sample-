@@ -52,7 +52,7 @@ public class IssueServiceImpl implements IssueService {
         log.debug("ISSUE: --> {}",issue.getSummary());
         return new CaptureIssue(issue.getSelf(),
                 issue.getKey(),issue.getId(),
-                CaptureUtil.getFullIconUrl(issue,host));
+                CaptureUtil.getFullIconUrl(issue,host), issue.getSummary());
     }
 
     @Override
@@ -68,7 +68,7 @@ public class IssueServiceImpl implements IssueService {
                     .forEach(issue -> {
                         captureIssues.add(new CaptureIssue(issue.getSelf(),
                                 issue.getKey(), issue.getId(),
-                                CaptureUtil.getFullIconUrl(issue, host)));
+                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary()));
                     });
             }
             return captureIssues;

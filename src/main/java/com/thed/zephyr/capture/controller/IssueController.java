@@ -92,7 +92,7 @@ public class IssueController {
         //Set Context Params
         captureContextIssueFieldsService.populateContextFields(request, issue, createRequest.getContext());
 
-        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(),basicIssue.getKey(),basicIssue.getId(),CaptureUtil.getFullIconUrl(issue,host));
+        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(),basicIssue.getKey(),basicIssue.getId(),CaptureUtil.getFullIconUrl(issue,host), issue.getSummary());
         if(StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {

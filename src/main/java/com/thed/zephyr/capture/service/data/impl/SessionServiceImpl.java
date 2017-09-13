@@ -18,6 +18,7 @@ import com.thed.zephyr.capture.model.CompleteSessionRequest.CompleteSessionIssue
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.ParticipantDto;
@@ -34,6 +35,7 @@ import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
+import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
@@ -44,6 +46,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -84,6 +89,8 @@ public class SessionServiceImpl implements SessionService {
 	private SessionESRepository sessionESRepository;
 	@Autowired
 	private PermissionService permissionService;
+	@Autowired
+	private UserService userService;
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -1009,8 +1016,18 @@ public class SessionServiceImpl implements SessionService {
 				activeParticipantCount++;
 			}
 		}
+		CaptureUser user = userService.findUser(session.getAssignee());
+		String userAvatarSrc = null, userLargeAvatarSrc = null;
+		try {
+			userAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("24x24") != null ? user.getAvatarUrls().get("24x24") : ""), Charset.defaultCharset().name());
+			userLargeAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("48x48") != null ? user.getAvatarUrls().get("48x48") : ""), Charset.defaultCharset().name());;
+		} catch (UnsupportedEncodingException e) {
+			log.error("Error in decoing the url.", e);
+		}
+	    
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
-		return new SessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, null, permissions, null);
+		return new SessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, null, permissions, null, 
+				i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName());
 	}
 }
