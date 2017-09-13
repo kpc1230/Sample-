@@ -1,27 +1,5 @@
 package com.thed.zephyr.capture.controller;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
-import java.util.Date;
-import java.util.Objects;
-
-import com.thed.zephyr.capture.service.PermissionService;
-import com.thed.zephyr.capture.service.jira.ProjectService;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
@@ -29,7 +7,19 @@ import com.thed.zephyr.capture.model.TemplateBuilder;
 import com.thed.zephyr.capture.model.TemplateRequest;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
+import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.TemplateService;
+import com.thed.zephyr.capture.service.jira.ProjectService;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Date;
+import java.util.Objects;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 /**
  * Controller class for implementing templates.
@@ -101,7 +91,7 @@ public class TemplateController extends CaptureAbstractController{
 			}
 		}
 		if(template == null || !canUse(template) ){
-			throw new CaptureValidationException(i18n.getMessage("template.validate.update.not.exist"));			
+			throw new CaptureValidationException(i18n.getMessage("template.validate.update.not.exist"));
 		}
 		log.info("getTemplate end for the id:{}", templateId);
 		return ok(template);
@@ -149,6 +139,27 @@ public class TemplateController extends CaptureAbstractController{
 		log.info("getFavouriteTemplates end for the user: {}");
 		return ok(result);
 	}
+
+	@PostMapping(value = "/favourites")
+	public ResponseEntity<?> updateFavouriteTemplate(@RequestBody JsonNode json) {
+		log.info("updateFavouriteTemplates start");
+		TemplateRequest templateRequest =null;
+		try {
+			String templateId = json.get("id").asText();
+			Boolean flag = json.get("favourite").asBoolean(false);
+			if(StringUtils.isNotEmpty(templateId)){
+                templateRequest = templateService.getTemplate(getUser(), templateId);
+                templateRequest.setFavourited(flag);
+                templateService.updateTemplate(templateRequest);
+            }
+		} catch (Exception ex) {
+			log.error("Error during updateFavouriteTemplates.", ex);
+			throw new CaptureRuntimeException(ex.getMessage());
+		}
+		log.info("updateFavouriteTemplates end ");
+		return ok(templateRequest);
+	}
+
 
 	@GetMapping(value = "/admin")
 	public ResponseEntity<?> getAllTemplates(@RequestParam Integer offset, @RequestParam Integer limit){
@@ -198,7 +209,7 @@ public class TemplateController extends CaptureAbstractController{
 			templateRequest = TemplateBuilder.parseJson(json);
 		} else {
 			templateRequest = TemplateBuilder.parseUpdateJson(json);
-		}		
+		}
 		templateRequest.setOwnerName(getUser());
 		validateTemplate(templateRequest, create);
 		return templateRequest;
@@ -276,15 +287,15 @@ public class TemplateController extends CaptureAbstractController{
 	private boolean canModifyTemplate(String user, TemplateRequest existing, CaptureProject project) {
         return user.equals(existing.getOwnerName()) || (permissionService.canEditTemplate(user, project));
     }
-    
+
 	private TemplateRequest getTemplate(String user, String templateId){
 		return StringUtils.isEmpty(templateId) ? null :
 			templateService.getTemplate(user, templateId);
 	}
-	
+
 	private boolean canUse(TemplateRequest templateReq) throws CaptureValidationException{
 		return
-				templateReq.getShared() || 
+				templateReq.getShared() ||
 				canModifyTemplate(getUser(), templateReq, projectService.getCaptureProject(templateReq.getProjectId()))
 				;
 	}
