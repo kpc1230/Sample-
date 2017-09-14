@@ -52,6 +52,7 @@ import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 /**
  * Class handles all the session related activities.
@@ -341,15 +342,16 @@ public class SessionServiceImpl implements SessionService {
 		return createSessionDto(loggedInUser, session, isActive, project);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Map<String, Object> getCompleteSessionView(Session session) {
 		Map<String, Object> map = new HashMap<>();
 		map.put(ApplicationConstants.SESSION,session);
+		List<Long> raisedIssues = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().stream().collect(Collectors.toList()) : new ArrayList<>(0);
 		map.put(ApplicationConstants.RAISED_ISSUE,
-				issueService.getCaptureIssuesByIds((List<Long>) session.getIssueRaisedIds()));
+				issueService.getCaptureIssuesByIds(raisedIssues));
+		List<Long> relatedIssues = Objects.nonNull(session.getRelatedIssueIds()) ? session.getRelatedIssueIds().stream().collect(Collectors.toList()) : new ArrayList<>(0);
 		map.put(ApplicationConstants.RELATED_ISSUE,
-				issueService.getCaptureIssuesByIds((List<Long>) session.getRelatedIssueIds()));
+				issueService.getCaptureIssuesByIds(relatedIssues));
 		map.put(ApplicationConstants.SESSION_ACTIVITIES,
 				sessionActivityService.getAllSessionActivityBySession(session.getId(),
 						CaptureUtil.getPageRequest(0,ApplicationConstants.DEFAULT_RESULT_SIZE)
