@@ -16,8 +16,6 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by Masud on 8/15/17.
@@ -127,6 +125,23 @@ public class UserServiceImpl implements UserService{
         URI targetUrl= UriComponentsBuilder.fromUriString(uri)
                 .path(JiraConstants.REST_API_USER)
                 .queryParam("username", username)
+                .build()
+                .encode()
+                .toUri();
+        try {
+        	CaptureUser[] response = restTemplate.getForObject(targetUrl, CaptureUser[].class);
+            return (response != null && response.length > 0) ? response[0] : null;  
+        } catch (Exception exception) {
+            log.error("Error during getting user by username from jira.", exception);
+        }
+        return null;
+    }
+    
+    @Override
+    public CaptureUser findUser(String userName, String uri){
+    	URI targetUrl= UriComponentsBuilder.fromUriString(uri)
+                .path(JiraConstants.REST_API_USER)
+                .queryParam("username", userName)
                 .build()
                 .encode()
                 .toUri();

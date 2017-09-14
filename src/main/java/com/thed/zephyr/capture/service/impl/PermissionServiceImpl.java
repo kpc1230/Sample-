@@ -186,6 +186,14 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    public boolean canEditNote(String user, String assignee, Note note) {
+        if (user == null || assignee == null || note == null) {
+            return false;
+        }
+        return user.equals(assignee) || user.equals(note.getAuthor());
+    }
+
+    @Override
     public boolean canEditSession(String user, Session session) {
         return checkPermissionForType(projectService.getProjectObj(session.getProjectId()).getKey(), null, ApplicationConstants.PROJECT_ADMIN)
                 || session.getAssignee().equals(user) || session.getCreator().equals(user);

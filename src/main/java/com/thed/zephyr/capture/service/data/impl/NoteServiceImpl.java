@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.*;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.NoteRepository;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.service.data.NoteService;
 import com.thed.zephyr.capture.service.data.TagService;
+import com.thed.zephyr.capture.service.jira.UserService;
 
 /**
  * @author Venkatareddy on 08/28/2017.
@@ -38,65 +40,69 @@ public class NoteServiceImpl implements NoteService {
 	private CaptureI18NMessageSource i18n;
 	@Autowired
 	PermissionService permissionService;
+	@Autowired
+	UserService userService;
 
 	@Override
-	public NoteSessionActivity create(NoteSessionActivity noteSessionActivityRequest) throws CaptureValidationException {
-		Set<String> tags = parseTags(noteSessionActivityRequest.getNoteData());
+	public NoteRequest create(NoteRequest noteRequest) throws CaptureValidationException {
+		Set<String> tags = parseTags(noteRequest.getNoteData());
 		NoteSessionActivity.Resolution resolution = tags.size() > 0?NoteSessionActivity.Resolution.INITIAL:NoteSessionActivity.Resolution.NON_ACTIONABLE;
 		SessionActivity sessionActivity =
 				new NoteSessionActivity(
-						noteSessionActivityRequest.getSessionId(),
-						noteSessionActivityRequest.getCtId(),
+						noteRequest.getSessionId(),
+						noteRequest.getCtId(),
 						new Date(),
-						noteSessionActivityRequest.getUser(),
-						noteSessionActivityRequest.getProjectId(),
-						noteSessionActivityRequest.getNoteData(),
+						noteRequest.getUser(),
+						noteRequest.getProjectId(),
+						noteRequest.getNoteData(),
 						resolution,
 						tags
 				);
 		NoteSessionActivity noteSessionActivity = (NoteSessionActivity)sessionActivityRepository.save(sessionActivity);
 		Note note = new Note(noteSessionActivity);
-		noteRepository.save(note);
+		note = noteRepository.save(note);
 
-		return noteSessionActivity;
+		return convertNoteTO(noteRequest.getUser(), note);
 	}
 
 	@Override
-	public NoteSessionActivity getNoteSessionActivity(String noteSessionActivityId) throws CaptureValidationException {
+	public NoteRequest getNoteSessionActivity(String noteSessionActivityId) throws CaptureValidationException {
 		SessionActivity noteSessionActivity = sessionActivityRepository.findOne(noteSessionActivityId);
 		if(!(noteSessionActivity instanceof NoteSessionActivity)){
 			throw new CaptureRuntimeException("This id do not belong to NoteSessionActivity");
 		}
-		return (NoteSessionActivity)noteSessionActivity;
+		return convertNoteSessionActivityTO((NoteSessionActivity)noteSessionActivity);
 	}
 
 	@Override
-	public NoteSessionActivity update(NoteSessionActivity noteSessionActivityRequest) throws CaptureValidationException{
-		return update(noteSessionActivityRequest, false);
+	public NoteRequest update(NoteRequest noteRequest) throws CaptureValidationException{
+		return update(noteRequest, false);
 	}
 
 	@Override
-	public NoteSessionActivity update(NoteSessionActivity noteSessionActivityRequest, boolean toggleResolution) throws CaptureValidationException {
-		SessionActivity existing = sessionActivityRepository.findOne(noteSessionActivityRequest.getId());
+	public NoteRequest update(NoteRequest noteRequest, boolean toggleResolution) throws CaptureValidationException {
+		SessionActivity existing = sessionActivityRepository.findOne(noteRequest.getSessionActivityId());
 		if(existing == null){
-			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteSessionActivityRequest.getId()}));
+			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteRequest.getId()}));
 		} else if(!(existing instanceof NoteSessionActivity)){
-			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteSessionActivityRequest.getId()}));
-		} else if (!noteSessionActivityRequest.getSessionId().equals(existing.getSessionId())){
+			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteRequest.getId()}));
+		} else if (!noteRequest.getSessionId().equals(existing.getSessionId())){
 			throw new CaptureValidationException("Note sessionId don't match");//TODO
-		} else if (!noteSessionActivityRequest.getUser().equals(existing.getUser())){
+		} else if (!noteRequest.getUser().equals(existing.getUser())){
 			throw new CaptureValidationException("Note author don't match");
 		}
-		if (!permissionService.canEditNote(noteSessionActivityRequest.getUser(), noteSessionActivityRequest.getSessionId(), (NoteSessionActivity)existing)) {
+		if (!permissionService.canEditNote(noteRequest.getUser(), noteRequest.getSessionId(), (NoteSessionActivity)existing)) {
 			throw new CaptureValidationException(i18n.getMessage("note.update.permission.violation"));
 		}
-		((NoteSessionActivity)existing).setNoteData(noteSessionActivityRequest.getNoteData());
-		Set<String> tags = tagService.parseTags(noteSessionActivityRequest.getNoteData());
+		//For update, rawNoteData should be used.
+		((NoteSessionActivity)existing).setNoteData(noteRequest.getRawNoteData());
+		Set<String> tags = tagService.parseTags(noteRequest.getRawNoteData());
 		NoteSessionActivity.Resolution resolution;
 		if (tags.size() == 0){
 			resolution = NoteSessionActivity.Resolution.NON_ACTIONABLE;
 		} else {
-			resolution = noteSessionActivityRequest.getResolutionState();
+			((NoteSessionActivity)existing).setTags(tags);
+			resolution = NoteSessionActivity.Resolution.valueOf(noteRequest.getResolutionState());
 		}
 		if(toggleResolution){
 			resolution = validateToggleResolution(((NoteSessionActivity)existing).getResolutionState());
@@ -107,9 +113,9 @@ public class NoteServiceImpl implements NoteService {
 		Note existingNote = noteRepository.findByCtIdAndNoteSessionActivityId(noteSessionActivity.getCtId(), noteSessionActivity.getId());
 		Note note = new Note(noteSessionActivity);
 		note.setId(existingNote.getId());
-		noteRepository.save(note);
+		note = noteRepository.save(note);
 
-		return noteSessionActivity;
+		return convertNoteTO(noteRequest.getUser(), note);
 	}
 
 
@@ -130,7 +136,7 @@ public class NoteServiceImpl implements NoteService {
 	}
 
 	@Override
-	public NoteSearchList getNotesByProjectId(String ctId, Long projectId, NoteFilter noteFilter, Integer page, Integer limit) {
+	public NoteSearchList getNotesByProjectId(String loggedUser, String ctId, Long projectId, NoteFilter noteFilter, Integer page, Integer limit) {
 		Pageable pageable = CaptureUtil.getPageRequest(page, limit);
 		Page<Note> notes = null;
 		if (noteFilter != null && noteFilter.getTags() != null && noteFilter.getTags().size() == 0){
@@ -147,18 +153,18 @@ public class NoteServiceImpl implements NoteService {
 		}
 		List<Note> content = notes != null?notes.getContent():new ArrayList<>();
 		Long total = notes != null?notes.getTotalElements():0;
-		NoteSearchList result = new NoteSearchList(content, page, limit, total);
+		NoteSearchList result = new NoteSearchList(convertNoteTO(loggedUser, content), page, limit, total);
 
 		return result;
 	}
 
 	@Override
-	public NoteSearchList getNotesBySessionId(String ctId, String sessionId, Integer page, Integer limit) {
+	public NoteSearchList getNotesBySessionId(String loggedUser, String ctId, String sessionId, Integer page, Integer limit) {
 		Pageable pageable = CaptureUtil.getPageRequest(page, limit);
 		Page<Note> notes = noteRepository.findByCtIdAndSessionId(ctId, sessionId, pageable);
 		List<Note> content = notes != null?notes.getContent():new ArrayList<>();
 		Long total = notes != null?notes.getTotalElements():0;
-		NoteSearchList result = new NoteSearchList(content, page, limit, total);
+		NoteSearchList result = new NoteSearchList(convertNoteTO(loggedUser, content), page, limit, total);
 
 		return result;
 	}
@@ -202,4 +208,35 @@ public class NoteServiceImpl implements NoteService {
 
 		return tagList;
 	}
+	private NoteRequest convertNoteTO(String userName, Note note){
+		return convertNoteTO(CaptureUtil.getCurrentClientBaseUrl(), userName, note); 
+	}
+	private NoteRequest convertNoteTO(String baseUri, String userName, Note note){
+		NoteRequest noteReq = new NoteRequest(note, note.getTags());
+		if(permissionService.canEditNote(userName, note.getAuthor(), note)){
+			noteReq.setCanEdit(true);
+		}
+		populateRequiredData(baseUri, noteReq, userName);
+		return noteReq;
+	}
+
+	private List<NoteRequest> convertNoteTO(String userName, List<Note> notes){
+		String baseUri = CaptureUtil.getCurrentClientBaseUrl();
+		List<NoteRequest> list = new ArrayList<>();
+		notes.parallelStream().forEach(note -> list.add(convertNoteTO(baseUri, userName, note)));
+		return list;
+	}
+	
+	private NoteRequest convertNoteSessionActivityTO(NoteSessionActivity noteSA){
+		NoteRequest noteReq = new NoteRequest(noteSA, noteSA.getTags());
+		noteReq.setCanEdit(true);
+		populateRequiredData(CaptureUtil.getCurrentClientBaseUrl(), noteReq, noteSA.getUser());
+		return noteReq;
+	}
+	private void populateRequiredData(String baseUri, final NoteRequest noteReq, String userName){
+		CaptureUser user = userService.findUser(noteReq.getUser(), baseUri);
+		noteReq.setAuthorDisplayName(user.getDisplayName());
+		noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
+	}
+	
 }

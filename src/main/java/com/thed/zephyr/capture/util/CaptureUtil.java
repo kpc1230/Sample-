@@ -13,6 +13,7 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Arrays;
@@ -92,6 +93,11 @@ public class CaptureUtil {
         return atlassianHostUser.getHost().getClientKey();
     }
 
+    public static String getCurrentClientBaseUrl(){
+    	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        return host.getHost().getBaseUrl();
+    }
     public static String getCurrentCtId(DynamoDBAcHostRepository dynamoDBAcHostRepository){
         AtlassianHostUser atlassianHostUser = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         AcHostModel acHostModel = (AcHostModel) dynamoDBAcHostRepository.findOne(atlassianHostUser.getHost().getClientKey());

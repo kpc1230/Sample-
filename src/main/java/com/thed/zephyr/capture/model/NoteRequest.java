@@ -1,11 +1,9 @@
 package com.thed.zephyr.capture.model;
 
 import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.DateTime;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +14,11 @@ final public class NoteRequest {
     private String ctId;
     private String sessionId;
     private Date createdTime;
-    private String author;
+    private String user;
+    private String authorDisplayName;
+    private boolean canEdit = false;
+    private String userIconUrl;
+    private String sessionActivityId;
 
     /**
      * Raw data of the note itself
@@ -25,13 +27,13 @@ final public class NoteRequest {
     private Long projectId;
     private String rawNoteData;
 
-    private List<LightTag> tags;
+    private Set<String> tags;
     
-    public List<LightTag> getTags() {
+    public Set<String> getTags() {
 		return tags;
 	}
 
-	public void setTags(List<LightTag> tags) {
+	public void setTags(Set<String> tags) {
 		this.tags = tags;
 	}
 
@@ -43,41 +45,69 @@ final public class NoteRequest {
     public NoteRequest() {
     }
     
-    public NoteRequest(Note note, List<Tag> tags) {
+    public NoteRequest(Note note) {
+		this.id = note.getId();
+		this.ctId = note.getCtId();
+		this.sessionId = note.getSessionId();
+		this.createdTime = note.getCreatedTime();
+		this.user = note.getAuthor();
+		this.rawNoteData = note.getNoteData();
+		this.resolutionState = note.getResolutionState().name();
+		this.projectId = note.getProjectId();
+		this.sessionActivityId = note.getNoteSessionActivityId();
+    }
+
+    public NoteRequest(Note note, Set<String> tags) {
     	if(note != null){
     		this.id = note.getId();
     		this.ctId = note.getCtId();
     		this.sessionId = note.getSessionId();
     		this.createdTime = note.getCreatedTime();
-    		this.author = note.getAuthor();
+    		this.user = note.getAuthor();
     		this.rawNoteData = note.getNoteData();
     		this.resolutionState = note.getResolutionState().name();
     		this.noteData = createNoteData(tags, note.getNoteData());
     		this.projectId = note.getProjectId();
-    		this.tags = createLightTag(tags);
+    		this.tags = tags;//createLightTag(tags);
+    		this.sessionActivityId = note.getNoteSessionActivityId();
+    	}
+    }
+
+    public NoteRequest(NoteSessionActivity note, Set<String> tags) {
+    	if(note != null){
+    		this.id = note.getId();
+    		this.ctId = note.getCtId();
+    		this.sessionId = note.getSessionId();
+    		this.createdTime = note.getTimestamp();
+    		this.user = note.getUser();
+    		this.rawNoteData = note.getNoteData();
+    		this.resolutionState = note.getResolutionState().name();
+    		this.noteData = createNoteData(tags, note.getNoteData());
+    		this.projectId = note.getProjectId();
+    		this.tags = tags;//createLightTag(tags);
     	}
     }
 
     public NoteRequest(String id, String ctId, String sessionId, Date createdTime, String author,
-			String rawNoteData, String resolutionState, Long projectId, List<Tag> tags) {
+			String rawNoteData, String resolutionState, Long projectId, Set<String> tags) {
 		super();
 		this.id = id;
 		this.ctId = ctId;
 		this.sessionId = sessionId;
 		this.createdTime = createdTime;
-		this.author = author;
+		this.user = author;
 		this.rawNoteData = rawNoteData;
 		this.resolutionState = resolutionState;
 		this.projectId = projectId;
 		this.noteData = createNoteData(tags, rawNoteData);
-		this.tags = createLightTag(tags);
+		this.tags = tags;//createLightTag(tags);
 	}
 
-	private List<LightTag> createLightTag(List<Tag> tags) {
+	/*private List<LightTag> createLightTag(List<Tag> tags) {
 		return tags.stream().map( tag -> new LightTag(tag.getId(), Tag.getTagCodeByName(tag.getName()))).collect(Collectors.toList());
-	}
+	}*/
 
-	private String createNoteData(List<Tag> tags, String noteData) {
+	private String createNoteData(Set<String> tags, String noteData) {
 		StringBuilder stringBuilder = new StringBuilder();
 		String tagData = null;
 		String cssClassUnknown = "tag-unknown";
@@ -94,19 +124,19 @@ final public class NoteRequest {
 			}
 				
 		}
-		for(Tag tag : tags){
+		for(String tag : tags){
 			tagData = null;
             String cssClass = cssClassUnknown;
-            if (Tag.ASSUMPTION_TAG_NAME.equals(tag.getName())) {
+            if (Tag.ASSUMPTION_TAG_NAME.equals(tag)) {
                 cssClass = "tag-assumption";
                 tagData = getTagData(noteData, Tag.ASSUMPTION);
-            }else if (Tag.FOLLOWUP_TAG_NAME.equals(tag.getName())) {
+            }else if (Tag.FOLLOWUP_TAG_NAME.equals(tag)) {
                 cssClass = "tag-followUp";
                 tagData = getTagData(noteData, Tag.FOLLOWUP);
-            }else if (Tag.IDEA_TAG_NAME.equals(tag.getName())) {
+            }else if (Tag.IDEA_TAG_NAME.equals(tag)) {
                 cssClass = "tag-idea";
                 tagData = getTagData(noteData, Tag.IDEA);
-            }else if (Tag.QUESTION_TAG_NAME.equals(tag.getName())) {
+            }else if (Tag.QUESTION_TAG_NAME.equals(tag)) {
                 cssClass = "tag-question";
                 tagData = getTagData(noteData, Tag.QUESTION);
             }
@@ -165,12 +195,12 @@ final public class NoteRequest {
         this.createdTime = createdTime;
     }
 
-    public String getAuthor() {
-        return author;
+    public String getUser() {
+        return user;
     }
 
-    public void setAuthor(String author) {
-        this.author = author;
+    public void setUser(String author) {
+        this.user = author;
     }
 
     public String getNoteData() {
@@ -215,6 +245,38 @@ final public class NoteRequest {
 
 	public void setProjectId(Long projectId) {
 		this.projectId = projectId;
+	}
+
+	public String getAuthorDisplayName() {
+		return authorDisplayName;
+	}
+
+	public void setAuthorDisplayName(String authorDisplayName) {
+		this.authorDisplayName = authorDisplayName;
+	}
+
+	public boolean isCanEdit() {
+		return canEdit;
+	}
+
+	public void setCanEdit(boolean canEdit) {
+		this.canEdit = canEdit;
+	}
+
+	public String getUserIconUrl() {
+		return userIconUrl;
+	}
+
+	public void setUserIconUrl(String userIconUrl) {
+		this.userIconUrl = userIconUrl;
+	}
+
+	public String getSessionActivityId() {
+		return sessionActivityId;
+	}
+
+	public void setSessionActivityId(String sessionActivityId) {
+		this.sessionActivityId = sessionActivityId;
 	}
 
 }

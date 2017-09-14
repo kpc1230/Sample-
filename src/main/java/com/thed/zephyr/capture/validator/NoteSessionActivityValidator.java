@@ -39,21 +39,21 @@ public class NoteSessionActivityValidator implements Validator {
 
 	@Override
 	public void validate(Object target, Errors errors) {
-		if(target instanceof NoteSessionActivity){
-			NoteSessionActivity noteSessionActivity = (NoteSessionActivity) target;
+		if(target instanceof NoteRequest){
+			NoteRequest noteRequest = (NoteRequest) target;
 			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "noteData", "", i18n.getMessage("note.create.empty"));
-			int noteLength = noteSessionActivity.getNoteData().length();
-			if (noteSessionActivity.getNoteData() != null && noteLength > ApplicationConstants.MAX_NOTE_LENGTH) {
+			int noteLength = noteRequest.getNoteData().length();
+			if (noteRequest.getNoteData() != null && noteLength > ApplicationConstants.MAX_NOTE_LENGTH) {
                 errors.reject("", i18n.getMessage("note.exceed.limit", new Object[]{noteLength, ApplicationConstants.MAX_NOTE_LENGTH}));
             }
 
-			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "sessionId", "", i18n.getMessage("session.invalid.id", new Object[]{noteSessionActivity.getSessionId()}));
-			if(!StringUtils.isNullOrEmpty(noteSessionActivity.getSessionId())){
-				Session s = sessionService.getSession(noteSessionActivity.getSessionId());
+			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "sessionId", "", i18n.getMessage("session.invalid.id", new Object[]{noteRequest.getSessionId()}));
+			if(!StringUtils.isNullOrEmpty(noteRequest.getSessionId())){
+				Session s = sessionService.getSession(noteRequest.getSessionId());
 				if(Objects.isNull(s)) {
-					errors.reject("", i18n.getMessage("session.invalid", new Object[]{noteSessionActivity.getSessionId()}));
+					errors.reject("", i18n.getMessage("session.invalid", new Object[]{noteRequest.getSessionId()}));
 				}else{
-					noteSessionActivity.setProjectId(s.getProjectId());
+					noteRequest.setProjectId(s.getProjectId());
 				}
 			}
 		}		

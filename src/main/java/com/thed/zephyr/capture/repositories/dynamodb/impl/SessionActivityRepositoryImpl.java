@@ -1,20 +1,27 @@
 package com.thed.zephyr.capture.repositories.dynamodb.impl;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.document.*;
-import com.amazonaws.services.dynamodbv2.document.internal.IteratorSupport;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.thed.zephyr.capture.model.SessionActivity;
-import com.thed.zephyr.capture.util.ApplicationConstants;
-import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Index;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
+import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.internal.IteratorSupport;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.thed.zephyr.capture.model.SessionActivity;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 
 /**
  * Created by aliakseimatsarski on 8/23/17.
@@ -33,6 +40,9 @@ public class SessionActivityRepositoryImpl {
     public SessionActivity findOne(String id){
         Table table = dynamodb.getTable(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME);
         Item item = table.getItem("id", id);
+        if(item == null){
+        	return null;
+        }
         SessionActivity sessionActivity = convertItemToSessionActivity(item);
 
         return sessionActivity;
@@ -67,6 +77,8 @@ public class SessionActivityRepositoryImpl {
                     attributeValue.setS(entry.getValue().toString());
                 } else if(entry.getValue() instanceof BigDecimal){
                     attributeValue.setN(entry.getValue().toString());
+                }else if(entry.getValue() instanceof Set){
+                    attributeValue.setSS((Set<String>)entry.getValue());
                 }
                 objectMap.put(entry.getKey(), attributeValue);
             }
