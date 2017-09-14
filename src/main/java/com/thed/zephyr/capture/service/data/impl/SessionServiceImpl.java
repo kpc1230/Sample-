@@ -21,6 +21,7 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.model.view.FullSessionDto;
 import com.thed.zephyr.capture.model.view.ParticipantDto;
 import com.thed.zephyr.capture.model.view.SessionDisplayDto;
 import com.thed.zephyr.capture.model.view.SessionDto;
@@ -285,9 +286,9 @@ public class SessionServiceImpl implements SessionService {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		List<Session> privateSessionsList = sessionRepository.fetchPrivateSessionsForUser(ctId, user);
 		List<Session> sharedSessionsList = sessionRepository.fetchSharedSessionsForUser(ctId, user);
-		List<LightSession> lightSessionPList = sortAndFetchLightSessions(privateSessionsList, 0, privateSessionsList.size(), new IdSessionComparator(true));
-		List<LightSession> lightSessionSList = sortAndFetchLightSessions(sharedSessionsList, 0, sharedSessionsList.size(), new IdSessionComparator(true));
-		return new SessionExtensionResponse(lightSessionPList, lightSessionSList);
+		List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, 0, privateSessionsList.size(), new IdSessionComparator(true));
+		List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, 0, sharedSessionsList.size(), new IdSessionComparator(true));
+		return new SessionExtensionResponse(privateSessionsDto, sharedSessionsDto);
 	}
 
 	@Override
@@ -335,11 +336,11 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionDto constructSessionDto(String loggedInUser, Session session) {
+	public SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull) {
 		CaptureProject project = projectService.getCaptureProject(session.getProjectId());
 		String activeSessionId = getActiveSessionIdFromCache(loggedInUser);
 		boolean isActive = session.getId().equals(activeSessionId);
-		return createSessionDto(loggedInUser, session, isActive, project);
+		return createSessionDto(loggedInUser, session, isActive, project, isSendFull);
 	}
 
 	@Override
@@ -934,19 +935,19 @@ public class SessionServiceImpl implements SessionService {
     }
 	
 	public class SessionExtensionResponse {		
-		private List<LightSession> privateSessions;		
-		private List<LightSession> sharedSessions;
+		private List<SessionDto> privateSessions;		
+		private List<SessionDto> sharedSessions;
 		
-		public SessionExtensionResponse(List<LightSession> privateSessions, List<LightSession> sharedSessions) {
+		public SessionExtensionResponse(List<SessionDto> privateSessions, List<SessionDto> sharedSessions) {
 			this.privateSessions = privateSessions;
 			this.sharedSessions = sharedSessions;
 		}
 		
-		public List<LightSession> getPrivateSessions() {
+		public List<SessionDto> getPrivateSessions() {
             return privateSessions;
         }
 
-        public List<LightSession> getSharedSessions() {
+        public List<SessionDto> getSharedSessions() {
             return sharedSessions;
         }		
 	}
@@ -977,6 +978,38 @@ public class SessionServiceImpl implements SessionService {
 			lighSessionsList.add(lightSession);
 		}
 		return lighSessionsList;
+	}
+	
+	/**
+	 * Sorts the sessions list and returns list of session dto object based on startAt and size parameters.
+	 *
+	 * @param sessionsList -- List of sessions fetched from database.
+	 * @param startAt -- Start position
+	 * @param size -- Number of elements to fetch.
+	 * @param comparator -- Comparator can be assignee, project, session name, shared, created time etc.,
+	 * @return -- Returns the list of light session object based on startAt and size parameters.
+	 */
+	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, List<Session> sessionsList, int startAt, int size, Comparator<Session> comparator) {
+		List<SessionDto> sessionDtoList = new ArrayList<>(size);
+		Map<Long, CaptureProject> projectsMap = new HashMap<>();
+		SessionDto sessionDto = null;
+		CaptureProject project = null;
+		Collections.sort(sessionsList, comparator); //Sort the sessions using the comparator.
+		String activeSessionId = getActiveSessionIdFromCache(loggedInUser);
+		final int actualSize = getActualSize(sessionsList.size(), startAt, size);
+		for (int i = startAt; i < startAt + actualSize; i++) {
+			Session session = sessionsList.get(i);
+			if(!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
+				project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
+				projectsMap.put(session.getProjectId(), project);
+			} else {
+				project = projectsMap.get(session.getProjectId());
+			}
+			boolean isActive = session.getId().equals(activeSessionId);
+			sessionDto = createSessionDto(loggedInUser, session, isActive, project, false);
+			sessionDtoList.add(sessionDto);
+		}
+		return sessionDtoList;
 	}
 
 	/**
@@ -1021,27 +1054,13 @@ public class SessionServiceImpl implements SessionService {
                 isStarted, canCreateSession, isAssignee, isComplete, isCreated, showInvite, canAssign);
     }
 	
-	private SessionDto createSessionDto(String loggedUser, Session session, boolean isActive, CaptureProject project) {
+	private SessionDto createSessionDto(String loggedUser, Session session, boolean isActive, CaptureProject project, boolean isSendFull) {
 		SessionDisplayDto permissions = getDisplayHelper(loggedUser, session);
 		Integer activeParticipantCount = 0;
 		if (Status.STARTED.equals(session.getStatus())) {
-            // If started then add the assignee
-            activeParticipantCount++;
+            activeParticipantCount++; // If started then add the assignee
         }
-		List<CaptureIssue> relatedIssues = Lists.newArrayList();
-		if(Objects.nonNull(session.getRelatedIssueIds())) {
-			for(Long issueId : session.getRelatedIssueIds()) {
-				CaptureIssue issue = issueService.getCaptureIssue(issueId);
-				relatedIssues.add(issue);
-			}
-		}
-		List<CaptureIssue> raisedIssues = Lists.newArrayList();
-		if(Objects.nonNull(session.getIssueRaisedIds())) {
-			for(Long issueId : session.getIssueRaisedIds()) {
-				CaptureIssue issue = issueService.getCaptureIssue(issueId);
-				raisedIssues.add(issue);
-			}
-		}
+		
 		List<ParticipantDto> activeParticipants = Lists.newArrayList();
 		if(Objects.nonNull(session.getParticipants())) {
 			for(Participant p : session.getParticipants()) {
@@ -1049,18 +1068,39 @@ public class SessionServiceImpl implements SessionService {
 				activeParticipantCount++;
 			}
 		}
-		CaptureUser user = userService.findUser(session.getAssignee());
-		String userAvatarSrc = null, userLargeAvatarSrc = null;
-		try {
-			userAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("24x24") != null ? user.getAvatarUrls().get("24x24") : ""), Charset.defaultCharset().name());
-			userLargeAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("48x48") != null ? user.getAvatarUrls().get("48x48") : ""), Charset.defaultCharset().name());;
-		} catch (UnsupportedEncodingException e) {
-			log.error("Error in decoing the url.", e);
-		}
-	    
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
-		return new SessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, null, permissions, null, 
-				i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName(), session.getTimeFinished());
+				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null);
+		if(isSendFull) {
+			List<CaptureIssue> relatedIssues = Lists.newArrayList();
+			if(Objects.nonNull(session.getRelatedIssueIds())) {
+				for(Long issueId : session.getRelatedIssueIds()) {
+					CaptureIssue issue = issueService.getCaptureIssue(issueId);
+					relatedIssues.add(issue);
+				}
+			}
+			List<CaptureIssue> raisedIssues = Lists.newArrayList();
+			if(Objects.nonNull(session.getIssueRaisedIds())) {
+				for(Long issueId : session.getIssueRaisedIds()) {
+					CaptureIssue issue = issueService.getCaptureIssue(issueId);
+					raisedIssues.add(issue);
+				}
+			}
+			
+			CaptureUser user = userService.findUser(session.getAssignee());
+			String userAvatarSrc = null, userLargeAvatarSrc = null;
+			try {
+				userAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("24x24") != null ? user.getAvatarUrls().get("24x24") : ""), Charset.defaultCharset().name());
+				userLargeAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("48x48") != null ? user.getAvatarUrls().get("48x48") : ""), Charset.defaultCharset().name());;
+			} catch (UnsupportedEncodingException e) {
+				log.error("Error in decoing the url.", e);
+			}
+			
+			return new FullSessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, null, permissions, null, 
+					i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName(), session.getTimeFinished());
+		} else {
+			Integer issusRaisedCount = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().size() : 0;
+			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, null, 
+					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished());
+		}
 	}
 }

@@ -27,7 +27,6 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.validator.SessionValidator;
 import org.apache.commons.lang.StringUtils;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -192,7 +191,7 @@ public class SessionController extends CaptureAbstractController{
 			} else if(Objects.isNull(session)) {
 				throw new CaptureValidationException(i18n.getMessage("session.not.exist.message"));
 			}
-			SessionDto sessionDto = sessionService.constructSessionDto(user, session);
+			SessionDto sessionDto = sessionService.constructSessionDto(user, session, true);
 			log.info("End of Create Session()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(Exception ex) {
@@ -221,7 +220,7 @@ public class SessionController extends CaptureAbstractController{
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult);
-			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, updateResult.getSession()); 
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, updateResult.getSession(), true); 
 			log.info("End of updateSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
@@ -273,7 +272,7 @@ public class SessionController extends CaptureAbstractController{
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
         	sessionActivityService.setStatus(session, new Date(), loggedUserKey);
-        	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session);
+        	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 			log.info("End of startSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
@@ -303,7 +302,7 @@ public class SessionController extends CaptureAbstractController{
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
         	sessionActivityService.setStatus(session, new Date(), loggedUserKey);
-        	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session);
+        	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 			log.info("End of pauseSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
@@ -377,7 +376,7 @@ public class SessionController extends CaptureAbstractController{
 			//Save status changed information as activity.
 			sessionActivityService.setStatus(session, new Date(), loggedUserKey);
 			sessionService.update(completeSessionResult.getSessionUpdateResult());
-			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session);
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 			log.info("End of completeSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
@@ -536,7 +535,7 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult);
 			//Save assigned user to the session as activity.
 			sessionActivityService.addAssignee(loadedSession, new Date(), loggedUserKey, assignee);
-			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession);
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession, false);
 			log.info("End of assignSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(Exception ex) {

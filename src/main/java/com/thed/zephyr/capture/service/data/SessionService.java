@@ -183,9 +183,10 @@ public interface SessionService {
 	 * 
 	 * @param loggedInUser -- Logged in user.
 	 * @param session -- Session object requested by the user.
+	 * @param isSendFull -- Flag to send whole session related or not.
 	 * @return -- Returns the constructed session dto object.
 	 */
-	SessionDto constructSessionDto(String loggedInUser, Session session);
+	SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull);
 
 	/**
 	 * Get Complete session view details

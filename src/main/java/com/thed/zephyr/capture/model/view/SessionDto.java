@@ -2,13 +2,10 @@ package com.thed.zephyr.capture.model.view;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.thed.zephyr.capture.model.LightSession;
-import com.thed.zephyr.capture.model.Note;
 import com.thed.zephyr.capture.model.Session.Status;
-import com.thed.zephyr.capture.model.jira.CaptureIssue;
 
 /**
  * <p>Bean that is shaped specifically for the browser extensions current active session.</p>
@@ -28,6 +25,8 @@ public class SessionDto {
 	
 	private String user;
 	
+	private String creator;
+	
 	private boolean shared;
 	
 	private String projectId;
@@ -41,10 +40,6 @@ public class SessionDto {
 	private String defaultTemplateId;
 	
 	private Integer issuesRaisedCount;
-	
-	private List<CaptureIssue> relatedIssues;
-
-    private List<CaptureIssue> issuesRaised;
 
     private List<ParticipantDto> participants;
     
@@ -53,33 +48,22 @@ public class SessionDto {
     private String prettyStatus;
     
     private String rawAdditionalInfo;
-    
-    private Integer noteCount;
-
-    private List<Note> sessionNotes;
 
     private String estimatedTimeSpent;
     
     private SessionDisplayDto permissions;
     
-    private String userAvatarSrc;
-
-    private String userLargeAvatarSrc;
-    
-    private String userDisplayName;
-    
     private Date timeCreated;
     
     private Date timeCompleted;
-    
 
-    public SessionDto(LightSession session, boolean isActive, List<CaptureIssue> relatedIssues,List<CaptureIssue> issuesRaised, List<ParticipantDto> activeParticipants,
-    		Integer activeParticipantCount, List<Note> sessionNotes, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus,	String userAvatarSrc, 
-    		String userLargeAvatarSrc, String userDisplayName, Date timeCompleted) {
+    public SessionDto(LightSession session, boolean isActive, List<ParticipantDto> activeParticipants, Integer activeParticipantCount,
+    		Integer issuesRaisedCount, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus, Date timeCompleted) {
     	this.id = session.getId();
     	this.name = session.getName();
     	this.status = session.getStatus();
     	this.user = session.getAssignee();
+    	this.creator = session.getCreator();
     	this.shared = session.isShared();
     	this.projectId = String.valueOf(session.getProject().getId());
     	this.projectKey = session.getProject().getKey();
@@ -87,35 +71,20 @@ public class SessionDto {
     	this.additionalInfo = session.getAdditionalInfo();
     	this.rawAdditionalInfo = session.getAdditionalInfo();
     	this.isActive = isActive;
-    	this.relatedIssues = relatedIssues;
-        this.issuesRaised = issuesRaised;
         this.participants = activeParticipants;
         this.participantCount = activeParticipantCount;
-        this.sessionNotes = sessionNotes;
         this.permissions = permissions;
         this.estimatedTimeSpent = estimatedTimeSpent;
         this.defaultTemplateId = session.getDefaultTemplateId();
         this.prettyStatus = prettyStatus;
-        this.issuesRaisedCount = issuesRaised.size();
-        this.noteCount = Objects.nonNull(sessionNotes) ? sessionNotes.size() : 0;
-        this.userAvatarSrc = userAvatarSrc;
-        this.userLargeAvatarSrc = userLargeAvatarSrc;
-        this.userDisplayName = userDisplayName;
+        this.issuesRaisedCount = issuesRaisedCount;
         this.timeCompleted = timeCompleted;
         this.timeCreated = session.getTimeCreated();
     }
 
 	public boolean isActive() {
 		return isActive;
-	}
-
-	public List<CaptureIssue> getRelatedIssues() {
-		return relatedIssues;
-	}
-
-	public List<CaptureIssue> getIssuesRaised() {
-		return issuesRaised;
-	}
+	}	
 
 	public List<ParticipantDto> getParticipants() {
 		return participants;
@@ -124,11 +93,7 @@ public class SessionDto {
 	public Integer getActiveParticipantCount() {
 		return participantCount;
 	}
-
-	public List<Note> getSessionNotes() {
-		return sessionNotes;
-	}
-
+	
 	public String getEstimatedTimeSpent() {
 		return estimatedTimeSpent;
 	}
@@ -193,27 +158,19 @@ public class SessionDto {
 		return rawAdditionalInfo;
 	}
 
-	public Integer getNoteCount() {
-		return noteCount;
-	}
-
-	public String getUserAvatarSrc() {
-		return userAvatarSrc;
-	}
-
-	public String getUserLargeAvatarSrc() {
-		return userLargeAvatarSrc;
-	}
-
-	public String getUserDisplayName() {
-		return userDisplayName;
-	}
-
 	public Date getCreatedDate() {
 		return timeCreated;
 	}
 
 	public Date getTimeCompleted() {
 		return timeCompleted;
+	}
+
+	public String getCreator() {
+		return creator;
+	}
+
+	public Date getTimeCreated() {
+		return timeCreated;
 	}
 }
