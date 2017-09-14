@@ -412,7 +412,32 @@ public class SessionServiceImpl implements SessionService {
 		updateSessionWithIssueId(sessions3, issueId);
 
     }
-
+    @Override
+    public List<CaptureIssue> updateSessionWithIssues(String sessionId, List<Long> issues) {
+        List<CaptureIssue> raisedIssues = Lists.newArrayList();
+        Session session = getSession(sessionId);
+        if(session !=null){
+            if (session.getIssueRaisedIds() != null) {
+                session.getIssueRaisedIds().addAll(issues);
+            } else {
+                Set<Long> set = new TreeSet<>();
+                set.addAll(issues);
+                session.setIssueRaisedIds(set);
+            }
+            save(session, new ArrayList<>());
+            if(Objects.nonNull(session.getIssueRaisedIds())) {
+                for(Long issueId : session.getIssueRaisedIds()) {
+                	try {
+						CaptureIssue issue = issueService.getCaptureIssue(issueId);
+						raisedIssues.add(issue);
+					}catch (Exception exption){
+						log.error("Error occured while fetching the issue with id  : "+issueId + " So skipped to add the response",exption);
+					}
+                }
+            }
+        }
+        return raisedIssues;
+    }
 	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId) {
 		List<Session> listOfSessionsAsParticipant = sessions != null ? sessions.getContent() : new ArrayList<>();
 		listOfSessionsAsParticipant.forEach(session -> {

@@ -8,6 +8,7 @@ import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.exception.model.ErrorDto;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.Session.Status;
+import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
@@ -26,6 +27,7 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.validator.SessionValidator;
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -135,6 +137,24 @@ public class SessionController extends CaptureAbstractController{
 			log.error("Error in createSession() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
+	}
+
+	@PostMapping(value = "/{sessionId}/issues", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> addIssueRaised(@PathVariable("sessionId") String sessionId,@NotEmpty @RequestBody List<Long> listOfIssues) throws CaptureValidationException {
+		log.info("Start of addIssueRaised() --> params " + listOfIssues);
+		List<CaptureIssue> issues =null;
+		try {
+			if(listOfIssues !=null && listOfIssues.size()>0){
+				issues = sessionService.updateSessionWithIssues(sessionId, listOfIssues);
+			}else{
+				throw new CaptureValidationException("Issues are empty");
+			}
+		} catch (Exception ex)
+		{
+			log.error("Error in addIssueRaised() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+		return ResponseEntity.ok(issues);
 	}
 	
 	@GetMapping(value = "/{sessionId}",  produces = {MediaType.APPLICATION_JSON_VALUE})

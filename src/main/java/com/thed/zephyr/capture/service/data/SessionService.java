@@ -7,6 +7,7 @@ import com.thed.zephyr.capture.model.Participant;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.SessionRequest;
+import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.SessionDto;
@@ -221,6 +222,8 @@ public interface SessionService {
 	SessionSearchList getSessionByRelatedIssueId(String ctId, Long projectId, Long relatedIssueId);
 
 	void updateSessionWithIssue(String ctId,Long projectId,String user,Long issueId);
+
+	List<CaptureIssue> updateSessionWithIssues(String sessionId, List<Long> issues);
 
 }
 
