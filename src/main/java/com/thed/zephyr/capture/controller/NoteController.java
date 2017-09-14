@@ -77,7 +77,6 @@ public class NoteController extends CaptureAbstractController{
 			noteRequest.setUser(hostUser.getUserKey().get());
 			noteRequest.setCtId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository));
 			created = noteService.create(noteRequest);
-//			noteSessionActivity.setCtId(hostUser.getHost().getClientKey());
 		} catch (CaptureValidationException e) {
 			throw e;
 		} catch (Exception ex) {
@@ -88,18 +87,6 @@ public class NoteController extends CaptureAbstractController{
 
 		return created(created);
 	}
-
-	/*private NoteSessionActivity createNoteSessionRequest(NoteRequest noteRequest) {
-		NoteSessionActivity one = new NoteSessionActivity(
-				noteRequest.getSessionId(), 
-				noteRequest.getCtId(), 
-				null, 
-				noteRequest.getUser(), 
-				noteRequest.getProjectId(), 
-				noteRequest.getNoteData(), 
-				noteRequest.getResolutionState(), null);
-		return one;
-	}*/
 
 	@GetMapping(value = "/note/{noteSessionActivityId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getNoteSessionActivity(@AuthenticationPrincipal AtlassianHostUser hostUser,
@@ -124,7 +111,7 @@ public class NoteController extends CaptureAbstractController{
 			if(StringUtils.isEmpty(noteSessionActivityId)){
 				throw new CaptureValidationException(i18n.getMessage("note.invalid.id" , new Object[]{noteSessionActivityId}));
 			}
-			noteRequest.setId(noteSessionActivityId);
+			noteRequest.setSessionActivityId(noteSessionActivityId);
 			noteRequest.setUser(hostUser.getUserKey().get());
 			noteRequest.setCtId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository));
 			updated = noteService.update(noteRequest);
