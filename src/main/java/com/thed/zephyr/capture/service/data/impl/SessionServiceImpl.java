@@ -253,8 +253,8 @@ public class SessionServiceImpl implements SessionService {
         if (errorCollection.hasErrors()) {
             return new UpdateResult(errorCollection, null);
         }
-        if (!Objects.isNull(session.getRelatedIssueIds()) && session.getIssueRaisedIds().contains(issue.getId())) session.getRelatedIssueIds().remove(issue.getId());
-        return validateUpdate(loggedUserKey, session);
+		if (!Objects.isNull(session.getIssueRaisedIds()) && session.getIssueRaisedIds().contains(issue.getId())) session.getIssueRaisedIds().remove(issue.getId());
+		return validateUpdate(loggedUserKey, session);
     }
 	
 	@Override

@@ -139,7 +139,7 @@ public class SessionController extends CaptureAbstractController{
 		}
 	}
 
-	@PostMapping(value = "/{sessionId}/issues", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+	@PostMapping(value = "/{sessionId}/raisedin", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> addIssueRaised(@PathVariable("sessionId") String sessionId,@RequestBody List<String> listOfIssues) throws CaptureValidationException {
 		log.info("Start of addIssueRaised() --> params " + listOfIssues);
 
