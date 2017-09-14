@@ -133,9 +133,15 @@ public class SessionServiceImpl implements SessionService {
 			session.setAssignee(sessionRequest.getAssignee());
 		}
         session.setName(sessionRequest.getName());
-        session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
+        if(Objects.nonNull(sessionRequest.getAdditionalInfo())) {
+        	session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
+        }
         session.setShared(sessionRequest.getShared());
-        session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
+        if(Objects.nonNull(session.getRelatedIssueIds())) {
+        	session.getRelatedIssueIds().addAll(sessionRequest.getRelatedIssueIds());
+        } else {
+        	session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
+        }
         session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
         //Generating the session object from session builder.
         return validateUpdate(loggedUserKey, session);
@@ -1073,5 +1079,11 @@ public class SessionServiceImpl implements SessionService {
 			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, null, 
 					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName());
 		}
+	}
+
+	@Override
+	public UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo) {
+		session.setAdditionalInfo(additionalInfo);
+		return validateUpdate(loggedUser, session);
 	}
 }

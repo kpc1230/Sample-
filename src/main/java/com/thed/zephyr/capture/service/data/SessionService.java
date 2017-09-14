@@ -226,6 +226,16 @@ public interface SessionService {
 	void updateSessionWithIssue(String ctId,Long projectId,String user,Long issueId);
 
 	List<CaptureIssue> updateSessionWithIssues(String sessionId, List<Long> issues);
+	
+	/**
+	 * Update the additional information into the requested session.
+	 * 
+	 * @param loggedUser -- Logged in user.
+	 * @param session -- Request Session object.
+	 * @param additionalInfo -- Updated additional information.
+	 * @return -- Returns UpdateResult object which holds the updated session object.
+	 */
+	UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo);
 
 }
 

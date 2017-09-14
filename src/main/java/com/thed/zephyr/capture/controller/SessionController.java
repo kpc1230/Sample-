@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
@@ -602,6 +603,31 @@ public class SessionController extends CaptureAbstractController{
 			return ResponseEntity.ok(inviteSessionRequest);
 		} catch(Exception ex) {
 			log.error("Error in inviteSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+	
+	@PutMapping(value = "/{sessionId}/additionalInfo", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> updateAdditionalInfo(@PathVariable("sessionId") String sessionId, @RequestBody JsonNode json) throws CaptureValidationException {
+		log.info("Start of updateAdditionalInfo() --> params " + sessionId);
+		try {		
+			String loggedUserKey = getUser();
+			Session loadedSession  = validateAndGetSession(sessionId);
+			String editedAdditionalInfo = json.get("additionalInfo").asText();
+			UpdateResult updateResult = sessionService.updateSessionAdditionalInfo(loggedUserKey, loadedSession, editedAdditionalInfo);
+			if (!updateResult.isValid()) {
+                return badRequest(updateResult.getErrorCollection());
+            }
+			sessionService.update(updateResult);
+			boolean isEmpty = StringUtils.isEmpty(updateResult.getSession().getAdditionalInfo());
+			Map<String, String> jsonResponse = new HashMap<>();
+			jsonResponse.put("additionalInfo", isEmpty ? i18n.getMessage("session.section.additionalinfo.empty") : updateResult.getSession().getAdditionalInfo());
+			log.info("End of updateAdditionalInfo()");
+			return ResponseEntity.ok(jsonResponse);
+		} catch(CaptureValidationException ex) {
+			throw ex;
+		} catch(Exception ex) {
+			log.error("Error in updateAdditionalInfo() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
