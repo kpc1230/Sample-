@@ -96,8 +96,8 @@ public class NoteServiceImpl implements NoteService {
 			throw new CaptureValidationException(i18n.getMessage("note.update.permission.violation"));
 		}
 		//For update, rawNoteData should be used.
-		((NoteSessionActivity)existing).setNoteData(noteRequest.getRawNoteData());
-		Set<String> tags = tagService.parseTags(noteRequest.getRawNoteData());
+		((NoteSessionActivity)existing).setNoteData(noteRequest.getNoteData());
+		Set<String> tags = tagService.parseTags(noteRequest.getNoteData());
 		NoteSessionActivity.Resolution resolution;
 		if (tags.size() == 0){
 			resolution = NoteSessionActivity.Resolution.NON_ACTIONABLE;
