@@ -236,6 +236,16 @@ public interface SessionService {
 	 * @return -- Returns UpdateResult object which holds the updated session object.
 	 */
 	UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo);
+	
+	/**
+	 * Clones the session for the requested session.
+	 * 
+	 * @param loggedUser -- Logged in user.
+	 * @param cloneSession -- Request clone session object.
+	 * @param cloneName -- User request clone session name.
+	 * @return -- Returns the newly created clone session object.
+	 */
+	Session cloneSession(String loggedUser, Session cloneSession, String cloneName);
 
 }
 

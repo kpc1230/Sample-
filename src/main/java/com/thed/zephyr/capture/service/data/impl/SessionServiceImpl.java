@@ -118,7 +118,6 @@ public class SessionServiceImpl implements SessionService {
         Session createdSession = sessionRepository.save(session);
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
 		sessionESRepository.save(createdSession);
-
 		return createdSession;
 	}
 
@@ -1085,5 +1084,25 @@ public class SessionServiceImpl implements SessionService {
 	public UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo) {
 		session.setAdditionalInfo(additionalInfo);
 		return validateUpdate(loggedUser, session);
+	}
+
+	@Override
+	public Session cloneSession(String loggedUser, Session cloneSession, String cloneName) {
+		Session session = new Session();
+		session.setCreator(loggedUser);
+		session.setCtId(cloneSession.getCtId());
+		session.setStatus(Status.CREATED);
+		session.setName(cloneName);
+		session.setTimeCreated(new Date());
+		session.setAdditionalInfo(cloneSession.getAdditionalInfo());
+		session.setShared(cloneSession.isShared());
+		session.setRelatedIssueIds(cloneSession.getRelatedIssueIds());
+		session.setProjectId(cloneSession.getProjectId());
+		session.setDefaultTemplateId(cloneSession.getDefaultTemplateId());
+		session.setAssignee(cloneSession.getAssignee());
+        Session createdSession = sessionRepository.save(session);
+        if(log.isDebugEnabled()) log.debug("Cloned Session -- > Session ID - " + createdSession.getId());
+		sessionESRepository.save(createdSession);
+		return createdSession;
 	}
 }

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.exception.model.ErrorDto;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
@@ -113,14 +112,22 @@ public class SessionController extends CaptureAbstractController{
 			CaptureProject captureProject = projectService.getCaptureProject(sessionRequest.getProjectId());
 			if (captureProject != null) {
 				// Check that the creator and assignee have assign issue permissions in the project
-				if (loggedUserKey != null && !permissionService.canCreateSession(loggedUserKey, captureProject)) {
+				if (!permissionService.canCreateSession(loggedUserKey, captureProject)) {
 					throw new CaptureRuntimeException(i18n.getMessage("session.creator.fail.permissions"));
 				}
 				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), captureProject)) {
 					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{sessionRequest.getAssignee()}));
+				} else if(!permissionService.canBeAssignedSession(loggedUserKey, captureProject)) {
+					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
 				}
 			}
 			Session createdSession = sessionService.createSession(loggedUserKey, sessionRequest);
+			//Save status changed information as activity.
+        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
+        	if(!loggedUserKey.equals(createdSession.getAssignee())) {
+        		 //Save if the assigned user and logged in user are different into the session as activity.
+    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, createdSession.getAssignee());
+        	}        		
 	        if(sessionRequest.getStartNow()) { //User requested to start the session.
 	        	UpdateResult updateResult = sessionService.startSession(loggedUserKey, createdSession);
 	        	if (!updateResult.isValid()) {
@@ -631,6 +638,41 @@ public class SessionController extends CaptureAbstractController{
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
+	
+	@PostMapping(value = "/{sessionId}/clone", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> cloneSession(@PathVariable("sessionId") String sessionId, @RequestParam("name") String name) throws CaptureValidationException {
+		log.info("Start of cloneSession() --> params - sessionId: " + sessionId + " name: " + name);
+		try {
+			String loggedUserKey = getUser();
+			Session loadedSession  = validateAndGetSession(sessionId);
+			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
+			if (Objects.nonNull(captureProject)) {
+				// Check that the creator and assignee have assign issue permissions in the project
+				if (!permissionService.canCreateSession(loggedUserKey, captureProject)) {
+					throw new CaptureRuntimeException(i18n.getMessage("session.creator.fail.permissions"));
+				}
+				if (loadedSession.getAssignee() != null && !permissionService.canBeAssignedSession(loadedSession.getAssignee(), captureProject)) {
+					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loadedSession.getAssignee()}));
+				} else if(!permissionService.canBeAssignedSession(loggedUserKey, captureProject)) {
+					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
+				}
+			}
+			Session newSession = sessionService.cloneSession(loggedUserKey, loadedSession, name);
+			//Save status changed information as activity.
+        	sessionActivityService.setStatus(newSession, new Date(), loggedUserKey);
+        	if(!loggedUserKey.equals(newSession.getAssignee())) {
+        		 //Save if the assigned user and logged in user are different into the session as activity.
+    			sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, newSession.getAssignee());
+        	} 
+			log.info("End of cloneSession()");
+			return ResponseEntity.ok(newSession);
+		} catch(CaptureValidationException ex) {
+			throw ex;
+		} catch(Exception ex) {
+			log.error("Error in cloneSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
 
 	private void validateInputParameters(Optional<Long> projectId, Optional<String> status) throws CaptureValidationException {
 		if(projectId.isPresent()) {
@@ -641,34 +683,6 @@ public class SessionController extends CaptureAbstractController{
 			Status fetchedStatus = Status.valueOf(status.get());
 			if(Objects.isNull(fetchedStatus)) throw new CaptureValidationException("Invalid Status.");//TODO,
 		}
-	}
-	
-	/**
-	 * Validates the session.
-	 * 
-	 * @param sessionId -- Session id requested by user
-	 * @return -- Returns the validated Session object using the session id.
-	 * @throws CaptureValidationException -- Thrown while validating the session.
-	 */
-	protected Session validateAndGetSession(String sessionId) throws CaptureValidationException {
-		if(StringUtils.isEmpty(sessionId)) {
-			throw new CaptureValidationException(i18n.getMessage("session.invalid.id", new Object[]{sessionId}));
-		}
-		Session loadedSession = sessionService.getSession(sessionId);
-		if(Objects.isNull(loadedSession)) {
-			throw new CaptureValidationException(i18n.getMessage("session.invalid", new Object[]{sessionId}));
-		}
-		return loadedSession;
-	}
-	
-	/**
-	 * Constructs the bad request response entity for the validation errors.
-	 * 
-	 * @param errorCollection -- Holds the validation errors information.
-	 * @return -- Returns the constructed response entity.
-	 */
-	protected ResponseEntity<List<ErrorDto>> badRequest(ErrorCollection errorCollection) {		
-		return ResponseEntity.badRequest().body(errorCollection.toErrorDto());
 	}
 	
 }
