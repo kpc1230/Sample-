@@ -51,6 +51,12 @@ public class ApplicationController {
         }
         model.addAttribute("generalConfigData", resp);
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+
+        Locale locale = LocaleContextHolder.getLocale();
+        String basename = "i18n/capture-i18n";
+        Map<String, String> messages = i18n.getKeyValues(basename, locale);
+        model.addAttribute("messages", messages);
+        
         log.debug("Ending Requesting the general configuration page with username : " + user_id + "with resp : " + resp);
         return "generalConfigPage";
     }
@@ -62,6 +68,12 @@ public class ApplicationController {
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
+
+        Locale locale = LocaleContextHolder.getLocale();
+        String basename = "i18n/capture-i18n";
+        Map<String, String> messages = i18n.getKeyValues(basename, locale);
+        model.addAttribute("messages", messages);
+
         log.debug("Ending Requesting the Browse Test Sessions page");
         return "sessionNavigator";
     }
@@ -73,6 +85,12 @@ public class ApplicationController {
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
+
+        Locale locale = LocaleContextHolder.getLocale();
+        String basename = "i18n/capture-i18n";
+        Map<String, String> messages = i18n.getKeyValues(basename, locale);
+        model.addAttribute("messages", messages);
+
         log.debug("Ending Requesting the Session Navigator page");
         return "viewSession";
     }
@@ -85,6 +103,12 @@ public class ApplicationController {
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
         model.addAttribute("issueId", issueId);
+
+        Locale locale = LocaleContextHolder.getLocale();
+        String basename = "i18n/capture-i18n";
+        Map<String, String> messages = i18n.getKeyValues(basename, locale);
+        model.addAttribute("messages", messages);
+
         log.debug("Ending Requesting the Testing Issue View page");
         return "testingIssueView";
     }
@@ -96,6 +120,12 @@ public class ApplicationController {
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
+
+        Locale locale = LocaleContextHolder.getLocale();
+        String basename = "i18n/capture-i18n";
+        Map<String, String> messages = i18n.getKeyValues(basename, locale);
+        model.addAttribute("messages", messages);
+
         log.debug("Ending Requesting the Project Test Sessions page");
         return "projectTestSessions";
     }
@@ -107,6 +137,12 @@ public class ApplicationController {
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
+
+        Locale locale = LocaleContextHolder.getLocale();
+        String basename = "i18n/capture-i18n";
+        Map<String, String> messages = i18n.getKeyValues(basename, locale);
+        model.addAttribute("messages", messages);
+
         log.debug("Ending Requesting the Project Test Sessions page");
         return "createTestSessionDialog";
     }
