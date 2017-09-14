@@ -112,7 +112,7 @@ final public class NoteRequest {
 		String tagData = null;
 		String cssClassUnknown = "tag-unknown";
 		if(!noteData.startsWith(Tag.HASH)){
-			if(tags.size() > 0){
+			if(tags != null && tags.size() > 0){
 				tagData = noteData.substring(0, noteData.indexOf(Tag.HASH));
 				stringBuilder.append("<span class=\"note-tag ").append(cssClassUnknown).append("\">")
 					.append(tagData) // Tag data if present
@@ -124,30 +124,32 @@ final public class NoteRequest {
 			}
 				
 		}
-		for(String tag : tags){
-			tagData = null;
-            String cssClass = cssClassUnknown;
-            if (Tag.ASSUMPTION_TAG_NAME.equals(tag)) {
-                cssClass = "tag-assumption";
-                tagData = getTagData(noteData, Tag.ASSUMPTION);
-            }else if (Tag.FOLLOWUP_TAG_NAME.equals(tag)) {
-                cssClass = "tag-followUp";
-                tagData = getTagData(noteData, Tag.FOLLOWUP);
-            }else if (Tag.IDEA_TAG_NAME.equals(tag)) {
-                cssClass = "tag-idea";
-                tagData = getTagData(noteData, Tag.IDEA);
-            }else if (Tag.QUESTION_TAG_NAME.equals(tag)) {
-                cssClass = "tag-question";
-                tagData = getTagData(noteData, Tag.QUESTION);
-            }
-            boolean tagIsUnknown = cssClass.equals(cssClassUnknown);
-            if(tagIsUnknown){
-            	tagData = noteData;
-            }
-            
-            stringBuilder.append("<span class=\"note-tag ").append(cssClass).append("\">").append(tagIsUnknown ? tag : "")
-            	.append(tagData == null ? "" : tagData) // Tag data if present
-            	.append("</span>");
+		if(tags != null){
+			for(String tag : tags){
+				tagData = null;
+	            String cssClass = cssClassUnknown;
+	            if (Tag.ASSUMPTION_TAG_NAME.equals(tag)) {
+	                cssClass = "tag-assumption";
+	                tagData = getTagData(noteData, Tag.ASSUMPTION);
+	            }else if (Tag.FOLLOWUP_TAG_NAME.equals(tag)) {
+	                cssClass = "tag-followUp";
+	                tagData = getTagData(noteData, Tag.FOLLOWUP);
+	            }else if (Tag.IDEA_TAG_NAME.equals(tag)) {
+	                cssClass = "tag-idea";
+	                tagData = getTagData(noteData, Tag.IDEA);
+	            }else if (Tag.QUESTION_TAG_NAME.equals(tag)) {
+	                cssClass = "tag-question";
+	                tagData = getTagData(noteData, Tag.QUESTION);
+	            }
+	            boolean tagIsUnknown = cssClass.equals(cssClassUnknown);
+	            if(tagIsUnknown){
+	            	tagData = noteData;
+	            }
+	            
+	            stringBuilder.append("<span class=\"note-tag ").append(cssClass).append("\">").append(tagIsUnknown ? tag : "")
+	            	.append(tagData == null ? "" : tagData) // Tag data if present
+	            	.append("</span>");
+			}
 		}
 		return stringBuilder.toString();
 	}

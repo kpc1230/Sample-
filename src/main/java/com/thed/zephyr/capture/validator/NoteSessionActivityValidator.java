@@ -2,7 +2,6 @@ package com.thed.zephyr.capture.validator;
 
 import java.util.Objects;
 
-import com.thed.zephyr.capture.model.NoteSessionActivity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
@@ -42,7 +41,7 @@ public class NoteSessionActivityValidator implements Validator {
 		if(target instanceof NoteRequest){
 			NoteRequest noteRequest = (NoteRequest) target;
 			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "noteData", "", i18n.getMessage("note.create.empty"));
-			int noteLength = noteRequest.getNoteData().length();
+			int noteLength = StringUtils.isNullOrEmpty(noteRequest.getNoteData()) ? 0 : noteRequest.getNoteData().length();
 			if (noteRequest.getNoteData() != null && noteLength > ApplicationConstants.MAX_NOTE_LENGTH) {
                 errors.reject("", i18n.getMessage("note.exceed.limit", new Object[]{noteLength, ApplicationConstants.MAX_NOTE_LENGTH}));
             }

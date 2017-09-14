@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.amazonaws.util.StringUtils;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
@@ -102,7 +103,11 @@ public class NoteServiceImpl implements NoteService {
 			resolution = NoteSessionActivity.Resolution.NON_ACTIONABLE;
 		} else {
 			((NoteSessionActivity)existing).setTags(tags);
-			resolution = NoteSessionActivity.Resolution.valueOf(noteRequest.getResolutionState());
+			if(StringUtils.isNullOrEmpty(noteRequest.getResolutionState())){
+				resolution = ((NoteSessionActivity)existing).getResolutionState();
+			}else{
+				resolution = NoteSessionActivity.Resolution.valueOf(noteRequest.getResolutionState());
+			}
 		}
 		if(toggleResolution){
 			resolution = validateToggleResolution(((NoteSessionActivity)existing).getResolutionState());
