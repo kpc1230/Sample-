@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("project")
@@ -25,8 +27,10 @@ public class ProjectController {
     ResponseEntity<?> getAllProjects() {
         log.debug("getAllProjects start");
         List<BasicProject> projects = projectService.getProjects();
+        Map<String,List<BasicProject>> resultMap = new HashMap();
+        resultMap.put("projects",projects);
         log.debug("getAllProjects end");
-        return ResponseEntity.ok(projects);
+        return ResponseEntity.ok(resultMap);
     }
     @GetMapping("/{projectIdOrKey}")
     ResponseEntity<?> getProjectByProjectIdOrKey(@PathVariable String projectIdOrKey) {
