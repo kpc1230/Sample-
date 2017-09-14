@@ -8,7 +8,7 @@ import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
-import com.thed.zephyr.capture.model.util.LightSessionSearchList;
+import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
@@ -160,6 +160,7 @@ public interface SessionService {
 	/**
 	 * Fetches the sessions based on the input search parameters and also sorts the results based on sort order.
 	 * 
+	 * @param loggedUser - Logged in user.
 	 * @param projectId -- Session Project ID.
 	 * @param assignee -- Session Assignee.
 	 * @param status -- Session Status.
@@ -170,7 +171,7 @@ public interface SessionService {
 	 * @param size -- Number of sessions to fetch.
 	 * @return
 	 */
-	LightSessionSearchList searchSession(Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
+	SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
 
 	/**
 	 * @return -- Returns all the session statuses which are required to render in ui.

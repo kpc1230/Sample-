@@ -11,6 +11,7 @@ import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
+import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.PermissionService;
@@ -481,12 +482,13 @@ public class SessionController extends CaptureAbstractController{
 			@RequestParam("sortField") Optional<String> sortField, @RequestParam("startAt") int startAt, @RequestParam("size") int size) throws CaptureValidationException {
 		log.info("Start of searchSession() --> params " + " projectFilter " + projectId.orElse(null) + " assigneeFilter " + assignee.orElse(null) + " statusFilter " + status.orElse(null) + " searchTerm "
 			+ searchTerm.orElse(null) + " sortOrder " + sortOrder.orElse("ASC") + " sortField " + " startAt " + startAt + " size " + size);
-		try {		
+		try {	
+			String loggedUser = getUser();
 			validateInputParameters(projectId, status);
 			boolean sortAscending = sortOrder.orElse(ApplicationConstants.SORT_ASCENDING).equalsIgnoreCase(ApplicationConstants.SORT_ASCENDING);
-			LightSessionSearchList lightSessionList = sessionService.searchSession(projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
+			SessionDtoSearchList sessionDtoSearchList = sessionService.searchSession(loggedUser, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
 			log.info("End of searchSession()");
-			return ResponseEntity.ok(lightSessionList);
+			return ResponseEntity.ok(sessionDtoSearchList);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
