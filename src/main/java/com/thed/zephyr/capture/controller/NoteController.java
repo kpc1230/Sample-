@@ -75,8 +75,9 @@ public class NoteController extends CaptureAbstractController{
 			}*/
 
 			noteSessionActivityRequest.setUser(hostUser.getUserKey().get());
+			noteSessionActivityRequest.setCtId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository));
 			noteSessionActivity = noteService.create(noteSessionActivityRequest);
-			noteSessionActivity.setCtId(hostUser.getHost().getClientKey());
+//			noteSessionActivity.setCtId(hostUser.getHost().getClientKey());
 		} catch (CaptureValidationException e) {
 			throw e;
 		} catch (Exception ex) {
@@ -113,6 +114,7 @@ public class NoteController extends CaptureAbstractController{
 			}
 			noteSessionActivityRequest.setId(noteSessionActivityId);
 			noteSessionActivityRequest.setUser(hostUser.getUserKey().get());
+			noteSessionActivityRequest.setCtId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository));
 			updated = noteService.update(noteSessionActivityRequest);
 		} catch (CaptureValidationException e) {
 			throw e;
@@ -163,7 +165,8 @@ public class NoteController extends CaptureAbstractController{
 	public ResponseEntity<?> getNotesByProjectId(@PathVariable Long projectId,
 												 @RequestParam("page") Integer page,
 												 @RequestParam("limit") Integer limit,
-												 @RequestBody NoteFilter noteFilter) throws CaptureValidationException {
+												 @RequestBody NoteFilter noteFilter
+												 ) throws CaptureValidationException {
 		log.info("getNotesByProjectId start for session:{}", projectId);
 		if (projectId == null) {
 			throw new CaptureValidationException(i18n.getMessage("session.project.id.needed"));
@@ -175,6 +178,39 @@ public class NoteController extends CaptureAbstractController{
 		NoteSearchList result = null;
 		try {
 			result = noteService.getNotesByProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, noteFilter, page, limit);
+		} catch (Exception ex) {
+			log.error("Error during getNotesByProjectId.", ex);
+			throw new CaptureRuntimeException(ex.getMessage());
+		}
+		log.debug("getNotesByProjectId end for the session:{}", projectId);
+		return ResponseEntity.ok(result);
+	}
+
+	/**
+	 * This method is for usage from Browser Extension only, as the GET mapping is used.
+	 * For more filtered criteria use getNotesByProjectId(POST mapping)
+	 * @param projectId
+	 * @param page
+	 * @param limit
+	 * @return
+	 * @throws CaptureValidationException
+	 */
+	@GetMapping(value = "/notes/project/{projectId}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getNotesByProjectIdGET(@PathVariable Long projectId,
+												 @RequestParam("page") Integer page,
+												 @RequestParam("limit") Integer limit
+												 ) throws CaptureValidationException {
+		log.info("getNotesByProjectId start for session:{}", projectId);
+		if (projectId == null) {
+			throw new CaptureValidationException(i18n.getMessage("session.project.id.needed"));
+		}
+		CaptureProject project = projectService.getCaptureProject(projectId);
+		if(project == null){
+			throw new CaptureValidationException(i18n.getMessage("session.project.id.invalid"));
+		}
+		NoteSearchList result = null;
+		try {
+			result = noteService.getNotesByProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, null, page, limit);
 		} catch (Exception ex) {
 			log.error("Error during getNotesByProjectId.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());

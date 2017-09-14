@@ -12,17 +12,12 @@ import com.thed.zephyr.capture.repositories.elasticsearch.NoteRepository;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.repositories.dynamodb.SessionRepository;
-import com.thed.zephyr.capture.repositories.elasticsearch.TagRepository;
-import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.NoteService;
 import com.thed.zephyr.capture.service.data.TagService;
 
@@ -83,13 +78,13 @@ public class NoteServiceImpl implements NoteService {
 	@Override
 	public NoteSessionActivity update(NoteSessionActivity noteSessionActivityRequest, boolean toggleResolution) throws CaptureValidationException {
 		SessionActivity existing = sessionActivityRepository.findOne(noteSessionActivityRequest.getId());
-		if(!(existing instanceof NoteSessionActivity)){
+		if(existing == null){
 			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteSessionActivityRequest.getId()}));
-		} else if(existing == null){
+		} else if(!(existing instanceof NoteSessionActivity)){
 			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteSessionActivityRequest.getId()}));
-		}else if (!noteSessionActivityRequest.getSessionId().equals(existing.getSessionId())){
+		} else if (!noteSessionActivityRequest.getSessionId().equals(existing.getSessionId())){
 			throw new CaptureValidationException("Note sessionId don't match");//TODO
-		}else if (!noteSessionActivityRequest.getUser().equals(existing.getUser())){
+		} else if (!noteSessionActivityRequest.getUser().equals(existing.getUser())){
 			throw new CaptureValidationException("Note author don't match");
 		}
 		if (!permissionService.canEditNote(noteSessionActivityRequest.getUser(), noteSessionActivityRequest.getSessionId(), (NoteSessionActivity)existing)) {
@@ -138,10 +133,10 @@ public class NoteServiceImpl implements NoteService {
 	public NoteSearchList getNotesByProjectId(String ctId, Long projectId, NoteFilter noteFilter, Integer page, Integer limit) {
 		Pageable pageable = CaptureUtil.getPageRequest(page, limit);
 		Page<Note> notes = null;
-		if (noteFilter.getTags().size() == 0){
+		if (noteFilter != null && noteFilter.getTags() != null && noteFilter.getTags().size() == 0){
 			noteFilter.setTags(null);
 		}
-		if(noteFilter.getTags() == null && noteFilter.getResolution() == null){
+		if(noteFilter == null || (noteFilter.getTags() == null && noteFilter.getResolution() == null)){
 			notes = noteRepository.findByCtIdAndProjectId(ctId, projectId, pageable);
 		} else if(noteFilter.getTags() != null && noteFilter.getResolution() != null){
 			notes = noteRepository.findByCtIdAndProjectIdAndResolutionStateAndTags(ctId, projectId, noteFilter.getResolution(), noteFilter.getTags(), pageable);
@@ -166,11 +161,6 @@ public class NoteServiceImpl implements NoteService {
 		NoteSearchList result = new NoteSearchList(content, page, limit, total);
 
 		return result;
-	}
-
-
-	private PageRequest getPageRequest(Integer offset, Integer limit) {
-		return new PageRequest((offset == null ? 0 : offset), (limit == null ? 20 : limit));
 	}
 
 	public NoteSessionActivity.Resolution validateToggleResolution(NoteSessionActivity.Resolution resolution) throws CaptureValidationException {
