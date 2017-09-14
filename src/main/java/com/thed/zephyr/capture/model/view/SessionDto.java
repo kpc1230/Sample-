@@ -56,9 +56,16 @@ public class SessionDto {
     private Date timeCreated;
     
     private Date timeCompleted;
+    
+    private String userAvatarSrc;
+
+    private String userLargeAvatarSrc;
+    
+    private String userDisplayName;
 
     public SessionDto(LightSession session, boolean isActive, List<ParticipantDto> activeParticipants, Integer activeParticipantCount,
-    		Integer issuesRaisedCount, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus, Date timeCompleted) {
+    		Integer issuesRaisedCount, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus, Date timeCompleted, String userAvatarSrc, 
+    		String userLargeAvatarSrc, String userDisplayName) {
     	this.id = session.getId();
     	this.name = session.getName();
     	this.status = session.getStatus();
@@ -80,6 +87,9 @@ public class SessionDto {
         this.issuesRaisedCount = issuesRaisedCount;
         this.timeCompleted = timeCompleted;
         this.timeCreated = session.getTimeCreated();
+        this.userAvatarSrc = userAvatarSrc;
+        this.userLargeAvatarSrc = userLargeAvatarSrc;
+        this.userDisplayName = userDisplayName;
     }
 
 	public boolean isActive() {
@@ -172,5 +182,17 @@ public class SessionDto {
 
 	public Date getTimeCreated() {
 		return timeCreated;
+	}
+	
+	public String getUserAvatarSrc() {
+		return userAvatarSrc;
+	}
+
+	public String getUserLargeAvatarSrc() {
+		return userLargeAvatarSrc;
+	}
+
+	public String getUserDisplayName() {
+		return userDisplayName;
 	}
 }

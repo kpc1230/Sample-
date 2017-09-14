@@ -1070,6 +1070,14 @@ public class SessionServiceImpl implements SessionService {
 		}
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null);
+		CaptureUser user = userService.findUser(session.getAssignee());
+		String userAvatarSrc = null, userLargeAvatarSrc = null;
+		try {
+			userAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("24x24") != null ? user.getAvatarUrls().get("24x24") : ""), Charset.defaultCharset().name());
+			userLargeAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("48x48") != null ? user.getAvatarUrls().get("48x48") : ""), Charset.defaultCharset().name());;
+		} catch (UnsupportedEncodingException e) {
+			log.error("Error in decoing the url.", e);
+		}
 		if(isSendFull) {
 			List<CaptureIssue> relatedIssues = Lists.newArrayList();
 			if(Objects.nonNull(session.getRelatedIssueIds())) {
@@ -1086,21 +1094,12 @@ public class SessionServiceImpl implements SessionService {
 				}
 			}
 			
-			CaptureUser user = userService.findUser(session.getAssignee());
-			String userAvatarSrc = null, userLargeAvatarSrc = null;
-			try {
-				userAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("24x24") != null ? user.getAvatarUrls().get("24x24") : ""), Charset.defaultCharset().name());
-				userLargeAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("48x48") != null ? user.getAvatarUrls().get("48x48") : ""), Charset.defaultCharset().name());;
-			} catch (UnsupportedEncodingException e) {
-				log.error("Error in decoing the url.", e);
-			}
-			
 			return new FullSessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, null, permissions, null, 
 					i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName(), session.getTimeFinished());
 		} else {
 			Integer issusRaisedCount = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().size() : 0;
 			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, null, 
-					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished());
+					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName());
 		}
 	}
 }

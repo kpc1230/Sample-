@@ -18,21 +18,13 @@ public class FullSessionDto extends SessionDto {
 
     private List<CaptureIssue> issuesRaised;
     
-    private String userAvatarSrc;
-
-    private String userLargeAvatarSrc;
-    
-    private String userDisplayName;
-    
     public FullSessionDto(LightSession session, boolean isActive, List<CaptureIssue> relatedIssues,List<CaptureIssue> issuesRaised, List<ParticipantDto> activeParticipants,
     		Integer activeParticipantCount, List<Note> sessionNotes, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus,	String userAvatarSrc, 
     		String userLargeAvatarSrc, String userDisplayName, Date timeCompleted) {
-    	super(session, isActive, activeParticipants, activeParticipantCount, issuesRaised.size(), permissions, estimatedTimeSpent, prettyStatus, timeCompleted);
+    	super(session, isActive, activeParticipants, activeParticipantCount, issuesRaised.size(), permissions, estimatedTimeSpent, prettyStatus, timeCompleted,
+    			userAvatarSrc, userLargeAvatarSrc, userDisplayName);
     	this.relatedIssues = relatedIssues;
         this.issuesRaised = issuesRaised;
-        this.userAvatarSrc = userAvatarSrc;
-        this.userLargeAvatarSrc = userLargeAvatarSrc;
-        this.userDisplayName = userDisplayName;
     }
     
     public List<CaptureIssue> getRelatedIssues() {
@@ -41,18 +33,6 @@ public class FullSessionDto extends SessionDto {
 
 	public List<CaptureIssue> getIssuesRaised() {
 		return issuesRaised;
-	}
-	
-	public String getUserAvatarSrc() {
-		return userAvatarSrc;
-	}
-
-	public String getUserLargeAvatarSrc() {
-		return userLargeAvatarSrc;
-	}
-
-	public String getUserDisplayName() {
-		return userDisplayName;
 	}
 
 }
