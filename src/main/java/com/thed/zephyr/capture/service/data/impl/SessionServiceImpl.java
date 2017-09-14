@@ -603,7 +603,7 @@ public class SessionServiceImpl implements SessionService {
 	    if(Objects.isNull(activeSessionId)) {
 	    	return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
 	    }
-	    Session activeSession = sessionRepository.findOne(activeSessionId);
+	    Session activeSession = sessionRepository.findOne(activeSessionId);//better to the whole session object from db.
 	    if (Objects.isNull(activeSession)) {
 	        if(log.isDebugEnabled()) log.debug(String.format("Unable to load active session with user: %s", user));
 	        return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
@@ -656,7 +656,14 @@ public class SessionServiceImpl implements SessionService {
 		String ctID = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		String cacheKey = TENANT_KEY + ctID + USER_KEY + user;
 		Object value = iTenantAwareCache.get(cacheKey);
-		return value != null ? (String) value : null;
+		if(Objects.isNull(value )) { //second condition to fetch the active session id from elasticsearch in case cache doesn't have or crashed.
+			Session activeSession = sessionESRepository.findByCtIdAndStatusAndAssignee(ctID, Status.STARTED.name(), user);
+			if(Objects.nonNull(activeSession))
+				return activeSession.getId();
+			else
+				return null;
+		}
+		return (String) value;
 	}
 	
 	/**
@@ -1054,6 +1061,6 @@ public class SessionServiceImpl implements SessionService {
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
 		return new SessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, null, permissions, null, 
-				i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName());
+				i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName(), session.getTimeFinished());
 	}
 }
