@@ -140,17 +140,38 @@ public class SessionController extends CaptureAbstractController{
 	}
 
 	@PostMapping(value = "/{sessionId}/issues", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> addIssueRaised(@PathVariable("sessionId") String sessionId,@NotEmpty @RequestBody List<Long> listOfIssues) throws CaptureValidationException {
+	public ResponseEntity<?> addIssueRaised(@PathVariable("sessionId") String sessionId,@RequestBody List<String> listOfIssues) throws CaptureValidationException {
 		log.info("Start of addIssueRaised() --> params " + listOfIssues);
-		List<CaptureIssue> issues =null;
+
+		Set<String> issueKeys = new TreeSet<>();
+		Set<String> failedKeys = new TreeSet<>();
+		List<Long> listOfIssueIds = new ArrayList<>();
+		issueKeys.addAll(listOfIssues);
+		issueKeys.forEach(issueKey -> {
+			try {
+				Issue issue = issueService.getIssueObject(issueKey);
+				if (issue != null) {
+					listOfIssueIds.add(issue.getId());
+				} else {
+					failedKeys.add(issueKey);
+				}
+			} catch (Exception exp) {
+				failedKeys.add(issueKey);
+				log.error("Error occured while validating issue keys the issue with id  : " + issueKey + " So skipped to add the response", exp);
+			}
+		});
+		if (failedKeys.size() > 0) {
+			throw new CaptureValidationException(i18n.getMessage("session.issue.key.invalid", new Object[]{StringUtils.join(failedKeys, ',')}));
+		}
+
+		List<CaptureIssue> issues = null;
 		try {
-			if(listOfIssues !=null && listOfIssues.size()>0){
-				issues = sessionService.updateSessionWithIssues(sessionId, listOfIssues);
-			}else{
+			if (listOfIssueIds != null && listOfIssueIds.size() > 0) {
+				issues = sessionService.updateSessionWithIssues(sessionId, listOfIssueIds);
+			} else {
 				throw new CaptureValidationException("Issues are empty");
 			}
-		} catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			log.error("Error in addIssueRaised() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
