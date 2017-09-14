@@ -140,7 +140,7 @@ public class TemplateController extends CaptureAbstractController{
 		return ok(result);
 	}
 
-	@PostMapping(value = "/favourites")
+	@PutMapping(value = "/favourites")
 	public ResponseEntity<?> updateFavouriteTemplate(@RequestBody JsonNode json) {
 		log.info("updateFavouriteTemplates start");
 		TemplateRequest templateRequest =null;
