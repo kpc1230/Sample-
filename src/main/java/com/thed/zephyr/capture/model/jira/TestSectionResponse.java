@@ -4,7 +4,7 @@ import com.atlassian.jira.rest.client.api.domain.BasicIssue;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.thed.zephyr.capture.model.Session;
+import com.thed.zephyr.capture.model.view.SessionDto;
 
 import java.io.Serializable;
 import java.util.List;
@@ -24,7 +24,7 @@ public class TestSectionResponse implements Serializable {
 	public TestSectionResponse(){}
 
     @JsonProperty
-    private List<Session> sessions;
+    private List<SessionDto> sessions;
 
     @JsonProperty
     private CaptureEnvironment captureEnvironment;
@@ -43,11 +43,11 @@ public class TestSectionResponse implements Serializable {
         this.testingStatus = testingStatus;
     }
 
-    public List<Session> getSessions() {
+    public List<SessionDto> getSessions() {
         return sessions;
     }
 
-    public void setSessions(List<Session> sessions) {
+    public void setSessions(List<SessionDto> sessions) {
         this.sessions = sessions;
     }
 

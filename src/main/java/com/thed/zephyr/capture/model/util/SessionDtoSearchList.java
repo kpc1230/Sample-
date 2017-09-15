@@ -8,6 +8,11 @@ import java.util.List;
  * Created by aliakseimatsarski on 8/23/17.
  */
 public class SessionDtoSearchList extends SearchList<SessionDto> {
+	
+	 public SessionDtoSearchList() {
+	     super();
+	 }
+	 
     public SessionDtoSearchList(List<SessionDto> content, int offset, int limit, long total) {
         super(content, offset, limit, total);
     }

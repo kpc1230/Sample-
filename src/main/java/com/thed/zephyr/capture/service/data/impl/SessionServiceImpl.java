@@ -398,12 +398,29 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionSearchList getSessionByRelatedIssueId(String ctId, Long projectId, Long relatedIssueId) {
+	public SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String ctId, Long projectId, Long relatedIssueId) {
 		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(ctId, projectId, relatedIssueId, CaptureUtil.getPageRequest(0, 1000));
-		List<Session> content = sessions != null?sessions.getContent():new ArrayList<>();
-		SessionSearchList result = new SessionSearchList();
-		result.setContent(content);
-		result.setTotal(content.size());
+		List<SessionDto> sessionDtoList = Lists.newArrayList();
+		Map<Long, CaptureProject> projectsMap = new HashMap<>();
+		SessionDto sessionDto = null;
+		CaptureProject project = null;
+		String activeSessionId = getActiveSessionIdFromCache(loggedUser);
+		if(Objects.nonNull(sessions.getContent())) {
+			for(Session session : sessions.getContent()) {
+				if(!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
+					project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
+					projectsMap.put(session.getProjectId(), project);
+				} else {
+					project = projectsMap.get(session.getProjectId());
+				}
+				boolean isActive = session.getId().equals(activeSessionId);
+				sessionDto = createSessionDto(loggedUser, session, isActive, project, false);
+				sessionDtoList.add(sessionDto);
+			}
+		}
+		SessionDtoSearchList result = new SessionDtoSearchList();
+		result.setContent(sessionDtoList);
+		result.setTotal(sessionDtoList.size());
 
 		return result;
 	}

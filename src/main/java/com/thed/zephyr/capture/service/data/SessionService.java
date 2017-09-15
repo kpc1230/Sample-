@@ -221,7 +221,7 @@ public interface SessionService {
 
 	SessionSearchList getSessionByRaisedIssueId(String ctId, Long projectId, Long raisedIssueId);
 
-	SessionSearchList getSessionByRelatedIssueId(String ctId, Long projectId, Long relatedIssueId);
+	SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String ctId, Long projectId, Long relatedIssueId);
 
 	void updateSessionWithIssue(String ctId,Long projectId,String user,Long issueId);
 

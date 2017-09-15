@@ -12,7 +12,7 @@ import com.thed.zephyr.capture.model.jira.CaptureEnvironment;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.TestSectionResponse;
 import com.thed.zephyr.capture.model.jira.TestingStatus;
-import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
@@ -127,28 +127,30 @@ public class IssueServiceImpl implements IssueService {
     public TestSectionResponse getIssueSessionDetails(Issue issue) throws JSONException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        SessionSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), issue.getProject().getId(), issue.getId());
+        SessionDtoSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(host.getUserKey().get(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), issue.getProject().getId(), issue.getId());
         TestSectionResponse testSectionResponse = new TestSectionResponse();
         testSectionResponse.setSessions(sessionByRelatedIssueId.getContent());
-        String userAgentPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ","_");
+        StringBuilder basePath = new StringBuilder();
+        basePath.append(JiraConstants.REST_API_BASE_ISSUE).append("/").append(issue.getKey()).append("/properties/");
+        String userAgentPath =   basePath.toString()  + CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ","_");
         String userAgent = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),userAgentPath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ","_"));
 
-        String browserNamePath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase().replace(" ","_");
+        String browserNamePath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase().replace(" ","_");
         String browser = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),browserNamePath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase().replace(" ","_"));
 
-        String documentPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ","_");
+        String documentPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ","_");
         String document = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),documentPath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ","_"));
 
-        String screenPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase().replace(" ","_");
+        String screenPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase().replace(" ","_");
         String screen = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),screenPath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase().replace(" ","_"));
 
-        String operatingSystemPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties/" + CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase().replace(" ","_");
+        String operatingSystemPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase().replace(" ","_");
         String operatingSystem = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),operatingSystemPath,CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase().replace(" ","_"));
 
-        String urlPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ","_");
+        String urlPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ","_");
         String url = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),urlPath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ","_"));
 
-        String jQueryVersionPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ","_");
+        String jQueryVersionPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ","_");
         String jQueryVersion = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),jQueryVersionPath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ","_"));
 
 
@@ -214,7 +216,6 @@ public class IssueServiceImpl implements IssueService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         IssueFields issueFields = createRequest.fields();
-        String rid = createRequest.getRid();
         IssueInput issueInput = createIssueInput(issueFields,request);
         BasicIssue basicIssue = postJiraRestClient.getIssueClient().createIssue(issueInput).claim();
         Issue issue = getIssueObject(basicIssue.getKey());
