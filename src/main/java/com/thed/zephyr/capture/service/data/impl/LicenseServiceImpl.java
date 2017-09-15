@@ -34,7 +34,8 @@ public class LicenseServiceImpl implements LicenseService {
         return valid;
     }
 
-    private AddonInfo getAddonInfo() {
+    @Override
+    public AddonInfo getAddonInfo() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         AcHostModel acHostModel = (AcHostModel) host.getHost();

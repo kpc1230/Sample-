@@ -22,6 +22,7 @@ import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.service.jira.issue.IssueFields;
 import com.thed.zephyr.capture.service.jira.issue.ResourceId;
 import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.apache.commons.lang3.StringUtils;
@@ -73,6 +74,9 @@ public class IssueServiceImpl implements IssueService {
 
     @Autowired
     private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+
+    @Autowired
+    private CaptureI18NMessageSource i18n;
 
 
     @Override
@@ -164,11 +168,14 @@ public class IssueServiceImpl implements IssueService {
         AtomicInteger startedCount = new AtomicInteger();
         AtomicInteger completedCount = new AtomicInteger();
         AtomicInteger inProgressCount = new AtomicInteger();
+        AtomicInteger notStartedCount = new AtomicInteger();
 
         sessionByRelatedIssueId.getContent().stream().peek(session -> {
             if (session != null) {
-                if (Session.Status.CREATED.equals(session.getStatus())) {
+                if (Session.Status.STARTED.equals(session.getStatus())) {
                     startedCount.getAndIncrement();
+                } else if (Session.Status.CREATED.equals(session.getStatus())) {
+                    notStartedCount.getAndIncrement();
                 } else if (Session.Status.COMPLETED.equals(session.getStatus())) {
                     completedCount.getAndIncrement();
                 } else {
@@ -179,16 +186,22 @@ public class IssueServiceImpl implements IssueService {
         });
         if (startedCount.get() == 0 && completedCount.get() != 0) {
             // If all the sessions are 'completed' then return complete
-            testingStatus.setTestingStatusEnum(TestingStatus.TestingStatusEnum.COMPLETED);
+            testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey()));
         } else if (startedCount.get() != 0 && completedCount.get() == 0) {
             // If all the sessions are 'created' then return not started
-            testingStatus.setTestingStatusEnum(TestingStatus.TestingStatusEnum.NOT_STARTED);
+            testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey()));
         } else {
             // Otherwise the sessions are either 'completed' or 'created'
-            testingStatus.setTestingStatusEnum(TestingStatus.TestingStatusEnum.INCOMPLETE);
+            testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey()));
         }
         testingStatus.setCompleteCount(new Double(completedCount.get()));
-        testingStatus.setComplete(testingStatus.getComplete());
+        Double notStartedPercent = Math.floor((notStartedCount.get() / testingStatus.getTotalCount().intValue()) * 100);
+        Double inProgressPercent = Math.floor((inProgressCount.get() / testingStatus.getTotalCount().intValue()) * 100);
+        Double completePercent = Math.floor((completedCount.get() / testingStatus.getTotalCount().intValue()) * 100);
+
+        testingStatus.setNotStartedPercent(notStartedPercent);
+        testingStatus.setInProgressPercent(inProgressPercent);
+        testingStatus.setCompletePercent(completePercent);
         testingStatus.setTotalSessions(testingStatus.getTotalSessions());
         testSectionResponse.setTestingStatus(testingStatus);
         return testSectionResponse;

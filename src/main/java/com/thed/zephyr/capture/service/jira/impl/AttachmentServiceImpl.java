@@ -151,7 +151,7 @@ public class AttachmentServiceImpl implements AttachmentService {
             List<Attachment> attachments = new ArrayList<>();
             issue.getAttachments().forEach(attachments::add);
             Collections.sort(attachments, attachmentComparator);
-            return attachments != null && attachments.size() > 1 ? attachments.get(0) : null;
+            return attachments != null && attachments.size() > 0 ? attachments.get(0) : null;
         }
         return null;
     }
