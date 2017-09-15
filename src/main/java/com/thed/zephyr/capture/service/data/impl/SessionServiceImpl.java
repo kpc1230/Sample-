@@ -563,6 +563,7 @@ public class SessionServiceImpl implements SessionService {
 		sessionESRepository.save(savedSession);
 		for (String leaver : leavers) {
             clearActiveSessionFromCache(leaver);
+            sessionActivityService.addParticipantLeft(session, new Date(), leaver);
         }
     }
 
@@ -587,9 +588,6 @@ public class SessionServiceImpl implements SessionService {
                         leavingUsers.add(p.getUser());
                     }
                 }
-                leavingUsers.stream().forEach(leavingUser -> {
-                	sessionActivityService.addParticipantLeft(session, new Date(), leavingUser);
-                });
                 Session activeUserSession = getActiveSession(user).getSession();
                 if (session.getId().equals(!Objects.isNull(activeUserSession) ? activeUserSession.getId() : null)) { // If this is my active session then I want to leave it
                     leavingUsers.add(user);
@@ -739,7 +737,6 @@ public class SessionServiceImpl implements SessionService {
         if (!newSession.isShared()) { // If we aren't shared, we wanna kick out all the current users
         	if(!Objects.isNull(newSession.getParticipants())) {
             	for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-                    sessionActivityService.addParticipantLeft(newSession, new Date(), p.getUser());
                     leavers.add(p.getUser());
                 }
             }
