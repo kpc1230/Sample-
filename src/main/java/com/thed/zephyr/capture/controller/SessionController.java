@@ -527,7 +527,7 @@ public class SessionController extends CaptureAbstractController{
 	
 	@GetMapping(value = "/filtered", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> searchSession(@RequestParam("projectFilter") Optional<Long> projectId, @RequestParam("assigneeFilter") Optional<String> assignee,
-			@RequestParam("statusFilter") Optional<String> status, @RequestParam("searchTerm") Optional<String> searchTerm, @RequestParam("sortOrder") Optional<String> sortOrder,
+			@RequestParam("statusFilter") Optional<List<String>> status, @RequestParam("searchTerm") Optional<String> searchTerm, @RequestParam("sortOrder") Optional<String> sortOrder,
 			@RequestParam("sortField") Optional<String> sortField, @RequestParam("startAt") int startAt, @RequestParam("size") int size) throws CaptureValidationException {
 		log.info("Start of searchSession() --> params " + " projectFilter " + projectId.orElse(null) + " assigneeFilter " + assignee.orElse(null) + " statusFilter " + status.orElse(null) + " searchTerm "
 			+ searchTerm.orElse(null) + " sortOrder " + sortOrder.orElse("ASC") + " sortField " + " startAt " + startAt + " size " + size);
@@ -720,14 +720,16 @@ public class SessionController extends CaptureAbstractController{
 		}
 	}
 
-	private void validateInputParameters(Optional<Long> projectId, Optional<String> status) throws CaptureValidationException {
+	private void validateInputParameters(Optional<Long> projectId, Optional<List<String>> status) throws CaptureValidationException {
 		if(projectId.isPresent()) {
 			CaptureProject project = projectService.getCaptureProject(projectId.get());
 			if(Objects.isNull(project)) throw new CaptureValidationException(i18n.getMessage("session.project.id.invalid", new Object[]{projectId.get()}));
 		}
-		if(status.isPresent() && !StringUtils.isBlank(status.get())) {
-			Status fetchedStatus = Status.valueOf(status.get());
-			if(Objects.isNull(fetchedStatus)) throw new CaptureValidationException("Invalid Status.");//TODO,
+		if(status.isPresent()) {
+			status.get().stream().forEach(paramStatus -> {
+				Status fetchedStatus = Status.valueOf(paramStatus);
+				if(Objects.isNull(fetchedStatus)) throw new CaptureRuntimeException(i18n.getMessage("session.status.invalid"));
+			});
 		}
 	}
 

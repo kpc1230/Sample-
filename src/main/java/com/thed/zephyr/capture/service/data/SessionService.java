@@ -171,7 +171,7 @@ public interface SessionService {
 	 * @param size -- Number of sessions to fetch.
 	 * @return
 	 */
-	SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
+	SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
 
 	/**
 	 * @return -- Returns all the session statuses which are required to render in ui.

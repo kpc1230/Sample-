@@ -54,7 +54,7 @@ public class SessionRepositoryImpl {
      * @param searchTerm -- Typed input value for the session name.
      * @return -- Returns the list of sessions.
      */
-    public List<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm) {
+    public List<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm) {
     	List<QueryFilter> queryFilters = new LinkedList<>();
     	QuerySpec querySpec = new QuerySpec();
     	querySpec.withHashKey(new KeyAttribute(ApplicationConstants.TENANT_ID_FIELD, ctId));
@@ -68,9 +68,9 @@ public class SessionRepositoryImpl {
     		assigneeQueryFilter.eq(assignee.get());
     		queryFilters.add(assigneeQueryFilter);
     	}
-    	if(status.isPresent() && !StringUtils.isBlank(status.get())) { //Check if status is selected then add to query.
+    	if(status.isPresent() && status.get().size() > 0) { //Check if status is selected then add to query.
     		QueryFilter statusQueryFilter = new QueryFilter(ApplicationConstants.STATUS_FIELD);
-    		statusQueryFilter.eq(status.get());
+    		statusQueryFilter.in(status.get().toArray());
     		queryFilters.add(statusQueryFilter);
     	}
     	if(searchTerm.isPresent() && !StringUtils.isBlank(searchTerm.get())) { //Check if user typed any search term against session name then add to query.

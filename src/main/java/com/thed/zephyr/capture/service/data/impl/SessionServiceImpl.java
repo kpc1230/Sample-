@@ -303,7 +303,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField,
+	public SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField,
 												boolean sortAscending, int startAt, int size) {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		List<Session> sessionsList = sessionRepository.searchSessions(ctId, projectId, assignee, status, searchTerm);
@@ -1028,7 +1028,7 @@ public class SessionServiceImpl implements SessionService {
 		return size;
 	}
 	
-	private SessionDisplayDto getDisplayHelper(String user, Session session) {
+	private SessionDisplayDto getDisplayHelper(String user, Session session, CaptureProject project) {
         boolean isSessionEditable = permissionService.canEditSession(user, session);
         boolean isStatusEditable = permissionService.canEditSessionStatus(user, session);
         boolean canCreateNote = permissionService.canCreateNote(user, session);
@@ -1036,7 +1036,6 @@ public class SessionServiceImpl implements SessionService {
         Collection<Participant> participant = session.getParticipants();
         boolean isJoined = Objects.nonNull(participant) ? Iterables.any(participant, new UserIsParticipantPredicate(user)) : false;
         boolean hasActive = Objects.nonNull(participant) ? Iterables.any(participant, new ActiveParticipantPredicate()) : false;
-        CaptureProject project = projectService.getCaptureProject(session.getProjectId());
         boolean canCreateSession = permissionService.canCreateSession(user, project);
         boolean isAssignee = session.getAssignee().equals(user);
         boolean showInvite = isAssignee && session.isShared();
@@ -1056,7 +1055,7 @@ public class SessionServiceImpl implements SessionService {
     }
 	
 	private SessionDto createSessionDto(String loggedUser, Session session, boolean isActive, CaptureProject project, boolean isSendFull) {
-		SessionDisplayDto permissions = getDisplayHelper(loggedUser, session);
+		SessionDisplayDto permissions = getDisplayHelper(loggedUser, session, project);
 		Integer activeParticipantCount = 0;
 		CaptureUser user = null;
 		String userAvatarSrc = null, userLargeAvatarSrc = null;
