@@ -39,6 +39,10 @@ public class IssueAttachmentSessionActivity extends SessionActivity {
         return issueId;
     }
 
+    public void setIssueId(Long issueId) {
+        this.issueId = issueId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
