@@ -3,18 +3,60 @@
 
 <head>
     <meta charset="UTF-8"/>
+    <title>Gadget Test Session</title>
 
-    <link rel="stylesheet" th:href="@{/css/gadgets/test-sessions-gadget.css}" media="all"></link>
-    </head>
+    <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui.min.css" media="all"></link>
+    <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui-experimental.min.css" media="all"></link>
+    <link rel="stylesheet" th:href="${captureUIBaseUrl} + '/css/GadgetTestSessions/GadgetTestSessions.css'" media="all"></link>
+</head>
 <body>
-Coming soon..........<BR/>
-dashboardView : <span th:text="${dashboardView}" /><BR/>
-dashboardId : <span th:text="${dashboardId}" /><BR/>
-dashboardItem : <span th:text="${dashboardItem}" /><BR/>
-gadgetType : <span th:text="${gadgetType}" /><BR/>
-xdm_e : <span th:text="${xdm_e}" /><BR/>
-cp : <span th:text="${cp}" />
+    
+    <div id="root" th:attr="data-dashboardid=${dashboardId}, data-dashboarditem=${dashboardItem}"></div>
+    
+<script type="text/javascript" th:inline="javascript" id="connect-loader" data-options="sizeToParent:true;">
+    //<![CDATA[
 
+    (function() {
+        var getUrlParam = function (param) {
+            var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
+            return decodeURIComponent(codedParam);
+        };
+
+        var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
+        var options = document.getElementById('connect-loader').getAttribute('data-options');
+
+        var script = document.createElement("script");
+        script.src = baseUrl + '/atlassian-connect/all.js';
+
+        var style = document.createElement("link");
+        style.rel = "stylesheet";
+        style.href = baseUrl + '/atlassian-connect/all.css';
+        if(options) {
+            script.setAttribute('data-options', options);
+        }
+
+        document.getElementsByTagName("head")[0].appendChild(script);
+        document.getElementsByTagName("head")[0].appendChild(style);
+
+        document.getElementById('root').dataset['baseurl'] = baseUrl;
+
+        
+        
+    })();
+
+    // ]]>
+</script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui.min.js"></script>
+<script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-experimental.min.js"></script>
+<!-- <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-soy.min.js"></script> -->
+<script defer="defer" type="text/javascript" th:src="${captureUIBaseUrl} + '/js/GadgetTestSessions/GadgetTestSessions.js'" />
+<script>
+
+	AJS.$(document).ready(function() {
+            AP.resize('100%', '300px');
+        });
+</script>
 
 </body>
 </html>
