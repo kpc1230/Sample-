@@ -137,7 +137,8 @@ public class SessionServiceImpl implements SessionService {
         }
         session.setShared(sessionRequest.getShared());
         if(Objects.nonNull(session.getRelatedIssueIds())) {
-        	session.getRelatedIssueIds().addAll(sessionRequest.getRelatedIssueIds());
+        	if(Objects.isNull(sessionRequest.getRelatedIssueIds()))
+        		session.getRelatedIssueIds().addAll(sessionRequest.getRelatedIssueIds());
         } else {
         	session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
         }
@@ -204,11 +205,10 @@ public class SessionServiceImpl implements SessionService {
                 }
             }
         }
-        addParticipantToSession(loggedUserKey, session);
         if (errorCollection.hasErrors()) {
             return new UpdateResult(errorCollection, session);
         }
-
+        addParticipantToSession(loggedUserKey, session); //set participant info only after all validations are passed.
         return new UpdateResult(validateUpdate(loggedUserKey, session), deactivateResult, loggedUserKey, true, false);
 	}
 	
@@ -470,8 +470,19 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private void addParticipantToSession(String user, Session session) {
 		Participant newParticipant = new ParticipantBuilder(user).setTimeJoined(new Date()).build();
+		 boolean currentlyParticipating = false;
         if(!Objects.isNull(session.getParticipants())) {
-        	session.getParticipants().add(newParticipant);
+        	for(Participant p : session.getParticipants()) {
+        		if(p.getUser().equals(user)) {
+        			currentlyParticipating = true;
+        			break;
+        		}
+        	}
+        	if(!currentlyParticipating) {
+        		session.getParticipants().add(newParticipant);
+        		//Store participant info in sessionActivity
+    			sessionActivityService.addParticipantJoined(session, new Date(), newParticipant,user);
+        	}
         } else {
         	List<Participant> participantsList = Lists.newArrayList();
         	participantsList.add(newParticipant);
@@ -573,10 +584,12 @@ public class SessionServiceImpl implements SessionService {
                 List<String> leavingUsers = new ArrayList<>();
                 if(!Objects.isNull(session.getParticipants())) {
                 	for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) {
-                    	sessionActivityService.addParticipantLeft(session, new Date(), p.getUser());
                         leavingUsers.add(p.getUser());
                     }
                 }
+                leavingUsers.stream().forEach(leavingUser -> {
+                	sessionActivityService.addParticipantLeft(session, new Date(), leavingUser);
+                });
                 Session activeUserSession = getActiveSession(user).getSession();
                 if (session.getId().equals(!Objects.isNull(activeUserSession) ? activeUserSession.getId() : null)) { // If this is my active session then I want to leave it
                     leavingUsers.add(user);

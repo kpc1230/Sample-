@@ -10,6 +10,7 @@ import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
@@ -24,6 +25,7 @@ import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionExten
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
+import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.validator.SessionValidator;
@@ -37,7 +39,12 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Class handles all the session related api request.
@@ -72,6 +79,9 @@ public class SessionController extends CaptureAbstractController{
 
 	@Autowired
 	private InviteService inviteService;
+	
+	@Autowired
+	private UserService userService;
 
 	@InitBinder("sessionRequest")
 	public void setupBinder(WebDataBinder binder) {
@@ -327,22 +337,37 @@ public class SessionController extends CaptureAbstractController{
 	public ResponseEntity<?> joinSession(@AuthenticationPrincipal AtlassianHostUser hostUser, @PathVariable("sessionId") String sessionId) throws CaptureValidationException {
 		log.info("Start of joinSession() --> params " + sessionId);
 		try {
-			String loggedUserKey = hostUser.getUserKey().get();
-			Session loadedSession  = validateAndGetSession(sessionId);
 			Date dateTime = new Date();
+			String loggedUserKey = hostUser.getUserKey().get();
+			Map<String, Object> response = new HashMap<>();
+			Session loadedSession  = validateAndGetSession(sessionId);
+			if (loadedSession != null && !permissionService.canJoinSession(loggedUserKey, loadedSession)) {
+				throw new CaptureValidationException(i18n.getMessage("session.join.no.permission", new Object[]{loadedSession.getName()}));
+			}
+			CaptureUser user = userService.findUser(loggedUserKey);
 			Participant participant = new ParticipantBuilder(loggedUserKey).setTimeJoined(dateTime).build();
 			SessionServiceImpl.UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loadedSession, participant);
 			if (!updateResult.isValid()) {
 				return badRequest(updateResult.getErrorCollection());
 			}
 			sessionService.update(updateResult);
-			//Store participant info in sessionActivity
-			if (loadedSession != null && !permissionService.canJoinSession(loggedUserKey, loadedSession)) {
-				throw new CaptureValidationException(i18n.getMessage("session.join.no.permission", new Object[]{loadedSession.getName()}));
+			response.put("user", participant.getUser());
+			response.put("timeJoined", participant.getTimeJoined());
+			response.put("timeLeft", participant.getTimeLeft());
+			if(Objects.nonNull(user)) {
+				response.put("userDisplayName", user.getDisplayName());
+				String userAvatarSrc = null, userLargeAvatarSrc = null;
+				try {
+					userAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("24x24") != null ? user.getAvatarUrls().get("24x24") : ""), Charset.defaultCharset().name());
+					userLargeAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("48x48") != null ? user.getAvatarUrls().get("48x48") : ""), Charset.defaultCharset().name());;
+				} catch (UnsupportedEncodingException e) {
+					log.error("Error in decoing the url.", e);
+				}
+				response.put("userAvatarSrc", userAvatarSrc);
+				response.put("userLargeAvatarSrc", userLargeAvatarSrc);
 			}
-			sessionActivityService.addParticipantJoined(updateResult.getSession(), dateTime, participant,loggedUserKey);
 			log.info("End of joinSession()");
-			return ResponseEntity.ok().build();
+			return ResponseEntity.ok(response);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -408,8 +433,13 @@ public class SessionController extends CaptureAbstractController{
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult);
+			Session session = updateResult.getSession();
+			Participant leftParticipant = new Participant();
+			if(Objects.nonNull(session.getParticipants())) {
+				leftParticipant = session.getParticipants().stream().filter(p -> p.getUser().equals(loggedUserKey)).collect(Collectors.toList()).get(0);				
+			}
 			log.info("End of leaveSession()");
-			return ResponseEntity.ok().build();
+			return ResponseEntity.ok(leftParticipant);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {

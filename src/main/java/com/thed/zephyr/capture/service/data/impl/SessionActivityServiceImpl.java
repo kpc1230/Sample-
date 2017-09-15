@@ -44,22 +44,10 @@ public class SessionActivityServiceImpl implements SessionActivityService{
 
     @Override
     public SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user) {
-        boolean currentlyParticipating = false;
-        if(!Objects.isNull(session.getParticipants())) {
-        	for (Iterator<Participant> iterator = session.getParticipants().iterator(); iterator.hasNext(); ) {
-                Participant participant1 = iterator.next();
-                if (participant1.getUser().equals(user) && !participant1.hasLeft()) {
-                    currentlyParticipating = true;
-                }
-            }
-        }
-        if (!currentlyParticipating) {
-            UserJoinedSessionActivity sessionActivity =
-                    new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), user, session.getProjectId(), participant);
-            sessionActivityRepository.save(sessionActivity);
-            return sessionActivity;
-        }
-        return null;
+    	UserJoinedSessionActivity sessionActivity =
+                new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), user, session.getProjectId(), participant);
+        sessionActivityRepository.save(sessionActivity);
+        return sessionActivity;
     }
 
     @Override
