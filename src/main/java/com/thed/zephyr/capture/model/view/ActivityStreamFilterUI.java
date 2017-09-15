@@ -4,6 +4,7 @@ import com.thed.zephyr.capture.model.*;
 
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * ActivityStreamFitlerUI holds filter parameters, and makes decisions based on those as to whether to show items or not
@@ -59,7 +60,7 @@ public class ActivityStreamFilterUI {
         // Okay now we need to work out if we can show this one...
         //    Note note = activityItem.getNote();
 
-          Set<String> tags = activityItem.getTags();
+          Set<String> tags = activityItem.getTags() !=null ? activityItem.getTags() : new TreeSet<>();
 
         // Incomplete?
         if (!notesFilterStateUI.isIncomplete() && activityItem.getResolutionState().equals(NoteSessionActivity.Resolution.INITIAL)) {
@@ -77,22 +78,22 @@ public class ActivityStreamFilterUI {
         }
 
         // Question?
-        if (notesFilterStateUI.isQuestion() && containsTag(activityItem, Tag.QUESTION)) {
+        if (notesFilterStateUI.isQuestion() && containsTag(activityItem, Tag.QUESTION_TAG_NAME)) {
             return true;
         }
 
         // Followup?
-        if (notesFilterStateUI.isFollowup() && containsTag(activityItem, Tag.FOLLOWUP)) {
+        if (notesFilterStateUI.isFollowup() && containsTag(activityItem, Tag.FOLLOWUP_TAG_NAME)) {
             return true;
         }
 
         // Assumption
-        if (notesFilterStateUI.isAssumption() && containsTag(activityItem, Tag.ASSUMPTION)) {
+        if (notesFilterStateUI.isAssumption() && containsTag(activityItem, Tag.ASSUMPTION_TAG_NAME)) {
             return true;
         }
 
         // Idea
-        if (notesFilterStateUI.isIdea() && containsTag(activityItem, Tag.IDEA)) {
+        if (notesFilterStateUI.isIdea() && containsTag(activityItem, Tag.IDEA_TAG_NAME)) {
             return true;
         }
 
@@ -103,9 +104,9 @@ public class ActivityStreamFilterUI {
     }
 
     private boolean containsTag(NoteSessionActivity activityItem, String... queryTags) {
-        for (String tag : activityItem.getTags()) {
+        for (String tag : activityItem.getTags()!=null?activityItem.getTags():new TreeSet<String>()) {
             for (String queryTag : queryTags) {
-                if (tag.equals(Tag.getTagCodeByName(queryTag))) {
+                if (tag.equals(queryTag)) {
                     return true;
                 }
             }

@@ -451,16 +451,24 @@ public class SessionServiceImpl implements SessionService {
 	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId,String loggedUser) {
 		List<Session> listOfSessionsAsParticipant = sessions != null ? sessions.getContent() : new ArrayList<>();
 		listOfSessionsAsParticipant.forEach(session -> {
+			boolean issueAdded = false;
 			if (session.getIssueRaisedIds() != null) {
-				session.getIssueRaisedIds().add(issueId);
+				if (!session.getIssueRaisedIds().contains(issueId)) {
+					session.getIssueRaisedIds().add(issueId);
+					issueAdded = true;
+				}
 			} else {
 				Set<Long> set = new TreeSet<>();
 				set.add(issueId);
 				session.setIssueRaisedIds(set);
+				issueAdded = true;
 			}
-			save(session, new ArrayList<>());
 			Date dateTime = new Date();
-			sessionActivityService.addRaisedIssue(session, issueId, dateTime, loggedUser); //Save removed raised issue information as activity.
+			save(session, new ArrayList<>());
+			if (issueAdded) {
+				sessionActivityService.addRaisedIssue(session, issueId, dateTime, loggedUser); //Save removed raised issue information as activity.
+			}
+
 		});
 	}
 
