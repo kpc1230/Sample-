@@ -3,6 +3,9 @@ package com.thed.zephyr.capture.controller;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
@@ -14,6 +17,8 @@ import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.model.view.ActivityStreamFilterUI;
+import com.thed.zephyr.capture.model.view.NotesFilterStateUI;
 import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.InviteService;
@@ -38,6 +43,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import java.io.UnsupportedEncodingException;
@@ -542,7 +548,8 @@ public class SessionController extends CaptureAbstractController{
 	@GetMapping(value = "/{sessionId}/activities", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> sessionActivities(@PathVariable("sessionId") String sessionId,
 											 @RequestParam("offset") Optional<Integer> offset,
-											 @RequestParam("limit") Optional<Integer> limit
+											 @RequestParam("limit") Optional<Integer> limit,
+											   HttpServletRequest request
 	) throws CaptureValidationException {
 		log.info("Start of sessionActivities() --> params " + sessionId);
 		try {
@@ -553,6 +560,10 @@ public class SessionController extends CaptureAbstractController{
 				ErrorCollection errorCollection = new ErrorCollection();
 				errorCollection.addError("Error during getting session activities");
 				return badRequest(errorCollection);
+			}else{
+				NotesFilterStateUI notesFilterStateUI = new NotesFilterStateUI(request);
+				ActivityStreamFilterUI activityStreamFilterUI = new ActivityStreamFilterUI(notesFilterStateUI);
+				sessionActivities =  getSessionActivityItems(sessionActivities,activityStreamFilterUI,getUser());
 			}
 			log.info("End of sessionActivities()");
 			return ResponseEntity.ok(sessionActivities);
@@ -717,6 +728,19 @@ public class SessionController extends CaptureAbstractController{
 			Status fetchedStatus = Status.valueOf(status.get());
 			if(Objects.isNull(fetchedStatus)) throw new CaptureValidationException("Invalid Status.");//TODO,
 		}
+	}
+
+	private List<SessionActivity> getSessionActivityItems(final List<SessionActivity> activities, final ActivityStreamFilterUI activityStreamFilter,
+														  final String user) {
+		Collection<SessionActivity> sessionActivityItems = Collections2.filter(activities, new Predicate<SessionActivity>() {
+			public boolean apply(SessionActivity sessionActivityItem) {
+				boolean passFilter = activityStreamFilter.showItem(sessionActivityItem);
+				boolean hasPermission = permissionService.showActivityItem(user, sessionActivityItem);
+				return passFilter && hasPermission;
+			}
+		});
+
+		return ImmutableList.copyOf(sessionActivityItems);
 	}
 	
 }

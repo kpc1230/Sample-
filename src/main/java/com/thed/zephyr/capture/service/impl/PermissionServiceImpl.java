@@ -12,6 +12,7 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.predicates.UserIsParticipantPredicate;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +40,9 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Autowired
     private SessionService sessionService;
+
+    @Autowired
+    private IssueService issueService;
 
     private Permissions getPermissionForIssue(String issueIdOrKey) {
         MyPermissionsInput myPermissionsInput = new MyPermissionsInput(null, null, issueIdOrKey, null);
@@ -237,13 +241,15 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean showActivityItem(String user, SessionActivity sessionActivity) {
-      /*  if (sessionActivityItem instanceof IssueAttachmentSessionActivityItem) {
-            Issue issue = ((IssueAttachmentSessionActivityItem) sessionActivityItem).getIssue();
+        if (sessionActivity instanceof IssueAttachmentSessionActivity) {
+            Long issueId = ((IssueAttachmentSessionActivity) sessionActivity).getIssueId();
+            Issue issue = issueService.getIssueObject(issueId);
             return canSeeIssue(user, issue);
-        } else if (sessionActivityItem instanceof IssueRaisedSessionActivityItem) {
-            Issue issue = ((IssueRaisedSessionActivityItem) sessionActivityItem).getIssue();
+        } else if (sessionActivity instanceof IssueRaisedSessionActivity) {
+            Long issueId = ((IssueRaisedSessionActivity) sessionActivity).getIssueId();
+            Issue issue = issueService.getIssueObject(issueId);
             return canSeeIssue(user, issue);
-        }*/
+        }
 
         return true;
     }

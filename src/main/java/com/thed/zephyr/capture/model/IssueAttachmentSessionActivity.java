@@ -35,6 +35,10 @@ public class IssueAttachmentSessionActivity extends SessionActivity {
         this.attachment = attachment;
     }
 
+    public Long getIssueId() {
+        return issueId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

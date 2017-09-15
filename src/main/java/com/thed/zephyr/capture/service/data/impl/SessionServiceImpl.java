@@ -411,11 +411,11 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public void updateSessionWithIssue(String ctId, Long projectId, String user, Long issueId) {
 		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndStatusAndAssignee(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-		updateSessionWithIssueId(sessions, issueId);
+		updateSessionWithIssueId(sessions, issueId,user);
 		Page<Session> sessions2 = sessionESRepository.findByCtIdAndProjectIdAndStatusAndCreator(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-		updateSessionWithIssueId(sessions2, issueId);
+		updateSessionWithIssueId(sessions2, issueId,user);
 		Page<Session> sessions3 = sessionESRepository.findByCtIdAndProjectIdAndStatusAndParticipants(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-		updateSessionWithIssueId(sessions3, issueId);
+		updateSessionWithIssueId(sessions3, issueId,user);
 
     }
     @Override
@@ -448,7 +448,7 @@ public class SessionServiceImpl implements SessionService {
         });
         return raisedIssues;
     }
-	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId) {
+	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId,String loggedUser) {
 		List<Session> listOfSessionsAsParticipant = sessions != null ? sessions.getContent() : new ArrayList<>();
 		listOfSessionsAsParticipant.forEach(session -> {
 			if (session.getIssueRaisedIds() != null) {
@@ -459,6 +459,8 @@ public class SessionServiceImpl implements SessionService {
 				session.setIssueRaisedIds(set);
 			}
 			save(session, new ArrayList<>());
+			Date dateTime = new Date();
+			sessionActivityService.addRaisedIssue(session, issueId, dateTime, loggedUser); //Save removed raised issue information as activity.
 		});
 	}
 
