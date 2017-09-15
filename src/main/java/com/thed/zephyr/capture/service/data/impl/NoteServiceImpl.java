@@ -150,9 +150,9 @@ public class NoteServiceImpl implements NoteService {
 		if(noteFilter == null || (noteFilter.getTags() == null && noteFilter.getResolution() == null)){
 			notes = noteRepository.findByCtIdAndProjectId(ctId, projectId, pageable);
 		} else if(noteFilter.getTags() != null && noteFilter.getResolution() != null){
-			notes = noteRepository.findByCtIdAndProjectIdAndResolutionStateAndTags(ctId, projectId, noteFilter.getResolution(), noteFilter.getTags(), pageable);
+			notes = noteRepository.findByCtIdAndProjectIdAndResolutionStateAndTagsIn(ctId, projectId, noteFilter.getResolution(), noteFilter.getTags(), pageable);
 		} else if(noteFilter.getTags() != null && noteFilter.getResolution() == null){
-			notes = noteRepository.findByCtIdAndProjectIdAndTags(ctId, projectId, noteFilter.getTags(), pageable);
+			notes = noteRepository.findByCtIdAndProjectIdAndTagsIn(ctId, projectId, noteFilter.getTags(), pageable);
 		} else if(noteFilter.getTags() == null && noteFilter.getResolution() != null){
 			notes = noteRepository.findByCtIdAndProjectIdAndResolutionState(ctId, projectId, noteFilter.getResolution(), pageable);
 		}

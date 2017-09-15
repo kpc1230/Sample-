@@ -19,9 +19,9 @@ public interface NoteRepository extends ElasticsearchRepository<Note, String> {
 
     Page<Note> findByCtIdAndProjectId(String ctId, Long projectId, Pageable pageable);
 
-    Page<Note> findByCtIdAndProjectIdAndResolutionStateAndTags(String ctId, Long projectId, NoteSessionActivity.Resolution resolution, Set<String> tags, Pageable pageable);
+    Page<Note> findByCtIdAndProjectIdAndResolutionStateAndTagsIn(String ctId, Long projectId, NoteSessionActivity.Resolution resolution, Set<String> tags, Pageable pageable);
 
-    Page<Note> findByCtIdAndProjectIdAndTags(String ctId, Long projectId, Set<String> tags, Pageable pageable);
+    Page<Note> findByCtIdAndProjectIdAndTagsIn(String ctId, Long projectId, Set<String> tags, Pageable pageable);
 
     Page<Note> findByCtIdAndProjectIdAndResolutionState(String ctId, Long projectId, NoteSessionActivity.Resolution resolution, Pageable pageable);
 
