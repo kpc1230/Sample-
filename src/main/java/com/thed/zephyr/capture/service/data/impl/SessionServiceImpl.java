@@ -1058,6 +1058,9 @@ public class SessionServiceImpl implements SessionService {
 	private SessionDto createSessionDto(String loggedUser, Session session, boolean isActive, CaptureProject project, boolean isSendFull) {
 		SessionDisplayDto permissions = getDisplayHelper(loggedUser, session);
 		Integer activeParticipantCount = 0;
+		CaptureUser user = null;
+		String userAvatarSrc = null, userLargeAvatarSrc = null;
+		Map<String, CaptureUser> usersMap = new HashMap<>();
 		if (Status.STARTED.equals(session.getStatus())) {
             activeParticipantCount++; // If started then add the assignee
         }
@@ -1065,20 +1068,31 @@ public class SessionServiceImpl implements SessionService {
 		List<ParticipantDto> activeParticipants = Lists.newArrayList();
 		if(Objects.nonNull(session.getParticipants())) {
 			for(Participant p : session.getParticipants()) {
-				activeParticipants.add(new ParticipantDto(p));
+				if(!usersMap.containsKey(p.getUser())) {
+					user = userService.findUser(session.getAssignee());
+				} else {
+					user = usersMap.get(p.getUser());
+				}
+				if(Objects.nonNull(user)) {
+					userAvatarSrc = getDecodedUrl(user, "24x24");
+					userLargeAvatarSrc = getDecodedUrl(user, "48x48");
+				}
+				activeParticipants.add(new ParticipantDto(p, userAvatarSrc, userLargeAvatarSrc));
 				activeParticipantCount++;
 			}
 		}
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null);
-		CaptureUser user = userService.findUser(session.getAssignee());
-		String userAvatarSrc = null, userLargeAvatarSrc = null;
-		try {
-			userAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("24x24") != null ? user.getAvatarUrls().get("24x24") : ""), Charset.defaultCharset().name());
-			userLargeAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("48x48") != null ? user.getAvatarUrls().get("48x48") : ""), Charset.defaultCharset().name());;
-		} catch (UnsupportedEncodingException e) {
-			log.error("Error in decoing the url.", e);
+		if(!usersMap.containsKey(session.getAssignee())) {
+			user = userService.findUser(session.getAssignee());
+		} else {
+			user = usersMap.get(session.getAssignee());
 		}
+		if(Objects.nonNull(user)) {
+			userAvatarSrc = getDecodedUrl(user, "24x24");
+			userLargeAvatarSrc = getDecodedUrl(user, "48x48");
+		}
+		
 		if(isSendFull) {
 			List<CaptureIssue> relatedIssues = Lists.newArrayList();
 			if(Objects.nonNull(session.getRelatedIssueIds())) {
@@ -1128,5 +1142,14 @@ public class SessionServiceImpl implements SessionService {
         if(log.isDebugEnabled()) log.debug("Cloned Session -- > Session ID - " + createdSession.getId());
 		sessionESRepository.save(createdSession);
 		return createdSession;
+	}
+	
+	private String getDecodedUrl(CaptureUser user, String key) {
+		try {
+			return URLDecoder.decode((user.getAvatarUrls().get(key) != null ? user.getAvatarUrls().get(key) : ""), Charset.defaultCharset().name());
+		} catch (UnsupportedEncodingException e) {
+			log.error("Error in decoing the url.", e);
+		}
+		return null;
 	}
 }

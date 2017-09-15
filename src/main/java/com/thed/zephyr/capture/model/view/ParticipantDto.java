@@ -15,8 +15,12 @@ public class ParticipantDto {
     private String timeLeft;
 
     private boolean hasLeft;
+    
+    private String userAvatarSrc;
 
-    public ParticipantDto(final Participant participant) {
+    private String userLargeAvatarSrc;
+
+    public ParticipantDto(final Participant participant, String userAvatarSrc, String userLargeAvatarSrc) {
     	SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
         this.user = participant.getUser();
         this.userDisplayName = participant.getUser();
@@ -25,6 +29,8 @@ public class ParticipantDto {
         if (participant.hasLeft()) {
             this.timeLeft = format.format(participant.getTimeLeft());
         }
+        this.userAvatarSrc = userAvatarSrc;
+        this.userLargeAvatarSrc = userLargeAvatarSrc;
     }
 
 	public String getUser() {
@@ -45,5 +51,13 @@ public class ParticipantDto {
 
 	public boolean isHasLeft() {
 		return hasLeft;
+	}
+
+	public String getUserAvatarSrc() {
+		return userAvatarSrc;
+	}
+
+	public String getUserLargeAvatarSrc() {
+		return userLargeAvatarSrc;
 	}
 }
