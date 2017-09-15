@@ -16,34 +16,44 @@ import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.CompleteSessionRequest.CompleteSessionIssueLinkRequest;
 import com.thed.zephyr.capture.model.Session.Status;
+import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
-import com.thed.zephyr.capture.model.util.LightSessionSearchList;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
+import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
-import com.thed.zephyr.capture.model.view.SessionUI;
+import com.thed.zephyr.capture.model.view.FullSessionDto;
+import com.thed.zephyr.capture.model.view.ParticipantDto;
+import com.thed.zephyr.capture.model.view.SessionDisplayDto;
+import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
 import com.thed.zephyr.capture.predicates.UserIsParticipantPredicate;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
+import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
+import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 /**
  * Class handles all the session related activities.
@@ -79,6 +89,10 @@ public class SessionServiceImpl implements SessionService {
 	private CaptureI18NMessageSource i18n;
 	@Autowired
 	private SessionESRepository sessionESRepository;
+	@Autowired
+	private PermissionService permissionService;
+	@Autowired
+	private UserService userService;
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -102,10 +116,8 @@ public class SessionServiceImpl implements SessionService {
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
 		session.setAssignee(!StringUtils.isBlank(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
         Session createdSession = sessionRepository.save(session);
-        setActiveSessionIdToCache(loggedUserKey, createdSession.getId());
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
 		sessionESRepository.save(createdSession);
-
 		return createdSession;
 	}
 
@@ -120,9 +132,15 @@ public class SessionServiceImpl implements SessionService {
 			session.setAssignee(sessionRequest.getAssignee());
 		}
         session.setName(sessionRequest.getName());
-        session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
+        if(Objects.nonNull(sessionRequest.getAdditionalInfo())) {
+        	session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
+        }
         session.setShared(sessionRequest.getShared());
-        session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
+        if(Objects.nonNull(session.getRelatedIssueIds())) {
+        	session.getRelatedIssueIds().addAll(sessionRequest.getRelatedIssueIds());
+        } else {
+        	session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
+        }
         session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
         //Generating the session object from session builder.
         return validateUpdate(loggedUserKey, session);
@@ -158,7 +176,7 @@ public class SessionServiceImpl implements SessionService {
             }
         }
         session.setStatus(Status.STARTED);
-        return validateUpdate(loggedUserKey, session);
+        return new UpdateResult(validateUpdate(loggedUserKey, session), deactivateResult, loggedUserKey, true, false);
 	}
 
 	@Override
@@ -240,8 +258,8 @@ public class SessionServiceImpl implements SessionService {
         if (errorCollection.hasErrors()) {
             return new UpdateResult(errorCollection, null);
         }
-        if (!Objects.isNull(session.getRelatedIssueIds()) && session.getIssueRaisedIds().contains(issue.getId())) session.getRelatedIssueIds().remove(issue.getId());
-        return validateUpdate(loggedUserKey, session);
+		if (!Objects.isNull(session.getIssueRaisedIds()) && session.getIssueRaisedIds().contains(issue.getId())) session.getIssueRaisedIds().remove(issue.getId());
+		return validateUpdate(loggedUserKey, session);
     }
 	
 	@Override
@@ -273,9 +291,9 @@ public class SessionServiceImpl implements SessionService {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		List<Session> privateSessionsList = sessionRepository.fetchPrivateSessionsForUser(ctId, user);
 		List<Session> sharedSessionsList = sessionRepository.fetchSharedSessionsForUser(ctId, user);
-		List<LightSession> lightSessionPList = sortAndFetchLightSessions(privateSessionsList, 0, privateSessionsList.size(), new IdSessionComparator(true));
-		List<LightSession> lightSessionSList = sortAndFetchLightSessions(sharedSessionsList, 0, sharedSessionsList.size(), new IdSessionComparator(true));
-		return new SessionExtensionResponse(lightSessionPList, lightSessionSList);
+		List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, 0, privateSessionsList.size(), new IdSessionComparator(true));
+		List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, 0, sharedSessionsList.size(), new IdSessionComparator(true));
+		return new SessionExtensionResponse(privateSessionsDto, sharedSessionsDto);
 	}
 
 	@Override
@@ -285,7 +303,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public LightSessionSearchList searchSession(Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField,
+	public SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField,
 												boolean sortAscending, int startAt, int size) {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		List<Session> sessionsList = sessionRepository.searchSessions(ctId, projectId, assignee, status, searchTerm);
@@ -312,9 +330,9 @@ public class SessionServiceImpl implements SessionService {
 			default:
 				comparator = new IdSessionComparator(sortAscending);
 		}
-		List<LightSession> ligthSessionList = sortAndFetchLightSessions(sessionsList, startAt, size, comparator);
-		LightSessionSearchList lightSessionSearchList = new LightSessionSearchList(ligthSessionList, startAt, size, sessionsList.size());
-		return lightSessionSearchList;
+		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, sessionsList, startAt, size, comparator);
+		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, sessionsList.size());
+		return sessionDtoSearchList;
 	}
 
 	@Override
@@ -323,19 +341,23 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionUI constructSessionUI(Session session) {
-		SessionUI sessionUI = new SessionUI(session);
-		return sessionUI;
+	public SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull) {
+		CaptureProject project = projectService.getCaptureProject(session.getProjectId());
+		String activeSessionId = getActiveSessionIdFromCache(loggedInUser);
+		boolean isActive = session.getId().equals(activeSessionId);
+		return createSessionDto(loggedInUser, session, isActive, project, isSendFull);
 	}
 
 	@Override
 	public Map<String, Object> getCompleteSessionView(Session session) {
 		Map<String, Object> map = new HashMap<>();
 		map.put(ApplicationConstants.SESSION,session);
+		List<Long> raisedIssues = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().stream().collect(Collectors.toList()) : new ArrayList<>(0);
 		map.put(ApplicationConstants.RAISED_ISSUE,
-				issueService.getCaptureIssuesByIds((List<Long>) session.getIssueRaisedIds()));
+				issueService.getCaptureIssuesByIds(raisedIssues));
+		List<Long> relatedIssues = Objects.nonNull(session.getRelatedIssueIds()) ? session.getRelatedIssueIds().stream().collect(Collectors.toList()) : new ArrayList<>(0);
 		map.put(ApplicationConstants.RELATED_ISSUE,
-				issueService.getCaptureIssuesByIds((List<Long>) session.getRelatedIssueIds()));
+				issueService.getCaptureIssuesByIds(relatedIssues));
 		map.put(ApplicationConstants.SESSION_ACTIVITIES,
 				sessionActivityService.getAllSessionActivityBySession(session.getId(),
 						CaptureUtil.getPageRequest(0,ApplicationConstants.DEFAULT_RESULT_SIZE)
@@ -384,6 +406,60 @@ public class SessionServiceImpl implements SessionService {
 		result.setTotal(content.size());
 
 		return result;
+	}
+
+    @Override
+    public void updateSessionWithIssue(String ctId, Long projectId, String user, Long issueId) {
+		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndStatusAndAssignee(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+		updateSessionWithIssueId(sessions, issueId);
+		Page<Session> sessions2 = sessionESRepository.findByCtIdAndProjectIdAndStatusAndCreator(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+		updateSessionWithIssueId(sessions2, issueId);
+		Page<Session> sessions3 = sessionESRepository.findByCtIdAndProjectIdAndStatusAndParticipants(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+		updateSessionWithIssueId(sessions3, issueId);
+
+    }
+    @Override
+    public List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<Long> issues) {
+        List<CaptureIssue> raisedIssues = Lists.newArrayList();
+        Date dateTime = new Date();
+        Session session = getSession(sessionId);
+        if(session !=null){
+            if (session.getIssueRaisedIds() != null) {
+                session.getIssueRaisedIds().addAll(issues);
+            } else {
+                Set<Long> set = new TreeSet<>();
+                set.addAll(issues);
+                session.setIssueRaisedIds(set);
+            }
+            save(session, new ArrayList<>());
+            if(Objects.nonNull(session.getIssueRaisedIds())) {
+                for(Long issueId : session.getIssueRaisedIds()) {
+                	try {
+						CaptureIssue issue = issueService.getCaptureIssue(issueId);
+						raisedIssues.add(issue);
+					}catch (Exception exption){
+						log.error("Error occured while fetching the issue with id  : "+issueId + " So skipped to add the response",exption);
+					}
+                }
+            }
+        }
+        issues.stream().forEach(issueId -> {
+        	sessionActivityService.addRaisedIssue(session, issueId, dateTime, loggedUser); //Save removed raised issue information as activity.
+        });
+        return raisedIssues;
+    }
+	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId) {
+		List<Session> listOfSessionsAsParticipant = sessions != null ? sessions.getContent() : new ArrayList<>();
+		listOfSessionsAsParticipant.forEach(session -> {
+			if (session.getIssueRaisedIds() != null) {
+				session.getIssueRaisedIds().add(issueId);
+			} else {
+				Set<Long> set = new TreeSet<>();
+				set.add(issueId);
+				session.setIssueRaisedIds(set);
+			}
+			save(session, new ArrayList<>());
+		});
 	}
 
 	/**
@@ -537,7 +613,7 @@ public class SessionServiceImpl implements SessionService {
 	    if(Objects.isNull(activeSessionId)) {
 	    	return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
 	    }
-	    Session activeSession = sessionRepository.findOne(activeSessionId);
+	    Session activeSession = sessionRepository.findOne(activeSessionId);//better to the whole session object from db.
 	    if (Objects.isNull(activeSession)) {
 	        if(log.isDebugEnabled()) log.debug(String.format("Unable to load active session with user: %s", user));
 	        return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
@@ -590,7 +666,14 @@ public class SessionServiceImpl implements SessionService {
 		String ctID = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		String cacheKey = TENANT_KEY + ctID + USER_KEY + user;
 		Object value = iTenantAwareCache.get(cacheKey);
-		return value != null ? (String) value : null;
+		if(Objects.isNull(value )) { //second condition to fetch the active session id from elasticsearch in case cache doesn't have or crashed.
+			Session activeSession = sessionESRepository.findByCtIdAndStatusAndAssignee(ctID, Status.STARTED.name(), user);
+			if(Objects.nonNull(activeSession))
+				return activeSession.getId();
+			else
+				return null;
+		}
+		return (String) value;
 	}
 	
 	/**
@@ -861,25 +944,25 @@ public class SessionServiceImpl implements SessionService {
     }
 	
 	public class SessionExtensionResponse {		
-		private List<LightSession> privateSessions;		
-		private List<LightSession> sharedSessions;
+		private List<SessionDto> privateSessions;		
+		private List<SessionDto> sharedSessions;
 		
-		public SessionExtensionResponse(List<LightSession> privateSessions, List<LightSession> sharedSessions) {
+		public SessionExtensionResponse(List<SessionDto> privateSessions, List<SessionDto> sharedSessions) {
 			this.privateSessions = privateSessions;
 			this.sharedSessions = sharedSessions;
 		}
 		
-		public List<LightSession> getPrivateSessions() {
+		public List<SessionDto> getPrivateSessions() {
             return privateSessions;
         }
 
-        public List<LightSession> getSharedSessions() {
+        public List<SessionDto> getSharedSessions() {
             return sharedSessions;
         }		
 	}
-
+	
 	/**
-	 * Sorts the sessions list and returns list of light session object based on startAt and size parameters.
+	 * Sorts the sessions list and returns list of session dto object based on startAt and size parameters.
 	 *
 	 * @param sessionsList -- List of sessions fetched from database.
 	 * @param startAt -- Start position
@@ -887,23 +970,27 @@ public class SessionServiceImpl implements SessionService {
 	 * @param comparator -- Comparator can be assignee, project, session name, shared, created time etc.,
 	 * @return -- Returns the list of light session object based on startAt and size parameters.
 	 */
-	private List<LightSession> sortAndFetchLightSessions(List<Session> sessionsList, int startAt, int size, Comparator<Session> comparator) {
-		List<LightSession> lighSessionsList = new ArrayList<>(size);
+	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, List<Session> sessionsList, int startAt, int size, Comparator<Session> comparator) {
+		List<SessionDto> sessionDtoList = new ArrayList<>(size);
 		Map<Long, CaptureProject> projectsMap = new HashMap<>();
-		LightSession lightSession = null;
+		SessionDto sessionDto = null;
+		CaptureProject project = null;
 		Collections.sort(sessionsList, comparator); //Sort the sessions using the comparator.
+		String activeSessionId = getActiveSessionIdFromCache(loggedInUser);
 		final int actualSize = getActualSize(sessionsList.size(), startAt, size);
 		for (int i = startAt; i < startAt + actualSize; i++) {
 			Session session = sessionsList.get(i);
 			if(!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
-				CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
+				project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
 				projectsMap.put(session.getProjectId(), project);
+			} else {
+				project = projectsMap.get(session.getProjectId());
 			}
-			lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-					projectsMap.get(session.getProjectId()), session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
-			lighSessionsList.add(lightSession);
+			boolean isActive = session.getId().equals(activeSessionId);
+			sessionDto = createSessionDto(loggedInUser, session, isActive, project, false);
+			sessionDtoList.add(sessionDto);
 		}
-		return lighSessionsList;
+		return sessionDtoList;
 	}
 
 	/**
@@ -919,5 +1006,107 @@ public class SessionServiceImpl implements SessionService {
 			return Math.max(maxSize - startIndex, 0);
 		}
 		return size;
+	}
+	
+	private SessionDisplayDto getDisplayHelper(String user, Session session) {
+        boolean isSessionEditable = permissionService.canEditSession(user, session);
+        boolean isStatusEditable = permissionService.canEditSessionStatus(user, session);
+        boolean canCreateNote = permissionService.canCreateNote(user, session);
+        boolean canJoin = permissionService.canJoinSession(user, session);
+        Collection<Participant> participant = session.getParticipants();
+        boolean isJoined = Objects.nonNull(participant) ? Iterables.any(participant, new UserIsParticipantPredicate(user)) : false;
+        boolean hasActive = Objects.nonNull(participant) ? Iterables.any(participant, new ActiveParticipantPredicate()) : false;
+        CaptureProject project = projectService.getCaptureProject(session.getProjectId());
+        boolean canCreateSession = permissionService.canCreateSession(user, project);
+        boolean isAssignee = session.getAssignee().equals(user);
+        boolean showInvite = isAssignee && session.isShared();
+        boolean canAssign = permissionService.canAssignSession(user, project);
+        boolean isComplete = false;
+        boolean isCreated = false;
+        boolean isStarted = false;
+        if (Session.Status.STARTED.equals(session.getStatus())) {
+            isStarted = true;
+        } else if (Session.Status.CREATED.equals(session.getStatus())) {
+            isCreated = true;
+        } else if (Session.Status.COMPLETED.equals(session.getStatus())) {
+            isComplete = true;
+        }
+        return new SessionDisplayDto(isSessionEditable, isStatusEditable, canCreateNote, canJoin, isJoined, hasActive,
+                isStarted, canCreateSession, isAssignee, isComplete, isCreated, showInvite, canAssign);
+    }
+	
+	private SessionDto createSessionDto(String loggedUser, Session session, boolean isActive, CaptureProject project, boolean isSendFull) {
+		SessionDisplayDto permissions = getDisplayHelper(loggedUser, session);
+		Integer activeParticipantCount = 0;
+		if (Status.STARTED.equals(session.getStatus())) {
+            activeParticipantCount++; // If started then add the assignee
+        }
+		
+		List<ParticipantDto> activeParticipants = Lists.newArrayList();
+		if(Objects.nonNull(session.getParticipants())) {
+			for(Participant p : session.getParticipants()) {
+				activeParticipants.add(new ParticipantDto(p));
+				activeParticipantCount++;
+			}
+		}
+		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
+				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null);
+		CaptureUser user = userService.findUser(session.getAssignee());
+		String userAvatarSrc = null, userLargeAvatarSrc = null;
+		try {
+			userAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("24x24") != null ? user.getAvatarUrls().get("24x24") : ""), Charset.defaultCharset().name());
+			userLargeAvatarSrc = URLDecoder.decode((user.getAvatarUrls().get("48x48") != null ? user.getAvatarUrls().get("48x48") : ""), Charset.defaultCharset().name());;
+		} catch (UnsupportedEncodingException e) {
+			log.error("Error in decoing the url.", e);
+		}
+		if(isSendFull) {
+			List<CaptureIssue> relatedIssues = Lists.newArrayList();
+			if(Objects.nonNull(session.getRelatedIssueIds())) {
+				for(Long issueId : session.getRelatedIssueIds()) {
+					CaptureIssue issue = issueService.getCaptureIssue(issueId);
+					relatedIssues.add(issue);
+				}
+			}
+			List<CaptureIssue> raisedIssues = Lists.newArrayList();
+			if(Objects.nonNull(session.getIssueRaisedIds())) {
+				for(Long issueId : session.getIssueRaisedIds()) {
+					CaptureIssue issue = issueService.getCaptureIssue(issueId);
+					raisedIssues.add(issue);
+				}
+			}
+			
+			return new FullSessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, null, permissions, null, 
+					i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName(), session.getTimeFinished());
+		} else {
+			Integer issusRaisedCount = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().size() : 0;
+			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, null, 
+					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName());
+		}
+	}
+
+	@Override
+	public UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo) {
+		session.setAdditionalInfo(additionalInfo);
+		return validateUpdate(loggedUser, session);
+	}
+
+	@Override
+	public Session cloneSession(String loggedUser, Session cloneSession, String cloneName) {
+		Session session = new Session();
+		session.setCreator(loggedUser);
+		session.setCtId(cloneSession.getCtId());
+		session.setStatus(Status.CREATED);
+		session.setName(cloneName);
+		session.setTimeCreated(new Date());
+		session.setAdditionalInfo(cloneSession.getAdditionalInfo());
+		session.setShared(cloneSession.isShared());
+		session.setRelatedIssueIds(cloneSession.getRelatedIssueIds());
+		session.setProjectId(cloneSession.getProjectId());
+		session.setDefaultTemplateId(cloneSession.getDefaultTemplateId());
+		session.setAssignee(cloneSession.getAssignee());
+        Session createdSession = sessionRepository.save(session);
+        if(log.isDebugEnabled()) log.debug("Cloned Session -- > Session ID - " + createdSession.getId());
+		sessionESRepository.save(createdSession);
+		return createdSession;
 	}
 }

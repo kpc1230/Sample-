@@ -2,15 +2,18 @@ package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.exception.model.ErrorDto;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.Session.Status;
+import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.util.LightSessionSearchList;
+import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.InviteService;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
@@ -109,14 +112,22 @@ public class SessionController extends CaptureAbstractController{
 			CaptureProject captureProject = projectService.getCaptureProject(sessionRequest.getProjectId());
 			if (captureProject != null) {
 				// Check that the creator and assignee have assign issue permissions in the project
-				if (loggedUserKey != null && !permissionService.canCreateSession(loggedUserKey, captureProject)) {
+				if (!permissionService.canCreateSession(loggedUserKey, captureProject)) {
 					throw new CaptureRuntimeException(i18n.getMessage("session.creator.fail.permissions"));
 				}
 				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), captureProject)) {
 					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{sessionRequest.getAssignee()}));
+				} else if(!permissionService.canBeAssignedSession(loggedUserKey, captureProject)) {
+					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
 				}
 			}
 			Session createdSession = sessionService.createSession(loggedUserKey, sessionRequest);
+			//Save status changed information as activity.
+        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
+        	if(!loggedUserKey.equals(createdSession.getAssignee())) {
+        		 //Save if the assigned user and logged in user are different into the session as activity.
+    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, createdSession.getAssignee());
+        	}        		
 	        if(sessionRequest.getStartNow()) { //User requested to start the session.
 	        	UpdateResult updateResult = sessionService.startSession(loggedUserKey, createdSession);
 	        	if (!updateResult.isValid()) {
@@ -135,6 +146,46 @@ public class SessionController extends CaptureAbstractController{
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
+
+	@PostMapping(value = "/{sessionId}/raisedin", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> addIssueRaised(@PathVariable("sessionId") String sessionId,@RequestBody List<String> listOfIssues) throws CaptureValidationException {
+		log.info("Start of addIssueRaised() --> params " + listOfIssues);
+
+		Set<String> issueKeys = new TreeSet<>();
+		Set<String> failedKeys = new TreeSet<>();
+		List<Long> listOfIssueIds = new ArrayList<>();
+		issueKeys.addAll(listOfIssues);
+		String loggedUser = getUser();
+		issueKeys.forEach(issueKey -> {
+			try {
+				Issue issue = issueService.getIssueObject(issueKey);
+				if (issue != null) {
+					listOfIssueIds.add(issue.getId());
+				} else {
+					failedKeys.add(issueKey);
+				}
+			} catch (Exception exp) {
+				failedKeys.add(issueKey);
+				log.error("Error occured while validating issue keys the issue with id  : " + issueKey + " So skipped to add the response", exp);
+			}
+		});
+		if (failedKeys.size() > 0) {
+			throw new CaptureValidationException(i18n.getMessage("session.issue.key.invalid", new Object[]{StringUtils.join(failedKeys, ',')}));
+		}
+
+		List<CaptureIssue> issues = null;
+		try {
+			if (listOfIssueIds != null && listOfIssueIds.size() > 0) {
+				issues = sessionService.updateSessionWithIssues(loggedUser, sessionId, listOfIssueIds);
+			} else {
+				throw new CaptureValidationException("Issues are empty");
+			}
+		} catch (Exception ex) {
+			log.error("Error in addIssueRaised() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+		return ResponseEntity.ok(issues);
+	}
 	
 	@GetMapping(value = "/{sessionId}",  produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> getSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException {
@@ -143,13 +194,16 @@ public class SessionController extends CaptureAbstractController{
 			throw new CaptureValidationException(i18n.getMessage("session.invalid.id", new Object[]{sessionId}));
 		}
 		try {
+			String user = getUser();
 			Session session = sessionService.getSession(sessionId);
-			if (session != null && !permissionService.canSeeSession(getUser(), session)) {
+			if (session != null && !permissionService.canSeeSession(user, session)) {
 				throw new CaptureRuntimeException(i18n.getMessage("session.update.not.editable"));
+			} else if(Objects.isNull(session)) {
+				throw new CaptureValidationException(i18n.getMessage("session.not.exist.message"));
 			}
-			//SessionUI sessionUI = sessionService.constructSessionUI(session);
+			SessionDto sessionDto = sessionService.constructSessionDto(user, session, true);
 			log.info("End of Create Session()");
-			return ResponseEntity.ok(session);
+			return ResponseEntity.ok(sessionDto);
 		} catch(Exception ex) {
 			log.error("Error in getSession() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
@@ -176,8 +230,9 @@ public class SessionController extends CaptureAbstractController{
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult);
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, updateResult.getSession(), true); 
 			log.info("End of updateSession()");
-			return ResponseEntity.ok(updateResult.getSession());
+			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -227,11 +282,9 @@ public class SessionController extends CaptureAbstractController{
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
         	sessionActivityService.setStatus(session, new Date(), loggedUserKey);
-        	CaptureProject project = projectService.getCaptureProject(session.getProjectId());
-        	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
+        	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 			log.info("End of startSession()");
-			return ResponseEntity.ok(lightSession);
+			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -259,11 +312,9 @@ public class SessionController extends CaptureAbstractController{
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
         	sessionActivityService.setStatus(session, new Date(), loggedUserKey);
-        	CaptureProject project = projectService.getCaptureProject(session.getProjectId());
-        	LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-					project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
+        	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 			log.info("End of pauseSession()");
-			return ResponseEntity.ok(lightSession);
+			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -279,7 +330,7 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUserKey = hostUser.getUserKey().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			Date dateTime = new Date();
-			Participant participant = new Participant(loggedUserKey, dateTime, null);
+			Participant participant = new ParticipantBuilder(loggedUserKey).setTimeJoined(dateTime).build();
 			SessionServiceImpl.UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loadedSession, participant);
 			if (!updateResult.isValid()) {
 				return badRequest(updateResult.getErrorCollection());
@@ -335,8 +386,9 @@ public class SessionController extends CaptureAbstractController{
 			//Save status changed information as activity.
 			sessionActivityService.setStatus(session, new Date(), loggedUserKey);
 			sessionService.update(completeSessionResult.getSessionUpdateResult());
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 			log.info("End of completeSession()");
-			return ResponseEntity.ok(session);
+			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -411,7 +463,8 @@ public class SessionController extends CaptureAbstractController{
 	@PutMapping(value = "/{sessionId}/raisedin/{issueKey}", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> unraiseIssueSessionRequest(@PathVariable("sessionId") String sessionId, @PathVariable("issueKey") String issueKey) throws CaptureValidationException {
 		log.info("Start of unraiseIssueSessionRequest() --> params " + sessionId + " issueKey " + issueKey);
-		try {		
+		try {
+			Date dateTime = new Date();
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			Issue issue = issueService.getIssueObject(issueKey);
@@ -423,6 +476,8 @@ public class SessionController extends CaptureAbstractController{
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult);
+			//Save removed raised issue information as activity.
+			sessionActivityService.removeRaisedIssue(loadedSession, issue, dateTime, loggedUserKey);
 			log.info("End of unraiseIssueSessionRequest()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {
@@ -439,12 +494,13 @@ public class SessionController extends CaptureAbstractController{
 			@RequestParam("sortField") Optional<String> sortField, @RequestParam("startAt") int startAt, @RequestParam("size") int size) throws CaptureValidationException {
 		log.info("Start of searchSession() --> params " + " projectFilter " + projectId.orElse(null) + " assigneeFilter " + assignee.orElse(null) + " statusFilter " + status.orElse(null) + " searchTerm "
 			+ searchTerm.orElse(null) + " sortOrder " + sortOrder.orElse("ASC") + " sortField " + " startAt " + startAt + " size " + size);
-		try {		
+		try {	
+			String loggedUser = getUser();
 			validateInputParameters(projectId, status);
 			boolean sortAscending = sortOrder.orElse(ApplicationConstants.SORT_ASCENDING).equalsIgnoreCase(ApplicationConstants.SORT_ASCENDING);
-			LightSessionSearchList lightSessionList = sessionService.searchSession(projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
+			SessionDtoSearchList sessionDtoSearchList = sessionService.searchSession(loggedUser, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
 			log.info("End of searchSession()");
-			return ResponseEntity.ok(lightSessionList);
+			return ResponseEntity.ok(sessionDtoSearchList);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -493,8 +549,9 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult);
 			//Save assigned user to the session as activity.
 			sessionActivityService.addAssignee(loadedSession, new Date(), loggedUserKey, assignee);
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession, false);
 			log.info("End of assignSession()");
-			return ResponseEntity.ok(loadedSession);
+			return ResponseEntity.ok(sessionDto);
 		} catch(Exception ex) {
 			log.error("Error in assignSession() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
@@ -560,6 +617,66 @@ public class SessionController extends CaptureAbstractController{
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
+	
+	@PutMapping(value = "/{sessionId}/additionalInfo", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> updateAdditionalInfo(@PathVariable("sessionId") String sessionId, @RequestBody JsonNode json) throws CaptureValidationException {
+		log.info("Start of updateAdditionalInfo() --> params " + sessionId);
+		try {		
+			String loggedUserKey = getUser();
+			Session loadedSession  = validateAndGetSession(sessionId);
+			String editedAdditionalInfo = json.get("additionalInfo").asText();
+			UpdateResult updateResult = sessionService.updateSessionAdditionalInfo(loggedUserKey, loadedSession, editedAdditionalInfo);
+			if (!updateResult.isValid()) {
+                return badRequest(updateResult.getErrorCollection());
+            }
+			sessionService.update(updateResult);
+			boolean isEmpty = StringUtils.isEmpty(updateResult.getSession().getAdditionalInfo());
+			Map<String, String> jsonResponse = new HashMap<>();
+			jsonResponse.put("additionalInfo", isEmpty ? i18n.getMessage("session.section.additionalinfo.empty") : updateResult.getSession().getAdditionalInfo());
+			log.info("End of updateAdditionalInfo()");
+			return ResponseEntity.ok(jsonResponse);
+		} catch(CaptureValidationException ex) {
+			throw ex;
+		} catch(Exception ex) {
+			log.error("Error in updateAdditionalInfo() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+	
+	@PostMapping(value = "/{sessionId}/clone", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> cloneSession(@PathVariable("sessionId") String sessionId, @RequestParam("name") String name) throws CaptureValidationException {
+		log.info("Start of cloneSession() --> params - sessionId: " + sessionId + " name: " + name);
+		try {
+			String loggedUserKey = getUser();
+			Session loadedSession  = validateAndGetSession(sessionId);
+			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
+			if (Objects.nonNull(captureProject)) {
+				// Check that the creator and assignee have assign issue permissions in the project
+				if (!permissionService.canCreateSession(loggedUserKey, captureProject)) {
+					throw new CaptureRuntimeException(i18n.getMessage("session.creator.fail.permissions"));
+				}
+				if (loadedSession.getAssignee() != null && !permissionService.canBeAssignedSession(loadedSession.getAssignee(), captureProject)) {
+					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loadedSession.getAssignee()}));
+				} else if(!permissionService.canBeAssignedSession(loggedUserKey, captureProject)) {
+					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
+				}
+			}
+			Session newSession = sessionService.cloneSession(loggedUserKey, loadedSession, name);
+			//Save status changed information as activity.
+        	sessionActivityService.setStatus(newSession, new Date(), loggedUserKey);
+        	if(!loggedUserKey.equals(newSession.getAssignee())) {
+        		 //Save if the assigned user and logged in user are different into the session as activity.
+    			sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, newSession.getAssignee());
+        	} 
+			log.info("End of cloneSession()");
+			return ResponseEntity.ok(newSession);
+		} catch(CaptureValidationException ex) {
+			throw ex;
+		} catch(Exception ex) {
+			log.error("Error in cloneSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
 
 	private void validateInputParameters(Optional<Long> projectId, Optional<String> status) throws CaptureValidationException {
 		if(projectId.isPresent()) {
@@ -570,34 +687,6 @@ public class SessionController extends CaptureAbstractController{
 			Status fetchedStatus = Status.valueOf(status.get());
 			if(Objects.isNull(fetchedStatus)) throw new CaptureValidationException("Invalid Status.");//TODO,
 		}
-	}
-	
-	/**
-	 * Validates the session.
-	 * 
-	 * @param sessionId -- Session id requested by user
-	 * @return -- Returns the validated Session object using the session id.
-	 * @throws CaptureValidationException -- Thrown while validating the session.
-	 */
-	protected Session validateAndGetSession(String sessionId) throws CaptureValidationException {
-		if(StringUtils.isEmpty(sessionId)) {
-			throw new CaptureValidationException(i18n.getMessage("session.invalid.id", new Object[]{sessionId}));
-		}
-		Session loadedSession = sessionService.getSession(sessionId);
-		if(Objects.isNull(loadedSession)) {
-			throw new CaptureValidationException(i18n.getMessage("session.invalid", new Object[]{sessionId}));
-		}
-		return loadedSession;
-	}
-	
-	/**
-	 * Constructs the bad request response entity for the validation errors.
-	 * 
-	 * @param errorCollection -- Holds the validation errors information.
-	 * @return -- Returns the constructed response entity.
-	 */
-	protected ResponseEntity<List<ErrorDto>> badRequest(ErrorCollection errorCollection) {		
-		return ResponseEntity.badRequest().body(errorCollection.toErrorDto());
 	}
 	
 }

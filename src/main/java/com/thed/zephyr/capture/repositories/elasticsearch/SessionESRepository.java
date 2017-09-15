@@ -16,9 +16,11 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
 
     Page<Session> findByCtIdAndProjectIdAndRelatedIssueIds(String ctId, Long projectId, Long relatedIssueId, Pageable pageable);
 
+    Page<Session> findByCtIdAndProjectIdAndStatusAndAssignee(String ctId,Long projectId, String status, String assignee,Pageable pageable);
+
+    Page<Session> findByCtIdAndProjectIdAndStatusAndCreator(String ctId,Long projectId, String status, String creator,Pageable pageable);
+
+    Page<Session> findByCtIdAndProjectIdAndStatusAndParticipants(String ctId,Long projectId, String status, String participants,Pageable pageable);
+    
     Session findByCtIdAndStatusAndAssignee(String ctId, String status, String assignee);
-
-    Session findByCtIdAndStatusAndCreator(String ctId, String status, String creator);
-
-    Session findByCtIdAndStatusAndParticipants(String ctId, String status, String participants);
 }

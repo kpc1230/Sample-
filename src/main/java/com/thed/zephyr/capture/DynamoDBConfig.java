@@ -4,6 +4,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -30,16 +31,22 @@ public class DynamoDBConfig {
     @Value("${amazon.aws.secretkey}")
     private String amazonAWSSecretKey;
 
+    @Value("${amazon.dynamodb.local}")
+    private Boolean amazonDynamoDBLocal;
+
     @Bean
     public AmazonDynamoDB amazonDynamoDB(AWSCredentialsProvider awsCredentialsProvider) {
-
-        AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(awsCredentialsProvider)
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(amazonDynamoDBEndpoint, "us-west-2"))
-                .build();
+        AmazonDynamoDBClientBuilder amazonDynamoDBClientBuilder = AmazonDynamoDBClientBuilder.standard().withCredentials(awsCredentialsProvider);
+        if(amazonDynamoDBLocal){
+            amazonDynamoDBClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(amazonDynamoDBEndpoint, "us-west-2"));
+        } else {
+            amazonDynamoDBClientBuilder.withRegion(Regions.US_WEST_2);
+        }
+        AmazonDynamoDB amazonDynamoDB = amazonDynamoDBClientBuilder.build();
 
         return amazonDynamoDB;
     }
+
 
     @Bean
     public AWSCredentialsProvider awsCredentialsProvider() {

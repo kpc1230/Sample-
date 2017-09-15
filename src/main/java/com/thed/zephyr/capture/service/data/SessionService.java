@@ -7,9 +7,10 @@ import com.thed.zephyr.capture.model.Participant;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.SessionRequest;
-import com.thed.zephyr.capture.model.util.LightSessionSearchList;
+import com.thed.zephyr.capture.model.jira.CaptureIssue;
+import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
-import com.thed.zephyr.capture.model.view.SessionUI;
+import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionExtensionResponse;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionResult;
@@ -159,6 +160,7 @@ public interface SessionService {
 	/**
 	 * Fetches the sessions based on the input search parameters and also sorts the results based on sort order.
 	 * 
+	 * @param loggedUser - Logged in user.
 	 * @param projectId -- Session Project ID.
 	 * @param assignee -- Session Assignee.
 	 * @param status -- Session Status.
@@ -169,7 +171,7 @@ public interface SessionService {
 	 * @param size -- Number of sessions to fetch.
 	 * @return
 	 */
-	LightSessionSearchList searchSession(Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
+	SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<String> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
 
 	/**
 	 * @return -- Returns all the session statuses which are required to render in ui.
@@ -178,12 +180,14 @@ public interface SessionService {
 	
 	
 	/**
-	 * Constructs the session ui object for the request session.
+	 * Constructs the session data transfer object for the request session.
 	 * 
+	 * @param loggedInUser -- Logged in user.
 	 * @param session -- Session object requested by the user.
-	 * @return -- Returns the constructed session ui object.
+	 * @param isSendFull -- Flag to send whole session related or not.
+	 * @return -- Returns the constructed session dto object.
 	 */
-	SessionUI constructSessionUI(Session session);
+	SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull);
 
 	/**
 	 * Get Complete session view details
@@ -218,5 +222,30 @@ public interface SessionService {
 	SessionSearchList getSessionByRaisedIssueId(String ctId, Long projectId, Long raisedIssueId);
 
 	SessionSearchList getSessionByRelatedIssueId(String ctId, Long projectId, Long relatedIssueId);
+
+	void updateSessionWithIssue(String ctId,Long projectId,String user,Long issueId);
+
+	List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<Long> issues);
+	
+	/**
+	 * Update the additional information into the requested session.
+	 * 
+	 * @param loggedUser -- Logged in user.
+	 * @param session -- Request Session object.
+	 * @param additionalInfo -- Updated additional information.
+	 * @return -- Returns UpdateResult object which holds the updated session object.
+	 */
+	UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo);
+	
+	/**
+	 * Clones the session for the requested session.
+	 * 
+	 * @param loggedUser -- Logged in user.
+	 * @param cloneSession -- Request clone session object.
+	 * @param cloneName -- User request clone session name.
+	 * @return -- Returns the newly created clone session object.
+	 */
+	Session cloneSession(String loggedUser, Session cloneSession, String cloneName);
+
 }
 

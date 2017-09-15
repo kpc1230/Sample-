@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service;
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.LightSession;
+import com.thed.zephyr.capture.model.Note;
 import com.thed.zephyr.capture.model.NoteSessionActivity;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.SessionActivity;
@@ -78,4 +79,6 @@ public interface PermissionService {
     public boolean canUseTemplate(String user, Long projectId);
 
 	public boolean canUseTemplate(String user, CaptureProject project);
+
+	boolean canEditNote(String user, String assignee, Note note);
 }
