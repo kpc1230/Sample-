@@ -13,7 +13,12 @@ import java.io.Serializable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CaptureEnvironment implements Serializable {
 
-    @JsonProperty
+    /**
+	 * Generated Serial Version id.
+	 */
+	private static final long serialVersionUID = 7602656454347859613L;
+
+	@JsonProperty
     private String operatingSystem;
 
     @JsonProperty

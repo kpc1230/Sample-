@@ -16,7 +16,12 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TestSectionResponse implements Serializable {
 
-    public TestSectionResponse(){}
+    /**
+	 * Generated Serial Version id.
+	 */
+	private static final long serialVersionUID = -6863061394674732559L;
+
+	public TestSectionResponse(){}
 
     @JsonProperty
     private List<Session> sessions;

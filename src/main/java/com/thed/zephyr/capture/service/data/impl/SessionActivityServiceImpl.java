@@ -52,21 +52,26 @@ public class SessionActivityServiceImpl implements SessionActivityService{
 
     @Override
     public SessionActivity addParticipantLeft(Session session, Date timestamp, String user) {
+    	UserLeftSessionActivity sessionActivity = null;
+    	Participant participantToRemove = null;
     	if(!Objects.isNull(session.getParticipants())) {
     		for (Iterator<Participant> iterator = session.getParticipants().iterator(); iterator.hasNext(); ) {
                 Participant participant1 = iterator.next();
                 if (user != null && user.equals(participant1.getUser()) && !participant1.hasLeft()) {
-                	participant1 = new ParticipantBuilder(participant1).setTimeLeft(timestamp).build();
-                    // ok we have a person how has joined but not left
-                    iterator.remove();
-                    UserLeftSessionActivity sessionActivity = new UserLeftSessionActivity(
-                            session.getId(),session.getCtId(), participant1.getTimeLeft(), participant1.getUser(), session.getProjectId(), participant1);
-                    sessionActivityRepository.save(sessionActivity);
-                    return sessionActivity;
+                    participantToRemove = participant1;
+                    break;
                 }
             }
     	}
-        return null;
+    	if(Objects.nonNull(participantToRemove)) {
+    		session.getParticipants().remove(participantToRemove);
+    		session.setParticipants(session.getParticipants().size() > 0 ? session.getParticipants() : null);
+    		participantToRemove.setTimeLeft(timestamp);
+    		sessionActivity = new UserLeftSessionActivity(
+                    session.getId(),session.getCtId(), participantToRemove.getTimeLeft(), participantToRemove.getUser(), session.getProjectId(), participantToRemove);
+            sessionActivityRepository.save(sessionActivity);
+    	}
+        return sessionActivity;
     }
 
     @Override

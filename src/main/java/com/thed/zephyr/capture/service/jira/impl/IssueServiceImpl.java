@@ -27,7 +27,6 @@ import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -195,9 +194,12 @@ public class IssueServiceImpl implements IssueService {
             testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey()));
         }
         testingStatus.setCompleteCount(new Double(completedCount.get()));
-        Double notStartedPercent = Math.floor((notStartedCount.get() / testingStatus.getTotalCount().intValue()) * 100);
-        Double inProgressPercent = Math.floor((inProgressCount.get() / testingStatus.getTotalCount().intValue()) * 100);
-        Double completePercent = Math.floor((completedCount.get() / testingStatus.getTotalCount().intValue()) * 100);
+        Double notStartedPercent = 0.0, inProgressPercent = 0.0, completePercent = 0.0;
+        if(testingStatus.getTotalCount().intValue() != 0) {
+        	notStartedPercent = Math.floor((notStartedCount.get() / testingStatus.getTotalCount().intValue()) * 100);
+            inProgressPercent = Math.floor((inProgressCount.get() / testingStatus.getTotalCount().intValue()) * 100);
+            completePercent = Math.floor((completedCount.get() / testingStatus.getTotalCount().intValue()) * 100);
+        }     
 
         testingStatus.setNotStartedPercent(notStartedPercent);
         testingStatus.setInProgressPercent(inProgressPercent);

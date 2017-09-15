@@ -137,7 +137,7 @@ public class SessionServiceImpl implements SessionService {
         }
         session.setShared(sessionRequest.getShared());
         if(Objects.nonNull(session.getRelatedIssueIds())) {
-        	if(Objects.isNull(sessionRequest.getRelatedIssueIds()))
+        	if(Objects.nonNull(sessionRequest.getRelatedIssueIds()))
         		session.getRelatedIssueIds().addAll(sessionRequest.getRelatedIssueIds());
         } else {
         	session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
@@ -568,13 +568,13 @@ public class SessionServiceImpl implements SessionService {
      * @param session  -- Session object to be saved.
      * @param leavers -- List of users leaving the session which needs to updated into session.
      */
-    private void save(Session session, List<String> leavers) {
-		Session savedSession = sessionRepository.save(session);
-		sessionESRepository.save(savedSession);
-		for (String leaver : leavers) {
+	private void save(Session session, List<String> leavers) {
+    	for (String leaver : leavers) {
             clearActiveSessionFromCache(leaver);
             sessionActivityService.addParticipantLeft(session, new Date(), leaver);
         }
+		Session savedSession = sessionRepository.save(session);
+		sessionESRepository.save(savedSession);
     }
 
 

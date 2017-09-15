@@ -1,15 +1,12 @@
 package com.thed.zephyr.capture.controller;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.TestSectionResponse;
 import com.thed.zephyr.capture.service.PermissionService;
-import com.thed.zephyr.capture.service.data.SessionActivityService;
-import com.thed.zephyr.capture.service.data.SessionService;
-import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
@@ -21,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -35,9 +34,6 @@ public class IssueController {
     private Logger log;
 
     @Autowired
-    private JiraRestClient getJiraRestClient;
-
-    @Autowired
     private IssueService issueService;
 
     @Autowired
@@ -48,22 +44,12 @@ public class IssueController {
     private PermissionService permissionService;
 
     @Autowired
-    private CaptureContextIssueFieldsService captureContextIssueFieldsService;
-
-    @Autowired
-    private SessionActivityService sessionActivityService;
-
-    @Autowired
-    private SessionService sessionService;
-
-    @Autowired
     private CaptureI18NMessageSource i18n;
 
 
     @RequestMapping(value = "/issue-ext", method = RequestMethod.POST)
     public ResponseEntity<CaptureIssue> createIssue(final HttpServletRequest request, final @RequestParam(value = "testSessionId",required = false)  String testSessionId, @Valid @RequestBody final IssueCreateRequest createRequest) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         if(auth == null || !auth.isAuthenticated()) {
             throw new CaptureRuntimeException(HttpStatus.UNAUTHORIZED.toString(), i18n.getMessage("template.validate.create.cannot.create.issue"));
         }
@@ -76,25 +62,24 @@ public class IssueController {
     }
 
     @RequestMapping(value = "/testSessionStatus", method = RequestMethod.GET)
-    public ResponseEntity<TestSectionResponse> getTestSessionStatus(final @RequestParam(value = "issueKey")  String issueKey) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        if(auth == null || !auth.isAuthenticated()) {
-            throw new CaptureRuntimeException(HttpStatus.UNAUTHORIZED.toString(), i18n.getMessage("template.validate.create.cannot.create.issue"));
-        }
-        log.info("getTestSessionStatus Request for Issue : {}", issueKey);
-        Issue issue = issueService.getIssueObject(issueKey);
-        if(issue == null) {
-            throw new CaptureRuntimeException(HttpStatus.BAD_REQUEST.toString(),i18n.getMessage("session.issue.invalid"));
-        }
-
-        TestSectionResponse testSectionResponse = null;
+    public ResponseEntity<?> getTestSessionStatus(final @RequestParam(value = "issueKey")  String issueKey) throws CaptureValidationException {
+    	log.info("Start of getTestSessionStatus() -> params : issueKey : " + issueKey);
         try {
-            testSectionResponse = issueService.getIssueSessionDetails(issue);
-        } catch (Exception e) {
-            e.printStackTrace();
+        	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if(Objects.isNull(auth) || !auth.isAuthenticated()) {
+                throw new CaptureRuntimeException(HttpStatus.UNAUTHORIZED.toString(), i18n.getMessage("template.validate.create.cannot.create.issue"));
+            }
+            Issue issue = issueService.getIssueObject(issueKey);
+            if(Objects.isNull(issue)) {
+                throw new CaptureValidationException(HttpStatus.BAD_REQUEST.toString(), i18n.getMessage("session.issue.invalid"));
+            }
+            TestSectionResponse testSectionResponse = issueService.getIssueSessionDetails(issue);
+            log.info("End of getTestSessionStatus().");
+            return ResponseEntity.ok(testSectionResponse);
+        } catch(Exception ex) {
+        	log.error("Error in getTestSessionStatus() -> ", ex);
+        	throw new CaptureRuntimeException(ex);
         }
-        return new ResponseEntity<>(testSectionResponse, HttpStatus.OK);
     }
 
 }
