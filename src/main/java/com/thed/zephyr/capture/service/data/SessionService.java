@@ -225,7 +225,7 @@ public interface SessionService {
 
 	void updateSessionWithIssue(String ctId,Long projectId,String user,Long issueId);
 
-	List<CaptureIssue> updateSessionWithIssues(String sessionId, List<Long> issues);
+	List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<Long> issues);
 	
 	/**
 	 * Update the additional information into the requested session.

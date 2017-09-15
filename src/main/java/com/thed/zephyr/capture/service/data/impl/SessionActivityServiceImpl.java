@@ -1,16 +1,11 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.thed.zephyr.capture.exception.CaptureRuntimeException;
-import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.Attachment;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
-import com.thed.zephyr.capture.service.data.TagService;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -24,8 +19,6 @@ public class SessionActivityServiceImpl implements SessionActivityService{
 
     @Autowired
     private SessionActivityRepository sessionActivityRepository;
-    @Autowired
-    private TagService tagService;
 
     @Override
     public SessionActivity setStatus(Session session, Date timestamp, String user) {
@@ -61,7 +54,6 @@ public class SessionActivityServiceImpl implements SessionActivityService{
             }
         }
         if (!currentlyParticipating) {
-            participant = new ParticipantBuilder(user).setTimeJoined(timestamp).build();
             UserJoinedSessionActivity sessionActivity =
                     new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), user, session.getProjectId(), participant);
             sessionActivityRepository.save(sessionActivity);
@@ -91,12 +83,17 @@ public class SessionActivityServiceImpl implements SessionActivityService{
 
     @Override
     public SessionActivity addRaisedIssue(Session session, Issue issue, Date timeRaised, String creator) {
+    	return addRaisedIssue(session, issue.getId(), timeRaised, creator);
+    }
+    
+    @Override
+    public SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator) {
 
         IssueRaisedSessionActivity sessionActivity =
                 new IssueRaisedSessionActivity(
                         session.getId(),
                         session.getCtId(),
-                        timeRaised, creator, session.getProjectId(), issue.getId());
+                        timeRaised, creator, session.getProjectId(), issueId);
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }

@@ -419,8 +419,9 @@ public class SessionServiceImpl implements SessionService {
 
     }
     @Override
-    public List<CaptureIssue> updateSessionWithIssues(String sessionId, List<Long> issues) {
+    public List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<Long> issues) {
         List<CaptureIssue> raisedIssues = Lists.newArrayList();
+        Date dateTime = new Date();
         Session session = getSession(sessionId);
         if(session !=null){
             if (session.getIssueRaisedIds() != null) {
@@ -442,6 +443,9 @@ public class SessionServiceImpl implements SessionService {
                 }
             }
         }
+        issues.stream().forEach(issueId -> {
+        	sessionActivityService.addRaisedIssue(session, issueId, dateTime, loggedUser); //Save removed raised issue information as activity.
+        });
         return raisedIssues;
     }
 	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId) {

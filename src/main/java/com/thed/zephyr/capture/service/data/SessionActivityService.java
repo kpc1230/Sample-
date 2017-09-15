@@ -3,7 +3,6 @@ package com.thed.zephyr.capture.service.data;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.Attachment;
-import org.joda.time.DateTime;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Date;
@@ -42,4 +41,6 @@ public interface SessionActivityService {
      * @return -- Returns the saved session activity object.
      */
     SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignee);
+    
+    SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator);
 }

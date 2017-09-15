@@ -155,6 +155,7 @@ public class SessionController extends CaptureAbstractController{
 		Set<String> failedKeys = new TreeSet<>();
 		List<Long> listOfIssueIds = new ArrayList<>();
 		issueKeys.addAll(listOfIssues);
+		String loggedUser = getUser();
 		issueKeys.forEach(issueKey -> {
 			try {
 				Issue issue = issueService.getIssueObject(issueKey);
@@ -175,7 +176,7 @@ public class SessionController extends CaptureAbstractController{
 		List<CaptureIssue> issues = null;
 		try {
 			if (listOfIssueIds != null && listOfIssueIds.size() > 0) {
-				issues = sessionService.updateSessionWithIssues(sessionId, listOfIssueIds);
+				issues = sessionService.updateSessionWithIssues(loggedUser, sessionId, listOfIssueIds);
 			} else {
 				throw new CaptureValidationException("Issues are empty");
 			}
@@ -329,7 +330,7 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUserKey = hostUser.getUserKey().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			Date dateTime = new Date();
-			Participant participant = new Participant(loggedUserKey, dateTime, null);
+			Participant participant = new ParticipantBuilder(loggedUserKey).setTimeJoined(dateTime).build();
 			SessionServiceImpl.UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loadedSession, participant);
 			if (!updateResult.isValid()) {
 				return badRequest(updateResult.getErrorCollection());
@@ -462,7 +463,8 @@ public class SessionController extends CaptureAbstractController{
 	@PutMapping(value = "/{sessionId}/raisedin/{issueKey}", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> unraiseIssueSessionRequest(@PathVariable("sessionId") String sessionId, @PathVariable("issueKey") String issueKey) throws CaptureValidationException {
 		log.info("Start of unraiseIssueSessionRequest() --> params " + sessionId + " issueKey " + issueKey);
-		try {		
+		try {
+			Date dateTime = new Date();
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			Issue issue = issueService.getIssueObject(issueKey);
@@ -474,6 +476,8 @@ public class SessionController extends CaptureAbstractController{
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult);
+			//Save removed raised issue information as activity.
+			sessionActivityService.removeRaisedIssue(loadedSession, issue, dateTime, loggedUserKey);
 			log.info("End of unraiseIssueSessionRequest()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {
