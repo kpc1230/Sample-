@@ -134,5 +134,7 @@ public class ApplicationConstants {
     public static final String DEFAULT_SMTP_PASSWORD = "ApnTtFsyojiOKBMfDGj8+cPlw7eISDrYIEwQQ6ulXmI1";
     public static final int DEFAULT_SMTP_PORT = 465;
     public static final String DEFAULT_SES_REGION = "us-west-2";
+    
+    public static final String SESSION_ID_FIELD = "sessionId";
 
 }

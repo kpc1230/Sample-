@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.List;
 
 import com.thed.zephyr.capture.model.LightSession;
-import com.thed.zephyr.capture.model.Note;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 
 /**
@@ -19,7 +18,7 @@ public class FullSessionDto extends SessionDto {
     private List<CaptureIssue> issuesRaised;
     
     public FullSessionDto(LightSession session, boolean isActive, List<CaptureIssue> relatedIssues,List<CaptureIssue> issuesRaised, List<ParticipantDto> activeParticipants,
-    		Integer activeParticipantCount, List<Note> sessionNotes, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus,	String userAvatarSrc, 
+    		Integer activeParticipantCount, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus,	String userAvatarSrc, 
     		String userLargeAvatarSrc, String userDisplayName, Date timeCompleted) {
     	super(session, isActive, activeParticipants, activeParticipantCount, issuesRaised.size(), permissions, estimatedTimeSpent, prettyStatus, timeCompleted,
     			userAvatarSrc, userLargeAvatarSrc, userDisplayName);

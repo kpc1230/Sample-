@@ -23,7 +23,6 @@ import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.InviteService;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
-import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionExtensionResponse;
@@ -65,9 +64,6 @@ public class SessionController extends CaptureAbstractController{
 	
 	@Autowired
     private Logger log;
-	
-	@Autowired
-	private SessionService sessionService;
 	
 	@Autowired
 	private SessionValidator sessionValidator;
