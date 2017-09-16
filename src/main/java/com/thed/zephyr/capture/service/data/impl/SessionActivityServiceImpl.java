@@ -135,4 +135,9 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     public SessionActivity getSessionActivity(String id) {
         return sessionActivityRepository.findOne(id);
     }
+    
+    @Override
+    public List<SessionActivity> getAllSessionActivityByPropertyExist(String sessionId, Optional<String> propertyName) {
+        return sessionActivityRepository.findBySessionId(sessionId, propertyName);
+    }
 }

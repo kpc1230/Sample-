@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 
+import com.atlassian.core.util.DateUtils;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -42,12 +43,14 @@ import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.time.Duration;
@@ -1104,6 +1107,8 @@ public class SessionServiceImpl implements SessionService {
 			userLargeAvatarSrc = getDecodedUrl(user, "48x48");
 		}
 		
+		String estimatedTimeSpent = formatShortTimeSpent(calculateEstimatedTimeSpentOnSession(session));
+		
 		if(isSendFull) {
 			List<CaptureIssue> relatedIssues = Lists.newArrayList();
 			if(Objects.nonNull(session.getRelatedIssueIds())) {
@@ -1120,12 +1125,12 @@ public class SessionServiceImpl implements SessionService {
 				}
 			}
 			
-			return new FullSessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, null, permissions, null, 
-					i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName(), session.getTimeFinished());
+			return new FullSessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, permissions, estimatedTimeSpent, 
+					i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeFinished());
 		} else {
 			Integer issusRaisedCount = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().size() : 0;
-			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, null, 
-					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc, userLargeAvatarSrc, user.getDisplayName());
+			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, estimatedTimeSpent, 
+					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc, userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee());
 		}
 	}
 
@@ -1162,5 +1167,53 @@ public class SessionServiceImpl implements SessionService {
 			log.error("Error in decoing the url.", e);
 		}
 		return null;
+	}
+	
+	private String formatShortTimeSpent(Duration time) {
+        String zeroMinutes = "0m";
+        return time == null ? zeroMinutes : StringUtils.defaultIfEmpty(shortFormat(time.getSeconds()), zeroMinutes);
+    }
+	
+	private String shortFormat(final Long duration) {
+        BigDecimal hoursPerDay = BigDecimal.valueOf(24);
+        BigDecimal daysPerWeek = BigDecimal.valueOf(7);
+
+        final BigDecimal secondsPerHour = BigDecimal.valueOf(DateUtils.Duration.HOUR.getSeconds());
+        final int secondsPerDay = hoursPerDay.multiply(secondsPerHour).intValueExact();
+        final int secondsPerWeek = daysPerWeek.multiply(hoursPerDay).multiply(secondsPerHour).intValueExact();
+        return DateUtils.getDurationString(duration.longValue(), secondsPerDay, secondsPerWeek);
+    }
+	
+	private Duration calculateEstimatedTimeSpentOnSession(Session session) {
+		List<SessionActivity> sessionActivityList = sessionActivityService.getAllSessionActivityByPropertyExist(session.getId(), Optional.of("status"));
+		DateTime startTime = null;
+        org.joda.time.Duration timeSpent = new org.joda.time.Duration(0L);
+        for(SessionActivity sessionActivity : sessionActivityList) {
+        	if(sessionActivity instanceof StatusSessionActivity) { //To avoid class cast exception.
+        		StatusSessionActivity statusSessionActivity = (StatusSessionActivity)sessionActivity;
+            	DateTime timestamp = new DateTime(statusSessionActivity.getTimestamp().getTime());
+            	switch (statusSessionActivity.getStatus()) {
+    	            case STARTED:
+    	                startTime = timestamp;
+    	                break;
+    	            case PAUSED:
+    	                // Append the time
+    	                if (startTime != null) {
+    	                    timeSpent = timeSpent.plus(new org.joda.time.Duration(startTime, timestamp));
+    	                    startTime = null;
+    	                } else {
+    	                    log.warn("Test Session " + session.getId() + " : Paused before Started");
+    	                }
+    	                break;
+    	            default:
+    	                break;
+            	}
+        	}
+        }
+        // If we're not paused at this point, add time from started to now
+        if (startTime != null) {
+            timeSpent = timeSpent.plus(new org.joda.time.Duration(startTime, new DateTime()));
+        }
+		return Duration.ofMillis(timeSpent.getMillis());
 	}
 }

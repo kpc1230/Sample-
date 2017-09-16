@@ -10,6 +10,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by aliakseimatsarski on 8/23/17.
@@ -18,6 +19,8 @@ import java.util.List;
 public interface SessionActivityRepository extends CrudRepository<SessionActivity, String> {
 
     List<SessionActivity> findBySessionId(String sessionId);
+    
+    List<SessionActivity> findBySessionId(String sessionId, Optional<String> propertyName);
     
     @EnableScan
     @EnableScanCount

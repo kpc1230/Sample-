@@ -3,10 +3,13 @@ package com.thed.zephyr.capture.repositories.dynamodb.impl;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -16,9 +19,12 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
+import com.amazonaws.services.dynamodbv2.document.QueryFilter;
 import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.internal.IteratorSupport;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.thed.zephyr.capture.model.SessionActivity;
 import com.thed.zephyr.capture.util.ApplicationConstants;
@@ -49,10 +55,23 @@ public class SessionActivityRepositoryImpl {
     }
 
     public List<SessionActivity> findBySessionId(String sessionId){
+       return findBySessionId(sessionId, Optional.empty());
+    }
+    
+    public List<SessionActivity> findBySessionId(String sessionId, Optional<String> propertyName){
+    	List<QueryFilter> queryFilters = new LinkedList<>();
+    	QuerySpec querySpec = new QuerySpec();
+    	querySpec.withHashKey(new KeyAttribute(ApplicationConstants.SESSION_ID_FIELD, sessionId));
+    	if(propertyName.isPresent() && !StringUtils.isBlank(propertyName.get())) {
+    		QueryFilter propertynameQueryFilter = new QueryFilter(propertyName.get());
+    		propertynameQueryFilter.exists();
+    		queryFilters.add(propertynameQueryFilter);
+    	}
+    	querySpec.withQueryFilters(queryFilters.toArray(new QueryFilter[queryFilters.size()]));
         List<SessionActivity> result = new ArrayList<>();
         Table table = dynamodb.getTable(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME);
         Index index = table.getIndex(ApplicationConstants.GSI_SESSIONID_TIMESTAMP);
-        ItemCollection<QueryOutcome> activityItemList = index.query("sessionId", sessionId);
+        ItemCollection<QueryOutcome> activityItemList = index.query(querySpec);
         IteratorSupport<Item, QueryOutcome> iterator = activityItemList.iterator();
 
         while (iterator.hasNext()){
@@ -61,16 +80,16 @@ public class SessionActivityRepositoryImpl {
             result.add(sessionActivity);
 
         }
-
         return result;
     }
 
-    private SessionActivity convertItemToSessionActivity(Item item){
+    @SuppressWarnings("unchecked")
+	private SessionActivity convertItemToSessionActivity(Item item){
         Map<String, AttributeValue> objectMap = new LinkedHashMap<>();
         Map<String, Object> stringObjectMap = item.asMap();
         String clazz = (String)stringObjectMap.get("clazz");
         try {
-            Class cls = Class.forName(clazz);
+            Class<?> cls = Class.forName(clazz);
             for (Map.Entry<String, Object> entry:stringObjectMap.entrySet()){
                 AttributeValue attributeValue = new AttributeValue();
                 if (entry.getValue() instanceof String){

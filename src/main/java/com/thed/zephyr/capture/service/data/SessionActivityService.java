@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by Masud on 8/25/17.
@@ -45,4 +46,6 @@ public interface SessionActivityService {
     SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator);
 
     SessionActivity getSessionActivity(String id);
+    
+    List<SessionActivity> getAllSessionActivityByPropertyExist(String sessionId, Optional<String> propertyName);
 }

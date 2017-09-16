@@ -29,7 +29,7 @@ public abstract class CaptureAbstractController {
 	protected CaptureI18NMessageSource i18n;
 	
 	@Autowired
-	private SessionService sessionService;
+	protected SessionService sessionService;
 
 	/**
 	 * Fetches the user key from the authentication object.
