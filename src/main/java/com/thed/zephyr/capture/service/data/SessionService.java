@@ -192,10 +192,11 @@ public interface SessionService {
 	/**
 	 * Get Complete session view details
 	 *
+	 * @param loggedUser -- Logged in user.
 	 * @param session -- Session object
 	 * @return Map of related issues, raised issues and activities
 	 */
-	Map<String, Object> getCompleteSessionView(Session session);
+	Map<String, Object> getCompleteSessionView(String loggedUser, Session session);
 	
 	/**
 	 * Assign session to the assignee. 

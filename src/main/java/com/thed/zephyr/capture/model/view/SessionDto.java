@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.model.view;
 
+import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 
@@ -62,10 +63,12 @@ public class SessionDto {
     private String userLargeAvatarSrc;
     
     private String userDisplayName;
+    
+    private Duration timeLogged;
 
     public SessionDto(LightSession session, boolean isActive, List<ParticipantDto> activeParticipants, Integer activeParticipantCount,
     		Integer issuesRaisedCount, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus, Date timeCompleted, String userAvatarSrc, 
-    		String userLargeAvatarSrc, String userDisplayName) {
+    		String userLargeAvatarSrc, String userDisplayName, Duration timeLogged) {
     	this.id = session.getId();
     	this.name = session.getName();
     	this.status = session.getStatus();
@@ -90,6 +93,7 @@ public class SessionDto {
         this.userAvatarSrc = userAvatarSrc;
         this.userLargeAvatarSrc = userLargeAvatarSrc;
         this.userDisplayName = userDisplayName;
+        this.timeLogged = timeLogged;
     }
 
 	public boolean isActive() {
@@ -195,4 +199,9 @@ public class SessionDto {
 	public String getUserDisplayName() {
 		return userDisplayName;
 	}
+
+	public Duration getTimeLogged() {
+		return timeLogged;
+	}
+	
 }

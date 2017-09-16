@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.service.data.impl;
 
 
 import com.atlassian.core.util.DateUtils;
+import com.atlassian.core.util.InvalidDurationException;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -352,9 +353,9 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public Map<String, Object> getCompleteSessionView(Session session) {
+	public Map<String, Object> getCompleteSessionView(String loggedUser, Session session) {
 		Map<String, Object> map = new HashMap<>();
-		map.put(ApplicationConstants.SESSION,session);
+		map.put(ApplicationConstants.SESSION, constructSessionDto(loggedUser, session, false));
 		List<Long> raisedIssues = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().stream().collect(Collectors.toList()) : new ArrayList<>(0);
 		map.put(ApplicationConstants.RAISED_ISSUE,
 				issueService.getCaptureIssuesByIds(raisedIssues));
@@ -530,13 +531,12 @@ public class SessionServiceImpl implements SessionService {
 	private Long getAndValidateTimeSpent(ErrorCollection errorCollection, String timeSpent) {
         Long millisecondsDuration = 0L;
         if (StringUtils.isNotBlank(timeSpent)) {
-            /*try {
+            try {
                 // Need to multiply by 1000 as jiraDurationUtils returns duration in seconds
-                millisecondsDuration = 1000 * parseDuration(timeSpent);
+            	millisecondsDuration = 1000 * DateUtils.getDuration(timeSpent);
             } catch (InvalidDurationException e) {
                 errorCollection.addError("'{0}' is not a valid format for time.", timeSpent);
-            }*/
-        	millisecondsDuration = 1000 * 1L; //Need to implement the logic
+            }
         }
         return millisecondsDuration;
     }
@@ -1126,11 +1126,13 @@ public class SessionServiceImpl implements SessionService {
 			}
 			
 			return new FullSessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, permissions, estimatedTimeSpent, 
-					i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeFinished());
+					i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, 
+					user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeFinished(), session.getTimeLogged());
 		} else {
 			Integer issusRaisedCount = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().size() : 0;
 			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, estimatedTimeSpent, 
-					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc, userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee());
+					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc, 
+					userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeLogged());
 		}
 	}
 

@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.model.view;
 
+import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 
@@ -19,9 +20,9 @@ public class FullSessionDto extends SessionDto {
     
     public FullSessionDto(LightSession session, boolean isActive, List<CaptureIssue> relatedIssues,List<CaptureIssue> issuesRaised, List<ParticipantDto> activeParticipants,
     		Integer activeParticipantCount, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus,	String userAvatarSrc, 
-    		String userLargeAvatarSrc, String userDisplayName, Date timeCompleted) {
+    		String userLargeAvatarSrc, String userDisplayName, Date timeCompleted, Duration timeLogged) {
     	super(session, isActive, activeParticipants, activeParticipantCount, issuesRaised.size(), permissions, estimatedTimeSpent, prettyStatus, timeCompleted,
-    			userAvatarSrc, userLargeAvatarSrc, userDisplayName);
+    			userAvatarSrc, userLargeAvatarSrc, userDisplayName, timeLogged);
     	this.relatedIssues = relatedIssues;
         this.issuesRaised = issuesRaised;
     }

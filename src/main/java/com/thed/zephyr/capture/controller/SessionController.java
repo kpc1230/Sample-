@@ -384,7 +384,8 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of completeSessionView() --> params " + sessionId);
 		try {
 			Session loadedSession  = validateAndGetSession(sessionId);
-			Map<String, Object> map = sessionService.getCompleteSessionView(loadedSession);
+			String loggedUser = getUser();
+			Map<String, Object> map = sessionService.getCompleteSessionView(loggedUser, loadedSession);
 			log.info("End of completeSessionView()");
 			return ResponseEntity.ok(map);
 		} catch(CaptureValidationException ex) {
