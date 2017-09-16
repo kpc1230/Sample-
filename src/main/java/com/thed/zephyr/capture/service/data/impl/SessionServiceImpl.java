@@ -640,13 +640,8 @@ public class SessionServiceImpl implements SessionService {
         return validateDeactivateSession(session, user, Status.PAUSED, null);
     }
 
-	/**
-	 * Fetches the active session from the cache for the logged in user.
-	 * 
-	 * @param user -- Logged in user key.
-	 * @return -- Returns the SessionResult object which holds the active session and also any validation errors.
-	 */
-	private SessionResult getActiveSession(String user) {
+	@Override
+	public SessionResult getActiveSession(String user) {
 	    String activeSessionId = getActiveSessionIdFromCache(user);
 	    if(Objects.isNull(activeSessionId)) {
 	    	return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);

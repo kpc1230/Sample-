@@ -27,6 +27,7 @@ import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionExtensionResponse;
+import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
@@ -716,6 +717,23 @@ public class SessionController extends CaptureAbstractController{
 			throw ex;
 		} catch(Exception ex) {
 			log.error("Error in cloneSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+	
+	@GetMapping(value = "/user/active", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> getActiveSessionForLoggedInUser() {
+		log.info("Start of getActiveSessionForLoggedInUser()");
+		try {
+			String loggedUsr = getUser();
+			SessionResult sessionResult = sessionService.getActiveSession(loggedUsr);
+			if(!sessionResult.isValid()) {
+				return ResponseEntity.ok().build();
+			}
+			log.info("End of getActiveSessionForLoggedInUser()");
+			return ResponseEntity.ok(sessionResult.getSession());
+		} catch(Exception ex) {
+			log.error("Error in getActiveSessionForLoggedInUser() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
