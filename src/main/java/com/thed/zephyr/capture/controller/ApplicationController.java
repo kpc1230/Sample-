@@ -96,13 +96,14 @@ public class ApplicationController {
     }
 
     @RequestMapping(value = "/public/rest/testing")
-    public String getTestingIssueView(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId, Model model) {
+    public String getTestingIssueView(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId,  @RequestParam String issueKey,Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
         log.debug("Requesting the Testing Issue View page");
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
         model.addAttribute("issueId", issueId);
+        model.addAttribute("issueKey", issueKey);
 
         Locale locale = LocaleContextHolder.getLocale();
         String basename = "i18n/capture-i18n";
