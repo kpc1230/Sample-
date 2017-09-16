@@ -9,6 +9,7 @@ import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.view.NotesFilterStateUI;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -64,6 +65,8 @@ public class NoteController extends CaptureAbstractController {
     private SessionService sessionService;
     @Autowired
     private PermissionService permissionService;
+    @Autowired
+    private SessionActivityService sessionActivityService;
 
     @InitBinder("noteRequest")
     protected void initBinder(WebDataBinder binder) {
@@ -75,11 +78,10 @@ public class NoteController extends CaptureAbstractController {
         log.info("createNote start for the name:" + noteRequest.getNoteData());
         NoteRequest created = null;
         try {
-        /*	Session session = sessionService.getSession(noteSessionActivity.getSessionId());
+        	Session session = sessionService.getSession(noteRequest.getSessionId());
             if (session != null && !permissionService.canCreateNote(getUser(), session)) {
 				throw new CaptureValidationException(i18n.getMessage("note.create.permission.violation"));
-			}*/
-
+			}
             noteRequest.setUser(hostUser.getUserKey().get());
             noteRequest.setCtId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository));
             created = noteService.create(noteRequest);
@@ -135,10 +137,10 @@ public class NoteController extends CaptureAbstractController {
     public ResponseEntity<?> deleteNote(@PathVariable String noteSessionActivityId) throws CaptureValidationException {
         log.info("Delete NoteSessionActivity start for the id:{}", noteSessionActivityId);
         try {
-            /*NoteSessionActivity noteSessionActivity = noteService.getNoteSessionActivity(noteSessionActivityId);
-            if (!permissionService.canEditNote(getUser(), noteSessionActivity.getUser(), noteSessionActivity)) {
+            NoteSessionActivity sessionActivity = (NoteSessionActivity)sessionActivityService.getSessionActivity(noteSessionActivityId);
+            if (!permissionService.canEditNote(getUser(), sessionActivity.getSessionId(),sessionActivity)) {
 				throw new CaptureRuntimeException(i18n.getMessage("note.delete.permission.violation"));
-			}*/
+			}
             noteService.delete(noteSessionActivityId);
         } catch (CaptureValidationException e) {
             throw e;

@@ -43,4 +43,6 @@ public interface SessionActivityService {
     SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignee);
     
     SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator);
+
+    SessionActivity getSessionActivity(String id);
 }
