@@ -257,7 +257,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
     public UpdateResult removeRaisedIssue(String loggedUserKey, Session session, String issueKey) throws CaptureValidationException {
         ErrorCollection errorCollection = new ErrorCollection();
-        Issue issue = issueService.getIssueObject(issueKey);
+        CaptureIssue issue = issueService.getCaptureIssue(issueKey);
         if (Objects.isNull(issue)) {
             throw new CaptureValidationException(i18n.getMessage("session.issue.invalid", new Object[]{issueKey}));
         }
@@ -461,7 +461,7 @@ public class SessionServiceImpl implements SessionService {
             if(Objects.nonNull(session.getIssueRaisedIds())) {
                 for(Long issueId : session.getIssueRaisedIds()) {
                 	try {
-						CaptureIssue issue = issueService.getCaptureIssue(issueId);
+						CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
 						raisedIssues.add(issue);
 					}catch (Exception exption){
 						log.error("Error occured while fetching the issue with id  : "+issueId + " So skipped to add the response",exption);
@@ -1118,14 +1118,14 @@ public class SessionServiceImpl implements SessionService {
 			List<CaptureIssue> relatedIssues = Lists.newArrayList();
 			if(Objects.nonNull(session.getRelatedIssueIds())) {
 				for(Long issueId : session.getRelatedIssueIds()) {
-					CaptureIssue issue = issueService.getCaptureIssue(issueId);
+					CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
 					relatedIssues.add(issue);
 				}
 			}
 			List<CaptureIssue> raisedIssues = Lists.newArrayList();
 			if(Objects.nonNull(session.getIssueRaisedIds())) {
 				for(Long issueId : session.getIssueRaisedIds()) {
-					CaptureIssue issue = issueService.getCaptureIssue(issueId);
+					CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
 					raisedIssues.add(issue);
 				}
 			}

@@ -20,6 +20,6 @@ public class IssueTypeConverter implements DynamoDBTypeConverter<Long, Issue> {
 
     @Override
     public Issue unconvert(Long issueId) {
-        return issueId != null?issueService.getIssueObject(issueId):null;
+        return issueId != null?issueService.getIssueObject(String.valueOf(issueId)):null;
     }
 }

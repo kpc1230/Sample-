@@ -1,7 +1,6 @@
 package com.thed.zephyr.capture.service.impl;
 
 import com.atlassian.jira.rest.client.api.JiraRestClient;
-import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.Permission;
 import com.atlassian.jira.rest.client.api.domain.Permissions;
 import com.atlassian.jira.rest.client.api.domain.Project;
@@ -245,11 +244,11 @@ public class PermissionServiceImpl implements PermissionService {
     public boolean showActivityItem(String user, SessionActivity sessionActivity) {
         if (sessionActivity instanceof IssueAttachmentSessionActivity) {
             Long issueId = ((IssueAttachmentSessionActivity) sessionActivity).getIssueId();
-            CaptureIssue issue = issueService.getCaptureIssue(issueId);
+            CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
             return canSeeIssue(user, issue);
         } else if (sessionActivity instanceof IssueRaisedSessionActivity) {
             Long issueId = ((IssueRaisedSessionActivity) sessionActivity).getIssueId();
-            CaptureIssue issue = issueService.getCaptureIssue(issueId);
+            CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
             return canSeeIssue(user, issue);
         }
 

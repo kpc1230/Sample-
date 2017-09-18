@@ -78,35 +78,19 @@ public class IssueServiceImpl implements IssueService {
     private CaptureI18NMessageSource i18n;
 
 
-    @Override
-    public Issue getIssueObject(Long issueId) {
-    	return jiraRestClient.getIssueClient().getIssue(String.valueOf(issueId)).claim();
-    }
-    
-    @Override
-    public Issue getIssueObject(String issueKey) {
-        return jiraRestClient.getIssueClient().getIssue(issueKey).claim();
+   @Override
+    public Issue getIssueObject(String issueIdOrKey) {
+        return jiraRestClient.getIssueClient().getIssue(issueIdOrKey).claim();
     }
 
     /**
      * Get serialized issue
-     * @param issueId
+     * @param issueIdOrKey
      * @return
      */
-    @Override
-    public CaptureIssue getCaptureIssue(Long issueId) {
-        Issue issue = getIssueObject(issueId);
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        log.debug("ISSUE: --> {}",issue.getSummary());
-        return new CaptureIssue(issue.getSelf(),
-                issue.getKey(),issue.getId(),
-                CaptureUtil.getFullIconUrl(issue,host), issue.getSummary(),issue.getProject().getId(),issue.getProject().getKey(),issue.getReporter().getName());
-    }
-
-    @Override
-    public CaptureIssue getCaptureIssue(String issueKey) {
-        Issue issue = getIssueObject(issueKey);
+     @Override
+    public CaptureIssue getCaptureIssue(String issueIdOrKey) {
+        Issue issue = getIssueObject(issueIdOrKey);
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         log.debug("ISSUE: --> {}",issue.getSummary());
@@ -344,7 +328,7 @@ public class IssueServiceImpl implements IssueService {
 
         ResourceId parentId = issueFields.parent();
         if(parentId != null) {
-            Issue issue = getIssueObject(parentId.id());
+            CaptureIssue issue = getCaptureIssue(parentId.id());
             Map<String, Object> parent = new HashMap<>();
             parent.put("key", issue.getKey());
             FieldInput parentField = new FieldInput("parent", new ComplexIssueInputFieldValue(parent));

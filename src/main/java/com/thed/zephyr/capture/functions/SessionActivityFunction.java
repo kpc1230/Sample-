@@ -34,19 +34,19 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 		Map<String, Object> finalSescionActivityMap = new HashMap<>();
 		if(sessionActivity instanceof IssueRaisedSessionActivity) {
 			IssueRaisedSessionActivity issueRaisedSessionActivity = (IssueRaisedSessionActivity)sessionActivity;
-			captureIssue = issueService.getCaptureIssue(issueRaisedSessionActivity.getIssueId());
+			captureIssue = issueService.getCaptureIssue(String.valueOf(issueRaisedSessionActivity.getIssueId()));
 			addSessionActivityInToMap(finalSescionActivityMap, issueRaisedSessionActivity);
 			addIssueInToMap(finalSescionActivityMap, captureIssue, issueRaisedSessionActivity.getIssueId());
 			return finalSescionActivityMap;
 		} else if(sessionActivity instanceof IssueUnraisedSessionActivity) {
 			IssueUnraisedSessionActivity issueUnraisedSessionActivity = (IssueUnraisedSessionActivity)sessionActivity;
-			captureIssue = issueService.getCaptureIssue(issueUnraisedSessionActivity.getIssueId());
+			captureIssue = issueService.getCaptureIssue(String.valueOf(issueUnraisedSessionActivity.getIssueId()));
 			addSessionActivityInToMap(finalSescionActivityMap, issueUnraisedSessionActivity);
 			addIssueInToMap(finalSescionActivityMap, captureIssue, issueUnraisedSessionActivity.getIssueId());
 			return finalSescionActivityMap;
 		} else if(sessionActivity instanceof IssueAttachmentSessionActivity) {
 			IssueAttachmentSessionActivity issueAttachmentSessionActivity = (IssueAttachmentSessionActivity)sessionActivity;
-			captureIssue = issueService.getCaptureIssue(issueAttachmentSessionActivity.getIssueId());
+			captureIssue = issueService.getCaptureIssue(String.valueOf(issueAttachmentSessionActivity.getIssueId()));
 			addSessionActivityInToMap(finalSescionActivityMap, issueAttachmentSessionActivity);
 			addIssueInToMap(finalSescionActivityMap, captureIssue, issueAttachmentSessionActivity.getIssueId());
 			finalSescionActivityMap.put("attachment", issueAttachmentSessionActivity.getAttachment());

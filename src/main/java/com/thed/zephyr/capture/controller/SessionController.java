@@ -172,7 +172,7 @@ public class SessionController extends CaptureAbstractController{
 		String loggedUser = getUser();
 		issueKeys.forEach(issueKey -> {
 			try {
-				Issue issue = issueService.getIssueObject(issueKey);
+				CaptureIssue issue = issueService.getCaptureIssue(issueKey);
 				if (issue != null) {
 					listOfIssueIds.add(issue.getId());
 				} else {

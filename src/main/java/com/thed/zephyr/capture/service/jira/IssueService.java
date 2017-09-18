@@ -15,13 +15,9 @@ import java.util.List;
  */
 public interface IssueService {
 	
-    Issue getIssueObject(Long issueId);
-    
-    Issue getIssueObject(String issueKey);
-
-    CaptureIssue getCaptureIssue(Long issueId);
-
-    CaptureIssue getCaptureIssue(String issueKey);
+    Issue getIssueObject(String issueIdOrKey);
+   
+    CaptureIssue getCaptureIssue(String issueIdOrKey);
 
     List<CaptureIssue> getCaptureIssuesByIds(List<Long> issueIds);
 
