@@ -11,6 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 /**
  * Created by Masud on 8/17/17.
  */
@@ -41,6 +43,12 @@ public class LicenseServiceImpl implements LicenseService {
         AcHostModel acHostModel = (AcHostModel) host.getHost();
         AddonInfo addonInfo = addonInfoService.getAddonInfo(acHostModel);
         return addonInfo;
+    }
+
+    @Override
+    public Optional<AddonInfo> getAddonInfo(AcHostModel acHostModel) {
+        AddonInfo addonInfo = addonInfoService.getAddonInfo(acHostModel);
+        return Optional.ofNullable(addonInfo);
     }
 
     @Override

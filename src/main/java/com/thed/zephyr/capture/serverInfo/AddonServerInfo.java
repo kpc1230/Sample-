@@ -11,6 +11,11 @@ public class AddonServerInfo {
 
     private String name;
 
+    public AddonServerInfo(String name,String version) {
+        this.version = version;
+        this.name = name;
+    }
+
     public String getVersion() {
         return StringUtils.replace(version, "-g", "-");
     }

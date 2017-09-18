@@ -61,7 +61,7 @@ public class Global {
         if(auth != null) {
             AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
             if (host != null) {
-                return cJiraRestClientFactory.createJiraGetRestClient(host,host.getUserKey());
+                return cJiraRestClientFactory.createJiraGetRestClient(host);
             }
         }
         return null;
@@ -82,7 +82,7 @@ public class Global {
         if(auth != null) {
             AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
             if (host != null) {
-                return cJiraRestClientFactory.createJiraPostRestClient(host,host.getUserKey());
+                return cJiraRestClientFactory.createJiraPostRestClient(host);
             }
         }
         return null;
