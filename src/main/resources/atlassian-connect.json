@@ -238,6 +238,10 @@
       {
         "event": "jira:issue_created",
         "url": "/rest/event/issue/created"
+      },
+      {
+      "event": "jira:issue_updated",
+      "url": "/rest/event/issue/updated"
       }
     ],
     "jiraEntityProperties": [
@@ -315,6 +319,16 @@
                 "objectName": "content",
                 "type": "text",
                 "alias":"captureDocumentMode"
+              }
+            ]
+          },
+          {
+            "propertyKey":"raisedinsession",
+            "extractions": [
+              {
+                "objectName": "content",
+                "type": "STRING",
+                "alias":"raisedInSession"
               }
             ]
           }

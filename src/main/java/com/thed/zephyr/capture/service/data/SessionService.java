@@ -227,8 +227,8 @@ public interface SessionService {
 	void updateSessionWithIssue(String ctId,Long projectId,String user,Long issueId);
 
 	List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<Long> issues);
-	
-	/**
+
+    /**
 	 * Update the additional information into the requested session.
 	 * 
 	 * @param loggedUser -- Logged in user.
@@ -252,10 +252,22 @@ public interface SessionService {
 	 * Fetches the active session from the cache for the logged in user.
 	 * If cache doesn't have any active session for the logged in user then code
 	 * will try fetch any active session in elastic search.
-	 * 
+	 *
 	 * @param user -- Logged in user key.
 	 * @return -- Returns the SessionResult object which holds the active session and also any validation errors.
 	 */
 	SessionResult getActiveSession(String user);
+
+	/**
+	 * Adds the Issue as Raised In for active User
+	 * @param userKey
+	 * @param issueRaisedId
+	 * @param sessionId
+	 */
+	void addRaisedInSession(String userKey, Long issueRaisedId, String sessionId);
+
+	void addUnRaisedInSession(String userKey, String issueKey, Session session);
+
+
 }
 

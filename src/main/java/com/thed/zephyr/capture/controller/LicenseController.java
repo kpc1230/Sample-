@@ -2,11 +2,8 @@ package com.thed.zephyr.capture.controller;
 
 import com.thed.zephyr.capture.model.AddonInfo;
 import com.thed.zephyr.capture.service.data.LicenseService;
-import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;

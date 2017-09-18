@@ -26,13 +26,15 @@ public class CaptureCustomFieldsUtils {
     public static final String CAPTURE_JQUERY_VERSION_NAME = "Capture for JIRA jQuery version";
     public static final String CAPTURE_DOCUMENT_MODE = "Capture for JIRA document mode";
 
-        public static final String ENTITY_CAPTURE_USERAGENT_NAME = "captureUserAgent";
+    public static final String ENTITY_CAPTURE_USERAGENT_NAME = "captureUserAgent";
     public static final String ENTITY_CAPTURE_BROWSER_NAME = "captureBrowserName";
     public static final String ENTITY_CAPTUREE_OS_NAME = "captureOperatingSystem";
     public static final String ENTITY_CAPTURE_URL_NAME = "captureJIRAUrl";
     public static final String ENTITY_CAPTURE_SCREEN_RES_NAME = "captureScreenResolution";
     public static final String ENTITY_CAPTURE_JQUERY_VERSION_NAME = "captureJQueryVersion";
     public static final String ENTITY_CAPTURE_DOCUMENT_MODE = "captureDocumentMode";
+    public static final String ENTITY_CAPTURE_RAISEDIN_NAME = "raisedInSession";
+
 
     // IMPORTANT - if we change the plugin key, this will need to change too.
     public static final String JIRA_TEXT_FIELD_KEY = "com.atlassian.jira.plugin.system.customfieldtypes:textfield";

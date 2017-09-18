@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.jira.impl;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
 import com.thed.zephyr.capture.util.JiraConstants;
@@ -10,6 +11,7 @@ import com.thed.zephyr.capture.util.UserAgentSniffer;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
@@ -20,6 +22,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,6 +31,8 @@ import java.util.Map;
 @Service
 public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssueFieldsService {
 
+    @Autowired
+    private Logger log;
 
     @Autowired
     private JwtSigningRestTemplate restTemplate;
@@ -42,6 +47,8 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
      */
     @Override
     public void populateContextFields(HttpServletRequest req, Issue issue, Map<String, String> context) {
+        log.debug("populateContextFields: issueKey:{}, contextParam:{}", issue.getKey(), context != null ? context.toString() : "");
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String baseUri = host.getHost().getBaseUrl();
@@ -99,7 +106,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                     }
                 }
             } catch(Exception e) {
-                e.printStackTrace();
+                log.error("Error populating Context Parameters", e);
             }
         }
     }
@@ -125,9 +132,49 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error Retrieving Context Parameters", e);
         }
         return StringUtils.EMPTY;
+    }
+
+    @Override
+    public void addRaisedInIssueField(String loggedUser, List<Long> listOfIssueIds, String sessionId) {
+        log.debug("addRaisedInIssueField request from User:{} , SessionId: {}", loggedUser, sessionId);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        String baseUri = host.getHost().getBaseUrl();
+        listOfIssueIds.stream().forEach(issueId -> {
+            String raisedInPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueId + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_RAISEDIN_NAME.toLowerCase().replace(" ", "_");
+            try {
+                StringBuilder sb = new StringBuilder(sessionId);
+                setEntityProperties(sb, baseUri, raisedInPath);
+            } catch (Exception e) {
+                log.error("Error adding RaisedIn Issue to Session:{}", sessionId);
+            }
+        });
+    }
+
+
+    @Override
+    public void removeRaisedIssue(Session loadedSession, String issueKey) {
+        log.debug("removeRaisedIssue request for SessionId: {}", loadedSession.getId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        String baseUrl = host.getHost().getBaseUrl();
+        String raisedInPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueKey + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_RAISEDIN_NAME.toLowerCase().replace(" ", "_");
+        try {
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            URI targetUrl= UriComponentsBuilder.fromUriString(baseUrl)
+                    .path(raisedInPath)
+                    .build()
+                    .encode()
+                    .toUri();
+
+            restTemplate.delete(targetUrl);
+        } catch (Exception e) {
+            log.error("Error adding RaisedIn Issue to Session:{}", loadedSession.getId());
+        }
     }
 
 

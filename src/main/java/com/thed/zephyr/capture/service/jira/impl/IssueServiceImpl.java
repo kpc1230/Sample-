@@ -228,6 +228,9 @@ public class IssueServiceImpl implements IssueService {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {
                 sessionActivityService.addRaisedIssue(session, issue, new Date(issue.getCreationDate().getMillis()),host.getUserKey().get());
+                List<Long> issueIds = new ArrayList<>();
+                issueIds.add(issue.getId());
+                captureContextIssueFieldsService.addRaisedInIssueField(host.getUserKey().get(),issueIds,session.getId());
             }
         }
         return captureIssue;

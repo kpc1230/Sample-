@@ -36,6 +36,7 @@ import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
@@ -97,6 +98,10 @@ public class SessionServiceImpl implements SessionService {
 	private PermissionService permissionService;
 	@Autowired
 	private UserService userService;
+
+	@Autowired
+	private CaptureContextIssueFieldsService captureContextIssueFieldsService;
+
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -1108,7 +1113,7 @@ public class SessionServiceImpl implements SessionService {
 		}
 		
 		String estimatedTimeSpent = formatShortTimeSpent(calculateEstimatedTimeSpentOnSession(session));
-		
+
 		if(isSendFull) {
 			List<CaptureIssue> relatedIssues = Lists.newArrayList();
 			if(Objects.nonNull(session.getRelatedIssueIds())) {
@@ -1124,14 +1129,14 @@ public class SessionServiceImpl implements SessionService {
 					raisedIssues.add(issue);
 				}
 			}
-			
-			return new FullSessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, permissions, estimatedTimeSpent, 
-					i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc, 
-					user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeFinished(), session.getTimeLogged());
-		} else {
-			Integer issusRaisedCount = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().size() : 0;
-			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, estimatedTimeSpent, 
-					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc, 
+
+            return new FullSessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, permissions, estimatedTimeSpent,
+                    i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc,
+                    user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeFinished(), session.getTimeLogged());
+        } else {
+            Integer issusRaisedCount = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().size() : 0;
+			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, estimatedTimeSpent,
+					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc,
 					userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeLogged());
 		}
 	}
@@ -1161,7 +1166,19 @@ public class SessionServiceImpl implements SessionService {
 		sessionESRepository.save(createdSession);
 		return createdSession;
 	}
-	
+
+	@Override
+	public void addRaisedInSession(String userKey, Long issueRaisedId, String sessionId) {
+		List<Long> issueRaisedIdList = new ArrayList<>();
+		issueRaisedIdList.add(issueRaisedId);
+		captureContextIssueFieldsService.addRaisedInIssueField(userKey,issueRaisedIdList,sessionId);
+	}
+
+	@Override
+	public void addUnRaisedInSession(String userKey, String issueKey, Session session) {
+		captureContextIssueFieldsService.removeRaisedIssue(session,issueKey);
+	}
+
 	private String getDecodedUrl(CaptureUser user, String key) {
 		try {
 			return URLDecoder.decode((user.getAvatarUrls().get(key) != null ? user.getAvatarUrls().get(key) : ""), Charset.defaultCharset().name());
@@ -1170,12 +1187,12 @@ public class SessionServiceImpl implements SessionService {
 		}
 		return null;
 	}
-	
+
 	private String formatShortTimeSpent(Duration time) {
         String zeroMinutes = "0m";
         return time == null ? zeroMinutes : StringUtils.defaultIfEmpty(shortFormat(time.getSeconds()), zeroMinutes);
     }
-	
+
 	private String shortFormat(final Long duration) {
         BigDecimal hoursPerDay = BigDecimal.valueOf(24);
         BigDecimal daysPerWeek = BigDecimal.valueOf(7);
@@ -1185,7 +1202,7 @@ public class SessionServiceImpl implements SessionService {
         final int secondsPerWeek = daysPerWeek.multiply(hoursPerDay).multiply(secondsPerHour).intValueExact();
         return DateUtils.getDurationString(duration.longValue(), secondsPerDay, secondsPerWeek);
     }
-	
+
 	private Duration calculateEstimatedTimeSpentOnSession(Session session) {
 		List<SessionActivity> sessionActivityList = sessionActivityService.getAllSessionActivityByPropertyExist(session.getId(), Optional.of("status"));
 		DateTime startTime = null;
