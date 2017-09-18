@@ -201,7 +201,7 @@ public class IssueServiceImpl implements IssueService {
         testingStatus.setNotStartedPercent(notStartedPercent);
         testingStatus.setInProgressPercent(inProgressPercent);
         testingStatus.setCompletePercent(completePercent);
-        testingStatus.setTotalSessions(testingStatus.getTotalSessions());
+        testingStatus.setTotalSessions(testingStatus.getTotalCount());
         testSectionResponse.setTestingStatus(testingStatus);
         return testSectionResponse;
     }

@@ -58,7 +58,7 @@
         "name": {
           "value": "Testing"
         },
-        "url": "/public/rest/testing?projectId={project.id}&issueId={issue.id}",
+        "url": "/testing?projectId={project.id}&issueId={issue.id}",
         "conditions": [
           {
             "condition": "user_is_logged_in",

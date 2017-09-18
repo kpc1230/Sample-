@@ -29,6 +29,7 @@ public class TestingController {
     @Autowired
     private IssueService issueService;
 
+    @Autowired
     private PermissionService permissionService;
 
     @Autowired
@@ -37,14 +38,17 @@ public class TestingController {
 
 
     @GetMapping
-    public ResponseEntity<?> getTestSessionStatus(final @RequestParam(value = "issueKey")  String issueKey) throws CaptureValidationException {
-        log.info("Start of getTestSessionStatus() -> params : issueKey : " + issueKey);
+    public ResponseEntity<?> getTestSessionStatus(final @RequestParam(value = "projectKey")  String projectKey, final @RequestParam(value = "issueId")  String issueId) throws CaptureValidationException {
+        log.info("Start of getTestSessionStatus() -> params : issueId : " + issueId);
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if(Objects.isNull(auth) || !auth.isAuthenticated()) {
                 throw new CaptureRuntimeException(HttpStatus.UNAUTHORIZED.toString(), i18n.getMessage("template.validate.create.cannot.create.issue"));
             }
-            Issue issue = issueService.getIssueObject(issueKey);
+            if(!permissionService.hasBrowsePermission(projectKey)) {
+                throw new CaptureRuntimeException(HttpStatus.UNAUTHORIZED.toString(), i18n.getMessage("template.validate.create.cannot.browse.project"));
+            }
+            Issue issue = issueService.getIssueObject(issueId);
             if(Objects.isNull(issue)) {
                 throw new CaptureValidationException(HttpStatus.BAD_REQUEST.toString(), i18n.getMessage("session.issue.invalid"));
             }
