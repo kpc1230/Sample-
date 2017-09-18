@@ -1,12 +1,8 @@
 package com.thed.zephyr.capture.service;
 
 
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.thed.zephyr.capture.model.LightSession;
-import com.thed.zephyr.capture.model.Note;
-import com.thed.zephyr.capture.model.NoteSessionActivity;
-import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.model.SessionActivity;
+import com.thed.zephyr.capture.model.*;
+import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 
 
@@ -15,11 +11,11 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
  */
 public interface PermissionService {
 
-    boolean hasCreateAttachmentPermission(Issue issue);
+    boolean hasCreateAttachmentPermission(String issueIdOrKey);
 
     boolean hasCreateIssuePermission();
 
-    boolean hasEditIssuePermission(Issue issue);
+    boolean hasEditIssuePermission(String issueIdOrKey);
 
     boolean hasBrowsePermission(String projectKey);
 
@@ -55,12 +51,12 @@ public interface PermissionService {
 
     public boolean canEditSessionStatus(String user, LightSession session);
 
-    public boolean canUnraiseIssueInSession(String user, Issue issue);
+    public boolean canUnraiseIssueInSession(String user, CaptureIssue captureIssue);
 
     /**
      * This will check both the issue security and the projects BROWSE permission
      */
-    public boolean canSeeIssue(String user, Issue issue);
+    public boolean canSeeIssue(String user,CaptureIssue issue);
 
     public boolean canCreateInProject(String user, CaptureProject project);
 

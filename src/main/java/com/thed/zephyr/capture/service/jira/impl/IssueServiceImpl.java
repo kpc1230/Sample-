@@ -101,7 +101,18 @@ public class IssueServiceImpl implements IssueService {
         log.debug("ISSUE: --> {}",issue.getSummary());
         return new CaptureIssue(issue.getSelf(),
                 issue.getKey(),issue.getId(),
-                CaptureUtil.getFullIconUrl(issue,host), issue.getSummary());
+                CaptureUtil.getFullIconUrl(issue,host), issue.getSummary(),issue.getProject().getId(),issue.getProject().getKey(),issue.getReporter().getName());
+    }
+
+    @Override
+    public CaptureIssue getCaptureIssue(String issueKey) {
+        Issue issue = getIssueObject(issueKey);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        log.debug("ISSUE: --> {}",issue.getSummary());
+        return new CaptureIssue(issue.getSelf(),
+                issue.getKey(),issue.getId(),
+                CaptureUtil.getFullIconUrl(issue,host), issue.getSummary(),issue.getProject().getId(),issue.getProject().getKey(),issue.getReporter().getName());
     }
 
     @Override
@@ -117,7 +128,7 @@ public class IssueServiceImpl implements IssueService {
                     .forEach(issue -> {
                         captureIssues.add(new CaptureIssue(issue.getSelf(),
                                 issue.getKey(), issue.getId(),
-                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary()));
+                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(),issue.getProject().getId(),issue.getProject().getKey(),issue.getReporter().getName()));
                     });
             }
             return captureIssues;
@@ -223,7 +234,7 @@ public class IssueServiceImpl implements IssueService {
         //Set Context Params
         captureContextIssueFieldsService.populateContextFields(request, issue, createRequest.getContext());
 
-        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(),basicIssue.getKey(),basicIssue.getId(),CaptureUtil.getFullIconUrl(issue,host),issue.getSummary());
+        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(),basicIssue.getKey(),basicIssue.getId(),CaptureUtil.getFullIconUrl(issue,host),issue.getSummary(),issue.getProject().getId(),issue.getProject().getKey(),issue.getReporter().getName());
         if(StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {

@@ -17,14 +17,20 @@ public class CaptureIssue implements Serializable {
     private final URI self;
     private final String key;
     private final Long id;
+    private final Long projectId;
+    private final String projectKey;
     private final String summary;
+    private final String reporter;
 
-    public CaptureIssue(URI self, String key, Long id,String iconPath,String summary) {
+    public CaptureIssue(URI self, String key, Long id, String iconPath, String summary, Long projectId, String projectKey,String reporter) {
         this.iconPath = iconPath;
         this.self = self;
         this.key = key;
         this.id = id;
         this.summary = summary;
+        this.projectId = projectId;
+        this.projectKey = projectKey;
+        this.reporter = reporter;
     }
 
     public URI getSelf() {
@@ -47,8 +53,19 @@ public class CaptureIssue implements Serializable {
         this.iconPath = iconPath;
     }
 
-	public String getSummary() {
-		return summary;
-	}
+    public String getSummary() {
+        return summary;
+    }
 
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public String getProjectKey() {
+        return projectKey;
+    }
+
+    public String getReporter() {
+        return reporter;
+    }
 }

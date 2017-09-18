@@ -21,6 +21,8 @@ public interface IssueService {
 
     CaptureIssue getCaptureIssue(Long issueId);
 
+    CaptureIssue getCaptureIssue(String issueKey);
+
     List<CaptureIssue> getCaptureIssuesByIds(List<Long> issueIds);
 
     TestSectionResponse getIssueSessionDetails(Issue issue) throws JSONException;

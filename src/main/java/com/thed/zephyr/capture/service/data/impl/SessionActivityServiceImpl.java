@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.data.impl;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.Attachment;
+import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,12 +93,12 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity removeRaisedIssue(Session session, Issue issue, Date timeRaised, String creator) {
+    public SessionActivity removeRaisedIssue(Session session, CaptureIssue captureIssue, Date timeRaised, String creator) {
 
         IssueUnraisedSessionActivity sessionActivity =
                 new IssueUnraisedSessionActivity(session.getId(),
                         session.getCtId(),
-                        timeRaised, creator, session.getProjectId(), issue.getId());
+                        timeRaised, creator, session.getProjectId(), captureIssue.getId());
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }

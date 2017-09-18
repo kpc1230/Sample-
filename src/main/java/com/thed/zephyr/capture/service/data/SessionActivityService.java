@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.data;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.Attachment;
+import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Date;
@@ -24,7 +25,7 @@ public interface SessionActivityService {
 
     SessionActivity addRaisedIssue(Session session, Issue issue, Date timeRaised, String creator);
 
-    SessionActivity removeRaisedIssue(Session session, Issue issue, Date timeRaised, String creator);
+    SessionActivity removeRaisedIssue(Session session, CaptureIssue captureIssue, Date timeRaised, String creator);
 
     SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author);
 

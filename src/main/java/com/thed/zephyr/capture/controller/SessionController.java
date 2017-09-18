@@ -503,8 +503,8 @@ public class SessionController extends CaptureAbstractController{
 			Date dateTime = new Date();
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			Issue issue = issueService.getIssueObject(issueKey);
-			if (issue != null && !permissionService.canUnraiseIssueInSession(loggedUserKey, issue)) {
+			CaptureIssue captureIssue = issueService.getCaptureIssue(issueKey);
+			if (captureIssue != null && !permissionService.canUnraiseIssueInSession(loggedUserKey, captureIssue)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.unraise.permission"));
 			}
 			UpdateResult updateResult = sessionService.removeRaisedIssue(loggedUserKey, loadedSession, issueKey);
@@ -513,7 +513,7 @@ public class SessionController extends CaptureAbstractController{
             }
 			sessionService.update(updateResult);
 			//Save removed raised issue information as activity.
-			sessionActivityService.removeRaisedIssue(loadedSession, issue, dateTime, loggedUserKey);
+			sessionActivityService.removeRaisedIssue(loadedSession, captureIssue, dateTime, loggedUserKey);
 			log.info("End of unraiseIssueSessionRequest()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {
