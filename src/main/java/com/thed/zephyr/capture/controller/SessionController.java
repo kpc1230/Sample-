@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.functions.SessionActivityFunction;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
@@ -151,7 +152,7 @@ public class SessionController extends CaptureAbstractController{
 	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
 	        }
 			log.info("End of createSession()");
-			return ResponseEntity.ok(createdSession);
+			return ResponseEntity.ok(sessionService.constructSessionDto(loggedUserKey, createdSession, false));
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -559,13 +560,14 @@ public class SessionController extends CaptureAbstractController{
 				ErrorCollection errorCollection = new ErrorCollection();
 				errorCollection.addError("Error during getting session activities");
 				return badRequest(errorCollection);
-			}else{
+			} else {
 				NotesFilterStateUI notesFilterStateUI = new NotesFilterStateUI(request);
 				ActivityStreamFilterUI activityStreamFilterUI = new ActivityStreamFilterUI(notesFilterStateUI);
 				sessionActivities =  getSessionActivityItems(sessionActivities,activityStreamFilterUI,getUser());
 			}
+			List<?> finalSessionActivities = sessionActivities.stream().map(new SessionActivityFunction(issueService)).collect(Collectors.toList());
 			log.info("End of sessionActivities()");
-			return ResponseEntity.ok(sessionActivities);
+			return ResponseEntity.ok(finalSessionActivities);
 		} catch(Exception ex) {
 			log.error("Error in sessionActivities() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
