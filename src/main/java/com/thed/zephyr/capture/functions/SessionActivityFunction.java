@@ -49,7 +49,7 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 			captureIssue = issueService.getCaptureIssue(issueAttachmentSessionActivity.getIssueId());
 			addSessionActivityInToMap(finalSescionActivityMap, issueAttachmentSessionActivity);
 			addIssueInToMap(finalSescionActivityMap, captureIssue, issueAttachmentSessionActivity.getIssueId());
-			finalSescionActivityMap.put("finalSescionActivityMap", issueAttachmentSessionActivity.getAttachment());
+			finalSescionActivityMap.put("attachment", issueAttachmentSessionActivity.getAttachment());
 			return finalSescionActivityMap;
 		}
 		return sessionActivity;
