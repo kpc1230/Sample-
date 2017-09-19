@@ -15,9 +15,13 @@ public interface PermissionService {
 
     boolean hasCreateIssuePermission();
 
-    boolean hasEditIssuePermission(String issueIdOrKey);
+    boolean hasEditIssuePermission(String issueKey);
+
+    boolean hasEditIssuePermission(Long issueId);
 
     boolean hasBrowsePermission(String projectKey);
+
+    boolean hasBrowsePermission(Long projectId);
 
     public boolean isSysadmin(String user);
 

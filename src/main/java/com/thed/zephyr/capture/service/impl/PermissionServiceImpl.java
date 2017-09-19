@@ -3,7 +3,6 @@ package com.thed.zephyr.capture.service.impl;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.Permission;
 import com.atlassian.jira.rest.client.api.domain.Permissions;
-import com.atlassian.jira.rest.client.api.domain.Project;
 import com.atlassian.jira.rest.client.api.domain.input.MyPermissionsInput;
 import com.google.common.collect.Iterables;
 import com.thed.zephyr.capture.model.*;
@@ -44,54 +43,26 @@ public class PermissionServiceImpl implements PermissionService {
     @Autowired
     private IssueService issueService;
 
-    private Permissions getPermissionForIssue(String issueIdOrKey) {
-        MyPermissionsInput myPermissionsInput = new MyPermissionsInput(null, null, issueIdOrKey, null);
+    private Permissions getPermissionForIssue(Long issueId, String issueKey) {
+        MyPermissionsInput myPermissionsInput = new MyPermissionsInput(null, null, issueKey, issueId != null ? issueId.intValue() : null);
         Permissions permissions = jiraRestClient.getMyPermissionsRestClient().getMyPermissions(myPermissionsInput).claim();
         return permissions;
     }
 
-    private Permissions getPermissionForProject(String projectIdOrKey) {
-        MyPermissionsInput myPermissionsInput = new MyPermissionsInput(projectIdOrKey, null, null, null);
+    private Permissions getPermissionForProject(Long projectId, String projectKey) {
+        MyPermissionsInput myPermissionsInput = new MyPermissionsInput(projectKey, projectId != null ? projectId.intValue() : null, null, null);
         Permissions permissions = jiraRestClient.getMyPermissionsRestClient().getMyPermissions(myPermissionsInput).claim();
         return permissions;
     }
 
-    private Permissions getAllUserPermissions() {
-        MyPermissionsInput myPermissionsInput = new MyPermissionsInput(null, null, null, null);
-        Permissions permissions = jiraRestClient.getMyPermissionsRestClient().getMyPermissions(myPermissionsInput).claim();
-        return permissions;
-    }
+    private boolean checkPermissionForType(Long projectId, String projectKey, Long issueId, String issueKey, String permissionType) {
 
-    @Override
-    public boolean hasCreateAttachmentPermission(String issueIdOrKey) {
-        if (checkPermissionForType(null, issueIdOrKey, ApplicationConstants.CREATE_ATTACHMENT_PERMISSION)) return true;
-        return false;
-    }
-
-    @Override
-    public boolean hasCreateIssuePermission() {
-        if (checkPermissionForType(null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION)) return true;
-        return false;
-    }
-
-    @Override
-    public boolean hasEditIssuePermission(String issueIdOrKey) {
-        if (checkPermissionForType(null, issueIdOrKey, ApplicationConstants.EDIT_ISSUE_PERMISSION)) return true;
-        return false;
-    }
-
-    @Override
-    public boolean hasBrowsePermission(String projectKey) {
-        if (checkPermissionForType(projectKey, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION)) return true;
-        return false;
-    }
-
-    private boolean checkPermissionForType(String projectIdOrKey, String issueIdOrKey, String permissionType) {
         Permissions permissions;
-        if (StringUtils.isNotBlank(projectIdOrKey)) {
-            permissions = getPermissionForProject(projectIdOrKey);
-        } else if (issueIdOrKey != null) {
-            permissions = getPermissionForIssue(issueIdOrKey);
+
+        if (StringUtils.isNotBlank(projectKey) || null != projectId) {
+            permissions = getPermissionForProject(projectId, projectKey);
+        } else if (StringUtils.isNotBlank(issueKey) || null != issueId) {
+            permissions = getPermissionForIssue(issueId, issueKey);
         } else {
             permissions = getAllUserPermissions();
         }
@@ -103,42 +74,90 @@ public class PermissionServiceImpl implements PermissionService {
         return false;
     }
 
+    private Permissions getAllUserPermissions() {
+        MyPermissionsInput myPermissionsInput = new MyPermissionsInput(null, null, null, null);
+        Permissions permissions = jiraRestClient.getMyPermissionsRestClient().getMyPermissions(myPermissionsInput).claim();
+        return permissions;
+    }
+
+    @Override
+    public boolean hasCreateAttachmentPermission(String issueIdOrKey) {
+        if (checkPermissionForType(null, null, null, issueIdOrKey, ApplicationConstants.CREATE_ATTACHMENT_PERMISSION))
+            return true;
+        return false;
+    }
+
+    @Override
+    public boolean hasCreateIssuePermission() {
+        if (checkPermissionForType(null, null, null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION)) return true;
+        return false;
+    }
+
+    @Override
+    public boolean hasEditIssuePermission(String issueIdOrKey) {
+        if (checkPermissionForType(null, null, null, issueIdOrKey, ApplicationConstants.EDIT_ISSUE_PERMISSION))
+            return true;
+        return false;
+    }
+
+    @Override
+    public boolean hasEditIssuePermission(Long issueId) {
+        if (checkPermissionForType(null, null, issueId, null, ApplicationConstants.EDIT_ISSUE_PERMISSION)) return true;
+        return false;
+    }
+
+    @Override
+    public boolean hasBrowsePermission(String projectKey) {
+        if (checkPermissionForType(null, projectKey, null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION))
+            return true;
+        return false;
+    }
+
+    @Override
+    public boolean hasBrowsePermission(Long projectId) {
+        if (checkPermissionForType(projectId, null, null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION))
+            return true;
+        return false;
+    }
 
     @Override
     public boolean isSysadmin(String user) {
-        if (checkPermissionForType(null, null, ApplicationConstants.SYSTEM_ADMIN)) return true;
+        if (checkPermissionForType(null, null, null, null, ApplicationConstants.SYSTEM_ADMIN)) return true;
         return false;
     }
 
     @Override
     public boolean canCreateSession(String user, CaptureProject project) {
-        if (checkPermissionForType(project.getKey(), null, ApplicationConstants.ASSIGNABLE_USER)) return true;
+        if (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.ASSIGNABLE_USER))
+            return true;
         return false;
     }
 
     @Override
     public boolean canBeAssignedSession(String user, CaptureProject project) {
-        if (checkPermissionForType(project.getKey(), null, ApplicationConstants.ASSIGNABLE_USER)) return true;
+        if (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.ASSIGNABLE_USER))
+            return true;
         return false;
     }
 
     @Override
     public boolean canAssignSession(String user, CaptureProject project) {
-        if (checkPermissionForType(project.getKey(), null, ApplicationConstants.ASSIGNABLE_USER)) return true;
+        if (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.ASSIGNABLE_USER))
+            return true;
         return false;
     }
 
     @Override
     public boolean canJoinSession(String user, Session session) {
         return !session.getAssignee().equals(user) && session.isShared()
-                && (checkPermissionForType(projectService.getCaptureProject(session.getProjectId()).getKey(), null, ApplicationConstants.ASSIGNABLE_USER))
+                && (checkPermissionForType(session.getProjectId(), null, null, null, ApplicationConstants.ASSIGNABLE_USER))
                 && session.getStatus().equals(Session.Status.STARTED);
     }
 
     @Override
     public boolean canJoinSession(String user, LightSession session) {
         CaptureProject project = session.getProject();
-        return project != null ? (checkPermissionForType(project.getKey(), null, ApplicationConstants.ASSIGNABLE_USER)) : false;
+        return project != null ? (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.ASSIGNABLE_USER)) : false;
     }
 
     @Override
@@ -200,13 +219,13 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canEditSession(String user, Session session) {
-        return checkPermissionForType(projectService.getCaptureProject(session.getProjectId()).getKey(), null, ApplicationConstants.PROJECT_ADMIN)
+        return checkPermissionForType(session.getProjectId(), null, null, null, ApplicationConstants.PROJECT_ADMIN)
                 || session.getAssignee().equals(user) || session.getCreator().equals(user);
     }
 
     @Override
     public boolean canEditLightSession(String user, LightSession session) {
-        return checkPermissionForType(session.getProject().getKey(), null, ApplicationConstants.PROJECT_ADMIN)
+        return checkPermissionForType(null, session.getProject().getKey(), null, null, ApplicationConstants.PROJECT_ADMIN)
                 || session.getAssignee().equals(user) || session.getCreator().equals(user);
     }
 
@@ -223,20 +242,20 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public boolean canUnraiseIssueInSession(String user, CaptureIssue issue) {
         boolean isReporter = isReporter(issue, user);
-        boolean isAssignableUser = checkPermissionForType(issue.getProjectKey(), null, ApplicationConstants.ASSIGNABLE_USER);
-        boolean isProjectAdmin = checkPermissionForType(issue.getProjectKey(), null, ApplicationConstants.PROJECT_ADMIN);
+        boolean isAssignableUser = checkPermissionForType(null, issue.getProjectKey(), null, null, ApplicationConstants.ASSIGNABLE_USER);
+        boolean isProjectAdmin = checkPermissionForType(null, issue.getProjectKey(), null, null, ApplicationConstants.PROJECT_ADMIN);
         return isReporter || isAssignableUser || isProjectAdmin;
     }
 
     @Override
     public boolean canSeeIssue(String user, CaptureIssue issue) {
-        boolean canSeeIssue = checkPermissionForType(issue.getProjectKey(), null, ApplicationConstants.BROWSE_PROJECT_PERMISSION);
+        boolean canSeeIssue = checkPermissionForType(null, issue.getProjectKey(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION);
         return canSeeIssue;
     }
 
     @Override
     public boolean canCreateInProject(String user, CaptureProject project) {
-        boolean canCreate = checkPermissionForType(project.getKey(), null, ApplicationConstants.BROWSE_PROJECT_PERMISSION);
+        boolean canCreate = checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION);
         return canCreate;
     }
 
@@ -261,15 +280,14 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canSeeRelatedProject = checkPermissionForType(project.getKey(), null, ApplicationConstants.BROWSE_PROJECT_PERMISSION);
+        boolean canSeeRelatedProject = checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION);
 
         return canSeeRelatedProject;
     }
 
     @Override
     public boolean canSeeSession(String user, LightSession session) {
-        CaptureProject project = session.getProject();
-        boolean canSeeRelatedProject = checkPermissionForType(project.getKey(), null, ApplicationConstants.BROWSE_PROJECT_PERMISSION);
+        boolean canSeeRelatedProject = checkPermissionForType(null, session.getProject().getKey(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION);
         return canSeeRelatedProject;
     }
 
@@ -278,7 +296,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canCreate = (checkPermissionForType(project.getKey(), null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
+        boolean canCreate = (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
         return canCreate;
     }
 
@@ -287,7 +305,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canEdit = (checkPermissionForType(project.getKey(), null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
+        boolean canEdit = (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
         return canEdit;
     }
 
@@ -301,9 +319,10 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canUse = (checkPermissionForType(project.getKey(), null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
+        boolean canUse = (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION));
         return canUse;
     }
+
     private boolean isReporter(CaptureIssue issue, String user) {
         return user.equals(issue.getReporter());
     }
