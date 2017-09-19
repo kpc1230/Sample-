@@ -154,5 +154,8 @@ public class ApplicationConstants {
     public static final String PERMISSION_CACHE_KEY_PREFIX = "permission-";
     /** Project cache const **/
     public static final String PROJECT_CACHE_KEY_PREFIX = "project-";
+    
+    
+    public static final String SESSION_LOCK_KEY = "session_";
 
 }

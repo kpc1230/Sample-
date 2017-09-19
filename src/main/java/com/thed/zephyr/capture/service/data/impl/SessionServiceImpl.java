@@ -708,9 +708,9 @@ public class SessionServiceImpl implements SessionService {
 		String cacheKey = TENANT_KEY + ctID + USER_KEY + user;
 		Object value = iTenantAwareCache.get(cacheKey);
 		if(Objects.isNull(value )) { //second condition to fetch the active session id from elasticsearch in case cache doesn't have or crashed.
-			Session activeSession = sessionESRepository.findByCtIdAndStatusAndAssignee(ctID, Status.STARTED.name(), user);
-			if(Objects.nonNull(activeSession))
-				return activeSession.getId();
+			List<Session> activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(ctID, Status.STARTED.name(), user);
+			if(Objects.nonNull(activeSessions) && activeSessions.size() > 0)
+				return activeSessions.get(0).getId();
 			else
 				return null;
 		}

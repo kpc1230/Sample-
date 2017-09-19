@@ -12,8 +12,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.exception.model.ErrorDto;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.ErrorCollection;
 import com.thed.zephyr.capture.model.Session;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 
@@ -30,6 +32,9 @@ public abstract class CaptureAbstractController {
 	
 	@Autowired
 	protected SessionService sessionService;
+	
+	@Autowired
+	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
 
 	/**
 	 * Fetches the user key from the authentication object.
@@ -74,4 +79,10 @@ public abstract class CaptureAbstractController {
 	protected ResponseEntity<List<ErrorDto>> badRequest(ErrorCollection errorCollection) {		
 		return ResponseEntity.badRequest().body(errorCollection.toErrorDto());
 	}
+	
+	public AcHostModel getAcHostModel() {
+        AtlassianHostUser atlassianHostUser = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        AcHostModel acHostModel = (AcHostModel) dynamoDBAcHostRepository.findOne(atlassianHostUser.getHost().getClientKey());
+        return acHostModel;
+    }
 }

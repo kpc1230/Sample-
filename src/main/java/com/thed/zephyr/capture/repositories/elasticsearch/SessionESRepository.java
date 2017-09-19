@@ -1,6 +1,9 @@
 package com.thed.zephyr.capture.repositories.elasticsearch;
 
 import com.thed.zephyr.capture.model.Session;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
@@ -22,7 +25,7 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
 
     Page<Session> findByCtIdAndProjectIdAndStatusAndParticipants(String ctId,Long projectId, String status, String participants,Pageable pageable);
     
-    Session findByCtIdAndStatusAndAssignee(String ctId, String status, String assignee);
+    List<Session> findByCtIdAndStatusAndAssignee(String ctId, String status, String assignee);
 
     long countByCtId(String ctId);
 }
