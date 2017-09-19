@@ -876,18 +876,20 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@GetMapping(value = "/user/active", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> getActiveSessionForLoggedInUser() {
-		log.info("Start of getActiveSessionForLoggedInUser()");
+	public ResponseEntity<?> getActiveSessionUser(@RequestParam String userKey) {
+		log.info("Start of getActiveSessionUser()");
 		try {
-			String loggedUsr = getUser();
-			SessionResult sessionResult = sessionService.getActiveSession(loggedUsr);
+			if(StringUtils.isBlank(userKey)) {
+				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userKey}));
+			}
+			SessionResult sessionResult = sessionService.getActiveSession(userKey);
 			if(!sessionResult.isValid()) {
 				return ResponseEntity.ok().build();
 			}
-			log.info("End of getActiveSessionForLoggedInUser()");
+			log.info("End of getActiveSessionUser()");
 			return ResponseEntity.ok(sessionResult.getSession());
 		} catch(Exception ex) {
-			log.error("Error in getActiveSessionForLoggedInUser() -> ", ex);
+			log.error("Error in getActiveSessionUser() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
