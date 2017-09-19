@@ -3,10 +3,10 @@ package com.thed.zephyr.capture.service.jira.impl;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
-import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CustomField;
 import com.thed.zephyr.capture.model.jira.FieldOption;
 import com.thed.zephyr.capture.service.jira.IssueTypeService;
@@ -22,7 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.thed.zephyr.capture.util.ApplicationConstants.*;
 
@@ -45,14 +48,14 @@ public class MetadataServiceImpl implements MetadataService {
     private UserService userService;
 
     @Override
-    public Map<String, Object> createFieldScreenRenderer(Project project) {
+    public Map<String, Object> createFieldScreenRenderer(CaptureProject captureProject) {
         Map<String, Object> resultMap = new HashMap<>();
 
         List<Map<String, Object>> fieldMap = new ArrayList<>();
         Map<String, Object> fieldValueMap = new HashMap<>();
 
 
-        List<IssueType> issueTypes = issueTypeService.getIssueTypesByProject(project.getId());
+        List<IssueType> issueTypes = issueTypeService.getIssueTypesByProject(captureProject.getId());
         List<Long> issueTypeIds = new ArrayList<>();
         issueTypes.forEach(issueType -> {
             issueTypeIds.add(issueType.getId());
@@ -62,7 +65,7 @@ public class MetadataServiceImpl implements MetadataService {
         String uri = host.getHost().getBaseUrl();
         URI targetUrl= UriComponentsBuilder.fromUriString(uri)
                 .path(JiraConstants.REST_API_CREATE_ISSUE_SCHEMA)
-                .queryParam("projectIds", project.getId())
+                .queryParam("projectIds", captureProject.getId())
                 .queryParam("issuetypeIds", issueTypeIds.toArray())
                 .queryParam("expand","projects.issuetypes.fields")
                 .build()
@@ -124,7 +127,7 @@ public class MetadataServiceImpl implements MetadataService {
                 }
             }
 
-            JsonNode userNode = userService.getAssignableUserByProjectKey(project.getKey());
+            JsonNode userNode = userService.getAssignableUserByProjectKey(captureProject.getKey());
             List<FieldOption> userBeans = new ArrayList<>();
             userNode.forEach(jsonNode1 -> {
 //                ObjectNode objectNode = new ObjectMapper().createObjectNode();

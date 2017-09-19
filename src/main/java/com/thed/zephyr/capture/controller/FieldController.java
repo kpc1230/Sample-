@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Project;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import org.slf4j.Logger;
@@ -33,7 +34,7 @@ public class FieldController {
     @RequestMapping(value = "/{projectKey}", method = RequestMethod.GET)
     public Map<String, Object> getMetadataForProject(@PathVariable String projectKey,
                                                      @AuthenticationPrincipal AtlassianHostUser hostUser){
-        Project project = projectService.getProjectObjByKey(projectKey);
+        CaptureProject project = projectService.getCaptureProject(projectKey);
         log.debug("Project: {}", project.getName());
         return metadataService.createFieldScreenRenderer(project);
     }

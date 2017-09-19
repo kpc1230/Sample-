@@ -1,7 +1,7 @@
 package com.thed.zephyr.capture.validator;
 
-import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.model.TemplateRequest;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -31,7 +31,7 @@ public class TemplateValidator implements Validator {
 	public void validate(Object obj, Errors errors) {
 		if(obj instanceof TemplateRequest){
 			TemplateRequest templateReq = (TemplateRequest) obj;
-			Project project = projectService.getProjectObj(templateReq.getProjectId());
+			CaptureProject project = projectService.getCaptureProject(templateReq.getProjectId());
 			if(Objects.isNull(project)) {
 				errors.rejectValue(TemplateRequest.FIELD_PROJECTID, "", "Project is not valid");
 			} else {

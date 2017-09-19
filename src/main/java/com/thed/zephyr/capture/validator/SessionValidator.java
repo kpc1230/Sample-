@@ -4,6 +4,7 @@ import com.atlassian.jira.rest.client.api.domain.Project;
 import com.google.common.collect.Maps;
 import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
@@ -54,7 +55,7 @@ public class SessionValidator implements Validator {
 			if(Objects.isNull(sessionRequest.getProjectKey())) {
 				errors.reject("", i18n.getMessage("session.project.key.needed"));
 			}
-			Project project = projectService.getProjectObjByKey(sessionRequest.getProjectKey()); //checking whether the project key is valid or not.
+			CaptureProject project = projectService.getCaptureProject(sessionRequest.getProjectKey()); //checking whether the project key is valid or not.
 			if(Objects.isNull(project)) {
 				errors.reject("", i18n.getMessage("session.project.key.invalid", new Object[]{sessionRequest.getProjectKey()}));
 			} else {

@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.service.jira;
 
 
 import com.atlassian.jira.rest.client.api.domain.Project;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
 
 import java.util.Map;
 
@@ -10,5 +11,5 @@ import java.util.Map;
  */
 public interface MetadataService {
 
-    Map<String, Object> createFieldScreenRenderer(Project project);
+    Map<String, Object> createFieldScreenRenderer(CaptureProject captureProject);
 }

@@ -15,5 +15,6 @@ public interface ProjectService {
     Project getProjectObjByKey(String projectKey);
     ArrayList<BasicProject> getProjects();
     CaptureProject getCaptureProject(Long projectId);
+    CaptureProject getCaptureProject(String projectKey);
 
 }

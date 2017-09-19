@@ -131,7 +131,7 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public boolean canJoinSession(String user, Session session) {
         return !session.getAssignee().equals(user) && session.isShared()
-                && (checkPermissionForType(projectService.getProjectObj(session.getProjectId()).getKey(), null, ApplicationConstants.ASSIGNABLE_USER))
+                && (checkPermissionForType(projectService.getCaptureProject(session.getProjectId()).getKey(), null, ApplicationConstants.ASSIGNABLE_USER))
                 && session.getStatus().equals(Session.Status.STARTED);
     }
 
@@ -200,7 +200,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canEditSession(String user, Session session) {
-        return checkPermissionForType(projectService.getProjectObj(session.getProjectId()).getKey(), null, ApplicationConstants.PROJECT_ADMIN)
+        return checkPermissionForType(projectService.getCaptureProject(session.getProjectId()).getKey(), null, ApplicationConstants.PROJECT_ADMIN)
                 || session.getAssignee().equals(user) || session.getCreator().equals(user);
     }
 
@@ -257,7 +257,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canSeeSession(String user, Session session) {
-        Project project = projectService.getProjectObj(session.getProjectId());
+        CaptureProject project = projectService.getCaptureProject(session.getProjectId());
         if (project == null) {
             return false;
         }

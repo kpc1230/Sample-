@@ -46,7 +46,12 @@ public class ProjectServiceImpl implements ProjectService {
      */
     @Override
     public CaptureProject getCaptureProject(Long projectId) {
-        Project project = getProjectObj(projectId);
+       return getCaptureProject(String.valueOf(projectId));
+    }
+
+    @Override
+    public CaptureProject getCaptureProject(String projectKey) {
+        Project project = getProjectObjByKey(projectKey);
         log.debug("PROJECT: --> {}",project.getName());
         return new CaptureProject(project.getSelf(),
                 project.getKey(),project.getId(),
