@@ -240,8 +240,20 @@
         "url": "/rest/event/issue/created"
       },
       {
-      "event": "jira:issue_updated",
-      "url": "/rest/event/issue/updated"
+        "event": "jira:issue_updated",
+        "url": "/rest/event/issue/updated"
+      },
+      {
+        "event": "jira:issue_deleted",
+        "url": "/rest/event/issue/deleted"
+      },
+      {
+        "event": "project_deleted",
+        "url": "/rest/event/project/deleted"
+      },
+      {
+        "event": "project_updated",
+        "url": "/rest/event/project/updated"
       }
     ],
     "jiraEntityProperties": [

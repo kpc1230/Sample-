@@ -68,7 +68,6 @@ public class ProjectServiceImpl implements ProjectService {
         try {
             captureProject = tenantAwareCache.getOrElse(acHostModel, buildProjectCacheKey(projectIdOrKey), new Callable<CaptureProject>() {
                 Project project = getProjectObjByKey(projectIdOrKey);
-
                 @Override
                 public CaptureProject call() throws Exception {
                     return new CaptureProject(project.getSelf(),

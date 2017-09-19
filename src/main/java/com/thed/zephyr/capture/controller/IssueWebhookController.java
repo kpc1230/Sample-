@@ -161,8 +161,12 @@ public class IssueWebhookController {
                         }
                         //Delete the cache
                         Long issueId = issueNode.get("id").asLong();
+                        String issueKey = issueNode.get("id").asText();
                         if (null != issueNode && null != issueId) {
                             tenantAwareCache.delete(acHostModel, ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + String.valueOf(issueId));
+                        }
+                        if (null != issueNode && null != issueKey) {
+                            tenantAwareCache.delete(acHostModel, ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + issueKey);
                         }
 
                     } catch (Exception e) {
@@ -191,8 +195,12 @@ public class IssueWebhookController {
             if (null != deletedIssueJson && deletedIssueJson.has("issue")) {
                 JsonNode issueNode = deletedIssueJson.get("issue");
                 Long issueId = issueNode.get("id").asLong();
-                if (issueId != null) {
+                String issueKey = issueNode.get("id").asText();
+                if (null != issueId) {
                     tenantAwareCache.delete(acHostModel, ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + String.valueOf(issueId));
+                }
+                if (null != issueKey) {
+                    tenantAwareCache.delete(acHostModel, ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + issueKey);
                 }
 
             } else {

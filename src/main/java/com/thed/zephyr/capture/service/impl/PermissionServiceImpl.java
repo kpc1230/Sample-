@@ -200,7 +200,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canEditSession(String user, Session session) {
-        return checkPermissionForType(projectService.getCaptureProject(session.getProjectId()).getKey(), null, ApplicationConstants.PROJECT_ADMIN)
+        return checkPermissionForType(String.valueOf(session.getProjectId()), null, ApplicationConstants.PROJECT_ADMIN)
                 || session.getAssignee().equals(user) || session.getCreator().equals(user);
     }
 
