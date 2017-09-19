@@ -57,7 +57,7 @@ import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 /**
@@ -71,8 +71,6 @@ import java.util.stream.Collectors;
 public class SessionServiceImpl implements SessionService {
 
 	private static final String USER_KEY = "USER_KEY_";
-
-	private static final String TENANT_KEY = "TENANT_KEY_";
 	
 	@Autowired
     private Logger log;
@@ -668,16 +666,11 @@ public class SessionServiceImpl implements SessionService {
 	 * @param user -- Logged in user key.
 	 */
 	private void clearActiveSessionFromCache(String user) {
-		String ctID = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		String cacheKey = TENANT_KEY + ctID + USER_KEY + user;
-		try {
-			if(!iTenantAwareCache.delete(cacheKey)) {
-				throw new CaptureRuntimeException("Not able to delete the cache for user key -> " + cacheKey);
-			} 
-		} catch (ExecutionException | InterruptedException e) {
-			log.error("Error while deleting the cache for user key -> " + user);
-			throw new CaptureRuntimeException(e);
-		}
+		AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
+		String cacheKey = USER_KEY + user;
+		if(!iTenantAwareCache.delete(acHostModel, cacheKey)) {
+			throw new CaptureRuntimeException("Not able to delete the cache for user key -> " + cacheKey);
+		} 
 	}
 	
 	/**
@@ -687,14 +680,9 @@ public class SessionServiceImpl implements SessionService {
 	 * @param sessionId -- Session id to be saved into cache for the logged in user.
 	 */
 	private void setActiveSessionIdToCache(String user, String sessionId) {
-		String ctID = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		String cacheKey = TENANT_KEY + ctID + USER_KEY + user;
-		try {
-			iTenantAwareCache.add(cacheKey, -1, sessionId); 
-		} catch (ExecutionException | InterruptedException e) {
-			log.error("Error while deleting the cache for user key -> " + user);
-			throw new CaptureRuntimeException(e);
-		}
+		AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
+		String cacheKey = USER_KEY + user;
+		iTenantAwareCache.set(acHostModel, cacheKey, sessionId);
 	}
 	
 	/**
@@ -704,17 +692,23 @@ public class SessionServiceImpl implements SessionService {
 	 * @return -- Returns the fetched session id from the cache for the loggedin user.
 	 */
 	private String getActiveSessionIdFromCache(String user) {
-		String ctID = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		String cacheKey = TENANT_KEY + ctID + USER_KEY + user;
-		Object value = iTenantAwareCache.get(cacheKey);
-		if(Objects.isNull(value )) { //second condition to fetch the active session id from elasticsearch in case cache doesn't have or crashed.
-			List<Session> activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(ctID, Status.STARTED.name(), user);
-			if(Objects.nonNull(activeSessions) && activeSessions.size() > 0)
-				return activeSessions.get(0).getId();
-			else
-				return null;
+		AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
+		String cacheKey = USER_KEY + user;
+		String value = null;
+		try {
+			value = iTenantAwareCache.getOrElse(acHostModel, cacheKey, new Callable<String>() {
+				public String call() throws Exception {
+					List<Session> activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), Status.STARTED.name(), user);
+					if(Objects.nonNull(activeSessions) && activeSessions.size() > 0)
+						return activeSessions.get(0).getId();
+					else
+						return null;
+				}				
+			}, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		return (String) value;
+		return value;
 	}
 	
 	/**
