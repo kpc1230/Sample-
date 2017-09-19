@@ -7,6 +7,7 @@ import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldVal
 import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.jira.CaptureEnvironment;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
@@ -14,6 +15,7 @@ import com.thed.zephyr.capture.model.jira.TestSectionResponse;
 import com.thed.zephyr.capture.model.jira.TestingStatus;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
@@ -21,10 +23,7 @@ import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.service.jira.issue.IssueFields;
 import com.thed.zephyr.capture.service.jira.issue.ResourceId;
-import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
-import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
-import com.thed.zephyr.capture.util.CaptureUtil;
-import com.thed.zephyr.capture.util.JiraConstants;
+import com.thed.zephyr.capture.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.joda.time.DateTime;
@@ -40,6 +39,7 @@ import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -77,6 +77,9 @@ public class IssueServiceImpl implements IssueService {
     @Autowired
     private CaptureI18NMessageSource i18n;
 
+    @Autowired
+    private ITenantAwareCache tenantAwareCache;
+
 
    @Override
     public Issue getIssueObject(String issueIdOrKey) {
@@ -90,13 +93,25 @@ public class IssueServiceImpl implements IssueService {
      */
      @Override
     public CaptureIssue getCaptureIssue(String issueIdOrKey) {
-        Issue issue = getIssueObject(issueIdOrKey);
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        log.debug("ISSUE: --> {}",issue.getSummary());
-        return new CaptureIssue(issue.getSelf(),
-                issue.getKey(),issue.getId(),
-                CaptureUtil.getFullIconUrl(issue,host), issue.getSummary(),issue.getProject().getId(),issue.getProject().getKey(),issue.getReporter().getName());
+         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+         AcHostModel acHostModel = (AcHostModel) host.getHost();
+         CaptureIssue captureIssue = null;
+         try {
+             captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKey(issueIdOrKey), new Callable<CaptureIssue>() {
+                 @Override
+                 public CaptureIssue call() throws Exception {
+                     Issue issue = getIssueObject(issueIdOrKey);
+                     return new CaptureIssue(issue.getSelf(),
+                             issue.getKey(), issue.getId(),
+                             CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName());
+                 }
+             }, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION);
+         } catch (Exception exp) {
+             log.error("Exception while getting the issue from JIRA." + exp.getMessage(), exp);
+         }
+         log.debug("ISSUE: --> {}", captureIssue.getSummary());
+         return captureIssue;
     }
 
     @Override
@@ -336,6 +351,10 @@ public class IssueServiceImpl implements IssueService {
         }
 
         return issueInputBuilder.build();
+    }
+
+    private String buildIssueCacheKey(String issueIdOrKey){
+         return ApplicationConstants.ISSUE_CACHE_KEY_PREFIX+issueIdOrKey;
     }
 
 }

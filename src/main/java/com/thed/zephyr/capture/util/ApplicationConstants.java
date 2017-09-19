@@ -142,5 +142,17 @@ public class ApplicationConstants {
     public static final String PING_HOME_URL = "app.dial.home.url";
     public static final String PING_HOME_VERSION_CHECK_URL = "https://version.yourzephyr.com/capture_version_check.php";
 
+    public static final int DEFAULT_CACHE_EXPIRATION = 60; //in Seconds
+    public static final int MEDIUM_CACHE_EXPIRATION = 180; //in Seconds
+    public static final int FIVE_MIN_CACHE_EXPIRATION = 300; //in Seconds
+    public static final int FOUR_HOUR_CACHE_EXPIRATION = 4*60*60; //in Seconds
+    public static final int MAX_CACHE_EXPIRATION = 259200; //in seconds (3 days)
+
+    /** Issue cache const **/
+    public static final String ISSUE_CACHE_KEY_PREFIX = "issue-";
+    /** Permission cache const **/
+    public static final String PERMISSION_CACHE_KEY_PREFIX = "permission-";
+    /** Project cache const **/
+    public static final String PROJECT_CACHE_KEY_PREFIX = "project-";
 
 }

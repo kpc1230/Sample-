@@ -14,10 +14,12 @@ import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
 import com.thed.zephyr.capture.service.PermissionService;
+import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.jira.IssueService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import org.apache.commons.lang3.StringUtils;
@@ -59,10 +61,13 @@ public class IssueWebhookController {
     @Autowired
     private IssueService issueService;
 
+    @Autowired
+    private ITenantAwareCache tenantAwareCache;
+
 
     @RequestMapping(value = "/created", method = RequestMethod.POST)
     public ResponseEntity issueCreated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode createIssueJson) {
-        AcHostModel acHostModel = (AcHostModel)hostUser.getHost();
+        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         String ctid = acHostModel.getCtId();
         log.debug("Invoked IssueCreate event");
         log.debug("JSON from webhook invoker : " + createIssueJson);
@@ -77,7 +82,7 @@ public class IssueWebhookController {
 
                 if (issueId != null) {
                     sessionService.updateSessionWithIssue(ctid, projectId, issueCreatedBy, issueId);
-                    sessionService.addRaisedInSession(hostUser.getUserKey().get(),issueId,session.getId());
+                    sessionService.addRaisedInSession(hostUser.getUserKey().get(), issueId, session.getId());
                 } else {
                     log.error("Issue creation details are empty from JIRA");
                     throw new CaptureValidationException("Issue ID is null");
@@ -97,12 +102,12 @@ public class IssueWebhookController {
 
     @RequestMapping(value = "/updated", method = RequestMethod.POST)
     public ResponseEntity issueUpdated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode updatedIssueJson) {
-        AcHostModel acHostModel = (AcHostModel)hostUser.getHost();
+        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         log.debug("Invoked IssueUpdated event");
         try {
             if (null != updatedIssueJson && updatedIssueJson.has("issue")) {
                 JsonNode issueNode = updatedIssueJson.get("issue");
-                 SessionServiceImpl.SessionResult sessionResult = sessionService.getActiveSession(hostUser.getUserKey().get());
+                SessionServiceImpl.SessionResult sessionResult = sessionService.getActiveSession(hostUser.getUserKey().get());
                 if (null != issueNode && null != issueNode.get("fields")) {
                     try {
                         //Get ChangeLogItems
@@ -114,19 +119,19 @@ public class IssueWebhookController {
                                 ChangelogItemJsonParser changelogItemJsonParser = new ChangelogItemJsonParser();
                                 for (final JsonNode changeLogItemJson : changeLogItems) {
                                     Iterator<JsonNode> jsonNodeIterator = changeLogItemJson.iterator();
-                                    while(jsonNodeIterator.hasNext()) {
+                                    while (jsonNodeIterator.hasNext()) {
                                         JsonNode jsonNode = jsonNodeIterator.next();
                                         ChangelogItem changelogItem = changelogItemJsonParser.parse(new JSONObject(jsonNode.toString()));
-                                        if (StringUtils.equalsIgnoreCase("Attachment",changelogItem.getField())) {
+                                        if (StringUtils.equalsIgnoreCase("Attachment", changelogItem.getField())) {
                                             AttachmentJsonParser attachmentJsonParser = new AttachmentJsonParser();
-                                            if(changelogItem.getFrom() != null && changelogItem.getTo() == null) {
+                                            if (changelogItem.getFrom() != null && changelogItem.getTo() == null) {
                                                 //sessionActivityService.removeRaisedIssue()
                                                 //delete
                                             } else if (changelogItem.getFrom() == null && changelogItem.getTo() != null) {
                                                 Iterator<JsonNode> jsonNodeAttachmentIterator = issueNode.get("fields").get("attachment").iterator();
-                                                while(jsonNodeAttachmentIterator.hasNext()) {
+                                                while (jsonNodeAttachmentIterator.hasNext()) {
                                                     JsonNode attachmentNode = jsonNodeAttachmentIterator.next();
-                                                    if(attachmentNode.get("id").asInt() == Integer.valueOf(changelogItem.getTo())) {
+                                                    if (attachmentNode.get("id").asInt() == Integer.valueOf(changelogItem.getTo())) {
                                                         Attachment jiraAttachment = attachmentJsonParser.parse(new JSONObject(attachmentNode.toString()));
                                                         if (jiraAttachment != null) {
                                                             try {
@@ -139,7 +144,7 @@ public class IssueWebhookController {
                                                                 SessionActivity sessionActivity = sessionActivityService.addAttachment(sessionResult.getSession(), issue, attachment, new Date(jiraAttachment.getCreationDate().getMillis()), attachment.getAuthor());
                                                                 List<ErrorCollection.ErrorItem> errorItems = validateUpdate(hostUser.getUserKey().get(), sessionService.getSession(sessionActivity.getSessionId()));
                                                                 errorItems.stream().forEach(errorItem -> {
-                                                                    log.error("Error:"+errorItem.getMessage());
+                                                                    log.error("Error:" + errorItem.getMessage());
                                                                 });
                                                             } catch (Exception e) {
                                                                 // don't do anything in this case
@@ -154,11 +159,17 @@ public class IssueWebhookController {
                                 }
                             }
                         }
+                        //Delete the cache
+                        Long issueId = issueNode.get("id").asLong();
+                        if (null != issueNode && null != issueId) {
+                            tenantAwareCache.delete(acHostModel, ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + String.valueOf(issueId));
+                        }
+
                     } catch (Exception e) {
                         log.error("Error handling issue update", e);
                     }
                 }
-           } else {
+            } else {
                 log.error("Issue creation details are empty from JIRA");
                 throw new CaptureRuntimeException("Issue creation details are empty from JIRA");
             }
@@ -166,6 +177,32 @@ public class IssueWebhookController {
         } catch (Exception e) {
             log.warn("Unable to handle the issue creation webhook: ", e);
             throw new CaptureRuntimeException("Unable to handle the issue creation webhook");
+        }
+        return new ResponseEntity(HttpStatus.NO_CONTENT);
+    }
+
+    @RequestMapping(value = "/deleted", method = RequestMethod.POST)
+    public ResponseEntity issueDeleted(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode deletedIssueJson) {
+        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+        String ctid = acHostModel.getCtId();
+        log.debug("Invoked IssueDelete event");
+        log.debug("JSON from webhook invoker : " + deletedIssueJson);
+        try {
+            if (null != deletedIssueJson && deletedIssueJson.has("issue")) {
+                JsonNode issueNode = deletedIssueJson.get("issue");
+                Long issueId = issueNode.get("id").asLong();
+                if (issueId != null) {
+                    tenantAwareCache.delete(acHostModel, ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + String.valueOf(issueId));
+                }
+
+            } else {
+                log.error("Issue deletion details are empty from JIRA");
+                throw new CaptureRuntimeException("Issue deletion details are empty from JIRA");
+            }
+
+        } catch (Exception e) {
+            log.warn("Unable to handle the issue delet webhook: ", e);
+            throw new CaptureRuntimeException("Unable to handle the issue delete webhook");
         }
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
@@ -185,23 +222,23 @@ public class IssueWebhookController {
             }
 
             if (newSession.getName().length() > CaptureConstants.SESSION_NAME_LENGTH_LIMIT) {
-                errorCollection.addError(i18n.getMessage("session.name.exceed.limit", new Integer[] {newSession.getName().length(),
+                errorCollection.addError(i18n.getMessage("session.name.exceed.limit", new Integer[]{newSession.getName().length(),
                         CaptureConstants.SESSION_NAME_LENGTH_LIMIT}));
             }
 
             if (newSession.getAdditionalInfo() != null && newSession.getAdditionalInfo().length() > CaptureConstants.ADDITIONAL_INFO_LENGTH_LIMIT) {
-                errorCollection.addError(i18n.getMessage("session.additionalInfo.exceed.limit", new Integer[] {newSession.getAdditionalInfo().length(),
+                errorCollection.addError(i18n.getMessage("session.additionalInfo.exceed.limit", new Integer[]{newSession.getAdditionalInfo().length(),
                         CaptureConstants.ADDITIONAL_INFO_LENGTH_LIMIT}));
             }
             if (newSession.getRelatedIssueIds().size() > CaptureConstants.RELATED_ISSUES_LIMIT) {
-                errorCollection.addError(i18n.getMessage("session.relatedissues.exceed", new Integer[] {newSession.getRelatedIssueIds().size(),
+                errorCollection.addError(i18n.getMessage("session.relatedissues.exceed", new Integer[]{newSession.getRelatedIssueIds().size(),
                         CaptureConstants.RELATED_ISSUES_LIMIT}));
             }
             // ANYTHING PAST THIS POINT IS A SANITY CHECK
             // Load in the session to check that it still exists
             loadedSession = sessionService.getSession(newSession.getId());
             if (loadedSession == null) {
-                errorCollection.addError(i18n.getMessage("session.invalid", new String[] {newSession.getId()}));
+                errorCollection.addError(i18n.getMessage("session.invalid", new String[]{newSession.getId()}));
             } else {
                 // If the session status is changed, we better have been allowed to do that!
                 if (!newSession.getStatus().equals(loadedSession.getStatus())
@@ -241,7 +278,7 @@ public class IssueWebhookController {
         // If we aren't shared, we wanna kick out all the current users
         if (!newSession.isShared()) {
             for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-                sessionActivityService.addParticipantLeft(newSession, new Date(),p.getUser());
+                sessionActivityService.addParticipantLeft(newSession, new Date(), p.getUser());
             }
         }
         return errorCollection.getErrors();

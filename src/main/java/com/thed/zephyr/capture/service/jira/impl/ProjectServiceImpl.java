@@ -1,16 +1,23 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.BasicProject;
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.google.common.collect.Lists;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
+import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.ProjectService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
 /**
  * Created by Masud on 8/13/17.
@@ -23,6 +30,9 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Autowired
     private JiraRestClient jiraRestClient;
+
+    @Autowired
+    private ITenantAwareCache tenantAwareCache;
 
     @Override
     public Project getProjectObj(Long projectId) {
@@ -50,12 +60,31 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public CaptureProject getCaptureProject(String projectKey) {
-        Project project = getProjectObjByKey(projectKey);
-        log.debug("PROJECT: --> {}",project.getName());
-        return new CaptureProject(project.getSelf(),
-                project.getKey(),project.getId(),
-                project.getName());
+    public CaptureProject getCaptureProject(String projectIdOrKey) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        AcHostModel acHostModel = (AcHostModel) host.getHost();
+        CaptureProject captureProject = null;
+        try {
+            captureProject = tenantAwareCache.getOrElse(acHostModel, buildProjectCacheKey(projectIdOrKey), new Callable<CaptureProject>() {
+                Project project = getProjectObjByKey(projectIdOrKey);
+
+                @Override
+                public CaptureProject call() throws Exception {
+                    return new CaptureProject(project.getSelf(),
+                            project.getKey(), project.getId(),
+                            project.getName());
+                }
+            }, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION);
+
+        } catch (Exception exp) {
+            log.error("Exception while getting the project from JIRA." + exp.getMessage(), exp);
+        }
+        return captureProject;
+    }
+
+    private String buildProjectCacheKey(String projectIdOrKey){
+        return ApplicationConstants.PROJECT_CACHE_KEY_PREFIX+projectIdOrKey;
     }
 
 }
