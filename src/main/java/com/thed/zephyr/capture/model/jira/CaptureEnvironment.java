@@ -39,6 +39,12 @@ public class CaptureEnvironment implements Serializable {
     @JsonProperty
     private String url;
 
+    @JsonProperty
+    private String browserIcon;
+
+    @JsonProperty
+    private String osIcon;
+
 
     public CaptureEnvironment() {
     }
@@ -97,5 +103,21 @@ public class CaptureEnvironment implements Serializable {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getBrowserIcon() {
+        return browserIcon;
+    }
+
+    public void setBrowserIcon(String browserIcon) {
+        this.browserIcon = browserIcon;
+    }
+
+    public String getOsIcon() {
+        return osIcon;
+    }
+
+    public void setOsIcon(String osIcon) {
+        this.osIcon = osIcon;
     }
 }

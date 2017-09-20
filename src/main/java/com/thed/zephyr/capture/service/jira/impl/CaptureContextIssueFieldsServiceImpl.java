@@ -54,12 +54,13 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         String baseUri = host.getHost().getBaseUrl();
 
         String userAgent = req.getHeader("user-agent");
+        StringBuilder sbUserAgent = new StringBuilder().append(userAgent);
         if (StringUtils.isNotBlank(userAgent)) {
             UserAgentSniffer.SniffedBrowser browser = UserAgentSniffer.sniffBrowser(userAgent);
             StringBuilder sb = new StringBuilder().append(browser.browser).append(" ").append(browser.version);
             String userAgentPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ","_");
             try {
-                setEntityProperties(sb, baseUri, userAgentPath);
+                setEntityProperties(sbUserAgent, baseUri, userAgentPath);
 
                 if (StringUtils.isNotBlank(browser.browser)) {
                     sb = new StringBuilder().append(browser.browser).append(" ").append(browser.version);
@@ -87,7 +88,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                     String url = context.get("url");
                     if (StringUtils.isNotBlank(url)) {
                         String urlPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ","_");
-                        setEntityProperties(new StringBuilder(url), baseUri, urlPath);
+                        setEntityProperties(sb, baseUri, urlPath);
                     }
                     String screenRes = context.get("screenRes");
                     if (StringUtils.isNotBlank(screenRes)) {
@@ -102,7 +103,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                     String documentMode = context.get("documentMode");
                     if (StringUtils.isNotBlank(documentMode)) {
                         String documentPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ","_");
-                        setEntityProperties(new StringBuilder(documentPath), baseUri, documentPath);
+                        setEntityProperties(new StringBuilder(documentMode), baseUri, documentPath);
                     }
                 }
             } catch(Exception e) {

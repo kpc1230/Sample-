@@ -151,4 +151,32 @@ public class CaptureUtil {
         }
         return imgSrc;
     }
+
+    public static String getOSIcon(String os) {
+        if (StringUtils.isNotBlank(os)) {
+            if (os.toLowerCase().contains(CaptureConstants.OS_LINUX)) {
+                return CaptureConstants.OS_LINUX;
+            } else if (os.toLowerCase().contains(CaptureConstants.OS_WINDOWS)) {
+                return CaptureConstants.OS_WINDOWS;
+            } else if (os.toLowerCase().contains(CaptureConstants.OS_MAC)) {
+                return CaptureConstants.OS_MAC.trim();// yeah osx
+            }
+        }
+        return "none";
+    }
+
+    public static String getBrowserIcon(String browser) {
+        if (StringUtils.isNotBlank(browser)) {
+            if (browser.toLowerCase().contains(CaptureConstants.BROWSER_FIREFOX)) {
+                return CaptureConstants.BROWSER_FIREFOX;
+            } else if (browser.toLowerCase().contains(CaptureConstants.BROWSER_MSIE) || browser.toLowerCase().contains(CaptureConstants.BROWSER_MSIE_ALT)) {
+                return CaptureConstants.BROWSER_MSIE;
+            } else if (browser.toLowerCase().contains(CaptureConstants.BROWSER_CHROME)) {
+                return CaptureConstants.BROWSER_CHROME;
+            } else if (browser.toLowerCase().contains(CaptureConstants.BROWSER_SAFARI)) {
+                return CaptureConstants.BROWSER_SAFARI;
+            }
+        }
+        return "none";
+    }
 }

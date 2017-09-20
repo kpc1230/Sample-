@@ -172,6 +172,8 @@ public class IssueServiceImpl implements IssueService {
         captureEnvironment.setScreenResolution(screen);
         captureEnvironment.setUrl(url);
         captureEnvironment.setOperatingSystem(operatingSystem);
+        captureEnvironment.setBrowserIcon(CaptureUtil.getBrowserIcon(browser));
+        captureEnvironment.setOsIcon(CaptureUtil.getOSIcon(operatingSystem));
         testSectionResponse.setCaptureEnvironment(captureEnvironment);
 
         TestingStatus testingStatus = new TestingStatus();
