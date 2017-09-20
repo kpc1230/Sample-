@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.service.impl;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.Permission;
 import com.atlassian.jira.rest.client.api.domain.Permissions;
@@ -10,16 +11,21 @@ import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.predicates.UserIsParticipantPredicate;
 import com.thed.zephyr.capture.service.PermissionService;
+import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -43,32 +49,99 @@ public class PermissionServiceImpl implements PermissionService {
     @Autowired
     private IssueService issueService;
 
+    @Autowired
+    private ITenantAwareCache tenantAwareCache;
+
+    @Autowired
+    private DynamicProperty dynamicProperty;
+
     private Permissions getPermissionForIssue(Long issueId, String issueKey) {
         MyPermissionsInput myPermissionsInput = new MyPermissionsInput(null, null, issueKey, issueId != null ? issueId.intValue() : null);
         Permissions permissions = jiraRestClient.getMyPermissionsRestClient().getMyPermissions(myPermissionsInput).claim();
         return permissions;
     }
 
+    private Map<String, Boolean> getPermissionMapForProject(Long projectId, String projectKey) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        AcHostModel acHostModel = (AcHostModel) host.getHost();
+        String caheKey = projectId != null ? String.valueOf(projectId) : "";
+        caheKey += projectKey != null ? projectKey : "";
+        Map<String, Boolean> map = null;
+        try {
+            map = tenantAwareCache.getOrElse(acHostModel, ApplicationConstants.PERMISSION_CACHE_KEY_PREFIX + "project-" + caheKey, () -> {
+                Map<String, Boolean> map2 = new HashMap<>();
+                Permissions permi = getPermissionForProject(projectId, projectKey);
+                permi.getPermissionMap().forEach((k, v) -> {
+                    map2.put(k, v.havePermission());
+                });
+                return map2.size() > 0 ? map2 : null;
+            }, dynamicProperty.getIntProp(ApplicationConstants.PERMISSION_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+        } catch (Exception exp) {
+            exp.printStackTrace();
+        }
+        return map != null && map.size() > 0 ? map : new HashMap<>();
+    }
+
+    private Map<String, Boolean> getPermissionMapForIssue(Long issueId, String issueKey) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        AcHostModel acHostModel = (AcHostModel) host.getHost();
+        String caheKey = issueId != null ? String.valueOf(issueId) : "";
+        caheKey += issueKey != null ? issueKey : "";
+        Map<String, Boolean> map = null;
+        try {
+            map = tenantAwareCache.getOrElse(acHostModel, ApplicationConstants.PERMISSION_CACHE_KEY_PREFIX + "issue-" + caheKey, () -> {
+                Map<String, Boolean> map2 = new HashMap<>();
+                Permissions permi = getPermissionForIssue(issueId, issueKey);
+                permi.getPermissionMap().forEach((k, v) -> {
+                    map2.put(k, v.havePermission());
+                });
+                return map2.size() > 0 ? map2 : null;
+            }, dynamicProperty.getIntProp(ApplicationConstants.PERMISSION_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+        } catch (Exception exp) {
+            exp.printStackTrace();
+        }
+        return map != null && map.size() > 0 ? map : new HashMap<>();
+    }
+
+    private Map<String, Boolean> getAllUserPermissionsMap() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        AcHostModel acHostModel = (AcHostModel) host.getHost();
+        Map<String, Boolean> map = null;
+        try {
+            map = tenantAwareCache.getOrElse(acHostModel, ApplicationConstants.PERMISSION_CACHE_KEY_PREFIX + "user-key-" + host.getUserKey().get(), () -> {
+                Permissions permi = getAllUserPermissions();
+                Map<String, Boolean> map2 = new HashMap<>();
+                permi.getPermissionMap().forEach((k, v) -> {
+                    map2.put(k, v.havePermission());
+                });
+                return map2.size() > 0 ? map2 : null;
+            }, dynamicProperty.getIntProp(ApplicationConstants.PERMISSION_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+        } catch (Exception exp) {
+            exp.printStackTrace();
+        }
+        return map != null && map.size() > 0 ? map : new HashMap<>();
+    }
+
     private Permissions getPermissionForProject(Long projectId, String projectKey) {
         MyPermissionsInput myPermissionsInput = new MyPermissionsInput(projectKey, projectId != null ? projectId.intValue() : null, null, null);
-        Permissions permissions = jiraRestClient.getMyPermissionsRestClient().getMyPermissions(myPermissionsInput).claim();
-        return permissions;
+        return jiraRestClient.getMyPermissionsRestClient().getMyPermissions(myPermissionsInput).claim();
     }
 
     private boolean checkPermissionForType(Long projectId, String projectKey, Long issueId, String issueKey, String permissionType) {
 
-        Permissions permissions;
+        Map<String, Boolean> perMap = null;
 
         if (StringUtils.isNotBlank(projectKey) || null != projectId) {
-            permissions = getPermissionForProject(projectId, projectKey);
+            perMap = getPermissionMapForProject(projectId, projectKey);
         } else if (StringUtils.isNotBlank(issueKey) || null != issueId) {
-            permissions = getPermissionForIssue(issueId, issueKey);
+            perMap = getPermissionMapForIssue(issueId, issueKey);
         } else {
-            permissions = getAllUserPermissions();
+            perMap = getAllUserPermissionsMap();
         }
-        Map<String, Permission> permissionMap = permissions.getPermissionMap();
-
-        if (permissionMap.containsKey(permissionType) && permissionMap.get(permissionType).havePermission()) {
+        if (perMap.containsKey(permissionType) && perMap.get(permissionType)) {
             return true;
         }
         return false;

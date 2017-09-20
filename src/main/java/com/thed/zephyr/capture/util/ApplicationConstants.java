@@ -150,12 +150,14 @@ public class ApplicationConstants {
 
     /** Issue cache const **/
     public static final String ISSUE_CACHE_KEY_PREFIX = "issue-";
+    public static final String ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP = "issue.cache.expiration";
     /** Permission cache const **/
     public static final String PERMISSION_CACHE_KEY_PREFIX = "permission-";
+    public static final String PERMISSION_CACHE_EXPIRATION_DYNAMIC_PROP = "permission.cache.expiration";
     /** Project cache const **/
     public static final String PROJECT_CACHE_KEY_PREFIX = "project-";
-    
-    
+    public static final String PROJECT_CACHE_EXPIRATION_DYNAMIC_PROP = "project.cache.expiration";
+
     public static final String SESSION_LOCK_KEY = "session_";
 
 }

@@ -79,45 +79,47 @@ public class IssueServiceImpl implements IssueService {
 
     @Autowired
     private ITenantAwareCache tenantAwareCache;
+    @Autowired
+    private DynamicProperty dynamicProperty;
 
-
-   @Override
+    @Override
     public Issue getIssueObject(String issueIdOrKey) {
         return jiraRestClient.getIssueClient().getIssue(issueIdOrKey).claim();
     }
 
     /**
      * Get serialized issue
+     *
      * @param issueIdOrKey
      * @return
      */
-     @Override
+    @Override
     public CaptureIssue getCaptureIssue(String issueIdOrKey) {
-         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-         AcHostModel acHostModel = (AcHostModel) host.getHost();
-         CaptureIssue captureIssue = null;
-         try {
-             captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKey(issueIdOrKey), new Callable<CaptureIssue>() {
-                 @Override
-                 public CaptureIssue call() throws Exception {
-                     Issue issue = getIssueObject(issueIdOrKey);
-                     return new CaptureIssue(issue.getSelf(),
-                             issue.getKey(), issue.getId(),
-                             CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName());
-                 }
-             }, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION);
-         } catch (Exception exp) {
-             log.error("Exception while getting the issue from JIRA." + exp.getMessage(), exp);
-         }
-         log.debug("ISSUE: --> {}", captureIssue.getSummary());
-         return captureIssue;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        AcHostModel acHostModel = (AcHostModel) host.getHost();
+        CaptureIssue captureIssue = null;
+        try {
+            captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKey(issueIdOrKey), new Callable<CaptureIssue>() {
+                @Override
+                public CaptureIssue call() throws Exception {
+                    Issue issue = getIssueObject(issueIdOrKey);
+                    return new CaptureIssue(issue.getSelf(),
+                            issue.getKey(), issue.getId(),
+                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName());
+                }
+            }, dynamicProperty.getIntProp(ApplicationConstants.ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+        } catch (Exception exp) {
+            log.error("Exception while getting the issue from JIRA." + exp.getMessage(), exp);
+        }
+        log.debug("ISSUE: --> {}", captureIssue.getSummary());
+        return captureIssue;
     }
 
     @Override
     public List<CaptureIssue> getCaptureIssuesByIds(List<Long> issueIds) {
         List<CaptureIssue> captureIssues = new ArrayList<>();
-        if(issueIds != null && issueIds.size()>0) {
+        if (issueIds != null && issueIds.size() > 0) {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
             String jql = "issue in (" + StringUtils.join(issueIds, ',') + ")";
@@ -127,11 +129,11 @@ public class IssueServiceImpl implements IssueService {
                     .forEach(issue -> {
                         captureIssues.add(new CaptureIssue(issue.getSelf(),
                                 issue.getKey(), issue.getId(),
-                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(),issue.getProject().getId(),issue.getProject().getKey(),issue.getReporter().getName()));
+                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName()));
                     });
-            }
-            return captureIssues;
         }
+        return captureIssues;
+    }
 
     @Override
     public TestSectionResponse getIssueSessionDetails(Issue issue) throws JSONException {
@@ -142,26 +144,26 @@ public class IssueServiceImpl implements IssueService {
         testSectionResponse.setSessions(sessionByRelatedIssueId.getContent());
         StringBuilder basePath = new StringBuilder();
         basePath.append(JiraConstants.REST_API_BASE_ISSUE).append("/").append(issue.getKey()).append("/properties/");
-        String userAgentPath =   basePath.toString()  + CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ","_");
-        String userAgent = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),userAgentPath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ","_"));
+        String userAgentPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ", "_");
+        String userAgent = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), userAgentPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ", "_"));
 
-        String browserNamePath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase().replace(" ","_");
-        String browser = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),browserNamePath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase().replace(" ","_"));
+        String browserNamePath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase().replace(" ", "_");
+        String browser = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), browserNamePath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase().replace(" ", "_"));
 
-        String documentPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ","_");
-        String document = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),documentPath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ","_"));
+        String documentPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ", "_");
+        String document = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), documentPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ", "_"));
 
-        String screenPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase().replace(" ","_");
-        String screen = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),screenPath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase().replace(" ","_"));
+        String screenPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase().replace(" ", "_");
+        String screen = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), screenPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase().replace(" ", "_"));
 
-        String operatingSystemPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase().replace(" ","_");
-        String operatingSystem = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),operatingSystemPath,CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase().replace(" ","_"));
+        String operatingSystemPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase().replace(" ", "_");
+        String operatingSystem = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), operatingSystemPath, CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase().replace(" ", "_"));
 
-        String urlPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ","_");
-        String url = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),urlPath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ","_"));
+        String urlPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ", "_");
+        String url = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), urlPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ", "_"));
 
-        String jQueryVersionPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ","_");
-        String jQueryVersion = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(),jQueryVersionPath,CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ","_"));
+        String jQueryVersionPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ", "_");
+        String jQueryVersion = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), jQueryVersionPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ", "_"));
 
 
         CaptureEnvironment captureEnvironment = new CaptureEnvironment();
@@ -209,11 +211,11 @@ public class IssueServiceImpl implements IssueService {
         }
         testingStatus.setCompleteCount(new Double(completedCount.get()));
         Double notStartedPercent = 0.0, inProgressPercent = 0.0, completePercent = 0.0;
-        if(testingStatus.getTotalCount().intValue() != 0) {
-        	notStartedPercent = Math.floor((notStartedCount.get() / testingStatus.getTotalCount().intValue()) * 100);
+        if (testingStatus.getTotalCount().intValue() != 0) {
+            notStartedPercent = Math.floor((notStartedCount.get() / testingStatus.getTotalCount().intValue()) * 100);
             inProgressPercent = Math.floor((inProgressCount.get() / testingStatus.getTotalCount().intValue()) * 100);
             completePercent = Math.floor((completedCount.get() / testingStatus.getTotalCount().intValue()) * 100);
-        }     
+        }
 
         testingStatus.setNotStartedPercent(notStartedPercent);
         testingStatus.setInProgressPercent(inProgressPercent);
@@ -228,21 +230,21 @@ public class IssueServiceImpl implements IssueService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         IssueFields issueFields = createRequest.fields();
-        IssueInput issueInput = createIssueInput(issueFields,request);
+        IssueInput issueInput = createIssueInput(issueFields, request);
         BasicIssue basicIssue = postJiraRestClient.getIssueClient().createIssue(issueInput).claim();
         Issue issue = getIssueObject(basicIssue.getKey());
 
         //Set Context Params
         captureContextIssueFieldsService.populateContextFields(request, issue, createRequest.getContext());
 
-        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(),basicIssue.getKey(),basicIssue.getId(),CaptureUtil.getFullIconUrl(issue,host),issue.getSummary(),issue.getProject().getId(),issue.getProject().getKey(),issue.getReporter().getName());
-        if(StringUtils.isNotBlank(testSessionId)) {
+        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName());
+        if (StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {
-                sessionActivityService.addRaisedIssue(session, issue, new Date(issue.getCreationDate().getMillis()),host.getUserKey().get());
+                sessionActivityService.addRaisedIssue(session, issue, new Date(issue.getCreationDate().getMillis()), host.getUserKey().get());
                 List<Long> issueIds = new ArrayList<>();
                 issueIds.add(issue.getId());
-                captureContextIssueFieldsService.addRaisedInIssueField(host.getUserKey().get(),issueIds,session.getId());
+                captureContextIssueFieldsService.addRaisedInIssueField(host.getUserKey().get(), issueIds, session.getId());
             }
         }
         return captureIssue;
@@ -252,18 +254,18 @@ public class IssueServiceImpl implements IssueService {
     private IssueInput createIssueInput(IssueFields issueFields, HttpServletRequest request) {
         IssueInputBuilder issueInputBuilder = new IssueInputBuilder();
         issueInputBuilder.setIssueTypeId(Long.valueOf(issueFields.issueType().id()));
-        if(issueFields.assignee() != null) {
+        if (issueFields.assignee() != null) {
             issueInputBuilder.setAssigneeName(issueFields.assignee().id());
         }
         Project project = getJiraRestClient.getProjectClient().getProject(issueFields.project().id()).claim();
         issueInputBuilder.setProject(project);
-        if(issueFields.components() != null) {
+        if (issueFields.components() != null) {
             List<String> components = issueFields.components().stream().map(ResourceId::id).collect(Collectors.toList());
-            if(components != null && components.size() > 0) {
+            if (components != null && components.size() > 0) {
                 List<BasicComponent> componentList = new ArrayList<>();
                 project.getComponents().forEach(component -> {
-                    if(components.contains(String.valueOf(component.getId()))) {
-                        BasicComponent basicComponent = new BasicComponent(component.getSelf(), component.getId(),component.getName(),component.getDescription());
+                    if (components.contains(String.valueOf(component.getId()))) {
+                        BasicComponent basicComponent = new BasicComponent(component.getSelf(), component.getId(), component.getName(), component.getDescription());
                         componentList.add(basicComponent);
                     }
                 });
@@ -273,26 +275,26 @@ public class IssueServiceImpl implements IssueService {
 
         issueInputBuilder.setSummary(issueFields.summary());
         issueInputBuilder.setDescription(issueFields.description());
-        if(issueFields.priority() != null) {
+        if (issueFields.priority() != null) {
             issueInputBuilder.setPriorityId(Long.valueOf(issueFields.priority().id()));
         }
 
-        if(issueFields.environment() != null) {
-            issueInputBuilder.setFieldValue("environment",issueFields.getEnvironment());
+        if (issueFields.environment() != null) {
+            issueInputBuilder.setFieldValue("environment", issueFields.getEnvironment());
         }
 
-        if(issueFields.labels() != null) {
+        if (issueFields.labels() != null) {
 
             List<String> labels = new ArrayList<>();
             issueFields.labels().stream().forEach(label -> {
                 labels.add(label.trim());
             });
-            issueInputBuilder.setFieldValue("labels",labels);
+            issueInputBuilder.setFieldValue("labels", labels);
         }
 
 
-        if(issueFields.customFields() != null) {
-            for(Long custId : issueFields.customFields().keySet()) {
+        if (issueFields.customFields() != null) {
+            for (Long custId : issueFields.customFields().keySet()) {
                 String[] values = issueFields.customFields().get(custId);
                 Map<String, Object> valueMap = new HashMap<>();
                 valueMap.put("values", values);
@@ -301,12 +303,12 @@ public class IssueServiceImpl implements IssueService {
             }
         }
 
-        if(issueFields.versions() != null) {
+        if (issueFields.versions() != null) {
             List<String> affectVersions = issueFields.versions().stream().map(ResourceId::id).collect(Collectors.toList());
-            if(affectVersions != null && affectVersions.size() > 0) {
+            if (affectVersions != null && affectVersions.size() > 0) {
                 List<String> versionList = new ArrayList<>();
                 project.getVersions().forEach(version -> {
-                    if(affectVersions.contains(String.valueOf(version.getId()))) {
+                    if (affectVersions.contains(String.valueOf(version.getId()))) {
                         versionList.add(version.getName());
                     }
                 });
@@ -314,12 +316,12 @@ public class IssueServiceImpl implements IssueService {
             }
         }
 
-        if(issueFields.fixVersions() != null) {
+        if (issueFields.fixVersions() != null) {
             List<String> fixVersions = issueFields.fixVersions().stream().map(ResourceId::id).collect(Collectors.toList());
-            if(fixVersions != null && fixVersions.size() > 0) {
+            if (fixVersions != null && fixVersions.size() > 0) {
                 List<String> versionList = new ArrayList<>();
                 project.getVersions().forEach(version -> {
-                    if(fixVersions.contains(String.valueOf(version.getId()))) {
+                    if (fixVersions.contains(String.valueOf(version.getId()))) {
                         versionList.add(version.getName());
                     }
                 });
@@ -327,24 +329,24 @@ public class IssueServiceImpl implements IssueService {
             }
         }
 
-        if(issueFields.getWorklog() != null) {
-            issueInputBuilder.setFieldValue("worklog",issueFields.getWorklog());
+        if (issueFields.getWorklog() != null) {
+            issueInputBuilder.setFieldValue("worklog", issueFields.getWorklog());
         }
 
-        if(issueFields.getTimetracking() != null) {
+        if (issueFields.getTimetracking() != null) {
             Map<String, Object> timeTracking = new HashMap<>();
             timeTracking.put("originalEstimate", issueFields.getTimetracking().getOriginalEstimate());
-            issueInputBuilder.setFieldValue("timetracking",new ComplexIssueInputFieldValue(timeTracking));
+            issueInputBuilder.setFieldValue("timetracking", new ComplexIssueInputFieldValue(timeTracking));
         }
 
-        if(issueFields.getDuedate() != null) {
+        if (issueFields.getDuedate() != null) {
             DateTimeFormatter inFormatter = DateTimeFormat.forPattern("d/MMM/yy");
             DateTime dateTime = inFormatter.parseDateTime(issueFields.getDuedate());
             issueInputBuilder.setDueDate(dateTime.toDateTime(DateTimeZone.UTC));
         }
 
         ResourceId parentId = issueFields.parent();
-        if(parentId != null) {
+        if (parentId != null) {
             CaptureIssue issue = getCaptureIssue(parentId.id());
             Map<String, Object> parent = new HashMap<>();
             parent.put("key", issue.getKey());
@@ -355,8 +357,8 @@ public class IssueServiceImpl implements IssueService {
         return issueInputBuilder.build();
     }
 
-    private String buildIssueCacheKey(String issueIdOrKey){
-         return ApplicationConstants.ISSUE_CACHE_KEY_PREFIX+issueIdOrKey;
+    private String buildIssueCacheKey(String issueIdOrKey) {
+        return ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + issueIdOrKey;
     }
 
 }

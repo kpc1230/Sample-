@@ -10,6 +10,7 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -33,6 +34,9 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Autowired
     private ITenantAwareCache tenantAwareCache;
+
+    @Autowired
+    private DynamicProperty dynamicProperty;
 
     @Override
     public Project getProjectObj(Long projectId) {
@@ -74,7 +78,7 @@ public class ProjectServiceImpl implements ProjectService {
                             project.getKey(), project.getId(),
                             project.getName());
                 }
-            }, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION);
+            }, dynamicProperty.getIntProp(ApplicationConstants.PROJECT_CACHE_EXPIRATION_DYNAMIC_PROP,ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
 
         } catch (Exception exp) {
             log.error("Exception while getting the project from JIRA." + exp.getMessage(), exp);

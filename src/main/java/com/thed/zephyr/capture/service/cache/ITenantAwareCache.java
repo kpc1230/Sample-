@@ -38,5 +38,9 @@ public interface ITenantAwareCache {
 
     public Future getAsync(String key);
 
+    void clearTenantCache(AcHostModel acHostModel);
+
+    void displayTenantCache(AcHostModel acHostModel);
+
 
 }
