@@ -85,7 +85,7 @@ public class TenantAwareCacheWrapper implements ITenantAwareCache {
         String tenantId = acHostModel.getClientKey();
         if (tenantId != null) {
             @SuppressWarnings("unchecked")
-            T val1 = (T) get(key);
+            T val1 = (T) get(acHostModel, key);
             if (val1 == null) {
                 T val2 = block.call();
                 if (val2 != null)    //Null values not allowed

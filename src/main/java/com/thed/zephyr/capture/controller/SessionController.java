@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.connect.spring.IgnoreJwt;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -875,6 +876,7 @@ public class SessionController extends CaptureAbstractController{
 		}
 	}
 	
+	@IgnoreJwt
 	@GetMapping(value = "/user/active", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> getActiveSessionUser(@RequestParam String userKey, @RequestParam String baseUrl) {
 		log.info("Start of getActiveSessionUser()");
