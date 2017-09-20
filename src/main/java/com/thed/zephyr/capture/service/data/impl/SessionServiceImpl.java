@@ -70,7 +70,7 @@ import java.util.stream.Collectors;
 @Service
 public class SessionServiceImpl implements SessionService {
 
-	private static final String USER_KEY = "USER_KEY_";
+	private static final String ACTIVE_USER_SESSION_ID_KEY = "active_user_session_id_";
 	
 	@Autowired
     private Logger log;
@@ -162,7 +162,7 @@ public class SessionServiceImpl implements SessionService {
 		}
 		sessionRepository.delete(sessionId);
 		sessionESRepository.delete(sessionId);
-        if (session.getId().equals(getActiveSessionIdFromCache(session.getAssignee()))) { // Clear it as assignees active session
+        if (session.getId().equals(getActiveSessionIdFromCache(session.getAssignee(), null))) { // Clear it as assignees active session
             clearActiveSessionFromCache(session.getAssignee());
         }
         if(!Objects.isNull(session.getParticipants())) {
@@ -176,7 +176,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public UpdateResult startSession(String loggedUserKey, Session session) {
 		DeactivateResult deactivateResult = null;
-        SessionResult activeSessionResult = getActiveSession(loggedUserKey); // Deactivate current active session
+        SessionResult activeSessionResult = getActiveSession(loggedUserKey, null); // Deactivate current active session
         if (activeSessionResult.isValid()) {
             deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), loggedUserKey);
             if (!deactivateResult.isValid()) {
@@ -204,7 +204,7 @@ public class SessionServiceImpl implements SessionService {
             if (!Status.STARTED.equals(session.getStatus())) {
                 errorCollection.addError(i18n.getMessage("session.join.not.started" , new Object[]{session.getName()}));
             }
-            SessionResult activeSessionResult = getActiveSession(loggedUserKey); // Deactivate current active session
+            SessionResult activeSessionResult = getActiveSession(loggedUserKey, null); // Deactivate current active session
             if (activeSessionResult.isValid()) {
                 deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), loggedUserKey);
                 if (!deactivateResult.isValid()) {
@@ -350,7 +350,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull) {
 		CaptureProject project = projectService.getCaptureProject(session.getProjectId());
-		String activeSessionId = getActiveSessionIdFromCache(loggedInUser);
+		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, null);
 		boolean isActive = session.getId().equals(activeSessionId);
 		return createSessionDto(loggedInUser, session, isActive, project, isSendFull);
 	}
@@ -411,7 +411,7 @@ public class SessionServiceImpl implements SessionService {
 		Map<Long, CaptureProject> projectsMap = new HashMap<>();
 		SessionDto sessionDto = null;
 		CaptureProject project = null;
-		String activeSessionId = getActiveSessionIdFromCache(loggedUser);
+		String activeSessionId = getActiveSessionIdFromCache(loggedUser, null);
 		if(Objects.nonNull(sessions.getContent())) {
 			for(Session session : sessions.getContent()) {
 				if(!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
@@ -621,7 +621,7 @@ public class SessionServiceImpl implements SessionService {
                         leavingUsers.add(p.getUser());
                     }
                 }
-                Session activeUserSession = getActiveSession(user).getSession();
+                Session activeUserSession = getActiveSession(user, null).getSession();
                 if (session.getId().equals(!Objects.isNull(activeUserSession) ? activeUserSession.getId() : null)) { // If this is my active session then I want to leave it
                     leavingUsers.add(user);
                 }
@@ -647,8 +647,8 @@ public class SessionServiceImpl implements SessionService {
     }
 
 	@Override
-	public SessionResult getActiveSession(String user) {
-	    String activeSessionId = getActiveSessionIdFromCache(user);
+	public SessionResult getActiveSession(String user, String baseUrl) {
+	    String activeSessionId = getActiveSessionIdFromCache(user, baseUrl);
 	    if(Objects.isNull(activeSessionId)) {
 	    	return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
 	    }
@@ -667,7 +667,7 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private void clearActiveSessionFromCache(String user) {
 		AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
-		String cacheKey = USER_KEY + user;
+		String cacheKey = ACTIVE_USER_SESSION_ID_KEY + user;
 		if(!iTenantAwareCache.delete(acHostModel, cacheKey)) {
 			throw new CaptureRuntimeException("Not able to delete the cache for user key -> " + cacheKey);
 		} 
@@ -681,7 +681,7 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private void setActiveSessionIdToCache(String user, String sessionId) {
 		AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
-		String cacheKey = USER_KEY + user;
+		String cacheKey = ACTIVE_USER_SESSION_ID_KEY + user;
 		iTenantAwareCache.set(acHostModel, cacheKey, sessionId);
 	}
 	
@@ -691,14 +691,13 @@ public class SessionServiceImpl implements SessionService {
 	 * @param user -- Logged in user key.
 	 * @return -- Returns the fetched session id from the cache for the loggedin user.
 	 */
-	private String getActiveSessionIdFromCache(String user) {
-		AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
-		String cacheKey = USER_KEY + user;
+	private String getActiveSessionIdFromAcHostModel(String user, AcHostModel acHostModel) {
+		String cacheKey = ACTIVE_USER_SESSION_ID_KEY + user;
 		String value = null;
 		try {
 			value = iTenantAwareCache.getOrElse(acHostModel, cacheKey, new Callable<String>() {
 				public String call() throws Exception {
-					List<Session> activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), Status.STARTED.name(), user);
+					List<Session> activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(acHostModel.getCtId(), Status.STARTED.name(), user);
 					if(Objects.nonNull(activeSessions) && activeSessions.size() > 0)
 						return activeSessions.get(0).getId();
 					else
@@ -709,6 +708,23 @@ public class SessionServiceImpl implements SessionService {
 			e.printStackTrace();
 		}
 		return value;
+	}
+	
+	/**
+	 * Fetches the session id from the cache for user based on base url.
+	 * 
+	 * @param user -- Logged in user key.
+	 * @param baseUrl -- User base url.
+	 * @return -- Returns the fetched session id from the cache for the user.
+	 */
+	private String getActiveSessionIdFromCache(String user, String baseUrl) {
+		AcHostModel acHostModel = null;
+		if(Objects.nonNull(baseUrl)) {
+			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository, baseUrl);
+		} else {
+			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
+		}
+		return getActiveSessionIdFromAcHostModel(user, acHostModel);
 	}
 	
 	/**
@@ -1010,7 +1026,7 @@ public class SessionServiceImpl implements SessionService {
 		SessionDto sessionDto = null;
 		CaptureProject project = null;
 		Collections.sort(sessionsList, comparator); //Sort the sessions using the comparator.
-		String activeSessionId = getActiveSessionIdFromCache(loggedInUser);
+		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, null);
 		final int actualSize = getActualSize(sessionsList.size(), startAt, size);
 		for (int i = startAt; i < startAt + actualSize; i++) {
 			Session session = sessionsList.get(i);

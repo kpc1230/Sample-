@@ -109,6 +109,11 @@ public class CaptureUtil {
         AcHostModel acHostModel = (AcHostModel) dynamoDBAcHostRepository.findOne(atlassianHostUser.getHost().getClientKey());
         return acHostModel;
     }
+    
+    public static AcHostModel getAcHostModel(DynamoDBAcHostRepository dynamoDBAcHostRepository, String baseUrl) {
+        AcHostModel acHostModel = (AcHostModel) dynamoDBAcHostRepository.findFirstByBaseUrl(baseUrl).get();
+        return acHostModel;
+    }
 
     /**
      * Creates the page request object for pagination.

@@ -77,7 +77,7 @@ public class IssueWebhookController {
                 Long issueId = issueNode.get("id").asLong();
                 Long projectId = issueNode.get("fields").get("project").get("id").asLong();
                 String issueCreatedBy = issueNode.get("fields").get("creator").get("key").asText();
-                SessionServiceImpl.SessionResult sessionResult = sessionService.getActiveSession(hostUser.getUserKey().get());
+                SessionServiceImpl.SessionResult sessionResult = sessionService.getActiveSession(hostUser.getUserKey().get(), null);
                 Session session = sessionResult.getSession();
 
                 if (issueId != null) {
@@ -107,7 +107,7 @@ public class IssueWebhookController {
         try {
             if (null != updatedIssueJson && updatedIssueJson.has("issue")) {
                 JsonNode issueNode = updatedIssueJson.get("issue");
-                SessionServiceImpl.SessionResult sessionResult = sessionService.getActiveSession(hostUser.getUserKey().get());
+                SessionServiceImpl.SessionResult sessionResult = sessionService.getActiveSession(hostUser.getUserKey().get(), null);
                 if (null != issueNode && null != issueNode.get("fields")) {
                     try {
                         //Get ChangeLogItems

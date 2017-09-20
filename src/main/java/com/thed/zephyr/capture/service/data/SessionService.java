@@ -249,14 +249,16 @@ public interface SessionService {
 	Session cloneSession(String loggedUser, Session cloneSession, String cloneName);
 
 	/**
-	 * Fetches the active session from the cache for the logged in user.
+	 * Fetches the active session from the cache for the user based on base url.
 	 * If cache doesn't have any active session for the logged in user then code
 	 * will try fetch any active session in elastic search.
 	 *
 	 * @param user -- Logged in user key.
+	 * @param baseUrl -- User base url.
 	 * @return -- Returns the SessionResult object which holds the active session and also any validation errors.
 	 */
-	SessionResult getActiveSession(String user);
+	SessionResult getActiveSession(String user, String baseUrl);
+
 
 	/**
 	 * Adds the Issue as Raised In for active User
