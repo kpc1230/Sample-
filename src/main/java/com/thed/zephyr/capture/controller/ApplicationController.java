@@ -1,7 +1,10 @@
 package com.thed.zephyr.capture.controller;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.IgnoreJwt;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
@@ -11,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,6 +44,9 @@ public class ApplicationController {
     @Autowired
     private CaptureI18NMessageSource i18n;
 
+    @Autowired
+    private ITenantAwareCache tenantAwareCache;
+
     @RequestMapping(value = "/adminGenConf")
     public String getGeneralConfigurationPage(@RequestParam String user_id, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -51,12 +58,8 @@ public class ApplicationController {
         }
         model.addAttribute("generalConfigData", resp);
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
 
-        Locale locale = LocaleContextHolder.getLocale();
-        String basename = "i18n/capture-i18n";
-        Map<String, String> messages = i18n.getKeyValues(basename, locale);
-        model.addAttribute("messages", messages);
-        
         log.debug("Ending Requesting the general configuration page with username : " + user_id + "with resp : " + resp);
         return "generalConfigPage";
     }
@@ -68,11 +71,7 @@ public class ApplicationController {
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
-
-        Locale locale = LocaleContextHolder.getLocale();
-        String basename = "i18n/capture-i18n";
-        Map<String, String> messages = i18n.getKeyValues(basename, locale);
-        model.addAttribute("messages", messages);
+        model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
 
         log.debug("Ending Requesting the Browse Test Sessions page");
         return "sessionNavigator";
@@ -85,18 +84,14 @@ public class ApplicationController {
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
-
-        Locale locale = LocaleContextHolder.getLocale();
-        String basename = "i18n/capture-i18n";
-        Map<String, String> messages = i18n.getKeyValues(basename, locale);
-        model.addAttribute("messages", messages);
+        model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
 
         log.debug("Ending Requesting the Session Navigator page");
         return "viewSession";
     }
 
     @RequestMapping(value = "/public/rest/testing")
-    public String getTestingIssueView(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId,  @RequestParam String issueKey,Model model) {
+    public String getTestingIssueView(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId, @RequestParam String issueKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
         log.debug("Requesting the Testing Issue View page");
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
@@ -104,11 +99,7 @@ public class ApplicationController {
         model.addAttribute("projectId", projectId);
         model.addAttribute("issueId", issueId);
         model.addAttribute("issueKey", issueKey);
-
-        Locale locale = LocaleContextHolder.getLocale();
-        String basename = "i18n/capture-i18n";
-        Map<String, String> messages = i18n.getKeyValues(basename, locale);
-        model.addAttribute("messages", messages);
+        model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
 
         log.debug("Ending Requesting the Testing Issue View page");
         return "testingIssueView";
@@ -121,11 +112,7 @@ public class ApplicationController {
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
-
-        Locale locale = LocaleContextHolder.getLocale();
-        String basename = "i18n/capture-i18n";
-        Map<String, String> messages = i18n.getKeyValues(basename, locale);
-        model.addAttribute("messages", messages);
+        model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
 
         log.debug("Ending Requesting the Project Test Sessions page");
         return "projectTestSessions";
@@ -138,11 +125,7 @@ public class ApplicationController {
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
-
-        Locale locale = LocaleContextHolder.getLocale();
-        String basename = "i18n/capture-i18n";
-        Map<String, String> messages = i18n.getKeyValues(basename, locale);
-        model.addAttribute("messages", messages);
+        model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
 
         log.debug("Ending Requesting the Project Test Sessions page");
         return "createTestSessionDialog";
@@ -152,10 +135,21 @@ public class ApplicationController {
     @ResponseBody
     @IgnoreJwt
     public ResponseEntity getI18NMessages() {
-        Locale locale = LocaleContextHolder.getLocale();
-        String basename = "i18n/capture-i18n";
-        Map<String, String> messages = i18n.getKeyValues(basename, locale);
+        Map<String, String> messages = getI18NMessagesBasedOnSessionLocale();
         return ResponseEntity.ok(messages);
     }
 
+    @RequestMapping(value = "/clearCache")
+    @ResponseBody
+    public ResponseEntity clearCache(@AuthenticationPrincipal AtlassianHostUser hostUser) {
+        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+        tenantAwareCache.clearTenantCache(acHostModel);
+        return ResponseEntity.ok("Success");
+    }
+
+    private Map<String, String> getI18NMessagesBasedOnSessionLocale() {
+        Locale locale = LocaleContextHolder.getLocale();
+        String basename = "i18n/capture-i18n";
+        return i18n.getKeyValues(basename, locale);
+    }
 }
