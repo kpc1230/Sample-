@@ -2,12 +2,7 @@
   "name": "zephyr",
   "version": "1.0.0",
   "description": "Build and Deployment",
-  "license": "Zephyr",
-  "author": {
-    "name": "Nirav Shah",
-    "email": "nirav.shah@getzephyr.com",
-    "url": "http://getzephyr.com"
-  },
+  "private": true,
   "devDependencies": {
     "grunt": "latest",
     "grunt-cli": "latest",
