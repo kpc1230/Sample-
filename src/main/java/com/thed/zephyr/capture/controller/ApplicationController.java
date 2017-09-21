@@ -131,6 +131,11 @@ public class ApplicationController {
         return "createTestSessionDialog";
     }
 
+   @RequestMapping(value = "/wikiHelp")
+    public String wikiHelp() {
+        log.debug("Requesting the wiki help page");
+        return "wikiHelp";
+    }
     @RequestMapping(value = "/capture-i18n")
     @ResponseBody
     @IgnoreJwt
