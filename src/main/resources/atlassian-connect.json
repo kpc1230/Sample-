@@ -144,10 +144,86 @@
         "tooltip": {
           "value": "Capture"
         },
-        "conditions": [{
-          "condition": "user_is_logged_in",
-          "invert": false
-        }]
+        "conditions": [
+          {
+            "condition": "user_is_logged_in",
+            "invert": false
+          },
+          {
+            "or": [
+              {
+                "condition": "project_type",
+                "params": {
+                  "projectTypeKey": "software"
+                }
+              },
+              {
+                "and": [
+                  {
+                    "condition": "project_type",
+                    "params": {
+                      "projectTypeKey": "business"
+                    }
+                  },
+                  {
+                    "or": [
+                      {
+                        "condition": "entity_property_exists",
+                        "invert": true,
+                        "params": {
+                          "entity": "user",
+                          "propertyKey": "captureGenPageSettings",
+                          "objectName": "businessProjectsEnabled"
+                        }
+                      },
+                      {
+                        "condition": "entity_property_equal_to",
+                        "params": {
+                          "entity": "user",
+                          "propertyKey": "captureGenPageSettings",
+                          "objectName": "businessProjectsEnabled",
+                          "value": "true"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "and": [
+                  {
+                    "condition": "project_type",
+                    "params": {
+                      "projectTypeKey": "service_desk"
+                    }
+                  },
+                  {
+                    "or": [
+                      {
+                        "condition": "entity_property_exists",
+                        "invert": true,
+                        "params": {
+                          "entity": "user",
+                          "propertyKey": "captureGenPageSettings",
+                          "objectName": "serviceDeskProjectsEnabled"
+                        }
+                      },
+                      {
+                        "condition": "entity_property_equal_to",
+                        "params": {
+                          "entity": "user",
+                          "propertyKey": "captureGenPageSettings",
+                          "objectName": "serviceDeskProjectsEnabled",
+                          "value": "true"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       {
         "location": "operations-operations",
