@@ -1,8 +1,6 @@
 /*global module:false*/
 module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-shell');
-  grunt.loadNpmTasks('grunt-ssh');
-  grunt.loadNpmTasks('grunt-replace');
   grunt.loadNpmTasks('grunt-gitinfo');
 
   var home = grunt.option("capture_home") || __dirname + '/../';
@@ -64,71 +62,9 @@ module.exports = function(grunt) {
         privateKey: '<%= grunt.file.read(secret.privateKey) %>',
         passphrase: '<%= secret.passphrase %>'
       }
-    },
-    replace: {
-      dist: {
-        options: {
-          patterns: [
-            {
-              match: /\"http:\/\/127.0.0.1:8080\/capture\"/g,
-              replacement: function () {
-                var qa = grunt.file.readJSON('qa.json');
-                //grunt.log.write("########### jms ====> "+qa.host);
-                var host= qa.host;
-                return '\"http://'+host+':8080/capture\"';
-              }
-            }
-          ]
-        },
-        files: [
-          {
-            expand: true,
-            flatten: true,
-            src: ['script/application.prod.template.properties'],
-            dest: 'script/'
-          }
-        ]
-      }
-    }/*,
-    sftp: {
-      deploy: {
-        files: {
-          "./":["script/!*.sh","script/!*.conf","script/!*.xml"]
-        },
-        options: {
-          createDirectories: true,
-          showProgress:true,
-          srcBasePath: "script/",
-          directoryPermissions: parseInt(777, 8)
-        }
-      }
-    },
-    sshexec: {
-      addScript: {
-        command: [
-          'echo <%= secret.password %> | sudo -S whoami',
-          'sudo mkdir -p capture/config/',
-          'sudo mv  *.sh capture/config/',
-          'sudo mv  *.conf capture/config/',
-          'sudo mv  *.xml capture/config/'
-        ].join('&&')
-      },
-      runTomcat: {
-        command: [
-          'echo <%= secret.password %> | sudo -S whoami',
-          'sudo docker run -d -p 80:8080 -p 5100:5100 -v ~/capture/logs:/opt/tomcat/logs/ -v ~/capture/config:/opt/conf --name capture docker2.getzephyr.com/capture:<%= gitinfo.my.custom.command %>',
-          'sudo docker ps'
-        ].join('&&')
-      }
-    }*/
+    }
   });
-
-  // These plugins provide necessary tasks.
-  
-
-  // Default task.
- // grunt.registerTask('default', ['gitinfo','shell','replace','sftp','sshexec:addScript','sshexec:runTomcat']);
- // grunt.registerTask('deploy', ['gitinfo','sftp','replace','sshexec:addScript','sshexec:runTomcat']);
+    
   grunt.registerTask('build', ['gitinfo','shell:build','shell:Build_docker_connect','shell:commitConnect']);
 
 };
