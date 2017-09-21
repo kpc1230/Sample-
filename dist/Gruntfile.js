@@ -39,8 +39,8 @@ module.exports = function(grunt) {
       },
       commitConnect: {
         command: [
-        'echo <%= secret.password %> | sudo -S whoami',
-        'echo "docker.devops"|sudo docker login docker2.getzephyr.com',
+      //  'echo <%= secret.password %> | sudo -S whoami',
+      //  'echo "docker.devops"|sudo docker login docker2.getzephyr.com',
         'sudo docker push docker2.getzephyr.com/capture:<%= gitinfo.my.custom.command %>'
         ].join('&&')
       }
