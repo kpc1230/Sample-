@@ -41,8 +41,8 @@ public class Session  implements Comparable<Session>, Serializable{
     private Date timeFinished;
     @DynamoDBTypeConverted(converter = DurationTypeConverter.class)
     private Duration timeLogged;
-    //@DynamoDBTypeConverted(converter = LongCollectionConverter.class)
-    private Set<Long> issueRaisedIds;
+    @DynamoDBTypeConverted(converter = IssueRaisedBeanConverter.class)
+    private Collection<IssueRaisedBean> issuesRaised;
     @DynamoDBIgnore
     private Collection<SessionActivity> sessionActivity;
     private boolean shared;
@@ -53,7 +53,7 @@ public class Session  implements Comparable<Session>, Serializable{
     public Session() {
     }
 
-    public Session(String id, String ctId, String creator, String assignee, String name, String additionalInfo, Status status, Set<Long> relatedIssueIds, Long projectId, Date timeCreated, Date timeFinished, Duration timeLogged, Set<Long> issueRaisedIds, Collection<SessionActivity> sessionActivity, boolean shared, Collection<Participant> participants, String defaultTemplateId) {
+    public Session(String id, String ctId, String creator, String assignee, String name, String additionalInfo, Status status, Set<Long> relatedIssueIds, Long projectId, Date timeCreated, Date timeFinished, Duration timeLogged, Collection<IssueRaisedBean> issuesRaised, Collection<SessionActivity> sessionActivity, boolean shared, Collection<Participant> participants, String defaultTemplateId) {
         this.id = id;
         this.ctId = ctId;
         this.creator = creator;
@@ -66,7 +66,7 @@ public class Session  implements Comparable<Session>, Serializable{
         this.timeCreated = timeCreated;
         this.timeFinished = timeFinished;
         this.timeLogged = timeLogged;
-        this.issueRaisedIds = issueRaisedIds;
+        this.issuesRaised = issuesRaised;
         this.sessionActivity = sessionActivity;
         this.shared = shared;
         this.participants = participants;
@@ -169,12 +169,12 @@ public class Session  implements Comparable<Session>, Serializable{
         this.timeLogged = timeLogged;
     }
 
-    public Set<Long> getIssueRaisedIds() {
-        return issueRaisedIds;
+    public Collection<IssueRaisedBean> getIssuesRaised() {
+        return issuesRaised;
     }
 
-    public void setIssueRaisedIds(Set<Long> issueRaisedIds) {
-        this.issueRaisedIds = issueRaisedIds;
+    public void setIssuesRaised(Collection<IssueRaisedBean> issuesRaised) {
+        this.issuesRaised = issuesRaised;
     }
 
     public Collection<SessionActivity> getSessionActivity() {
@@ -241,7 +241,7 @@ public class Session  implements Comparable<Session>, Serializable{
         if (timeFinished != null ? !timeFinished.equals(session.timeFinished) : session.timeFinished != null)
             return false;
         if (timeLogged != null ? !timeLogged.equals(session.timeLogged) : session.timeLogged != null) return false;
-
+        if (issuesRaised != null ? !issuesRaised.equals(session.issuesRaised) : session.issuesRaised != null) return false;
         return true;
     }
 
@@ -258,6 +258,7 @@ public class Session  implements Comparable<Session>, Serializable{
         result = 31 * result + (timeLogged != null ? timeLogged.hashCode() : 0);
         result = 31 * result + (participants != null ? participants.hashCode() : 0);
         result = 31 * result + (sessionActivity != null ? sessionActivity.hashCode() : 0);
+        result = 31 * result + (issuesRaised != null ? issuesRaised.hashCode() : 0);
         return result;
     }
 

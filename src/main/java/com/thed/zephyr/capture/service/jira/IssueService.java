@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.service.jira;
 
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.thed.zephyr.capture.model.IssueRaisedBean;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.TestSectionResponse;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
@@ -20,6 +21,8 @@ public interface IssueService {
     CaptureIssue getCaptureIssue(String issueIdOrKey);
 
     List<CaptureIssue> getCaptureIssuesByIds(List<Long> issueIds);
+    
+    List<CaptureIssue> getCaptureIssuesByIssueRaiseBean(List<IssueRaisedBean> issuesRaised);
 
     TestSectionResponse getIssueSessionDetails(Issue issue) throws JSONException;
 

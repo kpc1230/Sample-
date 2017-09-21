@@ -180,14 +180,15 @@ public class SessionController extends CaptureAbstractController{
 			log.info("Start of addIssueRaised() --> params " + listOfIssues);
 			Set<String> issueKeys = new TreeSet<>();
 			Set<String> failedKeys = new TreeSet<>();
-			List<Long> listOfIssueIds = new ArrayList<>();
+			List<IssueRaisedBean> listOfIssueRaised = new ArrayList<>();
 			issueKeys.addAll(listOfIssues);
 			String loggedUser = getUser();
 			issueKeys.forEach(issueKey -> {
 				try {
 					CaptureIssue issue = issueService.getCaptureIssue(issueKey);
 					if (issue != null) {
-						listOfIssueIds.add(issue.getId());
+						IssueRaisedBean issueRaisedBean = new IssueRaisedBean(issue.getId(), new Date());
+						listOfIssueRaised.add(issueRaisedBean);
 					} else {
 						failedKeys.add(issueKey);
 					}
@@ -201,8 +202,8 @@ public class SessionController extends CaptureAbstractController{
 			if (failedKeys.size() > 0) {
 				throw new CaptureValidationException(i18n.getMessage("session.issue.key.invalid", new Object[]{StringUtils.join(failedKeys, ',')}));
 			}
-			if (listOfIssueIds != null && listOfIssueIds.size() > 0) {
-				issues = sessionService.updateSessionWithIssues(loggedUser, sessionId, listOfIssueIds);
+			if (listOfIssueRaised != null && listOfIssueRaised.size() > 0) {
+				issues = sessionService.updateSessionWithIssues(loggedUser, sessionId, listOfIssueRaised);
 			} else {
 				throw new CaptureValidationException("Issues are empty");
 			}

@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.repositories.dynamodb.impl;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -44,6 +45,7 @@ public class SessionRepositoryImpl {
     @Autowired
     private DynamoDBMapper dynamoDBMapper;
     
+    private Map<String, String> strFieldNames = new HashMap<>();    
     /**
      * Fetch the list of sessions based on input filters from the database.
      * 
@@ -56,6 +58,7 @@ public class SessionRepositoryImpl {
      */
     public List<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm) {
     	List<QueryFilter> queryFilters = new LinkedList<>();
+    	setStringFieldNamesIntoMap();
     	QuerySpec querySpec = new QuerySpec();
     	querySpec.withHashKey(new KeyAttribute(ApplicationConstants.TENANT_ID_FIELD, ctId));
     	if(projectId.isPresent()) { //Check if project is selected then add to query.
@@ -102,6 +105,7 @@ public class SessionRepositoryImpl {
      */
     public List<Session> fetchPrivateSessionsForUser(String ctId, String user) {
     	List<QueryFilter> queryFilters = new LinkedList<>();
+    	setStringFieldNamesIntoMap();
     	QuerySpec querySpec = new QuerySpec();
     	querySpec.withHashKey(new KeyAttribute(ApplicationConstants.TENANT_ID_FIELD, ctId));
     	querySpec.withMaxResultSize(50);//fetch only 50 sessions for the user.
@@ -140,6 +144,7 @@ public class SessionRepositoryImpl {
      */
     public List<Session> fetchSharedSessionsForUser(String ctId, String user) {
     	List<QueryFilter> queryFilters = new LinkedList<>();
+    	setStringFieldNamesIntoMap();
     	QuerySpec querySpec = new QuerySpec();
     	querySpec.withHashKey(new KeyAttribute(ApplicationConstants.TENANT_ID_FIELD, ctId));
     	querySpec.withMaxResultSize(50);//fetch only 50 sessions for the user.
@@ -216,14 +221,20 @@ public class SessionRepositoryImpl {
           } else if(entry.getValue() instanceof BigDecimal){
               attributeValue.setN(entry.getValue().toString());
           } else if(entry.getValue() instanceof Set) {
-        	  if(!entry.getKey().equals("participants")) {
+        	  if(!strFieldNames.containsKey(entry.getKey())) {
         		  attributeValue.setNS(item.getStringSet(entry.getKey()));
         	  } else {
-        		  attributeValue.setSS(item.getStringSet("participants"));
+        		  attributeValue.setSS(item.getStringSet(entry.getKey()));
         	  }
           }
           objectMap.put(entry.getKey(), attributeValue);
       }
       return  (Session) dynamoDBMapper.marshallIntoObject(clazz, objectMap);
+    }
+    
+    private void setStringFieldNamesIntoMap() {
+    	strFieldNames.clear();
+    	strFieldNames.put("participants", "participants");
+    	strFieldNames.put("issuesRaised", "issuesRaised");
     }
 }

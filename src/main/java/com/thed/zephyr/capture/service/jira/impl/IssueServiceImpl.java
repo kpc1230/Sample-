@@ -8,12 +8,14 @@ import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.model.IssueRaisedBean;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.jira.CaptureEnvironment;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.TestSectionResponse;
 import com.thed.zephyr.capture.model.jira.TestingStatus;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
+import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
@@ -117,21 +119,48 @@ public class IssueServiceImpl implements IssueService {
     }
 
     @Override
-    public List<CaptureIssue> getCaptureIssuesByIds(List<Long> issueIds) {
+    public List<CaptureIssue> getCaptureIssuesByIds(List<Long> issues) {
         List<CaptureIssue> captureIssues = new ArrayList<>();
-        if (issueIds != null && issueIds.size() > 0) {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-            String jql = "issue in (" + StringUtils.join(issueIds, ',') + ")";
-            SearchResult searchResultPromise =
-                    jiraRestClient.getSearchClient().searchJql(jql).claim();
-            searchResultPromise.getIssues()
-                    .forEach(issue -> {
-                        captureIssues.add(new CaptureIssue(issue.getSelf(),
-                                issue.getKey(), issue.getId(),
-                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName()));
-                    });
+        if (issues != null && issues.size() > 0) {
+            String jql = "issue in (" + StringUtils.join(issues, ',') + ")";
+            captureIssues = getCaptureIssuesForJQL(jql);
         }
+        return captureIssues;
+    }
+    
+    @Override
+    public List<CaptureIssue> getCaptureIssuesByIssueRaiseBean(List<IssueRaisedBean> issues) {
+        List<CaptureIssue> captureIssues = new ArrayList<>();
+        if (issues != null && issues.size() > 0) {
+            StringBuilder issueIds = new StringBuilder();
+        	int count = issues.size();
+            int index= 1;
+            for(IssueRaisedBean tempIssueRaisedBean : issues) {
+            	if(index < count) {
+            		issueIds.append(tempIssueRaisedBean.getIssueId()).append(",");
+            	} else {
+            		issueIds.append(tempIssueRaisedBean.getIssueId());
+            	}
+            	index++;
+            }
+            String jql = "issue in (" + issueIds.toString() + ")";
+            captureIssues = getCaptureIssuesForJQL(jql);
+        }
+        return captureIssues;
+    }
+    
+    private List<CaptureIssue> getCaptureIssuesForJQL(String jql) {
+    	List<CaptureIssue> captureIssues = new ArrayList<>();
+    	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        SearchResult searchResultPromise =
+                jiraRestClient.getSearchClient().searchJql(jql).claim();
+        searchResultPromise.getIssues()
+                .forEach(issue -> {
+                    captureIssues.add(new CaptureIssue(issue.getSelf(),
+                            issue.getKey(), issue.getId(),
+                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName()));
+                });
         return captureIssues;
     }
 
@@ -139,9 +168,12 @@ public class IssueServiceImpl implements IssueService {
     public TestSectionResponse getIssueSessionDetails(Issue issue) throws JSONException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        SessionDtoSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(host.getUserKey().get(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), issue.getProject().getId(), issue.getId());
+        String ctdId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+        Session raisedDuring = sessionService.getSessionRaisedDuring(ctdId, issue.getId());
+        SessionDtoSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(host.getUserKey().get(), ctdId, issue.getProject().getId(), issue.getId());
         TestSectionResponse testSectionResponse = new TestSectionResponse();
         testSectionResponse.setSessions(sessionByRelatedIssueId.getContent());
+        testSectionResponse.setRaisedDuring(raisedDuring);
         StringBuilder basePath = new StringBuilder();
         basePath.append(JiraConstants.REST_API_BASE_ISSUE).append("/").append(issue.getKey()).append("/properties/");
         String userAgentPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ", "_");

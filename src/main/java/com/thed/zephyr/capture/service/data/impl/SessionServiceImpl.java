@@ -256,16 +256,33 @@ public class SessionServiceImpl implements SessionService {
     public UpdateResult removeRaisedIssue(String loggedUserKey, Session session, String issueKey) throws CaptureValidationException {
         ErrorCollection errorCollection = new ErrorCollection();
         CaptureIssue issue = issueService.getCaptureIssue(issueKey);
+        boolean isPresent = false;
         if (Objects.isNull(issue)) {
             throw new CaptureValidationException(i18n.getMessage("session.issue.invalid", new Object[]{issueKey}));
         }
-        if (!Objects.isNull(session.getIssueRaisedIds()) && !session.getIssueRaisedIds().contains(issue.getId())) {
-            errorCollection.addError(i18n.getMessage("validation.service.unraise.notexist"));
+        if (!Objects.isNull(session.getIssuesRaised())) {
+            for(IssueRaisedBean issueRaisedBean : session.getIssuesRaised()) {
+            	if(issueRaisedBean.getIssueId().equals(issue.getId())) {
+            		isPresent = true;
+            		break;
+            	}
+            }
+            if(!isPresent) {
+            	errorCollection.addError(i18n.getMessage("validation.service.unraise.notexist"));
+            }
         }
         if (errorCollection.hasErrors()) {
             return new UpdateResult(errorCollection, null);
         }
-		if (!Objects.isNull(session.getIssueRaisedIds()) && session.getIssueRaisedIds().contains(issue.getId())) session.getIssueRaisedIds().remove(issue.getId());
+		if (!Objects.isNull(session.getIssuesRaised())&& isPresent) {
+			Set<IssueRaisedBean> issuesRaised = new TreeSet<>();
+			for(IssueRaisedBean tempIssuedRaisedBean : session.getIssuesRaised()) {
+				if(!tempIssuedRaisedBean.getIssueId().equals(issue.getId())) {
+					issuesRaised.add(tempIssuedRaisedBean);
+				}
+			}
+			session.setIssuesRaised(issuesRaised.size() > 0 ? issuesRaised : null);
+		};
 		return validateUpdate(loggedUserKey, session);
     }
 	
@@ -359,9 +376,9 @@ public class SessionServiceImpl implements SessionService {
 	public Map<String, Object> getCompleteSessionView(String loggedUser, Session session) {
 		Map<String, Object> map = new HashMap<>();
 		map.put(ApplicationConstants.SESSION, constructSessionDto(loggedUser, session, false));
-		List<Long> raisedIssues = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().stream().collect(Collectors.toList()) : new ArrayList<>(0);
+		List<IssueRaisedBean> raisedIssues = Objects.nonNull(session.getIssuesRaised()) ? session.getIssuesRaised().stream().collect(Collectors.toList()) : new ArrayList<>(0);
 		map.put(ApplicationConstants.RAISED_ISSUE,
-				issueService.getCaptureIssuesByIds(raisedIssues));
+				issueService.getCaptureIssuesByIssueRaiseBean(raisedIssues));
 		List<Long> relatedIssues = Objects.nonNull(session.getRelatedIssueIds()) ? session.getRelatedIssueIds().stream().collect(Collectors.toList()) : new ArrayList<>(0);
 		map.put(ApplicationConstants.RELATED_ISSUE,
 				issueService.getCaptureIssuesByIds(relatedIssues));
@@ -394,14 +411,29 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionSearchList getSessionByRaisedIssueId(String ctId, Long projectId, Long raisedIssueId) {
-		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndIssueRaisedIds(ctId, projectId, raisedIssueId, CaptureUtil.getPageRequest(0, 1000));
+	public Session getSessionRaisedDuring(String ctId, Long raisedIssueId) {
+		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndIssueId(ctId, raisedIssueId, CaptureUtil.getPageRequest(0, 1000));
 		List<Session> content = sessions != null?sessions.getContent():new ArrayList<>();
 		SessionSearchList result = new SessionSearchList();
 		result.setContent(content);
 		result.setTotal(content.size());
-
-		return result;
+		Session raisedDuring = null;
+		Date latestRaisedDate = null;
+		for(Session session : result.getContent()) {
+			for(IssueRaisedBean issueRaisedBean : session.getIssuesRaised()) {
+				if(issueRaisedBean.getIssueId().equals(raisedIssueId)) {
+					if(latestRaisedDate == null) {
+						latestRaisedDate = issueRaisedBean.getTimeCreated();
+						raisedDuring = session;
+					} else if(issueRaisedBean.getTimeCreated().after(latestRaisedDate)) {
+						latestRaisedDate = issueRaisedBean.getTimeCreated();
+						raisedDuring = session;
+					}
+					break;
+				}
+			}
+		}
+		return raisedDuring;
 	}
 
 	@Override
@@ -443,54 +475,58 @@ public class SessionServiceImpl implements SessionService {
 
     }
     @Override
-    public List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<Long> issues) {
+    public List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<IssueRaisedBean> issues) {
         List<CaptureIssue> raisedIssues = Lists.newArrayList();
         Date dateTime = new Date();
         Session session = getSession(sessionId);
         if(session !=null){
-            if (session.getIssueRaisedIds() != null) {
-                session.getIssueRaisedIds().addAll(issues);
+            if (session.getIssuesRaised() != null) {
+                session.getIssuesRaised().addAll(issues);
             } else {
-                Set<Long> set = new TreeSet<>();
-                set.addAll(issues);
-                session.setIssueRaisedIds(set);
+            	Set<IssueRaisedBean> issuesRaised = new TreeSet<>();
+                issuesRaised.addAll(issues);
+                session.setIssuesRaised(issuesRaised);
             }
             save(session, new ArrayList<>());
-            if(Objects.nonNull(session.getIssueRaisedIds())) {
-                for(Long issueId : session.getIssueRaisedIds()) {
+            if(Objects.nonNull(session.getIssuesRaised())) {
+                for(IssueRaisedBean issueRaisedBean : session.getIssuesRaised()) {
                 	try {
-						CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
+						CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueRaisedBean.getIssueId()));
 						raisedIssues.add(issue);
 					}catch (Exception exption){
-						log.error("Error occured while fetching the issue with id  : "+issueId + " So skipped to add the response",exption);
+						log.error("Error occured while fetching the issue with id  : "+ issueRaisedBean.getIssueId() + " So skipped to add the response", exption);
 					}
                 }
             }
         }
-        issues.stream().forEach(issueId -> {
-        	sessionActivityService.addRaisedIssue(session, issueId, dateTime, loggedUser); //Save removed raised issue information as activity.
+        issues.stream().forEach(issueRaisedBean -> {
+        	sessionActivityService.addRaisedIssue(session, issueRaisedBean, dateTime, loggedUser); //Save removed raised issue information as activity.
         });
         return raisedIssues;
     }
-	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId,String loggedUser) {
+	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser) {
 		List<Session> listOfSessionsAsParticipant = sessions != null ? sessions.getContent() : new ArrayList<>();
+		Date dateTime = new Date();
+		IssueRaisedBean issueRaisedBean = new IssueRaisedBean(issueId, dateTime);
 		listOfSessionsAsParticipant.forEach(session -> {
 			boolean issueAdded = false;
-			if (session.getIssueRaisedIds() != null) {
-				if (!session.getIssueRaisedIds().contains(issueId)) {
-					session.getIssueRaisedIds().add(issueId);
-					issueAdded = true;
+			if (session.getIssuesRaised() != null) {
+				for(IssueRaisedBean tempBean : session.getIssuesRaised()) {
+					if(tempBean.getIssueId().equals(issueRaisedBean.getIssueId())) {
+						issueAdded = false;
+						break;
+					}
 				}
+				if(issueAdded) session.getIssuesRaised().add(issueRaisedBean);
 			} else {
-				Set<Long> set = new TreeSet<>();
-				set.add(issueId);
-				session.setIssueRaisedIds(set);
+				Set<IssueRaisedBean> issuesRaised = new TreeSet<>();
+				issuesRaised.add(issueRaisedBean);
+				session.setIssuesRaised(issuesRaised);
 				issueAdded = true;
 			}
-			Date dateTime = new Date();
 			save(session, new ArrayList<>());
 			if (issueAdded) {
-				sessionActivityService.addRaisedIssue(session, issueId, dateTime, loggedUser); //Save removed raised issue information as activity.
+				sessionActivityService.addRaisedIssue(session, issueRaisedBean, dateTime, loggedUser); //Save removed raised issue information as activity.
 			}
 
 		});
@@ -1133,9 +1169,9 @@ public class SessionServiceImpl implements SessionService {
 				}
 			}
 			List<CaptureIssue> raisedIssues = Lists.newArrayList();
-			if(Objects.nonNull(session.getIssueRaisedIds())) {
-				for(Long issueId : session.getIssueRaisedIds()) {
-					CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
+			if(Objects.nonNull(session.getIssuesRaised())) {
+				for(IssueRaisedBean issueRaisedBean : session.getIssuesRaised()) {
+					CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueRaisedBean.getIssueId()));
 					raisedIssues.add(issue);
 				}
 			}
@@ -1144,7 +1180,7 @@ public class SessionServiceImpl implements SessionService {
                     i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc,
                     user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeFinished(), session.getTimeLogged());
         } else {
-            Integer issusRaisedCount = Objects.nonNull(session.getIssueRaisedIds()) ? session.getIssueRaisedIds().size() : 0;
+            Integer issusRaisedCount = Objects.nonNull(session.getIssuesRaised()) ? session.getIssuesRaised().size() : 0;
 			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, estimatedTimeSpent,
 					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc,
 					userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeLogged());

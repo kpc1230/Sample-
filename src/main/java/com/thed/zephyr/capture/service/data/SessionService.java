@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.data;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.CompleteSessionRequest;
+import com.thed.zephyr.capture.model.IssueRaisedBean;
 import com.thed.zephyr.capture.model.Participant;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Session.Status;
@@ -220,13 +221,13 @@ public interface SessionService {
 	 */
 	Set<String> fetchAllAssignees();
 
-	SessionSearchList getSessionByRaisedIssueId(String ctId, Long projectId, Long raisedIssueId);
+	Session getSessionRaisedDuring(String ctId, Long raisedIssueId);
 
 	SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String ctId, Long projectId, Long relatedIssueId);
 
 	void updateSessionWithIssue(String ctId,Long projectId,String user,Long issueId);
 
-	List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<Long> issues);
+	List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<IssueRaisedBean> issues);
 
     /**
 	 * Update the additional information into the requested session.
