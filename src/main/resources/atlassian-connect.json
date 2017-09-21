@@ -55,6 +55,14 @@
         "location": "none"
       },
       {
+        "url": "/wikiHelp?projectId={project.id}&projectKey={project.key}",
+        "name": {
+          "value": "Wiki Help"
+        },
+        "key": "wiki-help",
+        "location": "none"
+      },
+      {
         "url": "/projectTestSessions?projectId={project.id}&projectKey={project.key}",
         "name": {
           "value": "Test Sessions"

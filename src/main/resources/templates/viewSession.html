@@ -7,11 +7,12 @@
 
     <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui.min.css" media="all"></link>
     <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui-experimental.min.css" media="all"></link>
+    <link rel="stylesheet" th:href="@{css/notes.css}" />
     <link rel="stylesheet" th:href="${captureUIBaseUrl} + '/css/ViewSession/ViewSession.css'" media="all"></link>
 </head>
 <body>
     
-    <div id="root" th:attr="data-projectkey=${projectKey}, data-projectid=${projectId}"></div>
+    <div id="root" th:attr="data-projectkey=${projectKey}, data-projectid=${projectId}, data-pluginkey=${pluginKey}"></div>
     
     <script th:src="@{js/utils/i18n.js}"></script>
     <script th:inline="javascript">

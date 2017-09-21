@@ -1,6 +1,7 @@
 <html>
 <head>
     <meta name="decorator" content="popup"/>
+    <link rel="stylesheet" th:href="@{css/notes.css}" />
 </head>
 <body>
 <div>
@@ -40,10 +41,46 @@
 
     </p>
 
-   <!--  <p>
-        You can find <a href="${baseurl}/secure/WikiRendererHelpAction.jspa?&section=texteffects">more information about
-        wiki markup here</a>
-    </p> -->
+    <p>
+        You can find <a target="_parent" id="wikiRendererLink">more information about wiki markup here</a>
+    </p>
 </div>
+
+<script type="text/javascript" th:inline="javascript" id="connect-loader" data-options="sizeToParent:true;">
+        //<![CDATA[
+
+        (function() {
+            var getUrlParam = function (param) {
+                var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
+                return decodeURIComponent(codedParam);
+            };
+
+            var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
+            var options = document.getElementById('connect-loader').getAttribute('data-options');
+
+            var script = document.createElement("script");
+            script.src = baseUrl + '/atlassian-connect/all.js';
+
+            var style = document.createElement("link");
+            style.rel = "stylesheet";
+            style.href = baseUrl + '/atlassian-connect/all.css';
+            if(options) {
+                script.setAttribute('data-options', options);
+            }
+
+            script.onload = function() {
+                AP.resize('500px', '500px');
+            }
+
+            document.body.appendChild(script);
+            document.body.appendChild(style);
+
+            document.getElementById('wikiRendererLink').setAttribute('href', baseUrl + '/secure/WikiRendererHelpAction.jspa?&section=texteffects');
+            
+        })();
+
+        // ]]>
+    </script>
+
 </body>
 </html>

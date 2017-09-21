@@ -50,6 +50,7 @@ public class ApplicationController {
     @RequestMapping(value = "/adminGenConf")
     public String getGeneralConfigurationPage(@RequestParam String user_id, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
+        String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         log.debug("Requesting the general configuration page with username : " + user_id);
         JsonNode jsonNode = jiraUserService.getUserProperty(user_id, "captureGenPageSettings");
         JsonNode resp = null;
@@ -57,8 +58,10 @@ public class ApplicationController {
             resp = jsonNode.get("value");
         }
         model.addAttribute("generalConfigData", resp);
+        model.addAttribute("pluginKey", pluginKey);
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
+
 
         log.debug("Ending Requesting the general configuration page with username : " + user_id + "with resp : " + resp);
         return "generalConfigPage";
@@ -67,8 +70,10 @@ public class ApplicationController {
     @RequestMapping(value = "/browseTestSessions")
     public String getSessionNavigatorPage(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
+        String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         log.debug("Requesting the Browse Test Sessions page");
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        model.addAttribute("pluginKey", pluginKey);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
         model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
@@ -80,8 +85,10 @@ public class ApplicationController {
     @RequestMapping(value = "/viewSession")
     public String getViewSessionPage(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
+        String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         log.debug("Requesting the Session Navigator page");
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        model.addAttribute("pluginKey", pluginKey);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
         model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
@@ -93,8 +100,10 @@ public class ApplicationController {
     @RequestMapping(value = "/public/rest/testing")
     public String getTestingIssueView(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId, @RequestParam String issueKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
+        String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         log.debug("Requesting the Testing Issue View page");
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        model.addAttribute("pluginKey", pluginKey);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
         model.addAttribute("issueId", issueId);
@@ -108,7 +117,9 @@ public class ApplicationController {
     @RequestMapping(value = "/projectTestSessions")
     public String projectTestSessions(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
+        String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         log.debug("Requesting the Project Test Sessions page");
+        model.addAttribute("pluginKey", pluginKey);
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
@@ -121,8 +132,10 @@ public class ApplicationController {
     @RequestMapping(value = "/createTestSessionDialog")
     public String createTestSessionDialog(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
+        String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         log.debug("Requesting the Project Test Sessions page");
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
+        model.addAttribute("pluginKey", pluginKey);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
         model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
