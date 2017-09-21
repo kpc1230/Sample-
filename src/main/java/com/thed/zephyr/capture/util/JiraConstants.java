@@ -14,7 +14,7 @@ public class JiraConstants {
     public static final String REST_API_CYCLE = "/rest/api/latest/cycle";
     public static final String REST_API_ISSUE = "/rest/api/latest/issue";
     public static final String REST_API_SEARCH = "/rest/api/latest/search";
-    public static final String REST_API_PICKER = "/rest/api/latest/issue/picker";
+    public static final String REST_API_ISSUE_PICKER = REST_API_BASE + "/issue/picker";
     public static final String REST_API_LICENSE = "/rest/atlassian-connect/latest/license";
     public static final String REST_API_MYPERMISSIONS = "/rest/api/2/mypermissions";
     public static final String REST_API_ADD_ON_INFO = "/rest/atlassian-connect/latest/addons";
