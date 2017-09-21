@@ -89,11 +89,11 @@ module.exports = function(grunt) {
           }
         ]
       }
-    },
+    }/*,
     sftp: {
       deploy: {
         files: {
-          "./":["script/*.sh","script/*.conf","script/*.xml"]
+          "./":["script/!*.sh","script/!*.conf","script/!*.xml"]
         },
         options: {
           createDirectories: true,
@@ -120,15 +120,15 @@ module.exports = function(grunt) {
           'sudo docker ps'
         ].join('&&')
       }
-    }
+    }*/
   });
 
   // These plugins provide necessary tasks.
   
 
   // Default task.
-  grunt.registerTask('default', ['gitinfo','shell','replace','sftp','sshexec:addScript','sshexec:runTomcat']);
-  grunt.registerTask('deploy', ['gitinfo','sftp','replace','sshexec:addScript','sshexec:runTomcat']);
+ // grunt.registerTask('default', ['gitinfo','shell','replace','sftp','sshexec:addScript','sshexec:runTomcat']);
+ // grunt.registerTask('deploy', ['gitinfo','sftp','replace','sshexec:addScript','sshexec:runTomcat']);
   grunt.registerTask('build', ['gitinfo','shell:build','shell:Build_docker_connect','shell:commitConnect']);
 
 };

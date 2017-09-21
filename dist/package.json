@@ -7,7 +7,6 @@
     "grunt": "latest",
     "grunt-cli": "latest",
     "grunt-shell": "latest",
-    "grunt-ssh": "latest",
     "grunt-git":"latest",
     "grunt-replace":"latest",
     "grunt-gitinfo":"latest"
