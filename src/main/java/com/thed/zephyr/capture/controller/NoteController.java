@@ -156,10 +156,10 @@ public class NoteController extends CaptureAbstractController {
 
     @PostMapping(value = "/note/{noteSessionActivityId}/toggleResolution", consumes = APPLICATION_JSON_VALUE)
     public ResponseEntity<?> completeNote(@AuthenticationPrincipal AtlassianHostUser hostUser,
-                                          @PathVariable String noteId, @Valid @RequestBody NoteRequest NoteRequest)
+                                          @PathVariable String noteSessionActivityId, @Valid @RequestBody NoteRequest NoteRequest)
             throws CaptureValidationException {
         NoteRequest updated = null;
-        NoteRequest.setId(noteId);
+        NoteRequest.setId(noteSessionActivityId);
         try {
             updated = noteService.update(NoteRequest, true);
         } catch (Exception ex) {

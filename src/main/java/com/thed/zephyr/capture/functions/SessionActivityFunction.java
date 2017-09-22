@@ -5,12 +5,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.model.IssueAttachmentSessionActivity;
 import com.thed.zephyr.capture.model.IssueRaisedSessionActivity;
 import com.thed.zephyr.capture.model.IssueUnraisedSessionActivity;
+import com.thed.zephyr.capture.model.NoteSessionActivity;
 import com.thed.zephyr.capture.model.SessionActivity;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.service.jira.IssueService;
+import com.thed.zephyr.capture.util.CaptureUtil;
 
 /**
  * Class converts the session activity which has issue id to map in order
@@ -51,10 +54,22 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 			addIssueInToMap(finalSescionActivityMap, captureIssue, issueAttachmentSessionActivity.getIssueId());
 			finalSescionActivityMap.put("attachment", issueAttachmentSessionActivity.getAttachment());
 			return finalSescionActivityMap;
+		} else if(sessionActivity instanceof NoteSessionActivity){
+			NoteSessionActivity noteSessionActivity = (NoteSessionActivity) sessionActivity;
+			addNoteActivityInToMap(finalSescionActivityMap, noteSessionActivity);
 		}
 		return sessionActivity;
 	}
-	
+
+	private void addNoteActivityInToMap(Map<String, Object> finalSessionActivityMap,
+			NoteSessionActivity noteSessionActivity) {
+		ObjectMapper m = new ObjectMapper();
+		finalSessionActivityMap.putAll(m.convertValue(noteSessionActivity, Map.class));
+		String rawNoteData = noteSessionActivity.getNoteData();
+		finalSessionActivityMap.put("rawNoteData", rawNoteData);
+		finalSessionActivityMap.put("noteData", CaptureUtil.createNoteData(noteSessionActivity.getTags(), rawNoteData));
+	}
+
 	private void addSessionActivityInToMap(Map<String, Object> finalSescionActivityMap, SessionActivity sessionActivity) {
 		finalSescionActivityMap.put("id", sessionActivity.getId());
 		finalSescionActivityMap.put("sessionId", sessionActivity.getSessionId());

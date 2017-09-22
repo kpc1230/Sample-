@@ -150,13 +150,10 @@ public final class TemplateBuilder {
 	public static TemplateRequest createTemplateRequest(Template template, Project project, CaptureUser user) {
 		TemplateRequest request = createTemplateRequest(template);
 		if(project != null){
-			request.setProjectKey(project.getKey());
-			//TODO, include the attributes projectIconUrl
-			//request.setProjectIconUrl(project.getSelf().toString());
-		}
+			request.setProjectKey(project.getKey());		}
 		if(user != null){
-			request.setOwnerName(project.getLead().getName());
-			request.setOwnerDisplayName(project.getLead().getDisplayName());
+			request.setOwnerName(user.getName());
+			request.setOwnerDisplayName(user.getDisplayName());
 		}
 
 		return request;

@@ -7,6 +7,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.util.CaptureUtil;
 
 final public class NoteRequest {
 
@@ -66,7 +67,7 @@ final public class NoteRequest {
     		this.user = note.getAuthor();
     		this.rawNoteData = note.getNoteData();
     		this.resolutionState = note.getResolutionState().name();
-    		this.noteData = createNoteData(tags, note.getNoteData());
+    		this.noteData = CaptureUtil.createNoteData(tags, note.getNoteData());
     		this.projectId = note.getProjectId();
     		this.tags = tags;//createLightTag(tags);
     		this.sessionActivityId = note.getNoteSessionActivityId();
@@ -82,7 +83,7 @@ final public class NoteRequest {
     		this.user = note.getUser();
     		this.rawNoteData = note.getNoteData();
     		this.resolutionState = note.getResolutionState().name();
-    		this.noteData = createNoteData(tags, note.getNoteData());
+    		this.noteData = CaptureUtil.createNoteData(tags, note.getNoteData());
     		this.projectId = note.getProjectId();
     		this.tags = tags;//createLightTag(tags);
     	}
@@ -99,70 +100,8 @@ final public class NoteRequest {
 		this.rawNoteData = rawNoteData;
 		this.resolutionState = resolutionState;
 		this.projectId = projectId;
-		this.noteData = createNoteData(tags, rawNoteData);
+		this.noteData = CaptureUtil.createNoteData(tags, rawNoteData);
 		this.tags = tags;//createLightTag(tags);
-	}
-
-	/*private List<LightTag> createLightTag(List<Tag> tags) {
-		return tags.stream().map( tag -> new LightTag(tag.getId(), Tag.getTagCodeByName(tag.getName()))).collect(Collectors.toList());
-	}*/
-
-	private String createNoteData(Set<String> tags, String noteData) {
-		StringBuilder stringBuilder = new StringBuilder();
-		String tagData = null;
-		String cssClassUnknown = "tag-unknown";
-		if(!noteData.startsWith(Tag.HASH)){
-			if(tags != null && tags.size() > 0){
-				tagData = noteData.substring(0, noteData.indexOf(Tag.HASH));
-				stringBuilder.append("<span class=\"note-tag ").append(cssClassUnknown).append("\">")
-					.append(tagData) // Tag data if present
-					.append("</span>");
-			}else{
-				stringBuilder.append("<span class=\"note-tag ").append(cssClassUnknown).append("\">")
-				.append(noteData) // Tag data if present
-				.append("</span>");
-			}
-				
-		}
-		if(tags != null){
-			for(String tag : tags){
-				tagData = null;
-	            String cssClass = cssClassUnknown;
-	            if (Tag.ASSUMPTION_TAG_NAME.equals(tag)) {
-	                cssClass = "tag-assumption";
-	                tagData = getTagData(noteData, Tag.ASSUMPTION);
-	            }else if (Tag.FOLLOWUP_TAG_NAME.equals(tag)) {
-	                cssClass = "tag-followUp";
-	                tagData = getTagData(noteData, Tag.FOLLOWUP);
-	            }else if (Tag.IDEA_TAG_NAME.equals(tag)) {
-	                cssClass = "tag-idea";
-	                tagData = getTagData(noteData, Tag.IDEA);
-	            }else if (Tag.QUESTION_TAG_NAME.equals(tag)) {
-	                cssClass = "tag-question";
-	                tagData = getTagData(noteData, Tag.QUESTION);
-	            }
-	            boolean tagIsUnknown = cssClass.equals(cssClassUnknown);
-	            if(tagIsUnknown){
-	            	tagData = noteData;
-	            }
-	            
-	            stringBuilder.append("<span class=\"note-tag ").append(cssClass).append("\">").append(tagIsUnknown ? tag : "")
-	            	.append(tagData == null ? "" : tagData) // Tag data if present
-	            	.append("</span>");
-			}
-		}
-		return stringBuilder.toString();
-	}
-
-	private String getTagData(String noteData, String tag) {
-		int beginIndex = noteData.indexOf(tag);
-		if (beginIndex == -1)
-			return null;
-		int endIndex = noteData.indexOf(Tag.HASH, beginIndex + 1);
-		if (endIndex == -1) {
-			return noteData.substring(beginIndex + tag.length());
-		}
-		return noteData.substring(beginIndex + tag.length(), endIndex);
 	}
 
 	public String getId() {

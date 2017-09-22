@@ -4,6 +4,7 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.model.Tag;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 
 public class CaptureUtil {
@@ -184,4 +186,63 @@ public class CaptureUtil {
         }
         return "none";
     }
+
+	public static String createNoteData(Set<String> tags, String noteData) {
+		StringBuilder stringBuilder = new StringBuilder();
+		String tagData = null;
+		String cssClassUnknown = "tag-unknown";
+		if(!noteData.startsWith(Tag.HASH)){
+			if(tags != null && tags.size() > 0){
+				tagData = noteData.substring(0, noteData.indexOf(Tag.HASH));
+				stringBuilder.append("<span class=\"note-tag ").append(cssClassUnknown).append("\">")
+					.append(tagData) // Tag data if present
+					.append("</span>");
+			}else{
+				stringBuilder.append("<span class=\"note-tag ").append(cssClassUnknown).append("\">")
+				.append(noteData) // Tag data if present
+				.append("</span>");
+			}
+				
+		}
+		if(tags != null){
+			for(String tag : tags){
+				tagData = null;
+	            String cssClass = cssClassUnknown;
+	            if (Tag.ASSUMPTION_TAG_NAME.equals(tag)) {
+	                cssClass = "tag-assumption";
+	                tagData = getTagData(noteData, Tag.ASSUMPTION);
+	            }else if (Tag.FOLLOWUP_TAG_NAME.equals(tag)) {
+	                cssClass = "tag-followUp";
+	                tagData = getTagData(noteData, Tag.FOLLOWUP);
+	            }else if (Tag.IDEA_TAG_NAME.equals(tag)) {
+	                cssClass = "tag-idea";
+	                tagData = getTagData(noteData, Tag.IDEA);
+	            }else if (Tag.QUESTION_TAG_NAME.equals(tag)) {
+	                cssClass = "tag-question";
+	                tagData = getTagData(noteData, Tag.QUESTION);
+	            }
+	            boolean tagIsUnknown = cssClass.equals(cssClassUnknown);
+	            if(tagIsUnknown){
+	            	tagData = noteData;
+	            }
+	            
+	            stringBuilder.append("<span class=\"note-tag ").append(cssClass).append("\">").append(tagIsUnknown ? tag : "")
+	            	.append(tagData == null ? "" : tagData) // Tag data if present
+	            	.append("</span>");
+			}
+		}
+		return stringBuilder.toString();
+	}
+
+	private static String getTagData(String noteData, String tag) {
+		int beginIndex = noteData.indexOf(tag);
+		if (beginIndex == -1)
+			return null;
+		int endIndex = noteData.indexOf(Tag.HASH, beginIndex + 1);
+		if (endIndex == -1) {
+			return noteData.substring(beginIndex + tag.length());
+		}
+		return noteData.substring(beginIndex + tag.length(), endIndex);
+	}
+
 }

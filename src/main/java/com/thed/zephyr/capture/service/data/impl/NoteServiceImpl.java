@@ -4,7 +4,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.amazonaws.util.StringUtils;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
@@ -88,30 +87,26 @@ public class NoteServiceImpl implements NoteService {
 		} else if(!(existing instanceof NoteSessionActivity)){
 			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteRequest.getId()}));
 		} else if (!noteRequest.getSessionId().equals(existing.getSessionId())){
-			throw new CaptureValidationException("Note sessionId don't match");//TODO
+			throw new CaptureValidationException(i18n.getMessage("session.invalid.id", new Object[]{noteRequest.getSessionId()}));
 		} else if (!noteRequest.getUser().equals(existing.getUser())){
-			throw new CaptureValidationException("Note author don't match");
+			throw new CaptureValidationException(i18n.getMessage("note.update.permission.violation"));
 		}
 		if (!permissionService.canEditNote(noteRequest.getUser(), noteRequest.getSessionId(), (NoteSessionActivity)existing)) {
 			throw new CaptureValidationException(i18n.getMessage("note.update.permission.violation"));
 		}
 		//For update, rawNoteData should be used.
+		Set<String> existingTags = ((NoteSessionActivity)existing).getTags(); 
 		((NoteSessionActivity)existing).setNoteData(noteRequest.getNoteData());
 		Set<String> tags = tagService.parseTags(noteRequest.getNoteData());
-		NoteSessionActivity.Resolution resolution;
-		if (tags.size() == 0){
-			resolution = NoteSessionActivity.Resolution.NON_ACTIONABLE;
-		} else {
-			((NoteSessionActivity)existing).setTags(tags);
-			if(StringUtils.isNullOrEmpty(noteRequest.getResolutionState())){
-				resolution = ((NoteSessionActivity)existing).getResolutionState();
-			}else{
-				resolution = NoteSessionActivity.Resolution.valueOf(noteRequest.getResolutionState());
-			}
+		NoteSessionActivity.Resolution resolution = NoteSessionActivity.Resolution.NON_ACTIONABLE;
+		if((existingTags.size() != tags.size()) 
+				|| !(existingTags.containsAll(tags) && tags.containsAll(existingTags))){
+			resolution = NoteSessionActivity.Resolution.INITIAL;
 		}
 		if(toggleResolution){
 			resolution = validateToggleResolution(((NoteSessionActivity)existing).getResolutionState());
 		}
+		((NoteSessionActivity)existing).setTags(tags);
 		((NoteSessionActivity)existing).setResolutionState(resolution);
 		NoteSessionActivity noteSessionActivity = (NoteSessionActivity)sessionActivityRepository.save(existing);
 
@@ -185,7 +180,7 @@ public class NoteServiceImpl implements NoteService {
 		case INVALID:
 			return NoteSessionActivity.Resolution.INITIAL;
 		default:
-			throw new CaptureValidationException("Invalid resolution state");//TODO
+			throw new CaptureValidationException("Invalid resolution state");
 		}
 	}
 
