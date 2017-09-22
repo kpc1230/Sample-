@@ -2,8 +2,7 @@ package com.thed.zephyr.capture.model.util;
 
 import java.util.List;
 
-import com.thed.zephyr.capture.service.jira.impl.IssueSearchServiceImpl.IssueSearchDto;
-
+import com.thed.zephyr.capture.model.view.IssueSearchDto;
 /**
  * @author manjunath
  *
