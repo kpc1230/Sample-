@@ -8,7 +8,7 @@ import com.thed.zephyr.capture.model.util.IssueSearchList;
  */
 public interface IssueSearchService {	
 	
-	IssueSearchList getIssuesForQuery(String query);
+	IssueSearchList getIssuesForQuery(String projectKey, String query);
 		
 	IssueSearchList getEpicIssuesForQuery(String query);
 	
