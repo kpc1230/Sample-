@@ -53,8 +53,10 @@
                 var appScript = document.createElement("script");
                 appScript.src = /*[[${captureUIBaseUrl} + '/js/SessionNavigator/SessionNavigator.js']]*/;
                 document.body.appendChild(appScript);
+                 AJS.$(document).ready(function() {
+                    AP.resize('100%', '800px');
+                });
             }
-
             document.body.appendChild(script);
             document.body.appendChild(style);
 

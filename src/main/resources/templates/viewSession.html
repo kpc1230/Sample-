@@ -55,6 +55,9 @@
                 var appScript = document.createElement("script");
                 appScript.src = /*[[${captureUIBaseUrl} + '/js/ViewSession/ViewSession.js']]*/;
                 document.body.appendChild(appScript);
+                 AJS.$(document).ready(function() {
+                    AP.resize('100%', '800px');
+                });
             }
 
             document.body.appendChild(script);
