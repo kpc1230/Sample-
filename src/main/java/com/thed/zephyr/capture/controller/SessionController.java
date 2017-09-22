@@ -822,9 +822,8 @@ public class SessionController extends CaptureAbstractController{
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult);
-			boolean isEmpty = StringUtils.isEmpty(updateResult.getSession().getAdditionalInfo());
 			Map<String, String> jsonResponse = new HashMap<>();
-			jsonResponse.put("additionalInfo", isEmpty ? i18n.getMessage("session.section.additionalinfo.empty") : updateResult.getSession().getAdditionalInfo());
+			jsonResponse.put("additionalInfo", updateResult.getSession().getAdditionalInfo());
 			log.info("End of updateAdditionalInfo()");
 			return ResponseEntity.ok(jsonResponse);
 		} catch(CaptureValidationException ex) {
