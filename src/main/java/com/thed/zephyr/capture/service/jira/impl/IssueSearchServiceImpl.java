@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -9,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
@@ -33,12 +35,12 @@ public class IssueSearchServiceImpl implements IssueSearchService {
     
     @Override
     public IssueSearchList getIssuesForQuery(String query) {
-    	return getIssuesForJQLAndQuery(query, "currentJQL=ORDER BY updated DESC");
+    	return getIssuesForJQLAndQuery(query, "ORDER BY updated DESC");
     }
     
     @Override
     public IssueSearchList getEpicIssuesForQuery(String query) {
-    	return getIssuesForJQLAndQuery(query, "currentJQL=\"issuetype = Epic ORDER BY updated DESC\"");
+    	return getIssuesForJQLAndQuery(query, "issuetype = Epic ORDER BY updated DESC");
     }
     
     private IssueSearchList getIssuesForJQLAndQuery(String query, String currentJQL) {
@@ -46,10 +48,15 @@ public class IssueSearchServiceImpl implements IssueSearchService {
         try {
         	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        	StringBuilder uri = new StringBuilder();
-            uri.append(host.getHost().getBaseUrl()).append(JiraConstants.REST_API_ISSUE_PICKER)
-            .append("?query=").append(query).append("&").append(currentJQL);
-            JsonNode response = restTemplate.getForObject(uri.toString(), JsonNode.class);
+        	String uri = host.getHost().getBaseUrl();
+            URI targetUrl= UriComponentsBuilder.fromUriString(uri)
+                    .path(JiraConstants.REST_API_ISSUE_PICKER)
+                    .queryParam("term", query)
+                    .queryParam("currentJQL", currentJQL)
+                    .build()
+                    .encode()
+                    .toUri();
+            JsonNode response = restTemplate.getForObject(targetUrl, JsonNode.class);
             JsonNode issuesNode = response.path("sections").get(0).get("issues");
             Iterator<JsonNode> issuesIterator = issuesNode.iterator();
             IssueSearchDto issueSearchDto = null;
