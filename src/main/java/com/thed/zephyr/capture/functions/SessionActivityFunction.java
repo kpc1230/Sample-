@@ -57,10 +57,12 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 		} else if(sessionActivity instanceof NoteSessionActivity){
 			NoteSessionActivity noteSessionActivity = (NoteSessionActivity) sessionActivity;
 			addNoteActivityInToMap(finalSescionActivityMap, noteSessionActivity);
+			return finalSescionActivityMap;
 		}
 		return sessionActivity;
 	}
 
+	@SuppressWarnings("unchecked")
 	private void addNoteActivityInToMap(Map<String, Object> finalSessionActivityMap,
 			NoteSessionActivity noteSessionActivity) {
 		ObjectMapper m = new ObjectMapper();
