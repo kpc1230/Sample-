@@ -15,6 +15,8 @@ public interface UserService {
 
     boolean createOrUpdateUserProperty(String userName, String propName, JsonNode jsonNode);
 
+    JsonNode getAssignableUserByProjectKey(String projectKey,String username);
+
     JsonNode getAssignableUserByProjectKey(String projectKey);
 
     CaptureUser findUser(String username);

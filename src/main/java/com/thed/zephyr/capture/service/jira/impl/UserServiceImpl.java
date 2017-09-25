@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.JiraConstants;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -94,7 +95,7 @@ public class UserServiceImpl implements UserService{
      * @return
      */
     @Override
-    public JsonNode getAssignableUserByProjectKey(String projectKey){
+    public JsonNode getAssignableUserByProjectKey(String projectKey,String username){
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
@@ -103,6 +104,7 @@ public class UserServiceImpl implements UserService{
         URI targetUrl= UriComponentsBuilder.fromUriString(uri)
                 .path(JiraConstants.REST_API_ASSIGNABLE_USER)
                 .queryParam("project", projectKey)
+                .queryParam("username", StringUtils.isNotEmpty(username)?username:"")
                 .build()
                 .encode()
                 .toUri();
@@ -113,6 +115,16 @@ public class UserServiceImpl implements UserService{
             log.error("Error during getting assignable user by project from jira.", exception);
         }
         return null;
+    }
+
+    /**
+     * Get Assignable users by project
+     * @param projectKey
+     * @return
+     */
+    @Override
+    public JsonNode getAssignableUserByProjectKey(String projectKey){
+        return getAssignableUserByProjectKey(projectKey,null);
     }
 
     @Override
