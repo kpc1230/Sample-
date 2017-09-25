@@ -63,16 +63,16 @@ public class IssueController {
     
     @GetMapping(value = "/issueSearch/autocomplete")
     public ResponseEntity<?> getIssuesForQuery(@RequestParam("term")  String query, @RequestParam  String projectKey) {
-    	log.info("Start of getIssuesForQuery() --> params - query " + query);
+    	log.info("Start of getIssuesForQuery() --> params - query " + query + " projectKey " + projectKey);
     	IssueSearchList searchIssues = issueSearchService.getIssuesForQuery(projectKey, query);
         log.info("End of getIssuesForQuery()");
         return ResponseEntity.ok(searchIssues);
     }
     
     @GetMapping(value = "/issueSearch/autocompleteEpic")
-    public ResponseEntity<?> getIssuesEpicForQuery(@RequestParam  String query) {
-    	log.info("Start of getIssuesEpicForQuery() --> params - query " + query);
-    	IssueSearchList searchIssues = issueSearchService.getEpicIssuesForQuery(query);
+    public ResponseEntity<?> getIssuesEpicForQuery(@RequestParam("term")  String query, @RequestParam  String projectKey) {
+    	log.info("Start of getIssuesEpicForQuery() --> params - query " + query + " projectKey " + projectKey);
+    	IssueSearchList searchIssues = issueSearchService.getEpicIssuesForQuery(projectKey, query);
         log.info("End of getIssuesEpicForQuery()");
         return ResponseEntity.ok(searchIssues);
     }

@@ -1,8 +1,6 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.lang.StringUtils;
@@ -34,70 +32,71 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     @Autowired
 	private ITenantAwareCache iTenantAwareCache;
     
-    private static Set<String> fields = new HashSet<>();
-    
-    static {
-    	fields.add("summary");
-    	fields.add("key");
-    	fields.add("iconUrl");
-    	fields.add("id");
-    }
-    
-    @Override
-    public IssueSearchList getIssuesForQuery(String projectKey, String query) {
+    private IssueSearchList getIssuesForIssueTerm(String projectKey, String issueTerm, boolean appendEpicIssueType) {
     	try {
     		SearchResult searchResult = null;
-    		if(StringUtils.isBlank(query)) {
-    			return new IssueSearchList(new ArrayList<>(1), 0, 10, 1);
+    		if(StringUtils.isBlank(issueTerm)) {
+    			return new IssueSearchList(new ArrayList<>(1), 0, 10, 0);
     		}
-        	if(query.matches("^[a-zA-Z0-9]+\\-[0-9]+$")) {
+        	if(issueTerm.matches("^[a-zA-Z0-9]+\\-[0-9]+$")) {
         		ArrayList<IssueSearchDto> searchedIssues = new ArrayList<>(10);
-        		int index = 0; //Placeholder for incrementing the value to append in the issue
-        		int maxResult = 10; //Fetching only matching 10 records from jira.
-        		while(index < maxResult) { //looping till we find 10 results matching to the issue query.
-        			if(index != 0) {
-        				searchResult = getJQLResult("project=" + projectKey + " AND issue=" + query + index, 0, 10, fields);
-        			} else {
-        				searchResult = getJQLResult("project=" + projectKey + " AND issue=" + query, 0, 10, fields);
-        			}
-        			searchResult.getIssues().spliterator().forEachRemaining(issue -> {
-        				searchedIssues.add(new IssueSearchDto(issue.getId(), issue.getKey(), issue.getIssueType().getIconUri().toString(), issue.getSummary()));
-            		});
-        			index++;
-        		}
+        		String issueQuery = generateIssueInClause(issueTerm);
+        		searchResult = getJQLResult("project = " + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : "") + " AND issue IN (" + issueQuery.toString() + ")", 0, 10);
+        		searchResult.getIssues().spliterator().forEachRemaining(issue -> {
+    				searchedIssues.add(new IssueSearchDto(issue.getId(), issue.getKey(), issue.getIssueType().getIconUri().toString(), issue.getSummary()));
+        		});
         		return new IssueSearchList(searchedIssues, 0, 10, searchedIssues.size());
         	} else {
         		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        		String cacheKey = "issue_search_project_" + projectKey + "_user_" + host.getUserKey();
-        		ArrayList<IssueSearchDto> searchedIssues = new ArrayList<>(50);;
+        		String cacheKey = "issue " + (appendEpicIssueType ? "epic" : "") + "_search_project_" + projectKey;
+        		ArrayList<IssueSearchDto> searchedIssues = new ArrayList<>(20);
         		try {
         			searchedIssues = iTenantAwareCache.getOrElse((AcHostModel)host.getHost(), cacheKey, new Callable<ArrayList<IssueSearchDto>>() {
         				public ArrayList<IssueSearchDto> call() throws Exception {
         					ArrayList<IssueSearchDto> issues = new ArrayList<>(50);
-        					SearchResult searchResult = getJQLResult("project=" + projectKey, 0, 20, fields); //fetching 20 is better in terms of performance.
+        					SearchResult searchResult = getJQLResult("project=" + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 20); //fetching 20 is better in terms of performance.
         		    		searchResult.getIssues().spliterator().forEachRemaining(issue -> {
         		    			issues.add(new IssueSearchDto(issue.getId(), issue.getKey(), issue.getIssueType().getIconUri().toString(), issue.getSummary()));
         		    		});
         		    		return issues;
         				}				
-        			}, 600);
+        			}, 3600);
         		} catch (Exception e) {
         			e.printStackTrace();
         		}
-        		return new IssueSearchList(searchedIssues, 0, 50, searchedIssues.size());
+        		return new IssueSearchList(searchedIssues, 0, 20, searchedIssues.size());
         	}
     	} catch(Exception ex) {
     		throw new CaptureRuntimeException(ex);
     	}
     }
     
-    private SearchResult getJQLResult(String jql, int offset, int limit, Set<String> fields) {
-    	return jiraRestClient.getSearchClient().searchJql(jql).claim();
+    private SearchResult getJQLResult(String jql, int offset, int limit) {
+    	return jiraRestClient.getSearchClient().searchJql(jql, limit, offset, null).claim();
+    }
+    
+    private String generateIssueInClause(String issueKey) {
+    	int index = 0; //Placeholder for incrementing the value to append in the issue
+    	StringBuilder sb = new StringBuilder();
+		sb.append(issueKey).append(",");
+		while(index < 10) { //generating only 10 issues for the in clause.
+			if(index != 9) {
+				sb.append(issueKey).append(index++ + ",");
+			} else {
+				sb.append(issueKey).append(index++);
+			}
+		}
+		return sb.toString();
     }
     
     @Override
-    public IssueSearchList getEpicIssuesForQuery(String query) {
-    	return null;
+    public IssueSearchList getEpicIssuesForQuery(String projectKey, String issueTerm) {
+    	return getIssuesForIssueTerm(projectKey, issueTerm, true);
     }
+
+	@Override
+	public IssueSearchList getIssuesForQuery(String projectKey, String issueTerm) {
+		return getIssuesForIssueTerm(projectKey, issueTerm, false);
+	}
 }
