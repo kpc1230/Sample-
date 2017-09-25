@@ -53,17 +53,17 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     	try {
     		SearchResult searchResult = null;
     		if(StringUtils.isBlank(issueTerm)) {
-    			return new IssueSearchList(new ArrayList<>(1), 0, 10, 0);
+    			return new IssueSearchList(new ArrayList<>(1), 0, 11, 0);
     		}
     		Matcher match = patttern.matcher(issueTerm);
         	if(match.matches()) {
-        		ArrayList<IssueSearchDto> searchedIssues = new ArrayList<>(10);
+        		ArrayList<IssueSearchDto> searchedIssues = new ArrayList<>(11);
         		String issueQuery = generateIssueInClause(issueTerm);
-        		searchResult = getJQLResult("project = " + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : "") + " AND issue IN (" + issueQuery.toString() + ")", 0, 10);
+        		searchResult = getJQLResult("project = " + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : "") + " AND issue IN (" + issueQuery.toString() + ")", 0, 11);
         		searchResult.getIssues().spliterator().forEachRemaining(issue -> {
     				searchedIssues.add(new IssueSearchDto(issue.getId(), issue.getKey(), issue.getIssueType().getIconUri().toString(), issue.getSummary()));
         		});
-        		return new IssueSearchList(searchedIssues, 0, 10, searchedIssues.size());
+        		return new IssueSearchList(searchedIssues, 0, 11, searchedIssues.size());
         	} else {
         		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
