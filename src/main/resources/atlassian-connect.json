@@ -36,7 +36,12 @@
           "value": "Get browser extension"
         },
         "key": "get-browser-extension-page",
-        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents"
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents",
+        "conditions": [
+          {
+            "condition": "user_is_logged_in"
+          }
+        ]
       },
       {
         "url": "/browseTestSessions?projectId={project.id}&projectKey={project.key}",
@@ -44,7 +49,12 @@
           "value": "Browse Test Sessions"
         },
         "key": "browse-test-session-url",
-        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session"
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session",
+        "conditions": [
+          {
+            "condition": "user_is_logged_in"
+          }
+        ]
       },
       {
         "url": "/viewSession?projectId={project.id}&projectKey={project.key}",
@@ -52,7 +62,12 @@
           "value": "View Session"
         },
         "key": "view-session-url",
-        "location": "none"
+        "location": "none",
+        "conditions": [
+          {
+            "condition": "user_is_logged_in"
+          }
+        ]
       },
       {
         "url": "/wikiHelp?projectId={project.id}&projectKey={project.key}",
@@ -68,7 +83,12 @@
           "value": "Test Sessions"
         },
         "key": "capture-test-sessions-url",
-        "location": "none"
+        "location": "none",
+        "conditions": [
+          {
+            "condition": "user_is_logged_in"
+          }
+        ]
       }
     ],
     "adminPages":[
@@ -120,37 +140,6 @@
         "weight": 710,
         "params": {
           "iconClass": "aui-icon-large icon-sidebar-test-sessions"
-        }
-      }
-    ],
-    "webItems": [
-      {
-        "url": "captureconfig-general",
-        "key": "capture-config",
-        "context": "page",
-        "location": "capture-admin/capture-admin-config",
-        "weight": 10,
-        "tooltip": {
-          "value":    "Capture for JIRA Settings"
-        },
-        "name": {
-          "value":    "Capture for JIRA Settings"
-        }
-      },
-      {
-        "context": "page",
-        "location": "system.top.navigation.bar",
-        "weight": 40,
-        "url": "bonfire-top-menu-dropdown-url",
-        "key": "bonfire-top-menu-dropdown",
-        "params": {
-          "webfragments.keywords": "Bonfire"
-        },
-        "name": {
-          "value": "Capture"
-        },
-        "tooltip": {
-          "value": "Capture"
         },
         "conditions": [
           {
@@ -232,6 +221,43 @@
             ]
           }
         ]
+      }
+    ],
+    "webItems": [
+      {
+        "url": "captureconfig-general",
+        "key": "capture-config",
+        "context": "page",
+        "location": "capture-admin/capture-admin-config",
+        "weight": 10,
+        "tooltip": {
+          "value":    "Capture for JIRA Settings"
+        },
+        "name": {
+          "value":    "Capture for JIRA Settings"
+        },
+        "conditions": [
+          {
+            "condition": "user_is_logged_in",
+            "invert": false
+          }
+        ]
+      },
+      {
+        "context": "page",
+        "location": "system.top.navigation.bar",
+        "weight": 40,
+        "url": "bonfire-top-menu-dropdown-url",
+        "key": "bonfire-top-menu-dropdown",
+        "params": {
+          "webfragments.keywords": "Bonfire"
+        },
+        "name": {
+          "value": "Capture"
+        },
+        "tooltip": {
+          "value": "Capture"
+        }
       },
       {
         "location": "operations-operations",
@@ -269,13 +295,92 @@
         "params": {
           "iconClass": "aui-icon-large icon-sidebar-test-sessions"
         },
-        "conditions": [{
+        "conditions": [
+          {
+            "condition": "user_is_logged_in",
+            "invert": false
+          },
+          {
           "condition": "feature_flag",
           "params": {
             "featureKey": "com.atlassian.jira.projects.ProjectCentricNavigation.Disabled"
           },
           "invert": true
-        }]
+        },
+          {
+            "or": [
+              {
+                "condition": "project_type",
+                "params": {
+                  "projectTypeKey": "software"
+                }
+              },
+              {
+                "and": [
+                  {
+                    "condition": "project_type",
+                    "params": {
+                      "projectTypeKey": "business"
+                    }
+                  },
+                  {
+                    "or": [
+                      {
+                        "condition": "entity_property_exists",
+                        "invert": true,
+                        "params": {
+                          "entity": "user",
+                          "propertyKey": "captureGenPageSettings",
+                          "objectName": "businessProjectsEnabled"
+                        }
+                      },
+                      {
+                        "condition": "entity_property_equal_to",
+                        "params": {
+                          "entity": "user",
+                          "propertyKey": "captureGenPageSettings",
+                          "objectName": "businessProjectsEnabled",
+                          "value": "true"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "and": [
+                  {
+                    "condition": "project_type",
+                    "params": {
+                      "projectTypeKey": "service_desk"
+                    }
+                  },
+                  {
+                    "or": [
+                      {
+                        "condition": "entity_property_exists",
+                        "invert": true,
+                        "params": {
+                          "entity": "user",
+                          "propertyKey": "captureGenPageSettings",
+                          "objectName": "serviceDeskProjectsEnabled"
+                        }
+                      },
+                      {
+                        "condition": "entity_property_equal_to",
+                        "params": {
+                          "entity": "user",
+                          "propertyKey": "captureGenPageSettings",
+                          "objectName": "serviceDeskProjectsEnabled",
+                          "value": "true"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }]
       }
     ],
     "webSections": [

@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.controller;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.IgnoreJwt;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.UserService;
@@ -47,12 +48,17 @@ public class ApplicationController {
     @Autowired
     private ITenantAwareCache tenantAwareCache;
 
+    @Autowired
+    private AddonInfoService addonInfoService;
+
     @RequestMapping(value = "/adminGenConf")
-    public String getGeneralConfigurationPage(@RequestParam String user_id, Model model) {
+    public String getGeneralConfigurationPage(@AuthenticationPrincipal AtlassianHostUser hostUser,
+                                              @RequestParam String user_id, Model model) {
+        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
         String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         log.debug("Requesting the general configuration page with username : " + user_id);
-        JsonNode jsonNode = jiraUserService.getUserProperty(user_id, "captureGenPageSettings");
+        JsonNode jsonNode = addonInfoService.getProperty(acHostModel, "captureGenPageSettings");
         JsonNode resp = null;
         if (jsonNode != null) {
             resp = jsonNode.get("value");
@@ -63,7 +69,7 @@ public class ApplicationController {
         model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
 
 
-        log.debug("Ending Requesting the general configuration page with username : " + user_id + "with resp : " + resp);
+        log.debug("Ending Requesting the general configuration page with resp : " + jsonNode);
         return "generalConfigPage";
     }
 

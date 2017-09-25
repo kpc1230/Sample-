@@ -30,5 +30,6 @@ public class JiraConstants {
     public static String REST_API_CUSTOM_FIELD = "/rest/api/2/field";
     public static String REST_API_CREATE_ISSUE_SCHEMA = "/rest/api/2/issue/createmeta";
     public static final String REST_API_USER = "/rest/api/2/user/search";
+    public static final String REST_ADD_ON_PROPERTY = "/rest/atlassian-connect/1/addons/{addon-key}/properties";
 
 }

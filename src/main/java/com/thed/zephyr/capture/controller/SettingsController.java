@@ -1,12 +1,15 @@
 package com.thed.zephyr.capture.controller;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.addon.AddonInfoService;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.SettingsAllRequest;
-import com.thed.zephyr.capture.service.jira.UserService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -17,16 +20,17 @@ public class SettingsController {
     private Logger log;
 
     @Autowired
-    private UserService jiraUserService;
-
+    private AddonInfoService addonInfoService;
 
     @RequestMapping(value = "/rest/api/{username}/settings/", method = RequestMethod.PUT,consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Boolean createOuUpdateGeneralConfigPageSettimgs(@PathVariable String username, @RequestBody SettingsAllRequest settingsAllRequest) {
+    public Boolean createOuUpdateGeneralConfigPageSettimgs(@AuthenticationPrincipal AtlassianHostUser hostUser,
+                                                           @PathVariable String username, @RequestBody SettingsAllRequest settingsAllRequest) {
         log.info("Create or update General the General Configuration Page settings for the username : " + username);
         try {
+            AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
             ObjectMapper mapper = new ObjectMapper();
             JsonNode node = mapper.convertValue(settingsAllRequest, JsonNode.class);
-            jiraUserService.createOrUpdateUserProperty(username, "captureGenPageSettings", node);
+            addonInfoService.createOrUpdateProperty(acHostModel, "captureGenPageSettings", node);
         } catch (Exception exception) {
             log.error("Error during Get General Configuration Page settings for the username : " + username, exception);
 
@@ -35,10 +39,12 @@ public class SettingsController {
     }
 
     @RequestMapping(value = "/rest/api/{username}/settings/", method = RequestMethod.DELETE)
-    public Boolean deleteGeneralConfigPageSettings(@PathVariable String username) {
+    public Boolean deleteGeneralConfigPageSettings(@AuthenticationPrincipal AtlassianHostUser hostUser,
+                                                   @PathVariable String username) {
         log.info("Get General Configuration Page settings for the username : " + username);
         try {
-            jiraUserService.deleteUserProperty(username, "captureGenPageSettings");
+            AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+            addonInfoService.deleteProperty(acHostModel, "captureGenPageSettings");
         } catch (Exception exception) {
             log.error("Error during delete General Configuration Page settings for the username : " + username, exception);
 
