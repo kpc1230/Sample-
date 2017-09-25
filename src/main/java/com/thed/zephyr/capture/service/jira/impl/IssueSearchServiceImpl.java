@@ -1,7 +1,11 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,13 +36,27 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     @Autowired
 	private ITenantAwareCache iTenantAwareCache;
     
+    private Pattern patttern = Pattern.compile("^[a-zA-Z0-9]+\\-[0-9]+$");
+    
+    private static Set<String> fields = new HashSet<>();
+    
+    static {
+    	fields.add("summary");
+    	fields.add("issuetype");
+    	fields.add("created");
+    	fields.add("updated");
+    	fields.add("project");
+    	fields.add("status");
+    }
+    
     private IssueSearchList getIssuesForIssueTerm(String projectKey, String issueTerm, boolean appendEpicIssueType) {
     	try {
     		SearchResult searchResult = null;
     		if(StringUtils.isBlank(issueTerm)) {
     			return new IssueSearchList(new ArrayList<>(1), 0, 10, 0);
     		}
-        	if(issueTerm.matches("^[a-zA-Z0-9]+\\-[0-9]+$")) {
+    		Matcher match = patttern.matcher(issueTerm);
+        	if(match.matches()) {
         		ArrayList<IssueSearchDto> searchedIssues = new ArrayList<>(10);
         		String issueQuery = generateIssueInClause(issueTerm);
         		searchResult = getJQLResult("project = " + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : "") + " AND issue IN (" + issueQuery.toString() + ")", 0, 10);
@@ -61,7 +79,7 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
         		    		});
         		    		return issues;
         				}				
-        			}, 3600);
+        			}, 1800);
         		} catch (Exception e) {
         			e.printStackTrace();
         		}
@@ -73,7 +91,7 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     }
     
     private SearchResult getJQLResult(String jql, int offset, int limit) {
-    	return jiraRestClient.getSearchClient().searchJql(jql, limit, offset, null).claim();
+    	return jiraRestClient.getSearchClient().searchJql(jql, limit, offset, fields).claim();
     }
     
     private String generateIssueInClause(String issueKey) {
