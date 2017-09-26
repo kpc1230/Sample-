@@ -25,31 +25,31 @@ public class LockServiceImpl implements LockService {
     private HazelcastInstance hazelcastInstance;
 
     @Override
-    public Boolean tryLock(AcHostModel acHostModel, String lockKey, Integer lockTimeOut) throws HazelcastInstanceNotDefinedException {
-        IMap<String, String> lockIMap = getLockIMap(acHostModel);
+    public Boolean tryLock(String clientKey, String lockKey, Integer lockTimeOut) throws HazelcastInstanceNotDefinedException {
+        IMap<String, String> lockIMap = getLockIMap(clientKey);
         lockTimeOut = lockTimeOut != null ? lockTimeOut : ApplicationConstants.DEFAULT_LOCK_TIMEOUT_SEC;
         try {
             Boolean lockResult = lockIMap.tryLock(lockKey, lockTimeOut, TimeUnit.SECONDS);
-            log.debug("Try to get IMapLock tenantId: " + acHostModel.getClientKey() + " lockKey: " + lockKey + " result: " + lockResult);
+            log.debug("Try to get IMapLock tenantId: " + clientKey + " lockKey: " + lockKey + " result: " + lockResult);
             return lockResult;
         } catch (InterruptedException exception) {
-            log.warn("Can't acquire lock with key: " + lockKey + " tenantId: " + acHostModel.getClientKey(), exception);
+            log.warn("Can't acquire lock with key: " + lockKey + " tenantId: " + clientKey, exception);
             return false;
         }
     }
 
     @Override
-    public void deleteLock(AcHostModel acHostModel, String lockKey) throws HazelcastInstanceNotDefinedException {
-        IMap<String, String> lockIMap = getLockIMap(acHostModel);
+    public void deleteLock(String clientKey, String lockKey) throws HazelcastInstanceNotDefinedException {
+        IMap<String, String> lockIMap = getLockIMap(clientKey);
         lockIMap.forceUnlock(lockKey);
-        log.debug("IMapLock was deleted lockKey: " + lockKey + " tenantId: " + acHostModel.getClientKey());
+        log.debug("IMapLock was deleted lockKey: " + lockKey + " tenantId: " + clientKey);
     }
 
-    private IMap<String, String> getLockIMap(AcHostModel acHostModel) throws HazelcastInstanceNotDefinedException {
+    private IMap<String, String> getLockIMap(String clientKey) throws HazelcastInstanceNotDefinedException {
         HazelcastInstance hz = hazelcastInstance;
-        String iMapName = String.valueOf(acHostModel.getClientKey() + "_" + ApplicationConstants.HZ_LOCK_IMAP_NAME);
+        String iMapName = String.valueOf(clientKey + "_" + ApplicationConstants.HZ_LOCK_IMAP_NAME);
         IMap<String, String> lockIMap = hz.getMap(iMapName);
-        log.debug("Got IMap with name: " + iMapName + " size: " + lockIMap.size() + " tenantId: " + acHostModel.getClientKey());
+        log.debug("Got IMap with name: " + iMapName + " size: " + lockIMap.size() + " tenantId: " + clientKey);
 
         return lockIMap;
     }

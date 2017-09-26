@@ -9,7 +9,7 @@ import com.thed.zephyr.capture.model.AcHostModel;
  */
 public interface LockService {
 
-    Boolean tryLock(AcHostModel acHostModel, String lockKey, Integer lockTimeOut)  throws HazelcastInstanceNotDefinedException;
+    Boolean tryLock(String clientKey, String lockKey, Integer lockTimeOut)  throws HazelcastInstanceNotDefinedException;
 
-    void deleteLock(AcHostModel acHostModel, String lockKey) throws HazelcastInstanceNotDefinedException;
+    void deleteLock(String clientKey, String lockKey) throws HazelcastInstanceNotDefinedException;
 }
