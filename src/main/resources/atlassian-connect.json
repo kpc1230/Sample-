@@ -187,12 +187,11 @@
                     }
                   },
                   {
-                    "or": [
+                    "and": [
                       {
                         "condition": "entity_property_exists",
-                        "invert": true,
                         "params": {
-                          "entity": "user",
+                          "entity": "addon",
                           "propertyKey": "captureGenPageSettings",
                           "objectName": "businessProjectsEnabled"
                         }
@@ -200,7 +199,7 @@
                       {
                         "condition": "entity_property_equal_to",
                         "params": {
-                          "entity": "user",
+                          "entity": "addon",
                           "propertyKey": "captureGenPageSettings",
                           "objectName": "businessProjectsEnabled",
                           "value": "true"
@@ -219,12 +218,11 @@
                     }
                   },
                   {
-                    "or": [
+                    "and": [
                       {
                         "condition": "entity_property_exists",
-                        "invert": true,
                         "params": {
-                          "entity": "user",
+                          "entity": "addon",
                           "propertyKey": "captureGenPageSettings",
                           "objectName": "serviceDeskProjectsEnabled"
                         }
@@ -232,7 +230,7 @@
                       {
                         "condition": "entity_property_equal_to",
                         "params": {
-                          "entity": "user",
+                          "entity": "addon",
                           "propertyKey": "captureGenPageSettings",
                           "objectName": "serviceDeskProjectsEnabled",
                           "value": "true"
@@ -348,12 +346,11 @@
                     }
                   },
                   {
-                    "or": [
+                    "and": [
                       {
                         "condition": "entity_property_exists",
-                        "invert": true,
                         "params": {
-                          "entity": "user",
+                          "entity": "addon",
                           "propertyKey": "captureGenPageSettings",
                           "objectName": "businessProjectsEnabled"
                         }
@@ -361,7 +358,7 @@
                       {
                         "condition": "entity_property_equal_to",
                         "params": {
-                          "entity": "user",
+                          "entity": "addon",
                           "propertyKey": "captureGenPageSettings",
                           "objectName": "businessProjectsEnabled",
                           "value": "true"
@@ -380,12 +377,11 @@
                     }
                   },
                   {
-                    "or": [
+                    "and": [
                       {
                         "condition": "entity_property_exists",
-                        "invert": true,
                         "params": {
-                          "entity": "user",
+                          "entity": "addon",
                           "propertyKey": "captureGenPageSettings",
                           "objectName": "serviceDeskProjectsEnabled"
                         }
@@ -393,7 +389,7 @@
                       {
                         "condition": "entity_property_equal_to",
                         "params": {
-                          "entity": "user",
+                          "entity": "addon",
                           "propertyKey": "captureGenPageSettings",
                           "objectName": "serviceDeskProjectsEnabled",
                           "value": "true"
