@@ -113,8 +113,20 @@
         "url": "/public/rest/testing?projectId={project.id}&projectKey={project.key}&issueId={issue.id}&issueKey={issue.key}",
         "conditions": [
           {
-            "condition": "user_is_logged_in",
-            "invert": false
+            "and":[
+              {
+                "condition": "user_is_logged_in",
+                "invert": false
+              },
+              {
+                "condition": "entity_property_exists",
+                "invert": false,
+                "params": {
+                  "entity": "issue",
+                  "propertyKey": "raisedinsession"
+                }
+              }
+            ]
           }
         ],
         "location": "atl.jira.view.issue.left.context",

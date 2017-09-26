@@ -499,9 +499,12 @@ public class SessionServiceImpl implements SessionService {
                 }
             }
         }
+        List<Long> issueRaisedIds = new ArrayList<>();
         issues.stream().forEach(issueRaisedBean -> {
         	sessionActivityService.addRaisedIssue(session, issueRaisedBean, dateTime, loggedUser); //Save removed raised issue information as activity.
+			issueRaisedIds.add(issueRaisedBean.getIssueId());
         });
+		captureContextIssueFieldsService.addRaisedInIssueField(loggedUser, issueRaisedIds, sessionId);
         return raisedIssues;
     }
 	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser) {
