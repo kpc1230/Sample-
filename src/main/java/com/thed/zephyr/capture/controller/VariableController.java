@@ -41,7 +41,7 @@ public class VariableController extends CaptureAbstractController{
 	@Autowired
 	private VariableValidator validator;
 
-	@InitBinder("variables")
+	@InitBinder("variableRequest")
 	protected void initBinder(WebDataBinder binder) {
 		binder.addValidators(validator);
 	}
