@@ -167,12 +167,13 @@ public class SessionController extends CaptureAbstractController{
 	}
 
 	@PostMapping(value = "/{sessionId}/raisedin", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> addIssueRaised(@PathVariable("sessionId") String sessionId,@RequestBody List<String> listOfIssues) throws CaptureValidationException {
+	public ResponseEntity<?> addIssueRaised(@AuthenticationPrincipal AtlassianHostUser hostUser,
+											@PathVariable("sessionId") String sessionId,
+											@RequestBody List<String> listOfIssues) throws CaptureValidationException {
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-		AcHostModel acHostModel = getAcHostModel();
 		boolean isLocked = false;
 		try {
-			if(!lockService.tryLock(acHostModel, lockKey, 5)) {
+			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
@@ -216,7 +217,7 @@ public class SessionController extends CaptureAbstractController{
 		} finally {
 			if(isLocked) {
 				try {
-					lockService.deleteLock(acHostModel, lockKey);
+					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
 				} catch (HazelcastInstanceNotDefinedException e) {
 				}
 			}
@@ -247,13 +248,14 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@PutMapping(value = "/{sessionId}", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> updateSession(@PathVariable("sessionId") String sessionId, @Valid @RequestBody SessionRequest sessionRequest) throws CaptureValidationException  {
+	public ResponseEntity<?> updateSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
+										   @PathVariable("sessionId") String sessionId,
+										   @Valid @RequestBody SessionRequest sessionRequest) throws CaptureValidationException  {
 		log.info("Start of updateSession() --> params " + sessionRequest.toString() + " sessionId -> " + sessionId);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-		AcHostModel acHostModel = getAcHostModel();
 		boolean isLocked = false;
 		try {
-			if(!lockService.tryLock(acHostModel, lockKey, 5)) {
+			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
@@ -285,7 +287,7 @@ public class SessionController extends CaptureAbstractController{
 		} finally {
 			if(isLocked) {
 				try {
-					lockService.deleteLock(acHostModel, lockKey);
+					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
 				} catch (HazelcastInstanceNotDefinedException e) {
 				}
 			}
@@ -315,13 +317,13 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@PutMapping(value = "/{sessionId}/start", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> startSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException {
+	public ResponseEntity<?> startSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
+										  @PathVariable("sessionId") String sessionId) throws CaptureValidationException {
 		log.info("Start of startSession() --> params " + sessionId);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-		AcHostModel acHostModel = getAcHostModel();
 		boolean isLocked = false;
 		try {
-			if(!lockService.tryLock(acHostModel, lockKey, 5)) {
+			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
@@ -352,7 +354,7 @@ public class SessionController extends CaptureAbstractController{
 		} finally {
 			if(isLocked) {
 				try {
-					lockService.deleteLock(acHostModel, lockKey);
+					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
 				} catch (HazelcastInstanceNotDefinedException e) {
 				}
 			}
@@ -360,13 +362,13 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@PutMapping(value = "/{sessionId}/pause", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> pauseSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException {
+	public ResponseEntity<?> pauseSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
+										  @PathVariable("sessionId") String sessionId) throws CaptureValidationException {
 		log.info("Start of pauseSession() --> params " + sessionId);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-		AcHostModel acHostModel = getAcHostModel();
 		boolean isLocked = false;
 		try {
-			if(!lockService.tryLock(acHostModel, lockKey, 5)) {
+			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
@@ -397,7 +399,7 @@ public class SessionController extends CaptureAbstractController{
 		} finally {
 			if(isLocked) {
 				try {
-					lockService.deleteLock(acHostModel, lockKey);
+					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
 				} catch (HazelcastInstanceNotDefinedException e) {
 				}
 			}
@@ -408,10 +410,9 @@ public class SessionController extends CaptureAbstractController{
 	public ResponseEntity<?> joinSession(@AuthenticationPrincipal AtlassianHostUser hostUser, @PathVariable("sessionId") String sessionId) throws CaptureValidationException {
 		log.info("Start of joinSession() --> params " + sessionId);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-		AcHostModel acHostModel = getAcHostModel();
 		boolean isLocked = false;
 		try {
-			if(!lockService.tryLock(acHostModel, lockKey, 5)) {
+			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
@@ -455,7 +456,7 @@ public class SessionController extends CaptureAbstractController{
 		} finally {
 			if(isLocked) {
 				try {
-					lockService.deleteLock(acHostModel, lockKey);
+					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
 				} catch (HazelcastInstanceNotDefinedException e) {
 				}
 			}
@@ -480,13 +481,14 @@ public class SessionController extends CaptureAbstractController{
 	}
 
 	@PutMapping(value = "/{sessionId}/complete", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> completeSession(@PathVariable("sessionId") String sessionId, @RequestBody CompleteSessionRequest completeSessionRequest) throws CaptureValidationException {
+	public ResponseEntity<?> completeSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
+											 @PathVariable("sessionId") String sessionId,
+											 @RequestBody CompleteSessionRequest completeSessionRequest) throws CaptureValidationException {
 		log.info("Start of completeSession() --> params " + sessionId);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-		AcHostModel acHostModel = getAcHostModel();
 		boolean isLocked = false;
 		try {
-			if(!lockService.tryLock(acHostModel, lockKey, 5)) {
+			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
@@ -517,7 +519,7 @@ public class SessionController extends CaptureAbstractController{
 		} finally {
 			if(isLocked) {
 				try {
-					lockService.deleteLock(acHostModel, lockKey);
+					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
 				} catch (HazelcastInstanceNotDefinedException e) {
 				}
 			}
@@ -525,13 +527,13 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@PutMapping(value = "/{sessionId}/leave", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> leaveSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException {
+	public ResponseEntity<?> leaveSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
+										  @PathVariable("sessionId") String sessionId) throws CaptureValidationException {
 		log.info("Start of leaveSession() --> params " + sessionId);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-		AcHostModel acHostModel = getAcHostModel();
 		boolean isLocked = false;
 		try {
-			if(!lockService.tryLock(acHostModel, lockKey, 5)) {
+			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
@@ -559,7 +561,7 @@ public class SessionController extends CaptureAbstractController{
 		} finally {
 			if(isLocked) {
 				try {
-					lockService.deleteLock(acHostModel, lockKey);
+					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
 				} catch (HazelcastInstanceNotDefinedException e) {
 				}
 			}
@@ -609,13 +611,14 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@PutMapping(value = "/{sessionId}/raisedin/{issueKey}", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> unraiseIssueSessionRequest(@PathVariable("sessionId") String sessionId, @PathVariable("issueKey") String issueKey) throws CaptureValidationException {
+	public ResponseEntity<?> unraiseIssueSessionRequest(@AuthenticationPrincipal AtlassianHostUser hostUser,
+														@PathVariable("sessionId") String sessionId,
+														@PathVariable("issueKey") String issueKey) throws CaptureValidationException {
 		log.info("Start of unraiseIssueSessionRequest() --> params " + sessionId + " issueKey " + issueKey);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-		AcHostModel acHostModel = getAcHostModel();
 		boolean isLocked = false;
 		try {
-			if(!lockService.tryLock(acHostModel, lockKey, 5)) {
+			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
@@ -644,7 +647,7 @@ public class SessionController extends CaptureAbstractController{
 		} finally {
 			if(isLocked) {
 				try {
-					lockService.deleteLock(acHostModel, lockKey);
+					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
 				} catch (HazelcastInstanceNotDefinedException e) {
 				}
 			}
@@ -652,9 +655,14 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@GetMapping(value = "/filtered", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> searchSession(@RequestParam("projectFilter") Optional<Long> projectId, @RequestParam("assigneeFilter") Optional<String> assignee,
-			@RequestParam("statusFilter") Optional<List<String>> status, @RequestParam("searchTerm") Optional<String> searchTerm, @RequestParam("sortOrder") Optional<String> sortOrder,
-			@RequestParam("sortField") Optional<String> sortField, @RequestParam("startAt") int startAt, @RequestParam("size") int size) throws CaptureValidationException {
+	public ResponseEntity<?> searchSession(@RequestParam("projectFilter") Optional<Long> projectId,
+										   @RequestParam("assigneeFilter") Optional<String> assignee,
+										   @RequestParam("statusFilter") Optional<List<String>> status,
+										   @RequestParam("searchTerm") Optional<String> searchTerm,
+										   @RequestParam("sortOrder") Optional<String> sortOrder,
+										   @RequestParam("sortField") Optional<String> sortField,
+										   @RequestParam("startAt") int startAt,
+										   @RequestParam("size") int size) throws CaptureValidationException {
 		log.info("Start of searchSession() --> params " + " projectFilter " + projectId.orElse(null) + " assigneeFilter " + assignee.orElse(null) + " statusFilter " + status.orElse(null) + " searchTerm "
 			+ searchTerm.orElse(null) + " sortOrder " + sortOrder.orElse("ASC") + " sortField " + " startAt " + startAt + " size " + size);
 		try {	
@@ -702,13 +710,14 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@PutMapping(value = "/{sessionId}/assign/{assignee}", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> assignSession(@PathVariable("sessionId") String sessionId, @PathVariable("assignee") String assignee) throws CaptureValidationException {
+	public ResponseEntity<?> assignSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
+										   @PathVariable("sessionId") String sessionId,
+										   @PathVariable("assignee") String assignee) throws CaptureValidationException {
 		log.info("Start of assignSession() --> params " + sessionId + " assignee " + assignee);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-		AcHostModel acHostModel = getAcHostModel();
 		boolean isLocked = false;
 		try {
-			if(!lockService.tryLock(acHostModel, lockKey, 5)) {
+			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
@@ -719,6 +728,7 @@ public class SessionController extends CaptureAbstractController{
 			if (assignee != null && !permissionService.canBeAssignedSession(assignee, captureProject)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{assignee}));
 			}
+			loadedSession.setAssignee(assignee);//set assignee to session
 			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loadedSession, assignee);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
@@ -735,7 +745,7 @@ public class SessionController extends CaptureAbstractController{
 		} finally {
 			if(isLocked) {
 				try {
-					lockService.deleteLock(acHostModel, lockKey);
+					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
 				} catch (HazelcastInstanceNotDefinedException e) {
 				}
 			}
@@ -803,13 +813,14 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@PutMapping(value = "/{sessionId}/additionalInfo", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> updateAdditionalInfo(@PathVariable("sessionId") String sessionId, @RequestBody JsonNode json) throws CaptureValidationException {
+	public ResponseEntity<?> updateAdditionalInfo(@AuthenticationPrincipal AtlassianHostUser hostUser,
+												  @PathVariable("sessionId") String sessionId,
+												  @RequestBody JsonNode json) throws CaptureValidationException {
 		log.info("Start of updateAdditionalInfo() --> params " + sessionId);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-		AcHostModel acHostModel = getAcHostModel();
 		boolean isLocked = false;
 		try {		
-			if(!lockService.tryLock(acHostModel, lockKey, 5)) {
+			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
@@ -834,7 +845,7 @@ public class SessionController extends CaptureAbstractController{
 		} finally {
 			if(isLocked) {
 				try {
-					lockService.deleteLock(acHostModel, lockKey);
+					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
 				} catch (HazelcastInstanceNotDefinedException e) {
 				}
 			}

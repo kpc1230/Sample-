@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.jira.impl;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
+import com.atlassian.jira.rest.client.api.domain.IssuelinksType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -13,6 +14,7 @@ import com.thed.zephyr.capture.service.jira.IssueTypeService;
 import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.JiraConstants;
+import net.minidev.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +55,24 @@ public class MetadataServiceImpl implements MetadataService {
 
         List<Map<String, Object>> fieldMap = new ArrayList<>();
         Map<String, Object> fieldValueMap = new HashMap<>();
+        List<JSONObject> issuelinksTypesList = new ArrayList<>();
 
+        List<IssuelinksType> issuelinksTypes = issueTypeService.getIssuelinksType();
+        if (issuelinksTypes != null) {
+            issuelinksTypes.forEach(issuelinksType -> {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("text", issuelinksType.getInward());
+                jsonObject.put("value", issuelinksType.getInward());
+                issuelinksTypesList.add(jsonObject);
+                if (issuelinksType.getInward() != null && !issuelinksType.getInward().equalsIgnoreCase(issuelinksType.getOutward())) {
+                    JSONObject jsonObject2 = new JSONObject();
+                    jsonObject2.put("text", issuelinksType.getOutward());
+                    jsonObject2.put("value", issuelinksType.getOutward());
+                    issuelinksTypesList.add(jsonObject2);
+                }
+
+            });
+        }
 
         List<IssueType> issueTypes = issueTypeService.getIssueTypesByProject(captureProject.getId());
         List<Long> issueTypeIds = new ArrayList<>();
@@ -105,7 +124,15 @@ public class MetadataServiceImpl implements MetadataService {
 
                         String key = vN.get(KEY).asText();
                         ObjectNode objectNode = (ObjectNode)vN;
-                        objectNode.set(OPTIONS, new ObjectMapper().valueToTree(fieldOptions));
+                        if(!key.equalsIgnoreCase("issuelinks")){
+                            objectNode.set(OPTIONS, new ObjectMapper().valueToTree(fieldOptions));
+                        }else{
+                            if(issuelinksTypesList.size()>0){
+                                objectNode.set(OPTIONS, new ObjectMapper().convertValue(issuelinksTypesList,JsonNode.class));
+                            }else {
+                                objectNode.set(OPTIONS, new ObjectMapper().valueToTree(fieldOptions));
+                            }
+                        }
                         CustomField customField = new ObjectMapper()
                                 .readValue(vN.toString(), CustomField.class);
                         String typeKey = customField.getSchema() != null &&

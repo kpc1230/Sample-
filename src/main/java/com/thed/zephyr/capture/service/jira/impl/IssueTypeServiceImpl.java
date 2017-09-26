@@ -4,6 +4,7 @@ import com.atlassian.jira.rest.client.api.GetCreateIssueMetadataOptions;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.CimProject;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
+import com.atlassian.jira.rest.client.api.domain.IssuelinksType;
 import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.service.jira.IssueTypeService;
 import org.slf4j.Logger;
@@ -30,6 +31,11 @@ public class IssueTypeServiceImpl implements IssueTypeService {
     @Override
     public List<IssueType> getIssueTypes() {
         return Lists.newArrayList(jiraRestClient.getMetadataClient().getIssueTypes().claim());
+    }
+
+    @Override
+    public List<IssuelinksType> getIssuelinksType() {
+        return Lists.newArrayList(jiraRestClient.getMetadataClient().getIssueLinkTypes().claim());
     }
 
     @Override
