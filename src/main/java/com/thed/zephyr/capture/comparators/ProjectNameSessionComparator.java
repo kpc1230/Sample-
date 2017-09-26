@@ -38,7 +38,7 @@ public class ProjectNameSessionComparator implements Comparator<Session> {
             return ascending ? 1 : -1;
         }
         Long firstProjectId = first.getProjectId();
-        Long secondProjectId = first.getProjectId();
+        Long secondProjectId = second.getProjectId();
         CaptureProject firstProject = projectService.getCaptureProject(firstProjectId);
         CaptureProject secondProject = projectService.getCaptureProject(secondProjectId);
         if (Objects.isNull(firstProject) && Objects.isNull(secondProject)) {
