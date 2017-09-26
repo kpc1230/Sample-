@@ -15,7 +15,6 @@ import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.TestSectionResponse;
 import com.thed.zephyr.capture.model.jira.TestingStatus;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
-import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
@@ -217,11 +216,11 @@ public class IssueServiceImpl implements IssueService {
         AtomicInteger inProgressCount = new AtomicInteger();
         AtomicInteger notStartedCount = new AtomicInteger();
 
-        sessionByRelatedIssueId.getContent().stream().peek(session -> {
+        sessionByRelatedIssueId.getContent().stream().forEach(session -> {
             if (session != null) {
-                if (Session.Status.STARTED.equals(session.getStatus())) {
+               /* if (Session.Status.STARTED.equals(session.getStatus())) {
                     startedCount.getAndIncrement();
-                } else if (Session.Status.CREATED.equals(session.getStatus())) {
+                } else*/ if (Session.Status.CREATED.equals(session.getStatus())) {
                     notStartedCount.getAndIncrement();
                 } else if (Session.Status.COMPLETED.equals(session.getStatus())) {
                     completedCount.getAndIncrement();
@@ -231,16 +230,21 @@ public class IssueServiceImpl implements IssueService {
                 }
             }
         });
-        if (startedCount.get() == 0 && completedCount.get() != 0) {
+        if(inProgressCount.get()==0){
             // If all the sessions are 'completed' then return complete
-            testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey()));
-        } else if (startedCount.get() != 0 && completedCount.get() == 0) {
-            // If all the sessions are 'created' then return not started
-            testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey()));
-        } else {
-            // Otherwise the sessions are either 'completed' or 'created'
-            testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey()));
+            if (notStartedCount.get() == 0 && completedCount.get() != 0) {
+                testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey()));
+            } else if (notStartedCount.get() != 0 && completedCount.get() == 0) {
+                // If all the sessions are 'created' then return not started
+                testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey()));
+            } else {
+                // Otherwise the sessions are either 'completed' or 'created'
+                testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey()));
+            }
+        }else{
+            testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.IN_PROGRESS.getI18nKey()));
         }
+
         testingStatus.setCompleteCount(new Double(completedCount.get()));
         Double notStartedPercent = 0.0, inProgressPercent = 0.0, completePercent = 0.0;
         if (testingStatus.getTotalCount().intValue() != 0) {
@@ -282,6 +286,11 @@ public class IssueServiceImpl implements IssueService {
         return captureIssue;
     }
 
+    @Override
+    public void setIssueTestStausAndTestSession(String issueId, String testingStatus,String sessionids){
+        captureContextIssueFieldsService.populateIssueTestStatusAndTestSessions(getCaptureIssue(String.valueOf(issueId)).getKey(),i18n.getMessage(testingStatus),sessionids);
+        return;
+    }
 
     private IssueInput createIssueInput(IssueFields issueFields, HttpServletRequest request) {
         IssueInputBuilder issueInputBuilder = new IssueInputBuilder();
@@ -392,5 +401,6 @@ public class IssueServiceImpl implements IssueService {
     private String buildIssueCacheKey(String issueIdOrKey) {
         return ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + issueIdOrKey;
     }
+
 
 }

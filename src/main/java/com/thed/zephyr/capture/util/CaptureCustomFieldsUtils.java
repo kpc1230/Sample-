@@ -34,6 +34,8 @@ public class CaptureCustomFieldsUtils {
     public static final String ENTITY_CAPTURE_JQUERY_VERSION_NAME = "captureJQueryVersion";
     public static final String ENTITY_CAPTURE_DOCUMENT_MODE = "captureDocumentMode";
     public static final String ENTITY_CAPTURE_RAISEDIN_NAME = "raisedInSession";
+    public static final String ENTITY_CAPTURE_TEST_STATUS = "testingStatus";
+    public static final String ENTITY_CAPTURE_TEST_SESSIONS = "testSessions";
 
 
     // IMPORTANT - if we change the plugin key, this will need to change too.

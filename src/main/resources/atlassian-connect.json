@@ -544,6 +544,26 @@
                 "alias":"raisedInSession"
               }
             ]
+          },
+          {
+            "propertyKey": "testingStatus",
+            "extractions": [
+              {
+                "objectName": "content",
+                "type": "STRING",
+                "alias": "testingStatus"
+              }
+            ]
+          },
+          {
+            "propertyKey": "testSessions",
+            "extractions": [
+              {
+                "objectName": "content",
+                "type": "STRING",
+                "alias": "testSessions"
+              }
+            ]
           }
         ]
       }

@@ -20,4 +20,6 @@ public interface CaptureContextIssueFieldsService {
     void addRaisedInIssueField(String loggedUser, List<Long> listOfIssueIds, String sessionId);
 
     void removeRaisedIssue(Session loadedSession, String issueKey);
+
+    void populateIssueTestStatusAndTestSessions(String issueKey,String testSessions,String testStatus);
 }

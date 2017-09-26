@@ -21,6 +21,7 @@ import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
+import com.thed.zephyr.capture.model.jira.TestingStatus;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.FullSessionDto;
@@ -125,6 +126,8 @@ public class SessionServiceImpl implements SessionService {
         Session createdSession = sessionRepository.save(session);
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
 		sessionESRepository.save(createdSession);
+		//Update test staus and test sessions for related issues
+		setIssueTestStausAndTestSession(createdSession);
 		return createdSession;
 	}
 
@@ -230,7 +233,8 @@ public class SessionServiceImpl implements SessionService {
         if (!result.isDeactivate()) { // If the session is a 'deactivate' then it will have been saved already
             saveUpdatedSession(result);
         }
-
+		//Update test status and test sesions to JIRA isssues
+		setIssueTestStausAndTestSession(result.getSession());
         return result;
     }
 	
@@ -1284,4 +1288,48 @@ public class SessionServiceImpl implements SessionService {
         }
 		return Duration.ofMillis(timeSpent.getMillis());
 	}
+
+	private void setIssueTestStausAndTestSession(Session createdSession) {
+		if (createdSession.getRelatedIssueIds() != null) {
+			createdSession.getRelatedIssueIds().forEach(issueId -> {
+				StringBuilder sessionIdBuilder = new StringBuilder();
+				String testingStatuKey = null;
+				int startedCount = 0, completedCount = 0;
+					Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(createdSession.getCtId(), createdSession.getProjectId(), issueId, CaptureUtil.getPageRequest(0, 1000));
+				if (Objects.nonNull(sessions.getContent())) {
+					for (Session session : sessions.getContent()) {
+						sessionIdBuilder.append(session.getId()).append(",");
+
+						if (Status.CREATED.equals(session.getStatus())) {
+							startedCount++;
+						} else if (Status.COMPLETED.equals(session.getStatus())) {
+							completedCount++;
+						} else {
+							// If a status other than created and completed appears, then it is in progress
+							testingStatuKey =TestingStatus.TestingStatusEnum.IN_PROGRESS.getI18nKey();
+						}
+
+					}
+					if(sessionIdBuilder.length()>0){
+						sessionIdBuilder.replace(sessionIdBuilder.length()-1,sessionIdBuilder.length(),"");
+
+					}
+				}
+				if(StringUtils.isBlank(testingStatuKey)) {
+					if (startedCount == 0 && completedCount != 0) {
+						// If all the sessions are 'completed' then return complete
+						testingStatuKey =TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey();
+					} else if (startedCount != 0 && completedCount == 0) {
+						// If all the sessions are 'created' then return not started
+						testingStatuKey = TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey();
+					} else {
+						// Otherwise the sessions are either 'completed' or 'created'
+						testingStatuKey = TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey();
+					}
+				}
+				issueService.setIssueTestStausAndTestSession(String.valueOf(issueId),testingStatuKey,sessionIdBuilder.toString());
+			});
+		}
+	}
+
 }

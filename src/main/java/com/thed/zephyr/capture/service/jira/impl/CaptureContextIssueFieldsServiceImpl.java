@@ -178,7 +178,28 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         }
     }
 
-
+    @Override
+    public void populateIssueTestStatusAndTestSessions(String issueKey,String testStatus,String testSessions) {
+        log.debug("populateIssueTestStatusAndTestSessions: issueKey:{}, testSessions:{}, testStatus:{}", issueKey,testSessions,testStatus);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        String baseUrl = host.getHost().getBaseUrl();
+        String testStatusPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueKey + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_TEST_STATUS.toLowerCase().replace(" ", "_");
+        try {
+            StringBuilder sb = new StringBuilder(testStatus);
+            setEntityProperties(sb, baseUrl, testStatusPath);
+        } catch (Exception e) {
+            log.error("Error populateIssueTestStatusAndTestSessions",e);
+        }
+        String testSessionsPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueKey + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_TEST_SESSIONS.toLowerCase().replace(" ", "_");
+        try {
+            StringBuilder sb = new StringBuilder(testSessions);
+            setEntityProperties(sb, baseUrl, testSessionsPath);
+        } catch (Exception e) {
+            log.error("Error populateIssueTestStatusAndTestSessions",e);
+        }
+        return;
+    }
 
     private void setEntityProperties(StringBuilder sb, String baseUrl, String path) throws JSONException {
         URI targetUrl= UriComponentsBuilder.fromUriString(baseUrl)
