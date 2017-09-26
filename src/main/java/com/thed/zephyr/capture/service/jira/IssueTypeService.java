@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.service.jira;
 
 
 import com.atlassian.jira.rest.client.api.domain.IssueType;
+import com.atlassian.jira.rest.client.api.domain.IssuelinksType;
 
 import java.util.List;
 
@@ -11,5 +12,6 @@ import java.util.List;
 public interface IssueTypeService {
     List<IssueType> getIssueTypes();
     IssueType getIssueType(Long id);
+    public List<IssuelinksType> getIssuelinksType();
     List<IssueType> getIssueTypesByProject(Long projectId);
 }
