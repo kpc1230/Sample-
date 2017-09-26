@@ -88,7 +88,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                     String url = context.get("url");
                     if (StringUtils.isNotBlank(url)) {
                         String urlPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ","_");
-                        setEntityProperties(sb, baseUri, urlPath);
+                        setEntityProperties(new StringBuilder(url), baseUri, urlPath);
                     }
                     String screenRes = context.get("screenRes");
                     if (StringUtils.isNotBlank(screenRes)) {
