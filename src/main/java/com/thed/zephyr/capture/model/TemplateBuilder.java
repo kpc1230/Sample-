@@ -107,7 +107,7 @@ public final class TemplateBuilder {
 		templateRequest.setShared(payload.path("shared").isMissingNode() ? false : payload.path("shared").asBoolean());
 
 		//Populate favourited
-		templateRequest.setFavourited(payload.path("favourited").isMissingNode() ? false : payload.path("favourited").asBoolean());
+		templateRequest.setFavourited(payload.path("favourited").isMissingNode() ? true : payload.path("favourited").asBoolean());
 
 		//Populate Source (source as it is from request body)
 		templateRequest.setSource(payload);
