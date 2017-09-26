@@ -719,6 +719,7 @@ public class SessionController extends CaptureAbstractController{
 			if (assignee != null && !permissionService.canBeAssignedSession(assignee, captureProject)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{assignee}));
 			}
+			loadedSession.setAssignee(assignee);//set assignee to session
 			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loadedSession, assignee);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
