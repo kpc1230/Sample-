@@ -135,6 +135,22 @@
                       "entity": "issue",
                       "propertyKey": "testsessions"
                     }
+                  },
+                  {
+                    "condition": "entity_property_exists",
+                    "invert": false,
+                    "params": {
+                      "entity": "issue",
+                      "propertyKey": "capturebrowser"
+                    }
+                  },
+                  {
+                    "condition": "entity_property_exists",
+                    "invert": false,
+                    "params": {
+                      "entity": "issue",
+                      "propertyKey": "captureuseragent"
+                    }
                   }
                 ]
               }
@@ -479,7 +495,7 @@
               {
                 "objectName": "content",
                 "type": "text",
-                "alias":"userAgent"
+                "alias":"captureUserAgent"
               }
             ]
           },

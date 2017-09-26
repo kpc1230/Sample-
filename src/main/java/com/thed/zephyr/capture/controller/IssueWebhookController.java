@@ -82,7 +82,9 @@ public class IssueWebhookController {
 
                 if (issueId != null) {
                     sessionService.updateSessionWithIssue(ctid, projectId, issueCreatedBy, issueId);
-                    sessionService.addRaisedInSession(hostUser.getUserKey().get(), issueId, session.getId());
+                    if(session != null) {
+                        sessionService.addRaisedInSession(hostUser.getUserKey().get(), issueId, session.getId());
+                    }
                 } else {
                     log.error("Issue creation details are empty from JIRA");
                     throw new CaptureValidationException("Issue ID is null");
