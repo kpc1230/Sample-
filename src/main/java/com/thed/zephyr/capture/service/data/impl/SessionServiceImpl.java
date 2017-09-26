@@ -185,6 +185,11 @@ public class SessionServiceImpl implements SessionService {
             if (!deactivateResult.isValid()) {
                 return new UpdateResult(deactivateResult.getErrorCollection(), session);
             }
+			//make active session status paused
+			Session activeSession = activeSessionResult.getSession();
+			activeSession.setStatus(Status.PAUSED);
+			UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
+			update(updateResult);
         }
         session.setStatus(Status.STARTED);
         return new UpdateResult(validateUpdate(loggedUserKey, session), deactivateResult, loggedUserKey, true, false);
