@@ -107,7 +107,7 @@ public final class TemplateBuilder {
 		templateRequest.setShared(payload.path("shared").isMissingNode() ? false : payload.path("shared").asBoolean());
 
 		//Populate favourited
-		templateRequest.setFavourited(payload.path("favourited").isMissingNode() ? false : payload.path("favourited").asBoolean());
+		templateRequest.setFavourited(payload.path("favourited").isMissingNode() ? true : payload.path("favourited").asBoolean());
 
 		//Populate Source (source as it is from request body)
 		templateRequest.setSource(payload);
@@ -134,7 +134,7 @@ public final class TemplateBuilder {
 		templateRequest.setShared(updatedJson.path("shared").isMissingNode() ? false : updatedJson.path("shared").asBoolean());
 
 		//Populate favourited
-		templateRequest.setFavourited(updatedJson.path("favourited").isMissingNode() ? false : updatedJson.path("favourited").get("value").asBoolean());
+		templateRequest.setFavourited(updatedJson.path("favourited").isMissingNode() ? true : updatedJson.path("favourited").get("value").asBoolean());
 
 		//Populate Source (source as it is from request body)
 		templateRequest.setSource(updatedJson);
