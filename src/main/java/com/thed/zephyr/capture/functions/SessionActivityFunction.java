@@ -69,7 +69,7 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 		finalSessionActivityMap.putAll(m.convertValue(noteSessionActivity, Map.class));
 		String rawNoteData = noteSessionActivity.getNoteData();
 		finalSessionActivityMap.put("rawNoteData", rawNoteData);
-		finalSessionActivityMap.put("noteData", CaptureUtil.createNoteData(noteSessionActivity.getTags(), rawNoteData));
+		finalSessionActivityMap.put("noteData", CaptureUtil.createNoteData( rawNoteData));
 	}
 
 	private void addSessionActivityInToMap(Map<String, Object> finalSescionActivityMap, SessionActivity sessionActivity) {
