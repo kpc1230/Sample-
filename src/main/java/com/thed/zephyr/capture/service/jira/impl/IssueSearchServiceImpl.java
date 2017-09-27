@@ -52,17 +52,20 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     private IssueSearchList getIssuesForIssueTerm(String projectKey, String issueTerm, boolean appendEpicIssueType) {
     	try {
     		SearchResult searchResult = null;
-    		if(StringUtils.isBlank(issueTerm)) {
+    		if(StringUtils.isBlank(issueTerm) || !issueTerm.startsWith(projectKey)) {
     			return new IssueSearchList(new ArrayList<>(1), 0, 11, 0);
     		}
     		Matcher match = patttern.matcher(issueTerm);
         	if(match.matches()) {
         		ArrayList<IssueSearchDto> searchedIssues = new ArrayList<>(11);
-        		String issueQuery = generateIssueInClause(issueTerm);
-        		searchResult = getJQLResult("project = " + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : "") + " AND issue IN (" + issueQuery.toString() + ")", 0, 11);
-        		searchResult.getIssues().spliterator().forEachRemaining(issue -> {
-    				searchedIssues.add(new IssueSearchDto(issue.getId(), issue.getKey(), issue.getIssueType().getIconUri().toString(), issue.getSummary()));
-        		});
+        		searchResult = getJQLResult("project=" + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 1);
+        		String issueQuery = generateIssueInClause(issueTerm, searchResult.getTotal()); 
+        		if(issueQuery.length() > 0) {
+        			searchResult = getJQLResult("project = " + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : "") + " AND issue IN (" + issueQuery.toString() + ")", 0, 11);
+            		searchResult.getIssues().spliterator().forEachRemaining(issue -> {
+        				searchedIssues.add(new IssueSearchDto(issue.getId(), issue.getKey(), issue.getIssueType().getIconUri().toString(), issue.getSummary()));
+            		});
+        		}
         		return new IssueSearchList(searchedIssues, 0, 11, searchedIssues.size());
         	} else {
         		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -94,16 +97,19 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     	return jiraRestClient.getSearchClient().searchJql(jql, limit, offset, fields).claim();
     }
     
-    private String generateIssueInClause(String issueKey) {
-    	int index = 0; //Placeholder for incrementing the value to append in the issue
+    private String generateIssueInClause(String issueKey, int total) {
     	StringBuilder sb = new StringBuilder();
-		sb.append(issueKey).append(",");
-		while(index < 10) { //generating only 10 issues for the in clause.
-			if(index != 9) {
-				sb.append(issueKey).append(index++ + ",");
-			} else {
-				sb.append(issueKey).append(index++);
-			}
+		String[] str = issueKey.split("-");
+		int extractedValue = Integer.parseInt(str[1]);
+		if(extractedValue == 0) return sb.toString();
+		int index = Integer.parseInt(str[1] + "0");
+		int maxResults = Integer.parseInt(str[1] + "9");  
+		if(maxResults <= total) 
+			sb.append(issueKey); 
+		else if(extractedValue <= total) 
+			sb.append(issueKey);
+		while(index <= maxResults && index <= total) { //generating only 10 issues for the in clause.
+			sb.append(",").append(str[0] + "-").append(index++);
 		}
 		return sb.toString();
     }
