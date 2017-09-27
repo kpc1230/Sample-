@@ -216,7 +216,7 @@ public class CaptureUtil {
 	}
 
     public static String createWikiData(String rawData){
-    	return createNoteData(rawData);
+    	return StringUtils.isNotEmpty(rawData) ? createNoteData(rawData) : null;
     }
 	public static String createNoteData(String noteData) {
 		StringBuilder stringBuilder = new StringBuilder();//"<pre>"
