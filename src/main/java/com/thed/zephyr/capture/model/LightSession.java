@@ -2,7 +2,6 @@ package com.thed.zephyr.capture.model;
 
 
 import com.thed.zephyr.capture.model.jira.CaptureProject;
-import org.joda.time.DateTime;
 
 import java.util.Date;
 import java.util.Map;
@@ -20,6 +19,7 @@ public class LightSession {
     private final CaptureProject project;
     private final String defaultTemplateId;
     private final String additionalInfo;
+    private final String rawAdditionalInfo;
     private Date timeCreated;
     private final Map<String, Object> rawData;
 
@@ -31,6 +31,7 @@ public class LightSession {
                         boolean shared,
                         CaptureProject project,
                         String defaultTemplateId,
+                        String rawAdditionalInfo,
                         String additionalInfo,
                         Date timeCreated,
                         Map<String, Object> rawData) {
@@ -43,6 +44,7 @@ public class LightSession {
         this.project = project;
         this.defaultTemplateId = defaultTemplateId;
         this.additionalInfo = additionalInfo;
+        this.rawAdditionalInfo = rawAdditionalInfo;
         this.timeCreated = timeCreated;
         this.rawData = rawData;
     }
@@ -94,4 +96,9 @@ public class LightSession {
 	public void setTimeCreated(Date timeCreated) {
 		this.timeCreated = timeCreated;
 	}
+
+	public String getRawAdditionalInfo() {
+		return rawAdditionalInfo;
+	}
+
 }

@@ -109,7 +109,7 @@ public class SessionController extends CaptureAbstractController{
 			SessionSearchList sessionsSearch = sessionService.getSessionsForProject(projectId, offset, limit);
 			sessionsSearch.getContent().stream().forEach(session -> {
 				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-						project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
+						project, session.getDefaultTemplateId(), session.getAdditionalInfo(), CaptureUtil.createWikiData(session.getAdditionalInfo()), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
 				sessionDtoList.add(lightSession);
 			});
 			LightSessionSearchList response = new LightSessionSearchList(sessionDtoList, sessionsSearch.getOffset(), sessionsSearch.getLimit(), sessionsSearch.getTotal());
@@ -834,7 +834,7 @@ public class SessionController extends CaptureAbstractController{
             }
 			sessionService.update(updateResult);
 			Map<String, String> jsonResponse = new HashMap<>();
-			jsonResponse.put("additionalInfo", updateResult.getSession().getAdditionalInfo());
+			jsonResponse.put("additionalInfo", CaptureUtil.createWikiData(updateResult.getSession().getAdditionalInfo()));
 			log.info("End of updateAdditionalInfo()");
 			return ResponseEntity.ok(jsonResponse);
 		} catch(CaptureValidationException ex) {

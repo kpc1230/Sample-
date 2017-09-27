@@ -1162,7 +1162,7 @@ public class SessionServiceImpl implements SessionService {
 			}
 		}
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), session.getTimeCreated(), null);
+				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), CaptureUtil.createWikiData(session.getAdditionalInfo()), session.getTimeCreated(), null);
 		if(!usersMap.containsKey(session.getAssignee())) {
 			user = userService.findUser(session.getAssignee());
 		} else {

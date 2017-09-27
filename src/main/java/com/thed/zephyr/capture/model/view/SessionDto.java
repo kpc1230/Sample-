@@ -81,7 +81,7 @@ public class SessionDto {
     	this.projectKey = session.getProject().getKey();
     	this.projectName = session.getProject().getName();
     	this.additionalInfo = session.getAdditionalInfo();
-    	this.rawAdditionalInfo = session.getAdditionalInfo();
+    	this.rawAdditionalInfo = session.getRawAdditionalInfo();
     	this.isActive = isActive;
         this.participants = activeParticipants;
         this.participantCount = activeParticipantCount;
