@@ -188,7 +188,7 @@ public class CaptureUtil {
     }
 
 	public static String createNoteData(Set<String> tags, String noteData) {
-		StringBuilder stringBuilder = new StringBuilder();
+		StringBuilder stringBuilder = new StringBuilder("<pre>");
 		String tagData = null;
 		String cssClassUnknown = "tag-unknown";
 		if(!noteData.startsWith(Tag.HASH)){
@@ -231,7 +231,7 @@ public class CaptureUtil {
 	            	.append("</span>");
 			}
 		}
-		return stringBuilder.toString();
+		return stringBuilder.append("</pre>").toString();
 	}
 
 	private static String getTagData(String noteData, String tag) {
