@@ -136,7 +136,7 @@ public class ApplicationController {
     }
 
     @RequestMapping(value = "/createTestSessionDialog")
-    public String createTestSessionDialog(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
+    public String createTestSessionDialog(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId, @RequestParam String issueKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
         String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         log.debug("Requesting the Project Test Sessions page");
@@ -144,6 +144,8 @@ public class ApplicationController {
         model.addAttribute("pluginKey", pluginKey);
         model.addAttribute("projectKey", projectKey);
         model.addAttribute("projectId", projectId);
+        model.addAttribute("issueId", issueId);
+        model.addAttribute("issueKey", issueKey);
         model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
 
         log.debug("Ending Requesting the Project Test Sessions page");
