@@ -110,7 +110,7 @@
         "name": {
           "value": "Testing"
         },
-        "url": "/public/rest/testing?projectId={project.id}&projectKey={project.key}&issueId={issue.id}&issueKey={issue.key}",
+        "url": "/public/rest/testing?projectId={project.id}&projectKey={project.key}&issueId={issue.id}&issueKey={issue.key}&boardsPage=false",
         "conditions": [
           {
             "and": [
@@ -165,7 +165,7 @@
         "name": {
           "value": "Capture for JIRA"
         },
-        "url": "bonfireGFWebPanelURL",
+        "url": "/public/rest/testing?projectId={project.id}&projectKey={project.key}&issueId={issue.id}&issueKey={issue.key}&boardsPage=true",
         "location": "atl.gh.issue.details.tab",
         "weight": 10
       },
@@ -174,7 +174,7 @@
         "name": {
           "value": "Test Sessions"
         },
-        "url": "bonfireGFWebPanelURL",
+        "url": "/public/rest/testing?projectId={project.id}&projectKey={project.key}&issueId={issue.id}&issueKey={issue.key}&boardsPage=false",
         "location": "com.atlassian.bonfire.plugin:capture-test-sessions",
         "section": "jira.project.sidebar.navigation",
         "weight": 710,

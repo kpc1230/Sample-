@@ -104,7 +104,7 @@ public class ApplicationController {
     }
 
     @RequestMapping(value = "/public/rest/testing")
-    public String getTestingIssueView(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId, @RequestParam String issueKey, Model model) {
+    public String getTestingIssueView(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId, @RequestParam String issueKey, @RequestParam String boardsPage, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
         String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         log.debug("Requesting the Testing Issue View page");
@@ -114,6 +114,7 @@ public class ApplicationController {
         model.addAttribute("projectId", projectId);
         model.addAttribute("issueId", issueId);
         model.addAttribute("issueKey", issueKey);
+        model.addAttribute("boardsPage", boardsPage);
         model.addAttribute("messages", getI18NMessagesBasedOnSessionLocale());
 
         log.debug("Ending Requesting the Testing Issue View page");
