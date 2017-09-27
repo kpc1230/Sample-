@@ -1,8 +1,10 @@
 package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.thed.zephyr.capture.service.db.converter.*;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.json.DurationJsonDeserializer;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -40,6 +42,7 @@ public class Session  implements Comparable<Session>, Serializable{
     @DynamoDBTypeConverted(converter = DateTypeConverter.class)
     private Date timeFinished;
     @DynamoDBTypeConverted(converter = DurationTypeConverter.class)
+    @JsonDeserialize(using = DurationJsonDeserializer.class)
     private Duration timeLogged;
     @DynamoDBTypeConverted(converter = IssueRaisedBeanConverter.class)
     private Collection<IssueRaisedBean> issuesRaised;
