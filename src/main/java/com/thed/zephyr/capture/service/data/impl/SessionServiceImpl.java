@@ -569,6 +569,9 @@ public class SessionServiceImpl implements SessionService {
         	List<Participant> participantsList = Lists.newArrayList();
         	participantsList.add(newParticipant);
         	session.setParticipants(participantsList);
+
+			sessionActivityService.addParticipantJoined(session, new Date(), newParticipant,user);
+
         }
     }
 	
