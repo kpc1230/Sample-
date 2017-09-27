@@ -27,6 +27,7 @@ import com.thed.zephyr.capture.service.jira.issue.ResourceId;
 import com.thed.zephyr.capture.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -290,6 +291,13 @@ public class IssueServiceImpl implements IssueService {
     public void setIssueTestStausAndTestSession(String issueId, String testingStatus,String sessionids){
         captureContextIssueFieldsService.populateIssueTestStatusAndTestSessions(getCaptureIssue(String.valueOf(issueId)).getKey(),i18n.getMessage(testingStatus),sessionids);
         return;
+    }
+
+    @Override
+    public void addComment(String issueKey, String comment) throws JSONException {
+        Issue issue = getIssueObject(issueKey);
+        JSONObject jsonObject = new JSONObject(comment);
+        postJiraRestClient.getIssueClient().addComment(issue.getCommentsUri(),Comment.valueOf(jsonObject.get("comment").toString())).claim();
     }
 
     private IssueInput createIssueInput(IssueFields issueFields, HttpServletRequest request) {

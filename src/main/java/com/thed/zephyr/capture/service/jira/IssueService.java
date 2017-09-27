@@ -28,5 +28,7 @@ public interface IssueService {
 
     CaptureIssue createIssue(HttpServletRequest request, String testSessionId, IssueCreateRequest createRequest);
 
-    public void setIssueTestStausAndTestSession(String issueKey, String testingStatus,String sessionids);
+    void setIssueTestStausAndTestSession(String issueKey, String testingStatus,String sessionids);
+
+    void addComment(String issueKey, String comment) throws JSONException;
 }

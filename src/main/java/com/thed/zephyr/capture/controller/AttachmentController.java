@@ -49,7 +49,11 @@ public class AttachmentController {
             String fullIconUrl = attachmentService.addAttachments(issueKey,testSessionId,json);
             return new ResponseEntity<>(new AttachmentResponse(fullIconUrl),HttpStatus.OK);
         } catch (JSONException e) {
+            log.error("JSON Error adding attachment",e);
             throw new CaptureRuntimeException(i18n.getMessage("rest.resource.malformed.json"),e);
+        } catch(Exception e) {
+            log.error("Error adding attachment",e);
+            throw new CaptureRuntimeException(e);
         }
     }
 

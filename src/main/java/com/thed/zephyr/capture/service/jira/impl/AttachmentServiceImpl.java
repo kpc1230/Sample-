@@ -95,7 +95,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         log.info("Attachment Upload request for Issue : {}", issueKey);
-        final Issue issue = getJiraRestClient.getIssueClient().getIssue(issueKey).claim();
+        Issue issue = getJiraRestClient.getIssueClient().getIssue(issueKey).claim();
         if (issue == null) {
             throw new CaptureRuntimeException("file.error.issue.key.invalid", issueKey);
         }
@@ -121,6 +121,9 @@ public class AttachmentServiceImpl implements AttachmentService {
                     imageDataTempFile = byteArrayToTempFile(filename,decodedImageData);
                     postJiraRestClient.getIssueClient().addAttachments(issue.getAttachmentsUri(),imageDataTempFile).claim();
                 } catch (CaptureRuntimeException e) {
+                    log.debug("Error creating temp file for attachment: " + e);
+                    throw e;
+                }   catch (Exception e) {
                     log.debug("Error creating temp file for attachment: " + e);
                     throw e;
                 } finally {
