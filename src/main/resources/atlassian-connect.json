@@ -436,18 +436,18 @@
       },
       {
         "name": {
-          "value": "Test Sessions Menu Contents"
+          "value": ""
         },
         "location": "bonfire-top-menu-dropdown",
-        "weight": 100,
+        "weight": 1,
         "key": "bonfire-top-main-menu-session"
       },
       {
         "name": {
-          "value": "Test Sessions Menu Contents"
+          "value": ""
         },
         "location": "bonfire-top-menu-dropdown",
-        "weight": 100,
+        "weight": 2,
         "key": "bonfire-top-main-menu-contents"
       }
     ],
