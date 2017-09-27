@@ -1,27 +1,31 @@
 package com.thed.zephyr.capture.util;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.IssueType;
-import com.thed.zephyr.capture.model.AcHostModel;
-import com.thed.zephyr.capture.model.Tag;
-import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.IssueType;
+import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.model.Tag;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 
 
 public class CaptureUtil {
@@ -187,20 +191,50 @@ public class CaptureUtil {
         return "none";
     }
 
-	public static String createNoteData(Set<String> tags, String noteData) {
-		StringBuilder stringBuilder = new StringBuilder("<pre>");
+    public static List<String> parseTags(String noteData) {
+		List<String> tagList = new ArrayList<>();
+		Pattern pattern = Pattern.compile("#(\\w+)|#!|#\\?");
+		Matcher matcher = pattern.matcher(noteData);
+		String tagName;
+		while (matcher.find()) {
+			String originalMatch = matcher.group(0);
+			if (org.apache.commons.lang3.StringUtils.equals(originalMatch, Tag.QUESTION)){
+				tagName = Tag.QUESTION_TAG_NAME;
+			} else if (org.apache.commons.lang3.StringUtils.equals(originalMatch, Tag.FOLLOWUP)){
+				tagName = Tag.FOLLOWUP_TAG_NAME;
+			} else if (org.apache.commons.lang3.StringUtils.equals(originalMatch, Tag.ASSUMPTION)){
+				tagName = Tag.ASSUMPTION_TAG_NAME;
+			} else if (org.apache.commons.lang3.StringUtils.equals(originalMatch, Tag.IDEA)){
+				tagName = Tag.IDEA_TAG_NAME;
+			} else {
+				tagName = matcher.group(1);
+			}
+
+			tagList.add(tagName);
+		}
+
+		return tagList;
+	}
+
+	public static String createNoteData(String noteData) {
+		StringBuilder stringBuilder = new StringBuilder();//"<pre>"
 		String tagData = null;
 		String cssClassUnknown = "tag-unknown";
+		List<String> tags = parseTags(noteData);
 		if(!noteData.startsWith(Tag.HASH)){
 			if(tags != null && tags.size() > 0){
 				tagData = noteData.substring(0, noteData.indexOf(Tag.HASH));
-				stringBuilder.append("<span class=\"note-tag ").append(cssClassUnknown).append("\">")
+				stringBuilder
+				//.append("<span class=\"note-tag ").append(cssClassUnknown).append("\">")
 					.append(tagData) // Tag data if present
-					.append("</span>");
+					//.append("</span>")
+					;
 			}else{
-				stringBuilder.append("<span class=\"note-tag ").append(cssClassUnknown).append("\">")
+				stringBuilder
+				//.append("<span class=\"note-tag ").append(cssClassUnknown).append("\">")
 				.append(noteData) // Tag data if present
-				.append("</span>");
+				//.append("</span>")
+				;
 			}
 				
 		}
@@ -223,15 +257,16 @@ public class CaptureUtil {
 	            }
 	            boolean tagIsUnknown = cssClass.equals(cssClassUnknown);
 	            if(tagIsUnknown){
-	            	tagData = noteData;
+	            	//tagData = noteData;
+	            	stringBuilder.append(noteData == null ? "" : noteData);
+	            }else{
+	            	stringBuilder.append("<span class=\"note-tag ").append(cssClass).append("\">").append(tagIsUnknown ? tag : "")
+	            		.append(tagData == null ? "" : tagData) // Tag data if present
+	            		.append("</span>");
 	            }
-	            
-	            stringBuilder.append("<span class=\"note-tag ").append(cssClass).append("\">").append(tagIsUnknown ? tag : "")
-	            	.append(tagData == null ? "" : tagData) // Tag data if present
-	            	.append("</span>");
 			}
 		}
-		return stringBuilder.append("</pre>").toString();
+		return stringBuilder.toString(); //.append("</pre>")
 	}
 
 	private static String getTagData(String noteData, String tag) {

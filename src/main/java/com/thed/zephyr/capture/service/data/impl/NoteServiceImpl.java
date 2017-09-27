@@ -1,8 +1,7 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.*;
@@ -45,7 +44,13 @@ public class NoteServiceImpl implements NoteService {
 
 	@Override
 	public NoteRequest create(NoteRequest noteRequest) throws CaptureValidationException {
-		Set<String> tags = parseTags(noteRequest.getNoteData());
+		List<String> tagList = CaptureUtil.parseTags(noteRequest.getNoteData());
+		Set<String> tags = null;
+		if(tagList != null && !tagList.isEmpty()){
+			tags = tagList.stream().collect(Collectors.toSet());
+		}else{
+			tags = new TreeSet<>();
+		}
 		NoteSessionActivity.Resolution resolution = tags.size() > 0?NoteSessionActivity.Resolution.INITIAL:NoteSessionActivity.Resolution.NON_ACTIONABLE;
 		SessionActivity sessionActivity =
 				new NoteSessionActivity(
@@ -193,30 +198,6 @@ public class NoteServiceImpl implements NoteService {
 		}
 	}
 
-	private Set<String> parseTags(String noteData) {
-		Set<String> tagList = new TreeSet<>();
-		Pattern pattern = Pattern.compile("#(\\w+)|#!|#\\?");
-		Matcher matcher = pattern.matcher(noteData);
-		String tagName;
-		while (matcher.find()) {
-			String originalMatch = matcher.group(0);
-			if (org.apache.commons.lang3.StringUtils.equals(originalMatch, Tag.QUESTION)){
-				tagName = Tag.QUESTION_TAG_NAME;
-			} else if (org.apache.commons.lang3.StringUtils.equals(originalMatch, Tag.FOLLOWUP)){
-				tagName = Tag.FOLLOWUP_TAG_NAME;
-			} else if (org.apache.commons.lang3.StringUtils.equals(originalMatch, Tag.ASSUMPTION)){
-				tagName = Tag.ASSUMPTION_TAG_NAME;
-			} else if (org.apache.commons.lang3.StringUtils.equals(originalMatch, Tag.IDEA)){
-				tagName = Tag.IDEA_TAG_NAME;
-			} else {
-				tagName = matcher.group(1);
-			}
-
-			tagList.add(tagName);
-		}
-
-		return tagList;
-	}
 	private NoteRequest convertNoteTO(String userName, Note note){
 		return convertNoteTO(CaptureUtil.getCurrentClientBaseUrl(), userName, note); 
 	}

@@ -67,7 +67,7 @@ final public class NoteRequest {
     		this.user = note.getAuthor();
     		this.rawNoteData = note.getNoteData();
     		this.resolutionState = note.getResolutionState().name();
-    		this.noteData = CaptureUtil.createNoteData(tags, note.getNoteData());
+    		this.noteData = CaptureUtil.createNoteData(note.getNoteData());
     		this.projectId = note.getProjectId();
     		this.tags = tags;//createLightTag(tags);
     		this.sessionActivityId = note.getNoteSessionActivityId();
@@ -83,7 +83,7 @@ final public class NoteRequest {
     		this.user = note.getUser();
     		this.rawNoteData = note.getNoteData();
     		this.resolutionState = note.getResolutionState().name();
-    		this.noteData = CaptureUtil.createNoteData(tags, note.getNoteData());
+    		this.noteData = CaptureUtil.createNoteData(note.getNoteData());
     		this.projectId = note.getProjectId();
     		this.tags = tags;//createLightTag(tags);
     	}
@@ -100,7 +100,7 @@ final public class NoteRequest {
 		this.rawNoteData = rawNoteData;
 		this.resolutionState = resolutionState;
 		this.projectId = projectId;
-		this.noteData = CaptureUtil.createNoteData(tags, rawNoteData);
+		this.noteData = CaptureUtil.createNoteData(rawNoteData);
 		this.tags = tags;//createLightTag(tags);
 	}
 
