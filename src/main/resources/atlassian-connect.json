@@ -570,22 +570,22 @@
             ]
           },
           {
-            "propertyKey": "testingStatus",
+            "propertyKey": "testingstatus",
             "extractions": [
               {
                 "objectName": "content",
                 "type": "STRING",
-                "alias": "testingStatus"
+                "alias": "testingstatus"
               }
             ]
           },
           {
-            "propertyKey": "testSessions",
+            "propertyKey": "testsessions",
             "extractions": [
               {
                 "objectName": "content",
                 "type": "STRING",
-                "alias": "testSessions"
+                "alias": "testsessions"
               }
             ]
           }
