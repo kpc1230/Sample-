@@ -99,8 +99,17 @@ public class NoteServiceImpl implements NoteService {
 		((NoteSessionActivity)existing).setNoteData(noteRequest.getNoteData());
 		Set<String> tags = tagService.parseTags(noteRequest.getNoteData());
 		NoteSessionActivity.Resolution resolution = NoteSessionActivity.Resolution.NON_ACTIONABLE;
-		if( existingTags != null && tags != null &&(existingTags.size() != tags.size()) 
-				|| !(existingTags.containsAll(tags) && tags.containsAll(existingTags))){
+		// resolution is INITIAL when
+		// 1. added/deleted the tags
+		// 2. Change in the tags (deleted one and added another)
+		if(
+				(existingTags == null 
+					&& (tags != null && tags.size() > 0))
+			|| (tags == null 
+					&& (existingTags != null && existingTags.size() > 0))
+			|| (
+					(existingTags != null && tags != null) && ((existingTags.size() != tags.size())
+							|| (!(existingTags.containsAll(tags) && tags.containsAll(existingTags)))))){
 			resolution = NoteSessionActivity.Resolution.INITIAL;
 		}
 		if(toggleResolution){
