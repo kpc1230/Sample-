@@ -116,7 +116,7 @@ public class CaptureUtil {
     }
     
     public static AcHostModel getAcHostModel(DynamoDBAcHostRepository dynamoDBAcHostRepository, String baseUrl) {
-        AcHostModel acHostModel = (AcHostModel) dynamoDBAcHostRepository.findFirstByBaseUrl(baseUrl).get();
+        AcHostModel acHostModel = (AcHostModel) dynamoDBAcHostRepository.findFirstByBaseUrl(baseUrl).orElse(null);
         return acHostModel;
     }
 
@@ -215,6 +215,9 @@ public class CaptureUtil {
 		return tagList;
 	}
 
+    public static String createWikiData(String rawData){
+    	return createNoteData(rawData);
+    }
 	public static String createNoteData(String noteData) {
 		StringBuilder stringBuilder = new StringBuilder();//"<pre>"
 		String tagData = null;
