@@ -9,6 +9,8 @@ import com.thed.zephyr.capture.service.data.InviteService;
 import com.thed.zephyr.capture.service.email.AmazonSEService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import com.thed.zephyr.capture.util.CaptureUtil;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,7 +72,7 @@ public class InviteServiceImpl implements InviteService{
         }
 
         //session link
-        String SESSION_LINK = host.getHost().getBaseUrl()+"/plugins/servlet/ac/capture-cloud/view-session-url?session.id="+session.getId()+"&origin=nav&invite=true";
+        String SESSION_LINK = host.getHost().getBaseUrl()+ CaptureUtil.createSessionLink(session.getId());
 
         //subject
         String subject = "[JIRA] "+i18n.getMessage("capture.session.invite.subject",new Object[]{loggedUser.getDisplayName(),session.getName()});

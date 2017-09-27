@@ -1193,12 +1193,12 @@ public class SessionServiceImpl implements SessionService {
 
             return new FullSessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, permissions, estimatedTimeSpent,
                     i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc,
-                    user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeFinished(), session.getTimeLogged());
+                    user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeFinished(), session.getTimeLogged(), CaptureUtil.createSessionLink(session.getId()));
         } else {
             Integer issusRaisedCount = Objects.nonNull(session.getIssuesRaised()) ? session.getIssuesRaised().size() : 0;
 			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, estimatedTimeSpent,
 					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc,
-					userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeLogged());
+					userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeLogged(), CaptureUtil.createSessionLink(session.getId()));
 		}
 	}
 

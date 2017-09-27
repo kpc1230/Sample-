@@ -65,10 +65,12 @@ public class SessionDto {
     private String userDisplayName;
     
     private Duration timeLogged;
+    
+    private String url;
 
     public SessionDto(LightSession session, boolean isActive, List<ParticipantDto> activeParticipants, Integer activeParticipantCount,
     		Integer issuesRaisedCount, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus, Date timeCompleted, String userAvatarSrc, 
-    		String userLargeAvatarSrc, String userDisplayName, Duration timeLogged) {
+    		String userLargeAvatarSrc, String userDisplayName, Duration timeLogged, String url) {
     	this.id = session.getId();
     	this.name = session.getName();
     	this.status = session.getStatus();
@@ -94,6 +96,7 @@ public class SessionDto {
         this.userLargeAvatarSrc = userLargeAvatarSrc;
         this.userDisplayName = userDisplayName;
         this.timeLogged = timeLogged;
+        this.url = url;
     }
 
 	public boolean isActive() {
@@ -203,5 +206,13 @@ public class SessionDto {
 	public Duration getTimeLogged() {
 		return timeLogged;
 	}
-	
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
+	}
+
 }

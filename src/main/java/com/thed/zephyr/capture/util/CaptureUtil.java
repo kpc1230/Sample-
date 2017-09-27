@@ -279,4 +279,7 @@ public class CaptureUtil {
 		return noteData.substring(beginIndex + tag.length(), endIndex);
 	}
 
+	public static String createSessionLink(String sessionId){
+		return String.format(ApplicationConstants.SESSION_URL_TEMPLATE, sessionId);
+	}
 }

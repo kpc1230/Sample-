@@ -20,9 +20,9 @@ public class FullSessionDto extends SessionDto {
     
     public FullSessionDto(LightSession session, boolean isActive, List<CaptureIssue> relatedIssues,List<CaptureIssue> issuesRaised, List<ParticipantDto> activeParticipants,
     		Integer activeParticipantCount, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus,	String userAvatarSrc, 
-    		String userLargeAvatarSrc, String userDisplayName, Date timeCompleted, Duration timeLogged) {
+    		String userLargeAvatarSrc, String userDisplayName, Date timeCompleted, Duration timeLogged, String url) {
     	super(session, isActive, activeParticipants, activeParticipantCount, issuesRaised.size(), permissions, estimatedTimeSpent, prettyStatus, timeCompleted,
-    			userAvatarSrc, userLargeAvatarSrc, userDisplayName, timeLogged);
+    			userAvatarSrc, userLargeAvatarSrc, userDisplayName, timeLogged, url);
     	this.relatedIssues = relatedIssues;
         this.issuesRaised = issuesRaised;
     }

@@ -160,4 +160,5 @@ public class ApplicationConstants {
 
     public static final String SESSION_LOCK_KEY = "session_";
 
+    public static final String SESSION_URL_TEMPLATE = "/plugins/servlet/ac/capture-cloud/view-session-url?session.id=%s&origin=nav&invite=true";
 }
