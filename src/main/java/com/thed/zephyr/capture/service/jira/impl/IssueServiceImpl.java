@@ -217,6 +217,8 @@ public class IssueServiceImpl implements IssueService {
         AtomicInteger inProgressCount = new AtomicInteger();
         AtomicInteger notStartedCount = new AtomicInteger();
 
+        boolean emptyList =  sessionByRelatedIssueId.getContent()!=null&&sessionByRelatedIssueId.getContent().isEmpty() ? true :false;
+
         sessionByRelatedIssueId.getContent().stream().forEach(session -> {
             if (session != null) {
                /* if (Session.Status.STARTED.equals(session.getStatus())) {
@@ -231,11 +233,12 @@ public class IssueServiceImpl implements IssueService {
                 }
             }
         });
+
         if(inProgressCount.get()==0){
             // If all the sessions are 'completed' then return complete
             if (notStartedCount.get() == 0 && completedCount.get() != 0) {
                 testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey()));
-            } else if (notStartedCount.get() != 0 && completedCount.get() == 0) {
+            } else if ((notStartedCount.get() != 0 && completedCount.get() == 0) || emptyList) {
                 // If all the sessions are 'created' then return not started
                 testingStatus.setTestingStatusEnum(i18n.getMessage(TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey()));
             } else {
