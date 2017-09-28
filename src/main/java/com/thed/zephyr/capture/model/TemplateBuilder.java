@@ -54,8 +54,9 @@ public final class TemplateBuilder {
 		if(templateRequest.getProjectId() != null && templateRequest.getProjectId().longValue() != template.getProjectId().longValue()){
 			template.setProjectId(templateRequest.getProjectId());
 		}
-
-		template.setFavourite(templateRequest.getFavourited());
+		if(templateRequest.getFavourited() != null){
+			template.setFavourite(templateRequest.getFavourited());
+		}
 		template.setShared(templateRequest.getShared());
 		template.setContent(templateRequest.getSource());
 		if(!template.getFavourite() && templateRequest.getFavourited()){
@@ -134,8 +135,10 @@ public final class TemplateBuilder {
 		templateRequest.setShared(updatedJson.path("shared").isMissingNode() ? false : updatedJson.path("shared").asBoolean());
 
 		//Populate favourited
-		templateRequest.setFavourited(updatedJson.path("favourited").isMissingNode() ? true : updatedJson.path("favourited").get("value").asBoolean());
-
+		if(!updatedJson.path("favourited").isMissingNode()){
+			templateRequest.setFavourited(updatedJson.path("favourited").get("value").asBoolean());
+		}
+		
 		//Populate Source (source as it is from request body)
 		templateRequest.setSource(updatedJson);
 		return templateRequest;
