@@ -150,7 +150,7 @@ public class TemplateController extends CaptureAbstractController{
 			if(StringUtils.isNotEmpty(templateId)){
                 templateRequest = templateService.getTemplate(getUser(), templateId);
                 templateRequest.setFavourited(flag);
-                templateService.updateTemplate(templateRequest);
+                templateRequest = templateService.updateTemplate(templateRequest);
             }
 		} catch (Exception ex) {
 			log.error("Error during updateFavouriteTemplates.", ex);

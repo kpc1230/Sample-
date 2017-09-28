@@ -59,7 +59,7 @@ public final class TemplateBuilder {
 		}
 		template.setShared(templateRequest.getShared());
 		template.setContent(templateRequest.getSource());
-		if(!template.getFavourite() && templateRequest.getFavourited()){
+		if(!template.getFavourite() && templateRequest.getFavourited() != null && templateRequest.getFavourited()){
 			template.setTimeFavourited(new Date());
 		}
 		template.setTimeUpdated(new Date());
