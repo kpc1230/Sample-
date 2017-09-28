@@ -219,7 +219,8 @@ public class CaptureUtil {
     	return StringUtils.isNotEmpty(rawData) ? createNoteData(rawData) : null;
     }
 	public static String createNoteData(String noteData) {
-		StringBuilder stringBuilder = new StringBuilder();//"<pre>"
+		if(StringUtils.isEmpty(noteData)){return null;}
+		StringBuilder stringBuilder = new StringBuilder("<pre>");
 		String tagData = null;
 		String cssClassUnknown = "tag-unknown";
 		List<String> tags = parseTags(noteData);
@@ -268,7 +269,7 @@ public class CaptureUtil {
 	            }
 			}
 		}
-		return stringBuilder.toString(); //.append("</pre>")
+		return stringBuilder.append("</pre>").toString();
 	}
 
 	private static String getTagData(String noteData, String tag) {
