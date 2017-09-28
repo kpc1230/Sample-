@@ -48,6 +48,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import javax.ws.rs.QueryParam;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -709,10 +710,10 @@ public class SessionController extends CaptureAbstractController{
 		}
 	}
 	
-	@PutMapping(value = "/{sessionId}/assign/{assignee}", produces = {MediaType.APPLICATION_JSON_VALUE})
+	@PutMapping(value = "/{sessionId}/assign", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> assignSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
 										   @PathVariable("sessionId") String sessionId,
-										   @PathVariable("assignee") String assignee) throws CaptureValidationException {
+										   @QueryParam("assignee") String assignee) throws CaptureValidationException {
 		log.info("Start of assignSession() --> params " + sessionId + " assignee " + assignee);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
 		boolean isLocked = false;

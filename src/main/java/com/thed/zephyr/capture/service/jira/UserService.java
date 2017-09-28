@@ -21,5 +21,7 @@ public interface UserService {
 
     CaptureUser findUser(String username);
 
+    CaptureUser findUserByKey(String key);
+
 	CaptureUser findUser(String userName, String uri);
 }
