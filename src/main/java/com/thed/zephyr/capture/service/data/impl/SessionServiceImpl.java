@@ -775,7 +775,7 @@ public class SessionServiceImpl implements SessionService {
 		} else {
 			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
 		}
-		return getActiveSessionIdFromAcHostModel(user, acHostModel);
+		return acHostModel == null ? null : getActiveSessionIdFromAcHostModel(user, acHostModel);
 	}
 	
 	/**
