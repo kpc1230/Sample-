@@ -12,6 +12,7 @@ import com.thed.zephyr.capture.model.IssueRaisedBean;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.jira.CaptureEnvironment;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
+import com.thed.zephyr.capture.model.jira.CaptureResolution;
 import com.thed.zephyr.capture.model.jira.TestSectionResponse;
 import com.thed.zephyr.capture.model.jira.TestingStatus;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
@@ -106,9 +107,11 @@ public class IssueServiceImpl implements IssueService {
                 @Override
                 public CaptureIssue call() throws Exception {
                     Issue issue = getIssueObject(issueIdOrKey);
+                    CaptureResolution resolution = issue.getResolution() != null ? new CaptureResolution(issue.getResolution().getId(), 
+                    		issue.getResolution().getName(), issue.getResolution().getSelf()) : null;
                     return new CaptureIssue(issue.getSelf(),
                             issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName());
+                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution);
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
         } catch (Exception exp) {
@@ -157,9 +160,11 @@ public class IssueServiceImpl implements IssueService {
                 jiraRestClient.getSearchClient().searchJql(jql).claim();
         searchResultPromise.getIssues()
                 .forEach(issue -> {
+                	CaptureResolution resolution = issue.getResolution() != null ? new CaptureResolution(issue.getResolution().getId(), 
+                    		issue.getResolution().getName(), issue.getResolution().getSelf()) : null;
                     captureIssues.add(new CaptureIssue(issue.getSelf(),
                             issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName()));
+                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution));
                 });
         return captureIssues;
     }
@@ -276,8 +281,9 @@ public class IssueServiceImpl implements IssueService {
 
         //Set Context Params
         captureContextIssueFieldsService.populateContextFields(request, issue, createRequest.getContext());
-
-        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName());
+        CaptureResolution resolution = issue.getResolution() != null ? new CaptureResolution(issue.getResolution().getId(), 
+        		issue.getResolution().getName(), issue.getResolution().getSelf()) : null;
+        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution);
         if (StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {
