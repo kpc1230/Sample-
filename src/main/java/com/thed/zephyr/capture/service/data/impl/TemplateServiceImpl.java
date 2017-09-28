@@ -93,36 +93,36 @@ public class TemplateServiceImpl implements TemplateService {
 	@Override
 	public TemplateSearchList getTemplates(String userName, Integer offset, Integer limit) {
 		//TODO, check condition on user who should be admin to execute this operation.
-		Page<Template> templatePage = repository.findAll(getPageRequest(offset, limit));
+		Page<Template> templatePage = repository.findByCtId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),getPageRequest(offset, limit));
 		return convert(templatePage, offset, limit);
 	}
 
 	@Override
 	public TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit) {
-		Page<Template> templatePage = repository.findByCreatedBy(userName, getPageRequest(offset, limit));
+		Page<Template> templatePage = repository.findByCtIdAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),userName, getPageRequest(offset, limit));
 		return convert(templatePage, offset, limit);
 	}
 
 	@Override
 	public TemplateSearchList getTemplatesByProject(Long projectId, Integer offset, Integer limit) {
-		Page<Template> templatePage = repository.findByProjectId(projectId, getPageRequest(offset, limit));
+		Page<Template> templatePage = repository.findByCtIdAndProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),projectId, getPageRequest(offset, limit));
 		return convert(templatePage, offset, limit);
 	}
 
 	@Override
 	public TemplateSearchList getSharedTemplates(String userName, Integer offset, Integer limit) {
-		Page<Template> templatePage = repository.findBySharedAndCreatedBy(true, userName, getPageRequest(offset, limit));
+		Page<Template> templatePage = repository.findByCtIdAndSharedAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, userName, getPageRequest(offset, limit));
 		return convert(templatePage, offset, limit);
 	}
 
 	@Override
 	public TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit) {
-		Page<Template> templatePage = repository.findByFavouriteAndCreatedBy(true, owner, getPageRequest(offset, limit));
+		Page<Template> templatePage = repository.findByCtIdAndFavouriteAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, owner, getPageRequest(offset, limit));
 		return convert(templatePage, offset, limit);
 	}
 
 	protected Page<Template> getUserTemplateObjects(String userName, Integer offset, Integer limit) {
-		return repository.findByCreatedBy(userName, getPageRequest(offset, limit));
+		return repository.findByCtIdAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),userName, getPageRequest(offset, limit));
 	}
 
 	/**
