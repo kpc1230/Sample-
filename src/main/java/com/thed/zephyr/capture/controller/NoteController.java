@@ -161,7 +161,7 @@ public class NoteController extends CaptureAbstractController {
         NoteRequest updated = null;
         NoteRequest.setId(noteSessionActivityId);
         try {
-            updated = noteService.update(NoteRequest, true);
+            updated = noteService.updateResolution(NoteRequest);
         } catch (Exception ex) {
             log.error("Error during completeNote.", ex);
             throw new CaptureRuntimeException(ex.getMessage());

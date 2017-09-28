@@ -5,8 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
@@ -189,7 +192,16 @@ public class CaptureUtil {
         }
         return "none";
     }
-
+    public static Set<String> parseTagsAsSet(String noteData) {
+    	List<String> tagList = CaptureUtil.parseTags(noteData);
+		Set<String> tags = null;
+		if(tagList != null && !tagList.isEmpty()){
+			tags = tagList.stream().collect(Collectors.toSet());
+		}else{
+			tags = new TreeSet<>();
+		}
+		return tags;
+    }
     public static List<String> parseTags(String noteData) {
 		List<String> tagList = new ArrayList<>();
 		Pattern pattern = Pattern.compile("#(\\w+)|#!|#\\?");

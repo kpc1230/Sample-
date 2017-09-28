@@ -12,6 +12,8 @@ import com.thed.zephyr.capture.repositories.elasticsearch.NoteRepository;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +21,6 @@ import org.springframework.stereotype.Service;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.service.data.NoteService;
-import com.thed.zephyr.capture.service.data.TagService;
 import com.thed.zephyr.capture.service.jira.UserService;
 
 /**
@@ -29,8 +30,6 @@ import com.thed.zephyr.capture.service.jira.UserService;
 @Service
 public class NoteServiceImpl implements NoteService {
 
-	@Autowired
-	private TagService tagService;
 	@Autowired
 	private SessionActivityRepository sessionActivityRepository;
 	@Autowired
@@ -80,12 +79,38 @@ public class NoteServiceImpl implements NoteService {
 	}
 
 	@Override
-	public NoteRequest update(NoteRequest noteRequest) throws CaptureValidationException{
-		return update(noteRequest, false);
+	public NoteRequest update(NoteRequest noteRequest) throws CaptureValidationException {
+		NoteSessionActivity existing = (NoteSessionActivity)validateAndGetSessionActivity(noteRequest);
+		//For update, rawNoteData should be used.
+		NoteSessionActivity.Resolution resolution = existing.getResolutionState();
+		if(!noteRequest.getNoteData().equals(existing.getNoteData())){
+//			Set<String> existingTags = ((NoteSessionActivity)existing).getTags();
+			Set<String> tags = CaptureUtil.parseTagsAsSet(noteRequest.getNoteData());
+			if(CollectionUtils.isEmpty(tags)){
+				resolution = NoteSessionActivity.Resolution.NON_ACTIONABLE;
+			}
+			((NoteSessionActivity)existing).setNoteData(noteRequest.getNoteData());
+			((NoteSessionActivity)existing).setTags(tags);
+
+		}
+		
+		((NoteSessionActivity)existing).setResolutionState(resolution);
+		return saveSessionActivityToDB(noteRequest.getUser(), existing);
 	}
 
-	@Override
-	public NoteRequest update(NoteRequest noteRequest, boolean toggleResolution) throws CaptureValidationException {
+
+	private NoteRequest saveSessionActivityToDB(String user, SessionActivity existing) {
+		NoteSessionActivity noteSessionActivity = (NoteSessionActivity)sessionActivityRepository.save(existing);
+
+		Note existingNote = noteRepository.findByCtIdAndNoteSessionActivityId(noteSessionActivity.getCtId(), noteSessionActivity.getId());
+		Note note = new Note(noteSessionActivity);
+		note.setId(existingNote.getId());
+		note = noteRepository.save(note);
+
+		return convertNoteTO(user, note);
+	}
+
+	private SessionActivity validateAndGetSessionActivity(NoteRequest noteRequest) throws CaptureValidationException{
 		SessionActivity existing = sessionActivityRepository.findOne(noteRequest.getSessionActivityId());
 		if(existing == null){
 			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteRequest.getId()}));
@@ -99,39 +124,8 @@ public class NoteServiceImpl implements NoteService {
 		if (!permissionService.canEditNote(noteRequest.getUser(), noteRequest.getSessionId(), (NoteSessionActivity)existing)) {
 			throw new CaptureValidationException(i18n.getMessage("note.update.permission.violation"));
 		}
-		//For update, rawNoteData should be used.
-		Set<String> existingTags = ((NoteSessionActivity)existing).getTags(); 
-		((NoteSessionActivity)existing).setNoteData(noteRequest.getNoteData());
-		Set<String> tags = tagService.parseTags(noteRequest.getNoteData());
-		NoteSessionActivity.Resolution resolution = NoteSessionActivity.Resolution.NON_ACTIONABLE;
-		// resolution is INITIAL when
-		// 1. added/deleted the tags
-		// 2. Change in the tags (deleted one and added another)
-		if(
-				(existingTags == null 
-					&& (tags != null && tags.size() > 0))
-			|| (tags == null 
-					&& (existingTags != null && existingTags.size() > 0))
-			|| (
-					(existingTags != null && tags != null) && ((existingTags.size() != tags.size())
-							|| (!(existingTags.containsAll(tags) && tags.containsAll(existingTags)))))){
-			resolution = NoteSessionActivity.Resolution.INITIAL;
-		}
-		if(toggleResolution){
-			resolution = validateToggleResolution(((NoteSessionActivity)existing).getResolutionState());
-		}
-		((NoteSessionActivity)existing).setTags(tags);
-		((NoteSessionActivity)existing).setResolutionState(resolution);
-		NoteSessionActivity noteSessionActivity = (NoteSessionActivity)sessionActivityRepository.save(existing);
-
-		Note existingNote = noteRepository.findByCtIdAndNoteSessionActivityId(noteSessionActivity.getCtId(), noteSessionActivity.getId());
-		Note note = new Note(noteSessionActivity);
-		note.setId(existingNote.getId());
-		note = noteRepository.save(note);
-
-		return convertNoteTO(noteRequest.getUser(), note);
+		return existing;
 	}
-
 
 	@Override
 	public Boolean delete(String noteSessionActivityId) throws CaptureValidationException {
@@ -227,6 +221,15 @@ public class NoteServiceImpl implements NoteService {
 		CaptureUser user = userService.findUser(noteReq.getUser());
 		noteReq.setAuthorDisplayName(user.getDisplayName());
 		noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
+	}
+
+	@Override
+	public NoteRequest updateResolution(NoteRequest noteRequest) throws CaptureValidationException {
+		NoteSessionActivity sessionActivity = (NoteSessionActivity)validateAndGetSessionActivity(noteRequest);
+		NoteSessionActivity.Resolution resolution = validateToggleResolution(sessionActivity.getResolutionState());
+		sessionActivity.setResolutionState(resolution);
+		
+		return saveSessionActivityToDB(noteRequest.getUser(), sessionActivity);
 	}
 	
 }
