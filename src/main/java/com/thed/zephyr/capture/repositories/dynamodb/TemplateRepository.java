@@ -23,7 +23,7 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	 */
 	@EnableScan
 	@EnableScanCount
-	public Page<Template> findBySharedAndProjectId(Boolean shared, Long projectId, Pageable pageable);
+	public Page<Template> findByCtIdAndSharedAndProjectId(String ctId,Boolean shared, Long projectId, Pageable pageable);
 
 	/**
 	 * Find all the Template objects using favourite as true and owner.
@@ -34,7 +34,7 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	 */
 	@EnableScan
 	@EnableScanCount
-	public Page<Template> findByFavouriteAndCreatedBy(Boolean favourite, String createdBy, Pageable pageable);
+	public Page<Template> findByCtIdAndFavouriteAndCreatedBy(String ctId,Boolean favourite, String createdBy, Pageable pageable);
 
 	/**
 	 * Find all the Template objects usign Shared as true and owner.
@@ -45,7 +45,7 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	 */
 	@EnableScan
 	@EnableScanCount
-	public Page<Template> findBySharedAndCreatedBy(Boolean shared, String createdBy, Pageable pageable);
+	public Page<Template> findByCtIdAndSharedAndCreatedBy(String ctId,Boolean shared, String createdBy, Pageable pageable);
 
 	/**
 	 * Find all the Template objects using owner.
@@ -55,7 +55,7 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	 */
 	@EnableScan
 	@EnableScanCount
-	public Page<Template> findByCreatedBy(String createdBy, Pageable pageable);
+	public Page<Template> findByCtIdAndCreatedBy(String ctId,String createdBy, Pageable pageable);
 
 	/**
 	 * Find all the Template objects using projectId.
@@ -65,7 +65,7 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	 */
 	@EnableScan
 	@EnableScanCount
-	public Page<Template> findByProjectId(Long projectId, Pageable pageRequest);
+	public Page<Template> findByCtIdAndProjectId(String ctId,Long projectId, Pageable pageRequest);
 
 	/**
 	 * Find all the Template objects.
@@ -74,5 +74,5 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	 */
 	@EnableScan
 	@EnableScanCount
-	public Page<Template> findAll(Pageable pageRequest);
+	public Page<Template> findByCtId(String ctId,Pageable pageRequest);
 }
