@@ -146,12 +146,7 @@ public class SessionServiceImpl implements SessionService {
         	session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
         }
         session.setShared(sessionRequest.getShared());
-        if(Objects.nonNull(session.getRelatedIssueIds())) {
-        	if(Objects.nonNull(sessionRequest.getRelatedIssueIds()))
-        		session.getRelatedIssueIds().addAll(sessionRequest.getRelatedIssueIds());
-        } else {
-        	session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
-        }
+        session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
         session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
         //Generating the session object from session builder.
         return validateUpdate(loggedUserKey, session);
