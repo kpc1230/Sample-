@@ -199,7 +199,7 @@ public class NoteServiceImpl implements NoteService {
 	}
 
 	private NoteRequest convertNoteTO(String userName, Note note){
-		return convertNoteTO(CaptureUtil.getCurrentClientBaseUrl(), userName, note); 
+		return convertNoteTO(CaptureUtil.getCurrentClientBaseUrl(), userName, note);
 	}
 	private NoteRequest convertNoteTO(String baseUri, String userName, Note note){
 		NoteRequest noteReq = new NoteRequest(note, note.getTags());
@@ -213,7 +213,7 @@ public class NoteServiceImpl implements NoteService {
 	private List<NoteRequest> convertNoteTO(String userName, List<Note> notes){
 		String baseUri = CaptureUtil.getCurrentClientBaseUrl();
 		List<NoteRequest> list = new ArrayList<>();
-		notes.parallelStream().forEach(note -> list.add(convertNoteTO(baseUri, userName, note)));
+		notes.forEach(note -> list.add(convertNoteTO(baseUri, userName, note)));
 		return list;
 	}
 	
@@ -224,7 +224,7 @@ public class NoteServiceImpl implements NoteService {
 		return noteReq;
 	}
 	private void populateRequiredData(String baseUri, final NoteRequest noteReq, String userName){
-		CaptureUser user = userService.findUser(noteReq.getUser(), baseUri);
+		CaptureUser user = userService.findUser(noteReq.getUser());
 		noteReq.setAuthorDisplayName(user.getDisplayName());
 		noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
 	}

@@ -157,6 +157,9 @@ public class ApplicationConstants {
     /** Project cache const **/
     public static final String PROJECT_CACHE_KEY_PREFIX = "project-";
     public static final String PROJECT_CACHE_EXPIRATION_DYNAMIC_PROP = "project.cache.expiration";
+    /** User cache const **/
+    public static final String USER_CACHE_KEY_PREFIX = "user-";
+    public static final String USER_CACHE_EXPIRATION_DYNAMIC_PROP = "user.cache.expiration";
 
     public static final String SESSION_LOCK_KEY = "session_";
 

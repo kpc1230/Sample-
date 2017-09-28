@@ -4,8 +4,12 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
+import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -17,6 +21,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.concurrent.Callable;
 
 /**
  * Created by Masud on 8/15/17.
@@ -29,6 +34,12 @@ public class UserServiceImpl implements UserService{
 
     @Autowired
     private JwtSigningRestTemplate restTemplate;
+
+    @Autowired
+    private ITenantAwareCache tenantAwareCache;
+
+    @Autowired
+    private DynamicProperty dynamicProperty;
 
     @Override
     public JsonNode getUserProperty(String userName, String propName) {
@@ -128,63 +139,65 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public CaptureUser findUser(String username){
-
+    public CaptureUser findUser(String username) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-
+        AcHostModel acHostModel = (AcHostModel) host.getHost();
         String uri = host.getHost().getBaseUrl();
-        URI targetUrl= UriComponentsBuilder.fromUriString(uri)
-                .path(JiraConstants.REST_API_USER_SEARCH)
-                .queryParam("username", username)
-                .build()
-                .encode()
-                .toUri();
+        CaptureUser captureUser = null;
         try {
-        	CaptureUser[] response = restTemplate.getForObject(targetUrl, CaptureUser[].class);
-            return (response != null && response.length > 0) ? response[0] : null;  
+            captureUser = tenantAwareCache.getOrElse(acHostModel, buildUserCacheKey(username), new Callable<CaptureUser>() {
+                @Override
+                public CaptureUser call() throws Exception {
+                    URI targetUrl = UriComponentsBuilder.fromUriString(uri)
+                            .path(JiraConstants.REST_API_USER_SEARCH)
+                            .queryParam("username", username)
+                            .build()
+                            .encode()
+                            .toUri();
+
+                    CaptureUser[] response = restTemplate.getForObject(targetUrl, CaptureUser[].class);
+                    return (response != null && response.length > 0) ? response[0] : null;
+                }
+            }, dynamicProperty.getIntProp(ApplicationConstants.USER_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+
         } catch (Exception exception) {
             log.error("Error during getting user by username from jira.", exception);
         }
-        return null;
+        return captureUser;
     }
 
     @Override
     public CaptureUser findUserByKey(String key) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-
         String uri = host.getHost().getBaseUrl();
-        URI targetUrl= UriComponentsBuilder.fromUriString(uri)
-                .path(JiraConstants.REST_API_USER)
-                .queryParam("key", key)
-                .build()
-                .encode()
-                .toUri();
+        AcHostModel acHostModel = (AcHostModel) host.getHost();
+        CaptureUser captureUser = null;
         try {
-            CaptureUser[] response = restTemplate.getForObject(targetUrl, CaptureUser[].class);
-            return (response != null && response.length > 0) ? response[0] : null;
-        } catch (Exception exception) {
-            log.error("Error during getting user by key from jira.", exception);
-        }
-        return null;
-    }
+            captureUser = tenantAwareCache.getOrElse(acHostModel, buildUserCacheKey(key), new Callable<CaptureUser>() {
+                @Override
+                public CaptureUser call() throws Exception {
+                    URI targetUrl = UriComponentsBuilder.fromUriString(uri)
+                            .path(JiraConstants.REST_API_USER)
+                            .queryParam("key", key)
+                            .build()
+                            .encode()
+                            .toUri();
 
-    @Override
-    public CaptureUser findUser(String userName, String uri){
-    	URI targetUrl= UriComponentsBuilder.fromUriString(uri)
-                .path(JiraConstants.REST_API_USER_SEARCH)
-                .queryParam("username", userName)
-                .build()
-                .encode()
-                .toUri();
-        try {
-        	CaptureUser[] response = restTemplate.getForObject(targetUrl, CaptureUser[].class);
-            return (response != null && response.length > 0) ? response[0] : null;  
+                    CaptureUser[] response = restTemplate.getForObject(targetUrl, CaptureUser[].class);
+                    return (response != null && response.length > 0) ? response[0] : null;
+                }
+            }, dynamicProperty.getIntProp(ApplicationConstants.USER_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+
         } catch (Exception exception) {
             log.error("Error during getting user by username from jira.", exception);
         }
-        return null;
+        return captureUser;
+    }
+
+    private String buildUserCacheKey(String userIdOrKey){
+        return ApplicationConstants.USER_CACHE_KEY_PREFIX+userIdOrKey;
     }
 
 }

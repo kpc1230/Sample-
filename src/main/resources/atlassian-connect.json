@@ -479,6 +479,14 @@
       {
         "event": "project_updated",
         "url": "/rest/event/project/updated"
+      },
+      {
+        "event": "user_updated",
+        "url": "/rest/event/user/updated"
+      },
+      {
+        "event": "user_deleted",
+        "url": "/rest/event/user/deleted"
       }
     ],
     "jiraEntityProperties": [

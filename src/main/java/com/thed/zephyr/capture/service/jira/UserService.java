@@ -23,5 +23,4 @@ public interface UserService {
 
     CaptureUser findUserByKey(String key);
 
-	CaptureUser findUser(String userName, String uri);
 }
