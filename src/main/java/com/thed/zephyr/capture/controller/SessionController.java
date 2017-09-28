@@ -827,7 +827,7 @@ public class SessionController extends CaptureAbstractController{
 			isLocked = true;
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			String editedAdditionalInfo = json.get("additionalInfo").asText();
+			String editedAdditionalInfo = json.get("rawAdditionalInfo").asText();
 			UpdateResult updateResult = sessionService.updateSessionAdditionalInfo(loggedUserKey, loadedSession, editedAdditionalInfo);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
@@ -835,6 +835,7 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult);
 			Map<String, String> jsonResponse = new HashMap<>();
 			jsonResponse.put("additionalInfo", CaptureUtil.createWikiData(updateResult.getSession().getAdditionalInfo()));
+			jsonResponse.put("rawAdditionalInfo", updateResult.getSession().getAdditionalInfo());
 			log.info("End of updateAdditionalInfo()");
 			return ResponseEntity.ok(jsonResponse);
 		} catch(CaptureValidationException ex) {
