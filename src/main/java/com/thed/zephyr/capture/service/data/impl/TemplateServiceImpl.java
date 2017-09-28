@@ -87,7 +87,7 @@ public class TemplateServiceImpl implements TemplateService {
 	@Override
 	public TemplateRequest getTemplate(String user,String templateId) {
 		Template one = repository.findOne(templateId);
-		return createTemplateRequest(one);
+		return one == null ? null : createTemplateRequest(one);
 	}
 
 	@Override
