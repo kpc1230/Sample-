@@ -135,7 +135,7 @@ public class UserServiceImpl implements UserService{
 
         String uri = host.getHost().getBaseUrl();
         URI targetUrl= UriComponentsBuilder.fromUriString(uri)
-                .path(JiraConstants.REST_API_USER)
+                .path(JiraConstants.REST_API_USER_SEARCH)
                 .queryParam("username", username)
                 .build()
                 .encode()
@@ -148,11 +148,32 @@ public class UserServiceImpl implements UserService{
         }
         return null;
     }
-    
+
+    @Override
+    public CaptureUser findUserByKey(String key) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+
+        String uri = host.getHost().getBaseUrl();
+        URI targetUrl= UriComponentsBuilder.fromUriString(uri)
+                .path(JiraConstants.REST_API_USER)
+                .queryParam("key", key)
+                .build()
+                .encode()
+                .toUri();
+        try {
+            CaptureUser[] response = restTemplate.getForObject(targetUrl, CaptureUser[].class);
+            return (response != null && response.length > 0) ? response[0] : null;
+        } catch (Exception exception) {
+            log.error("Error during getting user by key from jira.", exception);
+        }
+        return null;
+    }
+
     @Override
     public CaptureUser findUser(String userName, String uri){
     	URI targetUrl= UriComponentsBuilder.fromUriString(uri)
-                .path(JiraConstants.REST_API_USER)
+                .path(JiraConstants.REST_API_USER_SEARCH)
                 .queryParam("username", userName)
                 .build()
                 .encode()
