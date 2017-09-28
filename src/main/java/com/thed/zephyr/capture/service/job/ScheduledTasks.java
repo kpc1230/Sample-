@@ -37,7 +37,14 @@ public class ScheduledTasks implements SchedulingConfigurer {
         taskRegistrar.addTriggerTask(new Runnable() {
             @Override
             public void run() {
-                pingHomeService.runPing();
+                Boolean pingAvailability = dynamicProperty.getBoolProp(ApplicationConstants.DIAL_HOME_JOB, false).get();
+                if(pingAvailability){
+                    log.info("Start ping home job ...");
+                    pingHomeService.runPing();
+                } else {
+                    log.info("Ping job home disabled, please check in dynamic.prop.conf app.dial.home.job property.");
+                }
+
             }
         }, new Trigger() {
             @Override

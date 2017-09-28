@@ -118,6 +118,7 @@ public class PingHomeServiceImpl implements PingHomeService{
     public void runPing() {
         acHostModelRepository.findAll()
                 .forEach(acHostModel -> {
+                    log.info("Getting ping home for tenantKey:{} url:{}", acHostModel.getClientKey(), acHostModel.getBaseUrl());
                     JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(null)), new Jwt("", "", ""));
                     SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
                     dialHome(acHostModel);
@@ -135,7 +136,7 @@ public class PingHomeServiceImpl implements PingHomeService{
                     licParams.put("licType", licenseInfo.getType());
                     licParams.put("licenseId", licenseInfo.getSupportEntitlementNumber());
                 }else{
-                    licParams.put("active", AcHostModel.TenantStatus.PLUGIN_DISABLED.name());
+                    licParams.put("active", AcHostModel.TenantStatus.LIC_EXPIRED.name());
                 }
             }
         } catch (Exception e) {

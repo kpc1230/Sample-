@@ -137,7 +137,8 @@ public class ApplicationConstants {
     
     public static final String SESSION_ID_FIELD = "sessionId";
 
-    public static final String VERSION_PING_DEFAULT_CRON_EXPR = "0 0 0 * * *";
+    public static final String DIAL_HOME_JOB = "app.dial.home.job";
+    public static final String VERSION_PING_DEFAULT_CRON_EXPR = "0 40 14 * * *";
     public static final String VERSION_PING_CRON_EXPR = "version.ping.cron.expression" ;
     public static final String PING_HOME_URL = "app.dial.home.url";
     public static final String PING_HOME_VERSION_CHECK_URL = "https://version.yourzephyr.com/capture_version_check.php";
