@@ -88,6 +88,10 @@ public class NoteServiceImpl implements NoteService {
 			Set<String> tags = CaptureUtil.parseTagsAsSet(noteRequest.getNoteData());
 			if(CollectionUtils.isEmpty(tags)){
 				resolution = NoteSessionActivity.Resolution.NON_ACTIONABLE;
+			}else if (tags.size() > 0){
+				if(NoteSessionActivity.Resolution.NON_ACTIONABLE.equals(resolution)){
+					resolution = NoteSessionActivity.Resolution.INITIAL;
+				}
 			}
 			((NoteSessionActivity)existing).setNoteData(noteRequest.getNoteData());
 			((NoteSessionActivity)existing).setTags(tags);
