@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.service.data;
 
+import com.thed.zephyr.capture.exception.UnauthorizedException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.AddonInfo;
 
@@ -13,13 +14,13 @@ public interface LicenseService {
         ACTIVE, INACTIVE
         }
 
-    boolean validateLicense();
+    boolean validateLicense() throws UnauthorizedException;
 
-    AddonInfo getAddonInfo();
+    AddonInfo getAddonInfo() throws UnauthorizedException;
 
-    Optional<AddonInfo> getAddonInfo(AcHostModel acHostModel);
+    Optional<AddonInfo> getAddonInfo(AcHostModel acHostModel) throws UnauthorizedException;
 
-    Status getLicenseStatus();
-    boolean isCaptureActivated();
+    Status getLicenseStatus() throws UnauthorizedException;
+    boolean isCaptureActivated() throws UnauthorizedException;
 
 }

@@ -4,14 +4,17 @@ import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
 import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.addon.AddonInfoService;
+import com.thed.zephyr.capture.exception.UnauthorizedException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.AddonInfo;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.JiraConstants;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 
 public class AddonInfoServiceImpl implements AddonInfoService {
@@ -29,16 +32,21 @@ public class AddonInfoServiceImpl implements AddonInfoService {
     private AddonDescriptorLoader ad;
 
     @Override
-    public AddonInfo getAddonInfo(AcHostModel acHostModel) throws RestClientException {
+    public AddonInfo getAddonInfo(AcHostModel acHostModel) throws RestClientException, UnauthorizedException {
         String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         String uri = acHostModel.getBaseUrl() + JiraConstants.REST_API_ADD_ON_INFO + "/" + pluginKey;
         try {
             AddonInfo response = restTemplate.getForObject(uri, AddonInfo.class);
             return response;
         } catch (RestClientException exception) {
+            if (StringUtils.equals(exception.getMessage(), "401 Unauthorized")){
+                log.warn("The getting add-on info request Unauthorized tenantKey:{}", acHostModel.getClientKey() , exception);
+                throw new UnauthorizedException(exception);
+            }
             log.error("Error during getting addon information from jira.", exception);
             throw exception;
         }
+
     }
 
     @Override

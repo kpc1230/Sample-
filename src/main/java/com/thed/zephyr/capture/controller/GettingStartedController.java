@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.controller;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.model.AcHostModel;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -17,12 +18,20 @@ import org.springframework.web.bind.annotation.RequestMethod;
 public class GettingStartedController {
 
     @Autowired
+    private Logger log;
+    @Autowired
     private AddonInfoService addonInfoService;
 
     @RequestMapping(value = "/getting-started", method = RequestMethod.GET)
     public String gettingStartedPage(@AuthenticationPrincipal AtlassianHostUser hostUser, Model model){
-        model.addAttribute("captureVersion",
-                addonInfoService.getAddonInfo((AcHostModel) hostUser.getHost()).getVersion());
+        try{
+            String version = addonInfoService.getAddonInfo((AcHostModel) hostUser.getHost()).getVersion();
+            model.addAttribute("captureVersion", version);
+        } catch (Exception exception){
+            log.warn("Error during getting addon info.", exception);
+            model.addAttribute("captureVersion", "n/a");
+        }
+
         return "getting-started";
     }
 }

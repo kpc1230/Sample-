@@ -6,6 +6,7 @@ import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.UserAgentSniffer;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -22,8 +23,9 @@ import javax.servlet.http.HttpServletRequest;
 public class GetExtensionController {
 
     @Autowired
+    private Logger log;
+    @Autowired
     private DynamicProperty dynamicProperty;
-
     @Autowired
     private AddonInfoService addonInfoService;
 
@@ -55,8 +57,14 @@ public class GetExtensionController {
         }
 
         model.addAttribute(ApplicationConstants.DOWNLOAD_URL, downloadUrl);
-        model.addAttribute("captureVersion",
-                addonInfoService.getAddonInfo((AcHostModel) hostUser.getHost()).getVersion());
+        try{
+            String version = addonInfoService.getAddonInfo((AcHostModel) hostUser.getHost()).getVersion();
+            model.addAttribute("captureVersion", version);
+        } catch (Exception exception){
+            log.warn("Error during getting addon info.", exception);
+            model.addAttribute("captureVersion", "n/a");
+        }
+
         return "get-browser-extension";
     }
 }

@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.service.data.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.addon.AddonInfoService;
+import com.thed.zephyr.capture.exception.UnauthorizedException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.AddonInfo;
 import com.thed.zephyr.capture.service.data.LicenseService;
@@ -26,7 +27,7 @@ public class LicenseServiceImpl implements LicenseService {
     private AddonInfoService addonInfoService;
 
     @Override
-    public boolean validateLicense() {
+    public boolean validateLicense() throws UnauthorizedException {
         boolean valid = false;
         AddonInfo addonInfo = getAddonInfo();
         if(addonInfo.getLicense().isActive()){
@@ -37,7 +38,7 @@ public class LicenseServiceImpl implements LicenseService {
     }
 
     @Override
-    public AddonInfo getAddonInfo() {
+    public AddonInfo getAddonInfo() throws UnauthorizedException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         AcHostModel acHostModel = (AcHostModel) host.getHost();
@@ -46,13 +47,13 @@ public class LicenseServiceImpl implements LicenseService {
     }
 
     @Override
-    public Optional<AddonInfo> getAddonInfo(AcHostModel acHostModel) {
+    public Optional<AddonInfo> getAddonInfo(AcHostModel acHostModel) throws UnauthorizedException {
         AddonInfo addonInfo = addonInfoService.getAddonInfo(acHostModel);
         return Optional.ofNullable(addonInfo);
     }
 
     @Override
-    public Status getLicenseStatus() {
+    public Status getLicenseStatus() throws UnauthorizedException {
         Status status = Status.INACTIVE;
         AddonInfo addonInfo = getAddonInfo();
         if(addonInfo.getLicense().isActive()){
@@ -62,7 +63,7 @@ public class LicenseServiceImpl implements LicenseService {
     }
 
     @Override
-    public boolean isCaptureActivated() {
+    public boolean isCaptureActivated() throws UnauthorizedException {
         AddonInfo addonInfo = getAddonInfo();
         if(addonInfo.getLicense().isEvaluation()){
             return false;

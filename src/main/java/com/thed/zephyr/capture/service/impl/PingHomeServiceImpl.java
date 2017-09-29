@@ -55,34 +55,31 @@ public class PingHomeServiceImpl implements PingHomeService{
 
     @Override
     public void dialHome(AcHostModel acHostModel) {
-        Map<String, String> params = Maps.newHashMap();
-        params.put("baseUrl", acHostModel.getBaseUrl());
-        params.put("tenantKey", acHostModel.getClientKey());
-        Optional<ServerInfo> serverInfoOption = serverInfoService.getJiraServerInfo(acHostModel);
-        params.put("jiraVersion", serverInfoOption.get().getVersion() + "-" + serverInfoOption.get().getBuildNumber());
-        final AddonServerInfo addonServerInfo = serverInfoService.getAddonServerInfo();
-        params.put("buildNumber", addonServerInfo.getVersion());
-        params.putAll(populateLicParams(acHostModel));
-
-        StringBuffer checkSum = new StringBuffer();
-
-        //Projects
-        Optional<Integer> projectsOpt = serverInfoService.getProjectsCount(acHostModel);
-        if (projectsOpt.isPresent())
-            checkSum.append(StringUtils.leftPad(String.valueOf(projectsOpt.get()), 4, '0'));
-
-
-        //Executions
-        log.debug("finding all Sessions for tenantId : " + acHostModel.getClientKey());
-        Optional<Integer> sessionsOpt = serverInfoService.getSessionsCount(acHostModel);
-        if (sessionsOpt.isPresent())
-            checkSum.append(StringUtils.leftPad(String.valueOf(sessionsOpt.get()), 6, '0'));
-        else
-            checkSum.append(StringUtils.leftPad("", 6, '?'));
-
-        params.put("chksum", checkSum.toString());
-
         try {
+            Map<String, String> params = Maps.newHashMap();
+            params.put("baseUrl", acHostModel.getBaseUrl());
+            params.put("tenantKey", acHostModel.getClientKey());
+            Optional<ServerInfo> serverInfoOption = serverInfoService.getJiraServerInfo(acHostModel);
+            params.put("jiraVersion", serverInfoOption.get().getVersion() + "-" + serverInfoOption.get().getBuildNumber());
+            AddonServerInfo addonServerInfo = serverInfoService.getAddonServerInfo();
+            params.put("buildNumber", addonServerInfo.getVersion());
+            params.putAll(populateLicParams(acHostModel));
+            StringBuffer checkSum = new StringBuffer();
+            //Projects
+            Optional<Integer> projectsOpt = serverInfoService.getProjectsCount(acHostModel);
+            if (projectsOpt.isPresent())
+                checkSum.append(StringUtils.leftPad(String.valueOf(projectsOpt.get()), 4, '0'));
+
+
+            //Executions
+            log.debug("finding all Sessions for tenantId : " + acHostModel.getClientKey());
+            Optional<Integer> sessionsOpt = serverInfoService.getSessionsCount(acHostModel);
+            if (sessionsOpt.isPresent())
+                checkSum.append(StringUtils.leftPad(String.valueOf(sessionsOpt.get()), 6, '0'));
+            else
+                checkSum.append(StringUtils.leftPad("", 6, '?'));
+
+            params.put("chksum", checkSum.toString());
             JsonNode jsonNode = new ObjectMapper().convertValue(params, JsonNode.class);;
             log.debug("Ping String - " + jsonNode);
 

@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.controller;
 
+import com.thed.zephyr.capture.exception.UnauthorizedException;
 import com.thed.zephyr.capture.model.AddonInfo;
 import com.thed.zephyr.capture.service.data.LicenseService;
 import org.slf4j.Logger;
@@ -34,7 +35,12 @@ public class LicenseController {
 
     @RequestMapping(value = "/licenseInfo", method = RequestMethod.GET)
     public AddonInfo.License getLicenseInfo() {
-        AddonInfo.License licenseInfo = licenseService.getAddonInfo().getLicense();
+        AddonInfo.License licenseInfo = null;
+        try {
+            licenseInfo = licenseService.getAddonInfo().getLicense();
+        } catch (UnauthorizedException exception) {
+            log.warn("The response from Jira is Unauthorized during getting addon info", exception);
+        }
         if (licenseInfo != null) {
             return licenseInfo;
         } else {
