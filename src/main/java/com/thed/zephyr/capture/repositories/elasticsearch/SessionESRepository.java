@@ -5,6 +5,7 @@ import com.thed.zephyr.capture.model.Session;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
@@ -21,11 +22,11 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
 
     Page<Session> findByCtIdAndProjectIdAndRelatedIssueIds(String ctId, Long projectId, Long relatedIssueId, Pageable pageable);
 
-    Page<Session> findByCtIdAndProjectIdAndStatusAndAssignee(String ctId,Long projectId, String status, String assignee,Pageable pageable);
+    Page<Session> findByCtIdAndStatusAndAssignee(String ctId, String status, String assignee,Pageable pageable);
 
-    Page<Session> findByCtIdAndProjectIdAndStatusAndCreator(String ctId,Long projectId, String status, String creator,Pageable pageable);
+    Page<Session> findByCtIdAndStatusAndCreator(String ctId, String status, String creator,Pageable pageable);
 
-    Page<Session> findByCtIdAndProjectIdAndStatusAndParticipants(String ctId,Long projectId, String status, String participants,Pageable pageable);
+    Page<Session> findByCtIdAndStatusAndParticipants(String ctId, String status, String participants,Pageable pageable);
     
     List<Session> findByCtIdAndStatusAndAssignee(String ctId, String status, String assignee);
 
