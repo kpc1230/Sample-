@@ -306,6 +306,8 @@ public class CaptureUtil {
 		int wordLen = word.length();
 		String str = "";
 		for(int i=0; i < wordLen; i++) {
+			String tagName = null;
+			String cssClass = null;
 			char ch = word.charAt(i);
 			switch(ch) {
 				case '*':
@@ -370,6 +372,27 @@ public class CaptureUtil {
 					break;
 				default:
 					str = str + ch;
+					switch(str) {
+						case Tag.QUESTION: 
+							tagName = Tag.QUESTION_TAG_NAME;
+							cssClass = "tag-question";
+							break;
+						case Tag.FOLLOWUP:
+							cssClass = "tag-followUp";
+							tagName = Tag.FOLLOWUP_TAG_NAME;
+							break;
+						case Tag.ASSUMPTION: 
+							tagName = Tag.ASSUMPTION_TAG_NAME;
+							cssClass = "tag-assumption";
+							break;
+						case Tag.IDEA:
+							cssClass = "tag-idea";
+							tagName = Tag.IDEA_TAG_NAME;
+					}
+					if(Objects.nonNull(tagName) && Objects.nonNull(cssClass) && i == 1) {
+						finalData.append(" <span class=\"note-tag ").append(cssClass).append("\"></span>");
+						str = str.substring(0, str.length() - 2);
+					}
 			}
 		}
 		if(str.length() > 0) {
