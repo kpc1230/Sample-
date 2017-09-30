@@ -327,14 +327,14 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public Set<String> fetchAllAssignees() {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		return sessionRepository.fetchAllAssigneesForCtId(ctId);
+		return sessionESRepository.fetchAllAssigneesForCtId(ctId);
 	}
 
 	@Override
 	public SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField,
 												boolean sortAscending, int startAt, int size) {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		List<Session> sessionsList = sessionRepository.searchSessions(ctId, projectId, assignee, status, searchTerm);
+		List<Session> sessionsList = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm);
 		Comparator<Session> comparator;
 		switch(sortField.orElse("")) {
 			case ApplicationConstants.SORTFIELD_CREATED:
