@@ -890,6 +890,7 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@IgnoreJwt
+	@CrossOrigin
 	@GetMapping(value = "/user/active", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> getActiveSessionUser(@RequestParam String userKey, @RequestParam String baseUrl) {
 		log.info("Start of getActiveSessionUser()");
