@@ -1,7 +1,6 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
 import com.atlassian.jira.rest.client.api.domain.IssuelinksType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,6 +12,7 @@ import com.thed.zephyr.capture.model.jira.FieldOption;
 import com.thed.zephyr.capture.service.jira.IssueTypeService;
 import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.service.jira.http.JwtRestTemplate;
 import com.thed.zephyr.capture.util.JiraConstants;
 import net.minidev.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
@@ -41,7 +41,7 @@ public class MetadataServiceImpl implements MetadataService {
     private Logger log;
 
     @Autowired
-    private JwtSigningRestTemplate restTemplate;
+    private JwtRestTemplate restTemplate;
 
     @Autowired
     private IssueTypeService issueTypeService;

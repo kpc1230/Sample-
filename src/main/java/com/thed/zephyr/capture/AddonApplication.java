@@ -10,6 +10,7 @@ import com.hazelcast.spring.cache.HazelcastCacheManager;
 import com.netflix.config.DynamicPropertyFactory;
 import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.addon.impl.AddonInfoServiceImpl;
+import com.thed.zephyr.capture.filter.ZephyrAuthFilter;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepositoryImpl;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
@@ -19,7 +20,6 @@ import org.apache.velocity.exception.VelocityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -36,7 +36,6 @@ import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 
-import javax.servlet.Filter;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Properties;
@@ -100,9 +99,12 @@ public class AddonApplication extends SpringBootServletInitializer {
         return new HazelcastCacheManager(hazelcastInstance());
     }
 
+    @Autowired
+    private ZephyrAuthFilter jwtFilter;
+
     @Bean
-    public FilterRegistrationBean registration(@Qualifier("jwtAuthenticationFilter") Filter filter) {
-        FilterRegistrationBean registration = new FilterRegistrationBean(filter);
+    public FilterRegistrationBean registration() {
+        FilterRegistrationBean registration = new FilterRegistrationBean(jwtFilter);
         registration.setEnabled(false);
         return registration;
     }

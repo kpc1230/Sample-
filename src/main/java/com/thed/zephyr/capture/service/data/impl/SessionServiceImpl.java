@@ -1076,15 +1076,17 @@ public class SessionServiceImpl implements SessionService {
 		final int actualSize = getActualSize(sessionsList.size(), startAt, size);
 		for (int i = startAt; i < startAt + actualSize; i++) {
 			Session session = sessionsList.get(i);
-			if(!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
-				project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
-				projectsMap.put(session.getProjectId(), project);
-			} else {
-				project = projectsMap.get(session.getProjectId());
+			if(permissionService.canSeeSession(loggedInUser,session)) {
+				if (!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
+					project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
+					projectsMap.put(session.getProjectId(), project);
+				} else {
+					project = projectsMap.get(session.getProjectId());
+				}
+				boolean isActive = session.getId().equals(activeSessionId);
+				sessionDto = createSessionDto(loggedInUser, session, isActive, project, false);
+				sessionDtoList.add(sessionDto);
 			}
-			boolean isActive = session.getId().equals(activeSessionId);
-			sessionDto = createSessionDto(loggedInUser, session, isActive, project, false);
-			sessionDtoList.add(sessionDto);
 		}
 		return sessionDtoList;
 	}

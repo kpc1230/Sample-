@@ -2,11 +2,11 @@ package com.thed.zephyr.capture.service.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
-import com.atlassian.connect.spring.internal.jwt.Jwt;
 import com.atlassian.jira.rest.client.api.domain.ServerInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.AddonInfo;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
@@ -115,8 +115,7 @@ public class PingHomeServiceImpl implements PingHomeService{
     public void runPing() {
         acHostModelRepository.findAll()
                 .forEach(acHostModel -> {
-                    log.info("Getting ping home for tenantKey:{} url:{}", acHostModel.getClientKey(), acHostModel.getBaseUrl());
-                    JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(null)), new Jwt("", "", ""));
+                    JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(null)), new JWTClaimsSet());
                     SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
                     dialHome(acHostModel);
                 });

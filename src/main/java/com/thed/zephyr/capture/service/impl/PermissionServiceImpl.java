@@ -1,8 +1,8 @@
 package com.thed.zephyr.capture.service.impl;
 
+import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
-import com.atlassian.jira.rest.client.api.domain.Permission;
 import com.atlassian.jira.rest.client.api.domain.Permissions;
 import com.atlassian.jira.rest.client.api.domain.input.MyPermissionsInput;
 import com.google.common.collect.Iterables;
@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by niravshah on 8/15/17.
@@ -54,6 +55,9 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Autowired
     private DynamicProperty dynamicProperty;
+
+    @Autowired
+    private AtlassianHostRestClients restClients;
 
     private Permissions getPermissionForIssue(Long issueId, String issueKey) {
         MyPermissionsInput myPermissionsInput = new MyPermissionsInput(null, null, issueKey, issueId != null ? issueId.intValue() : null);
@@ -127,6 +131,13 @@ public class PermissionServiceImpl implements PermissionService {
 
     private Permissions getPermissionForProject(Long projectId, String projectKey) {
         MyPermissionsInput myPermissionsInput = new MyPermissionsInput(projectKey, projectId != null ? projectId.intValue() : null, null, null);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        AtlassianHostUser hostByUser = new AtlassianHostUser(host.getHost(), Optional.of(host.getUserKey().get()));
+        //TODO testing on behalf of user
+        String string = restClients.authenticatedAs(hostByUser)
+                .getForObject("/rest/api/2/mypermissions", String.class);
+        log.info(string.toString());
         return jiraRestClient.getMyPermissionsRestClient().getMyPermissions(myPermissionsInput).claim();
     }
 
