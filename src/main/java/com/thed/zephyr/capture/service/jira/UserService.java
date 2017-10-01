@@ -19,7 +19,7 @@ public interface UserService {
 
     JsonNode getAssignableUserByProjectKey(String projectKey);
 
-    CaptureUser findUser(String username);
+    CaptureUser findUserByName(String username);
 
     CaptureUser findUserByKey(String key);
 

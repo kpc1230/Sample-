@@ -160,7 +160,7 @@ public class TemplateServiceImpl implements TemplateService {
 	private Map<String, CaptureUser> getUserMap(List<Template> templateList) {
 		Map<String, CaptureUser> userMap = new HashMap<>();
 		templateList.forEach(t -> 
-				userMap.put(t.getCreatedBy(), userService.findUser(t.getCreatedBy())));
+				userMap.put(t.getCreatedBy(), userService.findUserByKey(t.getCreatedBy())));
 		return userMap;
 	}
 
@@ -170,7 +170,7 @@ public class TemplateServiceImpl implements TemplateService {
 
 	private TemplateRequest createTemplateRequest(Template created) {
 		return TemplateBuilder.createTemplateRequest(created, getProject(created.getProjectId())
-				, userService.findUser(created.getCreatedBy()));
+				, userService.findUserByKey(created.getCreatedBy()));
 	}
 
 	protected Set<String> getVariables(JsonNode json, String userName){
