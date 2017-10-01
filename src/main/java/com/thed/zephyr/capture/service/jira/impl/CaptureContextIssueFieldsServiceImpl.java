@@ -1,10 +1,10 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
+import com.thed.zephyr.capture.service.jira.http.JwtRestTemplate;
 import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
 import com.thed.zephyr.capture.util.JiraConstants;
 import com.thed.zephyr.capture.util.UserAgentSniffer;
@@ -13,14 +13,16 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.Serializable;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +37,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
     private Logger log;
 
     @Autowired
-    private JwtSigningRestTemplate restTemplate;
+    private JwtRestTemplate restTemplate;
 
 
     /**

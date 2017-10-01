@@ -55,7 +55,8 @@
         <dependency>
             <groupId>com.atlassian.connect</groupId>
             <artifactId>atlassian-connect-spring-boot-core</artifactId>
-            <version>1.0.0</version>
+            <version>${atlassian-connect-spring-boot.version}</version>
+            <!--<scope>provided</scope>-->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -200,6 +201,11 @@
             <groupId>org.apache.velocity</groupId>
             <artifactId>velocity</artifactId>
             <version>1.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.6</version>
         </dependency>
     </dependencies>
 

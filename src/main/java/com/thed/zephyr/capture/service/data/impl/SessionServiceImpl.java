@@ -470,13 +470,12 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public void updateSessionWithIssue(String ctId, Long projectId, String user, Long issueId) {
-		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndStatusAndAssignee(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+		Page<Session> sessions = sessionESRepository.findByCtIdAndStatusAndAssignee(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
 		updateSessionWithIssueId(sessions, issueId,user);
-		Page<Session> sessions2 = sessionESRepository.findByCtIdAndProjectIdAndStatusAndCreator(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+		Page<Session> sessions2 = sessionESRepository.findByCtIdAndStatusAndCreator(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
 		updateSessionWithIssueId(sessions2, issueId,user);
-		Page<Session> sessions3 = sessionESRepository.findByCtIdAndProjectIdAndStatusAndParticipants(ctId, projectId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+		Page<Session> sessions3 = sessionESRepository.findByCtIdAndStatusAndParticipants(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
 		updateSessionWithIssueId(sessions3, issueId,user);
-
     }
     @Override
     public List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<IssueRaisedBean> issues) {
@@ -516,7 +515,7 @@ public class SessionServiceImpl implements SessionService {
 		Date dateTime = new Date();
 		IssueRaisedBean issueRaisedBean = new IssueRaisedBean(issueId, dateTime);
 		listOfSessionsAsParticipant.forEach(session -> {
-			boolean issueAdded = false;
+			boolean issueAdded = true;
 			if (session.getIssuesRaised() != null) {
 				for(IssueRaisedBean tempBean : session.getIssuesRaised()) {
 					if(tempBean.getIssueId().equals(issueRaisedBean.getIssueId())) {
@@ -1076,15 +1075,18 @@ public class SessionServiceImpl implements SessionService {
 		final int actualSize = getActualSize(sessionsList.size(), startAt, size);
 		for (int i = startAt; i < startAt + actualSize; i++) {
 			Session session = sessionsList.get(i);
-			if(!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
-				project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
-				projectsMap.put(session.getProjectId(), project);
-			} else {
-				project = projectsMap.get(session.getProjectId());
+			//Only Show the Session If User has Project Browse Permission else filter it out.
+			if(permissionService.hasBrowsePermission(session.getProjectId())) {
+				if (!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
+					project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
+					projectsMap.put(session.getProjectId(), project);
+				} else {
+					project = projectsMap.get(session.getProjectId());
+				}
+				boolean isActive = session.getId().equals(activeSessionId);
+				sessionDto = createSessionDto(loggedInUser, session, isActive, project, false);
+				sessionDtoList.add(sessionDto);
 			}
-			boolean isActive = session.getId().equals(activeSessionId);
-			sessionDto = createSessionDto(loggedInUser, session, isActive, project, false);
-			sessionDtoList.add(sessionDto);
 		}
 		return sessionDtoList;
 	}

@@ -14,5 +14,11 @@
             <multicast enabled="true"/>
         </join>
     </network>
+    <serialization>
+        <serializers>
+            <serializer type-class="com.atlassian.connect.spring.AtlassianHostUser" class-name="com.thed.zephyr.capture.util.hazelcast.AtlassianHostUserStreamSerializer" />
+            <serializer type-class="org.springframework.security.oauth2.client.OAuth2RestTemplate" class-name="com.thed.zephyr.capture.util.hazelcast.OAuth2RestTemplateStreamSerializer" />
+        </serializers>
+    </serialization>
 
 </hazelcast>

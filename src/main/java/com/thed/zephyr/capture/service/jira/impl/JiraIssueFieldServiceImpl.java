@@ -1,11 +1,11 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.model.CustomFieldMetadata;
 import com.thed.zephyr.capture.service.jira.JiraIssueFieldService;
+import com.thed.zephyr.capture.service.jira.http.JwtRestTemplate;
 import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.slf4j.Logger;
@@ -29,7 +29,7 @@ public class JiraIssueFieldServiceImpl implements JiraIssueFieldService {
     private Logger log;
 
     @Autowired
-    private JwtSigningRestTemplate restTemplate;
+    private JwtRestTemplate restTemplate;
 
     @Autowired
     CaptureCustomFieldsUtils captureCustomFieldsUtils;

@@ -1,12 +1,12 @@
 package com.thed.zephyr.capture.addon.impl;
 
 import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
-import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.exception.UnauthorizedException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.AddonInfo;
+import com.thed.zephyr.capture.service.jira.http.JwtRestTemplate;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.apache.commons.lang3.StringUtils;
@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 
 public class AddonInfoServiceImpl implements AddonInfoService {
@@ -26,7 +25,7 @@ public class AddonInfoServiceImpl implements AddonInfoService {
     private Environment env;
 
     @Autowired
-    private JwtSigningRestTemplate restTemplate;
+    private JwtRestTemplate restTemplate;
 
     @Autowired
     private AddonDescriptorLoader ad;

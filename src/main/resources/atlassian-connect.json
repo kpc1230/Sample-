@@ -615,5 +615,5 @@
       }
     ]
   },
-  "scopes": ["READ", "WRITE","ADMIN"]
+  "scopes": ["READ", "WRITE","ADMIN","ACT_AS_USER"]
 }
