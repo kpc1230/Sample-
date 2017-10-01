@@ -37,6 +37,8 @@ public class Session  implements Comparable<Session>, Serializable{
     private Set<Long> relatedIssueIds;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_PROJECT_ID)
     private Long projectId;
+    @DynamoDBIgnore
+    private String projectName;
     @DynamoDBTypeConverted(converter = DateTypeConverter.class)
     private Date timeCreated;
     @DynamoDBTypeConverted(converter = DateTypeConverter.class)
@@ -212,7 +214,15 @@ public class Session  implements Comparable<Session>, Serializable{
         return shared;
     }
 
-    /**
+    public String getProjectName() {
+		return projectName;
+	}
+
+	public void setProjectName(String projectName) {
+		this.projectName = projectName;
+	}
+
+	/**
      * Get the Session Status History (timestamp to status mapping)
      *
      * @return Map time instant to new status

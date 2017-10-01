@@ -7,9 +7,9 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.annotations.Query;
+import org.springframework.data.elasticsearch.core.aggregation.AggregatedPage;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
@@ -34,7 +34,8 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
 
     long countByCtId(String ctId);
     
-    List<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm);
+    AggregatedPage<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm,
+    		Optional<String> sortField, boolean sortAscending, int startAt, int size);
     
     Set<String> fetchAllAssigneesForCtId(String ctId);
 }

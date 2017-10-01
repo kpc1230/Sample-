@@ -5,7 +5,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
+import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+
+import java.util.Objects;
+
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,10 +29,12 @@ public class ProjectWebhookController {
     private Logger log;
     @Autowired
     private ITenantAwareCache tenantAwareCache;
+    @Autowired
+    private SessionService sessionService;
 
 
     @RequestMapping(value = "/created", method = RequestMethod.POST)
-    public ResponseEntity projectCreated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode createProjectJson) {
+    public ResponseEntity<?> projectCreated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode createProjectJson) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         String ctid = acHostModel.getCtId();
         log.debug("Invoked projectCreated event");
@@ -39,11 +45,11 @@ public class ProjectWebhookController {
             log.warn("Unable to handle the project creation webhook: ", e);
             throw new CaptureRuntimeException("Unable to handle the project creation webhook");
         }
-        return new ResponseEntity(HttpStatus.NO_CONTENT);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @RequestMapping(value = "/updated", method = RequestMethod.POST)
-    public ResponseEntity projectUpdated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode updateProjectJson) {
+    public ResponseEntity<?> projectUpdated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode updateProjectJson) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         String ctid = acHostModel.getCtId();
         log.debug("Invoked projectUpdated event");
@@ -52,26 +58,30 @@ public class ProjectWebhookController {
             JsonNode projectNode = null != updateProjectJson ? updateProjectJson.get("project") : null;
             if (projectNode == null) {
                 log.warn("Project Update event triggered with no Project details.");
-                return new ResponseEntity(HttpStatus.BAD_REQUEST);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
             }
             Long projectId = projectNode.get("id").asLong();
             String projectKey = projectNode.get("key").asText();
+            String projectName = projectNode.get("name").asText();
             if (null != projectId) {
                 tenantAwareCache.delete(acHostModel, ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + String.valueOf(projectId));
             }
             if (null != projectKey) {
                 tenantAwareCache.delete(acHostModel, ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + projectKey);
             }
+            if(Objects.nonNull(projectId)) {
+            	sessionService.updateProjectNameForSessions(ctid, projectId, projectName);
+            }
         } catch (Exception e) {
             log.warn("Unable to handle the project updating webhook: ", e);
             throw new CaptureRuntimeException("Unable to handle the project updating webhook");
         }
-        return new ResponseEntity(HttpStatus.NO_CONTENT);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 
     @RequestMapping(value = "/deleted", method = RequestMethod.POST)
-    public ResponseEntity projectDeleted(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode deleteProjectJson) {
+    public ResponseEntity<?> projectDeleted(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode deleteProjectJson) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         log.debug("Invoked projectDeleted event");
         log.debug("JSON from webhook invoker : " + deleteProjectJson);
@@ -79,7 +89,7 @@ public class ProjectWebhookController {
             JsonNode projectNode = null != deleteProjectJson ? deleteProjectJson.get("project") : null;
             if (projectNode == null) {
                 log.warn("Project Delete event triggered with no Project details.");
-                return new ResponseEntity(HttpStatus.BAD_REQUEST);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
             }
             Long projectId = projectNode.get("id").asLong();
             String projectKey = projectNode.get("key").asText();
@@ -94,7 +104,7 @@ public class ProjectWebhookController {
             log.warn("Unable to handle the project deleting webhook: ", e);
             throw new CaptureRuntimeException("Unable to handle the project deleting webhook");
         }
-        return new ResponseEntity(HttpStatus.NO_CONTENT);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 
