@@ -1,10 +1,10 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
+import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
-import com.thed.zephyr.capture.service.jira.http.JwtRestTemplate;
 import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
 import com.thed.zephyr.capture.util.JiraConstants;
 import com.thed.zephyr.capture.util.UserAgentSniffer;
@@ -35,9 +35,8 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
 
     @Autowired
     private Logger log;
-
     @Autowired
-    private JwtRestTemplate restTemplate;
+    private AtlassianHostRestClients atlassianHostRestClients;
 
 
     /**
@@ -123,7 +122,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                 .toUri();
 
         try {
-            String response = restTemplate.getForObject(targetUrl, String.class);
+            String response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, String.class);
             if (StringUtils.isNotBlank(response)) {
                 JSONObject jsonObject = new JSONObject(response);
                 String value = null;
@@ -174,7 +173,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                     .encode()
                     .toUri();
 
-            restTemplate.delete(targetUrl);
+            atlassianHostRestClients.authenticatedAsAddon().delete(targetUrl);
         } catch (Exception e) {
             log.error("Error adding RaisedIn Issue to Session:{}", loadedSession.getId());
         }
@@ -216,6 +215,6 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         request.put("content",sb.toString());
         String resourceUrl = targetUrl.toString();
         HttpEntity<String> requestUpdate = new HttpEntity<>(request.toString(),httpHeaders);
-        restTemplate.exchange(resourceUrl, HttpMethod.PUT,requestUpdate,Void.class);
+        atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.PUT,requestUpdate,Void.class);
     }
 }

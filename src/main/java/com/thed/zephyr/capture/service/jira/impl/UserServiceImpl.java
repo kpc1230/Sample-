@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
+import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,7 +8,6 @@ import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.UserService;
-import com.thed.zephyr.capture.service.jira.http.JwtRestTemplate;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
@@ -31,15 +31,12 @@ public class UserServiceImpl implements UserService{
 
     @Autowired
     private Logger log;
-
-    @Autowired
-    private JwtRestTemplate restTemplate;
-
     @Autowired
     private ITenantAwareCache tenantAwareCache;
-
     @Autowired
     private DynamicProperty dynamicProperty;
+    @Autowired
+    private AtlassianHostRestClients atlassianHostRestClients;
 
     @Override
     public JsonNode getUserProperty(String userName, String propName) {
@@ -48,7 +45,7 @@ public class UserServiceImpl implements UserService{
         String uri = host.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "/" + propName + "?username=" + userName;
 
         try {
-            JsonNode response = restTemplate.getForObject(uri, JsonNode.class);
+            JsonNode response = atlassianHostRestClients.authenticatedAsAddon().getForObject(uri, JsonNode.class);
             return response;
         } catch (RestClientException exception) {
             log.error("Error during getting user property from jira.", exception);
@@ -63,7 +60,7 @@ public class UserServiceImpl implements UserService{
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String uri = host.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "?username=" + userName;
         try {
-            JsonNode response = restTemplate.getForObject(uri, JsonNode.class);
+            JsonNode response = atlassianHostRestClients.authenticatedAsAddon().getForObject(uri, JsonNode.class);
             return response;
         } catch (RestClientException exception) {
             log.error("Error during getting user properties from jira.", exception);
@@ -77,7 +74,7 @@ public class UserServiceImpl implements UserService{
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String uri = host.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "/" + propName;
         try {
-            restTemplate.delete(uri);
+            atlassianHostRestClients.authenticatedAsAddon().delete(uri);
             return true;
         } catch (RestClientException exception) {
             log.error("Error during deleting the user property from jira.", exception);
@@ -92,7 +89,7 @@ public class UserServiceImpl implements UserService{
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String uri = host.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "/" + propName + "?username=" + userName;
         try {
-            restTemplate.put(uri, jsonNode);
+            atlassianHostRestClients.authenticatedAsAddon().put(uri, jsonNode);
             return true;
         } catch (RestClientException exception) {
             log.error("Error during getting project from jira.", exception);
@@ -120,7 +117,7 @@ public class UserServiceImpl implements UserService{
                 .encode()
                 .toUri();
         try {
-            String response = restTemplate.getForObject(targetUrl, String.class);
+            String response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, String.class);
             return new ObjectMapper().readTree(response);
         } catch (Exception exception) {
             log.error("Error during getting assignable user by project from jira.", exception);
@@ -156,7 +153,7 @@ public class UserServiceImpl implements UserService{
                             .encode()
                             .toUri();
 
-                    CaptureUser response = restTemplate.getForObject(targetUrl, CaptureUser.class);
+                    CaptureUser response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, CaptureUser.class);
                     return response;
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.USER_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
@@ -185,7 +182,7 @@ public class UserServiceImpl implements UserService{
                             .encode()
                             .toUri();
 
-                    CaptureUser response = restTemplate.getForObject(targetUrl, CaptureUser.class);
+                    CaptureUser response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, CaptureUser.class);
                     return response;
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.USER_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());

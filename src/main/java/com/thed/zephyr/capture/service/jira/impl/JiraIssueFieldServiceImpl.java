@@ -1,11 +1,11 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
+import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.model.CustomFieldMetadata;
 import com.thed.zephyr.capture.service.jira.JiraIssueFieldService;
-import com.thed.zephyr.capture.service.jira.http.JwtRestTemplate;
 import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.slf4j.Logger;
@@ -27,9 +27,8 @@ public class JiraIssueFieldServiceImpl implements JiraIssueFieldService {
 
     @Autowired
     private Logger log;
-
     @Autowired
-    private JwtRestTemplate restTemplate;
+    private AtlassianHostRestClients atlassianHostRestClients;
 
     @Autowired
     CaptureCustomFieldsUtils captureCustomFieldsUtils;
@@ -43,7 +42,7 @@ public class JiraIssueFieldServiceImpl implements JiraIssueFieldService {
         try {
             ObjectMapper mapper = new ObjectMapper();
             reqJson = mapper.convertValue(fieldMetadata, JsonNode.class);
-            JsonNode respJson = restTemplate.postForObject(uri, reqJson, JsonNode.class);
+            JsonNode respJson = atlassianHostRestClients.authenticatedAsAddon().postForObject(uri, reqJson, JsonNode.class);
             return respJson;
         } catch (RestClientException exception) {
             log.error("Error during creating the Custom field with details : " + reqJson.toString(), exception);
@@ -57,7 +56,7 @@ public class JiraIssueFieldServiceImpl implements JiraIssueFieldService {
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         try {
             String uri = host.getHost().getBaseUrl() + JiraConstants.REST_API_CUSTOM_FIELD;
-            JsonNode respJson = restTemplate.getForObject(uri, JsonNode.class);
+            JsonNode respJson = atlassianHostRestClients.authenticatedAsAddon().getForObject(uri, JsonNode.class);
             return respJson;
         } catch (RestClientException exception) {
             log.error("Error during getting the all custom fields.", exception);
@@ -96,7 +95,7 @@ public class JiraIssueFieldServiceImpl implements JiraIssueFieldService {
         try {
             ObjectMapper mapper = new ObjectMapper();
             reqJson = mapper.convertValue(fieldMetadata, JsonNode.class);
-            JsonNode respJson = restTemplate.postForObject(uri, reqJson, JsonNode.class);
+            JsonNode respJson = atlassianHostRestClients.authenticatedAsAddon().postForObject(uri, reqJson, JsonNode.class);
             return respJson;
         } catch (RestClientException exception) {
             log.error("Error during creating the Custom field with details : " + reqJson.toString(), exception);

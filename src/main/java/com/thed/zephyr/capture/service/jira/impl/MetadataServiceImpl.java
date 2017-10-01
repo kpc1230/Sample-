@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
+import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
 import com.atlassian.jira.rest.client.api.domain.IssuelinksType;
@@ -12,7 +13,6 @@ import com.thed.zephyr.capture.model.jira.FieldOption;
 import com.thed.zephyr.capture.service.jira.IssueTypeService;
 import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.service.jira.UserService;
-import com.thed.zephyr.capture.service.jira.http.JwtRestTemplate;
 import com.thed.zephyr.capture.util.JiraConstants;
 import net.minidev.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
@@ -39,13 +39,10 @@ public class MetadataServiceImpl implements MetadataService {
 
     @Autowired
     private Logger log;
-
     @Autowired
-    private JwtRestTemplate restTemplate;
-
+    private AtlassianHostRestClients atlassianHostRestClients;
     @Autowired
     private IssueTypeService issueTypeService;
-
     @Autowired
     private UserService userService;
 
@@ -92,7 +89,7 @@ public class MetadataServiceImpl implements MetadataService {
                 .toUri();
 
         try {
-            String response = restTemplate.getForObject(targetUrl, String.class);
+            String response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, String.class);
             JsonNode jsonNode = new ObjectMapper().readTree(response).get(PROJECTS);
             for(final JsonNode pN: jsonNode){
                 JsonNode itNode = pN.get(ISSUE_TYPES);
