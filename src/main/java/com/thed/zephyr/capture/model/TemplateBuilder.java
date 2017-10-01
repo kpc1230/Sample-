@@ -155,7 +155,7 @@ public final class TemplateBuilder {
 		if(project != null){
 			request.setProjectKey(project.getKey());		}
 		if(user != null){
-			request.setOwnerName(user.getName());
+			request.setOwnerName(user.getKey());
 			request.setOwnerDisplayName(user.getDisplayName());
 		}
 

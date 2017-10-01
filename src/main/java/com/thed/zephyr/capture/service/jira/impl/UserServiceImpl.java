@@ -139,7 +139,7 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public CaptureUser findUser(String username) {
+    public CaptureUser findUserByName(String username) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         AcHostModel acHostModel = (AcHostModel) host.getHost();
@@ -150,14 +150,14 @@ public class UserServiceImpl implements UserService{
                 @Override
                 public CaptureUser call() throws Exception {
                     URI targetUrl = UriComponentsBuilder.fromUriString(uri)
-                            .path(JiraConstants.REST_API_USER_SEARCH)
+                            .path(JiraConstants.REST_API_USER)
                             .queryParam("username", username)
                             .build()
                             .encode()
                             .toUri();
 
-                    CaptureUser[] response = restTemplate.getForObject(targetUrl, CaptureUser[].class);
-                    return (response != null && response.length > 0) ? response[0] : null;
+                    CaptureUser response = restTemplate.getForObject(targetUrl, CaptureUser.class);
+                    return response;
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.USER_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
 
@@ -185,13 +185,13 @@ public class UserServiceImpl implements UserService{
                             .encode()
                             .toUri();
 
-                    CaptureUser[] response = restTemplate.getForObject(targetUrl, CaptureUser[].class);
-                    return (response != null && response.length > 0) ? response[0] : null;
+                    CaptureUser response = restTemplate.getForObject(targetUrl, CaptureUser.class);
+                    return response;
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.USER_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
 
         } catch (Exception exception) {
-            log.error("Error during getting user by username from jira.", exception);
+            log.error("Error during getting user by user key from jira.", exception);
         }
         return captureUser;
     }

@@ -425,7 +425,7 @@ public class SessionController extends CaptureAbstractController{
 			if (loadedSession != null && !permissionService.canJoinSession(loggedUserKey, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.join.no.permission", new Object[]{loadedSession.getName()}));
 			}
-			CaptureUser user = userService.findUser(loggedUserKey);
+			CaptureUser user = userService.findUserByKey(loggedUserKey);
 			Participant participant = new ParticipantBuilder(loggedUserKey).setTimeJoined(dateTime).build();
 			SessionServiceImpl.UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loadedSession, participant);
 			if (!updateResult.isValid()) {

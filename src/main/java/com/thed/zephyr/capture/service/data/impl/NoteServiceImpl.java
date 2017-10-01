@@ -222,7 +222,7 @@ public class NoteServiceImpl implements NoteService {
 		return noteReq;
 	}
 	private void populateRequiredData(String baseUri, final NoteRequest noteReq, String userName){
-		CaptureUser user = userService.findUser(noteReq.getUser());
+		CaptureUser user = userService.findUserByKey(noteReq.getUser());
 		noteReq.setAuthorDisplayName(user.getDisplayName());
 		noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
 	}

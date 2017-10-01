@@ -10,6 +10,7 @@ import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.DynamicProperty;
+import org.apache.commons.collections.map.HashedMap;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -171,7 +172,9 @@ public class ApplicationController {
     public ResponseEntity clearCache(@AuthenticationPrincipal AtlassianHostUser hostUser) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         tenantAwareCache.clearTenantCache(acHostModel);
-        return ResponseEntity.ok("Success");
+        Map<String,String> map = new HashedMap();
+        map.put("status","success");
+        return ResponseEntity.ok(map);
     }
 
     private Map<String, String> getI18NMessagesBasedOnSessionLocale() {

@@ -57,7 +57,7 @@ public class InviteServiceImpl implements InviteService{
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String userKey = host.getUserKey().get();
-        CaptureUser loggedUser = userService.findUser(userKey);
+        CaptureUser loggedUser = userService.findUserByKey(userKey);
 
         List<String> toEmails = inviteSessionRequest.getEmails() != null ?
                 inviteSessionRequest.getEmails(): new ArrayList<>();
@@ -66,7 +66,7 @@ public class InviteServiceImpl implements InviteService{
             inviteSessionRequest.getUsernames()
                     .forEach(username -> {
                         CaptureUser captureUser =
-                                userService.findUser(username);
+                                userService.findUserByKey(username);
                         toEmails.add(captureUser.getEmailAddress());
                     });
         }

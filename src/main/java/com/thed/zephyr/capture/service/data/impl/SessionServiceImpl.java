@@ -1146,7 +1146,7 @@ public class SessionServiceImpl implements SessionService {
 		if(Objects.nonNull(session.getParticipants())) {
 			for(Participant p : session.getParticipants()) {
 				if(!usersMap.containsKey(p.getUser())) {
-					user = userService.findUser(session.getAssignee());
+					user = userService.findUserByKey(session.getAssignee());
 				} else {
 					user = usersMap.get(p.getUser());
 				}
@@ -1161,7 +1161,7 @@ public class SessionServiceImpl implements SessionService {
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), CaptureUtil.createWikiData(session.getAdditionalInfo()), session.getTimeCreated(), null);
 		if(!usersMap.containsKey(session.getAssignee())) {
-			user = userService.findUser(session.getAssignee());
+			user = userService.findUserByKey(session.getAssignee());
 		} else {
 			user = usersMap.get(session.getAssignee());
 		}
