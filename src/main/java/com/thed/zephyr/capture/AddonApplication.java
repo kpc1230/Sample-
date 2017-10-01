@@ -4,9 +4,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.atlassian.connect.spring.AtlassianHostRepository;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spring.cache.HazelcastCacheManager;
 import com.netflix.config.DynamicPropertyFactory;
 import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.addon.impl.AddonInfoServiceImpl;
@@ -25,10 +22,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.env.Environment;
 import org.springframework.ui.velocity.VelocityEngineFactory;
@@ -85,19 +80,6 @@ public class AddonApplication extends SpringBootServletInitializer {
         return new DynamoDBAcHostRepositoryImpl();
     }
 
-
-    @Bean
-    @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
-    @Primary
-    public HazelcastInstance hazelcastInstance() {
-         return Hazelcast.newHazelcastInstance();
-    }
-
-    @Bean
-    @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
-    CacheManager cacheManager() {
-        return new HazelcastCacheManager(hazelcastInstance());
-    }
 
     @Autowired
     private ZephyrAuthFilter jwtFilter;

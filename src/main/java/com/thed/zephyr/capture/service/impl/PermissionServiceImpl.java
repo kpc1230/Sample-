@@ -3,9 +3,14 @@ package com.thed.zephyr.capture.service.impl;
 import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
+import com.atlassian.jira.rest.client.api.domain.Permission;
 import com.atlassian.jira.rest.client.api.domain.Permissions;
 import com.atlassian.jira.rest.client.api.domain.input.MyPermissionsInput;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
@@ -18,16 +23,15 @@ import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Created by niravshah on 8/15/17.
@@ -132,14 +136,20 @@ public class PermissionServiceImpl implements PermissionService {
     private Permissions getPermissionForProject(Long projectId, String projectKey) {
         MyPermissionsInput myPermissionsInput = new MyPermissionsInput(projectKey, projectId != null ? projectId.intValue() : null, null, null);
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        AtlassianHostUser hostByUser = new AtlassianHostUser(host.getHost(), Optional.of(host.getUserKey().get()));
-        //TODO testing on behalf of user
-        String string = restClients.authenticatedAs(hostByUser)
-                .getForObject("/rest/api/2/mypermissions", String.class);
-        log.info(string.toString());
-        return jiraRestClient.getMyPermissionsRestClient().getMyPermissions(myPermissionsInput).claim();
+        AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
+        String url = "/rest/api/2/mypermissions";
+        if (StringUtils.isNotBlank(projectKey)){
+            url = url + "?projectKey=" + projectKey;
+        } else if(projectId != null){
+            url = url + "?projectId=" + projectId.toString();
+        }
+        String permissionsStr = restClients.authenticatedAs(hostUser)
+                .getForObject(url, String.class);
+        Permissions permissions = parsePermissions(permissionsStr);
+
+        return permissions;
     }
+
 
     private boolean checkPermissionForType(Long projectId, String projectKey, Long issueId, String issueKey, String permissionType) {
 
@@ -409,5 +419,33 @@ public class PermissionServiceImpl implements PermissionService {
 
     private boolean isReporter(CaptureIssue issue, String user) {
         return user.equals(issue.getReporter());
+    }
+
+    private Permissions parsePermissions(String permissionsStr) {
+        List<Permission> permissions = Lists.newArrayList();
+        ObjectMapper om = new ObjectMapper();
+        try{
+            JsonNode jsonPermissions = om.readTree(permissionsStr);
+            JsonNode jsonPermissionsObject = jsonPermissions.get("permissions");
+            Iterator it = jsonPermissionsObject.iterator();
+            while (it.hasNext()) {
+                JsonNode permissionObject = (JsonNode)it.next();
+                Permission permission = parsePermission(permissionObject);
+                permissions.add(permission);
+            }
+        } catch (Exception exception){
+            log.error("Error during parse permission object.", exception);
+        }
+
+        return new Permissions(permissions);
+    }
+
+    private Permission parsePermission(JsonNode json) throws JSONException {
+        Integer id = json.get("id").asInt();
+        String key = json.get("key").asText();
+        String name = json.get("name").asText();
+        String description = json.get("description").asText();
+        boolean havePermission = json.get("havePermission").asBoolean();
+        return new Permission(id, key, name, description, havePermission);
     }
 }

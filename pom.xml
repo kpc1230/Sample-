@@ -52,11 +52,12 @@
             <artifactId>atlassian-connect-spring-boot-jpa-starter</artifactId>
             <version>${atlassian-connect-spring-boot.version}</version>
         </dependency>-->
-        <!--<dependency>-->
-            <!--<groupId>com.atlassian.connect</groupId>-->
-            <!--<artifactId>atlassian-connect-spring-boot-core</artifactId>-->
-            <!--<version>${atlassian-connect-spring-boot.version}</version>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>com.atlassian.connect</groupId>
+            <artifactId>atlassian-connect-spring-boot-core</artifactId>
+            <version>${atlassian-connect-spring-boot.version}</version>
+            <!--<scope>provided</scope>-->
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
