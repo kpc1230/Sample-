@@ -2,7 +2,6 @@ package com.thed.zephyr.capture.model;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import java.util.List;
 import java.util.Set;
 
 
@@ -28,6 +27,7 @@ public class SessionRequest {
 	private Boolean startNow = false;
 	//Internal use only. Values are set from session validate java.
 	private Long projectId;
+	private String projectName;
 	private Set<Long> relatedIssueIds;
 
 	public SessionRequest() {
@@ -124,6 +124,14 @@ public class SessionRequest {
 
 	public void setRelatedIssueIds(Set<Long> relatedIssueIds) {
 		this.relatedIssueIds = relatedIssueIds;
+	}
+
+	public String getProjectName() {
+		return projectName;
+	}
+
+	public void setProjectName(String projectName) {
+		this.projectName = projectName;
 	}
 
 	@Override

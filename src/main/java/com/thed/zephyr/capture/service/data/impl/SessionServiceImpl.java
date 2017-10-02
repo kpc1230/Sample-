@@ -6,13 +6,7 @@ import com.atlassian.core.util.InvalidDurationException;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.thed.zephyr.capture.comparators.AssigneeSessionComparator;
 import com.thed.zephyr.capture.comparators.IdSessionComparator;
-import com.thed.zephyr.capture.comparators.ProjectNameSessionComparator;
-import com.thed.zephyr.capture.comparators.SessionNameSessionComparator;
-import com.thed.zephyr.capture.comparators.SharedSessionComparator;
-import com.thed.zephyr.capture.comparators.StatusSessionComparator;
-import com.thed.zephyr.capture.comparators.TimeCreatedSessionComparator;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.*;
@@ -50,6 +44,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.elasticsearch.core.aggregation.AggregatedPage;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
@@ -121,6 +116,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setShared(sessionRequest.getShared());
 		session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
 		session.setProjectId(sessionRequest.getProjectId());
+		session.setProjectName(sessionRequest.getProjectName());
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
 		session.setAssignee(!StringUtils.isBlank(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
         Session createdSession = sessionRepository.save(session);
@@ -319,8 +315,8 @@ public class SessionServiceImpl implements SessionService {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		List<Session> privateSessionsList = sessionRepository.fetchPrivateSessionsForUser(ctId, user);
 		List<Session> sharedSessionsList = sessionRepository.fetchSharedSessionsForUser(ctId, user);
-		List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, 0, privateSessionsList.size(), new IdSessionComparator(true));
-		List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, 0, sharedSessionsList.size(), new IdSessionComparator(true));
+		List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, privateSessionsList.size(), new IdSessionComparator(true));
+		List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, sharedSessionsList.size(), new IdSessionComparator(true));
 		return new SessionExtensionResponse(privateSessionsDto, sharedSessionsDto);
 	}
 
@@ -334,32 +330,10 @@ public class SessionServiceImpl implements SessionService {
 	public SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField,
 												boolean sortAscending, int startAt, int size) {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		List<Session> sessionsList = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm);
-		Comparator<Session> comparator;
-		switch(sortField.orElse("")) {
-			case ApplicationConstants.SORTFIELD_CREATED:
-				comparator = new TimeCreatedSessionComparator(sortAscending);
-				break;
-			case ApplicationConstants.SORTFIELD_STATUS:
-				comparator = new StatusSessionComparator(sortAscending);
-				break;
-			case ApplicationConstants.SORTFIELD_SESSION_NAME:
-				comparator = new SessionNameSessionComparator(sortAscending);
-				break;
-			case ApplicationConstants.SORTFIELD_ASSIGNEE:
-				comparator = new AssigneeSessionComparator(sortAscending);
-				break;
-			case ApplicationConstants.SORTFIELD_SHARED:
-				comparator = new SharedSessionComparator(sortAscending);
-				break;
-			case ApplicationConstants.SORTFIELD_PROJECT:
-				comparator = new ProjectNameSessionComparator(sortAscending, projectService);
-				break;
-			default:
-				comparator = new IdSessionComparator(sortAscending);
-		}
-		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, sessionsList, startAt, size, comparator);
-		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, sessionsList.size());
+		AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
+		List<Session> sessionsList = pageResponse.getContent();
+		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, sessionsList, size, null);
+		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, pageResponse.getTotalElements());
 		return sessionDtoSearchList;
 	}
 
@@ -1065,28 +1039,16 @@ public class SessionServiceImpl implements SessionService {
 	 * @param comparator -- Comparator can be assignee, project, session name, shared, created time etc.,
 	 * @return -- Returns the list of light session object based on startAt and size parameters.
 	 */
-	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, List<Session> sessionsList, int startAt, int size, Comparator<Session> comparator) {
+	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, List<Session> sessionsList, int size, Comparator<Session> comparator) {
 		List<SessionDto> sessionDtoList = new ArrayList<>(size);
-		Map<Long, CaptureProject> projectsMap = new HashMap<>();
+		if(Objects.nonNull(comparator)) Collections.sort(sessionsList);	
 		SessionDto sessionDto = null;
-		CaptureProject project = null;
-		Collections.sort(sessionsList, comparator); //Sort the sessions using the comparator.
 		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, null);
-		final int actualSize = getActualSize(sessionsList.size(), startAt, size);
-		for (int i = startAt; i < startAt + actualSize; i++) {
-			Session session = sessionsList.get(i);
-			//Only Show the Session If User has Project Browse Permission else filter it out.
-			if(permissionService.hasBrowsePermission(session.getProjectId())) {
-				if (!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
-					project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
-					projectsMap.put(session.getProjectId(), project);
-				} else {
-					project = projectsMap.get(session.getProjectId());
-				}
-				boolean isActive = session.getId().equals(activeSessionId);
-				sessionDto = createSessionDto(loggedInUser, session, isActive, project, false);
-				sessionDtoList.add(sessionDto);
-			}
+		for(Session session : sessionsList) {
+			CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
+			boolean isActive = session.getId().equals(activeSessionId);
+			sessionDto = createSessionDto(loggedInUser, session, isActive, project, false);
+			sessionDtoList.add(sessionDto);
 		}
 		return sessionDtoList;
 	}
@@ -1098,13 +1060,13 @@ public class SessionServiceImpl implements SessionService {
 	 * @param startIndex -- Start position.
 	 * @param size -- Number of elements to fetch.
 	 * @return -- Returns the actual size.
-	 */
+	 *//*
 	private int getActualSize(final int maxSize, final int startIndex, final int size) {
 		if (startIndex + size > maxSize - 1) {
 			return Math.max(maxSize - startIndex, 0);
 		}
 		return size;
-	}
+	}*/
 	
 	private SessionDisplayDto getDisplayHelper(String user, Session session, CaptureProject project) {
         boolean isSessionEditable = permissionService.canEditSession(user, session);
@@ -1335,6 +1297,30 @@ public class SessionServiceImpl implements SessionService {
 				issueService.setIssueTestStausAndTestSession(String.valueOf(issueId),testingStatuKey,sessionIdBuilder.toString());
 			});
 		}
+	}
+	
+	@Override
+	public void updateProjectNameForSessions(String ctid, Long projectId, String projectName) {
+		new Thread(() -> {
+			int index = 0;
+			int maxResults = 20;
+			AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctid, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
+					Optional.empty(), true, index, maxResults);
+			for(Session session : pageResponse.getContent()) {
+				session.setProjectName(projectName);
+				sessionESRepository.save(session);
+			}
+			index = index  + maxResults;
+			Long total = pageResponse.getTotalElements();
+			while(index <= total.intValue()) {
+				pageResponse = sessionESRepository.searchSessions(ctid, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
+						Optional.empty(), true, index, maxResults);
+				for(Session session : pageResponse.getContent()) {
+					session.setProjectName(projectName);
+					sessionESRepository.save(session);
+				}
+			}
+		}).start();
 	}
 
 }

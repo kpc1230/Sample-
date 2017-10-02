@@ -1,6 +1,5 @@
 package com.thed.zephyr.capture.validator;
 
-import com.atlassian.jira.rest.client.api.domain.Project;
 import com.google.common.collect.Maps;
 import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
@@ -60,6 +59,7 @@ public class SessionValidator implements Validator {
 				errors.reject("", i18n.getMessage("session.project.key.invalid", new Object[]{sessionRequest.getProjectKey()}));
 			} else {
 				sessionRequest.setProjectId(project.getId());
+				sessionRequest.setProjectName(project.getName());
 			}
 			if(!Objects.isNull(sessionRequest.getRelatedIssues())) {
 				Set<Long> relatedIssues = new TreeSet<>();

@@ -270,7 +270,10 @@ public interface SessionService {
 	void addRaisedInSession(String userKey, Long issueRaisedId, String sessionId);
 
 	void addUnRaisedInSession(String userKey, String issueKey, Session session);
-
-
+	
+	/*
+	 * Webhook call to update project name for the project id.
+	 */
+	void updateProjectNameForSessions(String ctid, Long projectId, String projectName);
 }
 

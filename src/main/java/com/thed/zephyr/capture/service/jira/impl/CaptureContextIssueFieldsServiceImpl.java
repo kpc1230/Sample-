@@ -1,7 +1,7 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
+import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.connect.spring.internal.request.jwt.JwtSigningRestTemplate;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
@@ -13,14 +13,16 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.Serializable;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +35,8 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
 
     @Autowired
     private Logger log;
-
     @Autowired
-    private JwtSigningRestTemplate restTemplate;
+    private AtlassianHostRestClients atlassianHostRestClients;
 
 
     /**
@@ -121,7 +122,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                 .toUri();
 
         try {
-            String response = restTemplate.getForObject(targetUrl, String.class);
+            String response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, String.class);
             if (StringUtils.isNotBlank(response)) {
                 JSONObject jsonObject = new JSONObject(response);
                 String value = null;
@@ -172,7 +173,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                     .encode()
                     .toUri();
 
-            restTemplate.delete(targetUrl);
+            atlassianHostRestClients.authenticatedAsAddon().delete(targetUrl);
         } catch (Exception e) {
             log.error("Error adding RaisedIn Issue to Session:{}", loadedSession.getId());
         }
@@ -214,6 +215,6 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         request.put("content",sb.toString());
         String resourceUrl = targetUrl.toString();
         HttpEntity<String> requestUpdate = new HttpEntity<>(request.toString(),httpHeaders);
-        restTemplate.exchange(resourceUrl, HttpMethod.PUT,requestUpdate,Void.class);
+        atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.PUT,requestUpdate,Void.class);
     }
 }
