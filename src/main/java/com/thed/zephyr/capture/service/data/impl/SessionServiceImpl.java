@@ -1046,11 +1046,10 @@ public class SessionServiceImpl implements SessionService {
 		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, null);
 		for(Session session : sessionsList) {
 			CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
-			if(permissionService.canSeeSession(loggedInUser,session)) {
-				boolean isActive = session.getId().equals(activeSessionId);
-				sessionDto = createSessionDto(loggedInUser, session, isActive, project, false);
-				sessionDtoList.add(sessionDto);
-			}
+			boolean isActive = session.getId().equals(activeSessionId);
+			sessionDto = createSessionDto(loggedInUser, session, isActive, project, false);
+			sessionDtoList.add(sessionDto);
+
 		}
 		return sessionDtoList;
 	}
