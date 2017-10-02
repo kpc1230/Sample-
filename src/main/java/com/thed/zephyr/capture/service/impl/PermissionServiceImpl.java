@@ -8,7 +8,6 @@ import com.atlassian.jira.rest.client.api.domain.Permissions;
 import com.atlassian.jira.rest.client.api.domain.input.MyPermissionsInput;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.model.*;
@@ -24,7 +23,6 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -75,6 +73,8 @@ public class PermissionServiceImpl implements PermissionService {
         AcHostModel acHostModel = (AcHostModel) host.getHost();
         String caheKey = projectId != null ? String.valueOf(projectId) : "";
         caheKey += projectKey != null ? projectKey : "";
+        caheKey += "-user-";
+        caheKey += host.getUserKey().isPresent()? host.getUserKey().get() : "";
         Map<String, Boolean> map = null;
         try {
             map = tenantAwareCache.getOrElse(acHostModel, ApplicationConstants.PERMISSION_CACHE_KEY_PREFIX + "project-" + caheKey, () -> {

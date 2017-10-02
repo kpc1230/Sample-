@@ -7,7 +7,6 @@ import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.netflix.config.DynamicPropertyFactory;
 import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.addon.impl.AddonInfoServiceImpl;
-import com.thed.zephyr.capture.filter.ZephyrAuthFilter;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepositoryImpl;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
@@ -20,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -81,15 +79,15 @@ public class AddonApplication extends SpringBootServletInitializer {
     }
 
 
-    @Autowired
-    private ZephyrAuthFilter jwtFilter;
-
-    @Bean
-    public FilterRegistrationBean registration() {
-        FilterRegistrationBean registration = new FilterRegistrationBean(jwtFilter);
-        registration.setEnabled(false);
-        return registration;
-    }
+//    @Autowired
+//    private ZephyrAuthFilter jwtFilter;
+//
+//    @Bean
+//    public FilterRegistrationBean registration() {
+//        FilterRegistrationBean registration = new FilterRegistrationBean(jwtFilter);
+//        registration.setEnabled(false);
+//        return registration;
+//    }
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
