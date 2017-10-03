@@ -323,9 +323,9 @@ public class IssueServiceImpl implements IssueService {
                         if(jsonArray.length() > 0) {
                             JSONObject issue = jsonArray.getJSONObject(0);
                             JSONObject fields = issue.getJSONObject("fields");
-                            JSONObject issuetype = fields != null && fields.has("issuetype") ? fields.getJSONObject("issuetype") : null;
-                            JSONObject resolution = fields != null && fields.has("resolution") ? fields.getJSONObject("resolution") : null;
-                            JSONObject properties = issue.has("properties") ? issue.getJSONObject("properties") : null;
+                            JSONObject issuetype = fields != null && fields.has("issuetype") && !fields.isNull("issuetype") ? fields.getJSONObject("issuetype") : null;
+                            JSONObject resolution = fields != null && fields.has("resolution") && !fields.isNull("resolution") ? fields.getJSONObject("resolution") : null;
+                            JSONObject properties = issue.has("properties") && !issue.isNull("properties") ? issue.getJSONObject("properties") : null;
                             String captureBrowserName = properties.has(CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase()) ? properties.getJSONObject(CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase()).getString("content") : "-";
                             String captureOS = properties.has(CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase()) ? properties.getJSONObject(CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase()).getString("content") : "-";
                             String captureDocument = properties.has(CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase()) ? properties.getJSONObject(CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase()).getString("content") : "-";
