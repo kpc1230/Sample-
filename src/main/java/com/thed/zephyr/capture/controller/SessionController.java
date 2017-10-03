@@ -261,6 +261,7 @@ public class SessionController extends CaptureAbstractController{
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
 			isLocked = true;
+			Set<Long> removedRelatedIssues = null;
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
 		    if (loadedSession != null) {
@@ -272,12 +273,23 @@ public class SessionController extends CaptureAbstractController{
 					throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{sessionRequest.getAssignee()}));
 				}
 			}
+			if(loadedSession!=null&&loadedSession.getRelatedIssueIds()!=null){
+				if(sessionRequest.getRelatedIssueIds()!=null){
+					removedRelatedIssues = loadedSession.getRelatedIssueIds().stream().filter(elem -> !sessionRequest.getRelatedIssueIds().contains(elem)).collect(Collectors.toSet());
+				}else {
+					removedRelatedIssues = loadedSession.getRelatedIssueIds();
+				}
+			}
 			UpdateResult updateResult = sessionService.updateSession(loggedUserKey, loadedSession, sessionRequest);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult);
-			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, updateResult.getSession(), true); 
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, updateResult.getSession(), true);
+			//Updating session for removed related issue to JIRA
+			if (removedRelatedIssues != null && removedRelatedIssues.size() > 0) {
+				sessionService.setIssueTestStausAndTestSession(removedRelatedIssues,loadedSession.getCtId(),loadedSession.getProjectId());
+			}
 			log.info("End of updateSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
@@ -307,8 +319,12 @@ public class SessionController extends CaptureAbstractController{
 			if (loadedSession != null && !permissionService.canEditSession(loggedUserKey, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.delete.permission.fail"));
 			}
-
 			sessionService.deleteSession(sessionId);
+			//This is to update related issues testing status and test session
+			if(loadedSession!=null&&loadedSession.getRelatedIssueIds()!=null&&loadedSession.getRelatedIssueIds().size()>0){
+				sessionService.setIssueTestStausAndTestSession(loadedSession.getRelatedIssueIds(),loadedSession.getCtId(),loadedSession.getProjectId());
+			}
+
 			log.info("End of deleteSession()");
 			return ResponseEntity.ok().build();
 		} catch(Exception ex) {

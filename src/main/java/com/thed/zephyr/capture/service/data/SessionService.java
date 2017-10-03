@@ -275,5 +275,7 @@ public interface SessionService {
 	 * Webhook call to update project name for the project id.
 	 */
 	void updateProjectNameForSessions(String ctid, Long projectId, String projectName);
+
+	void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId);
 }
 

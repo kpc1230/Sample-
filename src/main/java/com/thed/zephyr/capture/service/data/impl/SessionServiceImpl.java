@@ -1258,12 +1258,18 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	private void setIssueTestStausAndTestSession(Session createdSession) {
-		if (createdSession.getRelatedIssueIds() != null) {
-			createdSession.getRelatedIssueIds().forEach(issueId -> {
+		setIssueTestStausAndTestSession(createdSession.getRelatedIssueIds(),createdSession.getCtId(),createdSession.getProjectId());
+	}
+
+	@Override
+	public void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId) {
+		if (relatedIssues != null) {
+			relatedIssues.forEach(issueId -> {
 				StringBuilder sessionIdBuilder = new StringBuilder();
 				String testingStatuKey = null;
 				int createdCount = 0, startedCount = 0, completedCount = 0;
-					Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(createdSession.getCtId(), createdSession.getProjectId(), issueId, CaptureUtil.getPageRequest(0, 1000));
+				Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(ctId, projectId, issueId, CaptureUtil.getPageRequest(0, 1000));
+				boolean emptyList =  sessions.getContent()!=null&&sessions.getContent().isEmpty() ? true :false;
 				if (Objects.nonNull(sessions.getContent())) {
 					for (Session session : sessions.getContent()) {
 						sessionIdBuilder.append(session.getId()).append(",");
@@ -1288,7 +1294,7 @@ public class SessionServiceImpl implements SessionService {
 					if (createdCount == 0 && startedCount == 0 && completedCount != 0) {
 						// If all the sessions are 'completed' then return complete
 						testingStatuKey =TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey();
-					} else if (createdCount != 0 && startedCount == 0  && completedCount == 0) {
+					} else if (emptyList || (createdCount != 0 && startedCount == 0  && completedCount == 0)) {
 						// If all the sessions are 'created' then return not started
 						testingStatuKey = TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey();
 					} else {

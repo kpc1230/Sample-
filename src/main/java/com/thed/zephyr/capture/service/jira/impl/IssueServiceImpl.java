@@ -191,13 +191,15 @@ public class IssueServiceImpl implements IssueService {
         testSectionResponse.setSessions(sessionByRelatedIssueId.getContent());
         testSectionResponse.setRaisedDuring(raisedDuring);
         CaptureEnvironment captureEnvironment = new CaptureEnvironment();
-        captureEnvironment.setUserAgent(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME,"-"));
-        captureEnvironment.setBrowser(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME,null));
-        captureEnvironment.setjQueryVersion(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME,"-"));
-        captureEnvironment.setDocumentMode(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE,"-"));
-        captureEnvironment.setScreenResolution(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME,"-"));
-        captureEnvironment.setUrl(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME,"-"));
-        captureEnvironment.setOperatingSystem(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME,null));
+        if (issue.getProperties() != null) {
+            captureEnvironment.setUserAgent(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME,"-"));
+            captureEnvironment.setBrowser(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME,null));
+            captureEnvironment.setjQueryVersion(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME,"-"));
+            captureEnvironment.setDocumentMode(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE,"-"));
+            captureEnvironment.setScreenResolution(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME,"-"));
+            captureEnvironment.setUrl(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME,"-"));
+            captureEnvironment.setOperatingSystem(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME,null));
+        }
         captureEnvironment.setBrowserIcon(CaptureUtil.getBrowserIcon(captureEnvironment.getBrowser()));
         captureEnvironment.setOsIcon(CaptureUtil.getOSIcon(captureEnvironment.getOperatingSystem()));
         testSectionResponse.setCaptureEnvironment(captureEnvironment);
