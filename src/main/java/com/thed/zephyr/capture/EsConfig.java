@@ -1,8 +1,14 @@
 package com.thed.zephyr.capture;
 
+import com.thed.zephyr.capture.util.ApplicationConstants;
+import org.apache.commons.lang3.ArrayUtils;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
@@ -51,13 +57,20 @@ public class EsConfig {
                 .build()
                 .addTransportAddress(
                         new InetSocketTransportAddress(InetAddress.getByName(EsHost), EsPort));
+
+        GetIndexResponse getIndexResponse = client.admin().indices().getIndex(new GetIndexRequest()).actionGet();
+        if(!ArrayUtils.contains(getIndexResponse.indices(), ApplicationConstants.ES_INDEX_NAME)){
+            CreateIndexRequest createIndexRequest = new CreateIndexRequest(ApplicationConstants.ES_INDEX_NAME);
+            client.admin().indices().create(createIndexRequest).actionGet();
+            //Give to ES time to create index
+            Thread.sleep(500);
+        }
         client.admin().indices().close(new CloseIndexRequest(EsClusterName));
-        
         client.admin().indices().prepareUpdateSettings(EsClusterName).setSettings(Settings.builder().loadFromSource(XContentFactory.jsonBuilder()
         		.startObject().startObject("analysis").startObject("analyzer").startObject("case_insensitive_sort")
         		.field("tokenizer", "keyword").field("filter", "lowercase").string()).build()).get();
-        
         client.admin().indices().open(new OpenIndexRequest(EsClusterName));
+
         return client; 
     }
 
