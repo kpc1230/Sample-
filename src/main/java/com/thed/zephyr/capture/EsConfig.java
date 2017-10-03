@@ -1,9 +1,12 @@
 package com.thed.zephyr.capture;
 
+import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
+import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,11 +46,19 @@ public class EsConfig {
                 .build();
 
         //https://www.elastic.co/guide/en/elasticsearch/guide/current/_transport_client_versus_node_client.html
-        return TransportClient.builder()
+        Client client = TransportClient.builder()
                 .settings(esSettings)
                 .build()
                 .addTransportAddress(
                         new InetSocketTransportAddress(InetAddress.getByName(EsHost), EsPort));
+        client.admin().indices().close(new CloseIndexRequest(EsClusterName));
+        
+        client.admin().indices().prepareUpdateSettings(EsClusterName).setSettings(Settings.builder().loadFromSource(XContentFactory.jsonBuilder()
+        		.startObject().startObject("analysis").startObject("analyzer").startObject("case_insensitive_sort")
+        		.field("tokenizer", "keyword").field("filter", "lowercase").string()).build()).get();
+        
+        client.admin().indices().open(new OpenIndexRequest(EsClusterName));
+        return client; 
     }
 
     @Bean

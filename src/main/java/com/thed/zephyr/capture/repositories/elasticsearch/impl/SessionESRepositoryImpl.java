@@ -68,9 +68,10 @@ public class SessionESRepositoryImpl {
     	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort("id").order(sortAscending ? SortOrder.ASC : SortOrder.DESC);
     	if(sortField.isPresent() && !StringUtils.isBlank(sortField.get())) {
     		String fieldToSort = sortField.get();
-    		if("sessionname".equalsIgnoreCase(fieldToSort)) fieldToSort = "name";
+    		if("sessionname".equalsIgnoreCase(fieldToSort)) fieldToSort = "name.lower_case_sort";
     		if("created".equalsIgnoreCase(fieldToSort)) fieldToSort = "timeCreated";
-    		if("project".equalsIgnoreCase(fieldToSort)) fieldToSort = "projectName";
+    		if("project".equalsIgnoreCase(fieldToSort)) fieldToSort = "projectName.lower_case_sort";
+    		if("assignee".equalsIgnoreCase(fieldToSort)) fieldToSort = "assignee.lower_case_sort";
     		sortFieldBuilder = SortBuilders.fieldSort(fieldToSort).order(sortAscending ? SortOrder.ASC : SortOrder.DESC);
     	}
     	Pageable pageable = CaptureUtil.getPageRequest((startAt / size), size);
