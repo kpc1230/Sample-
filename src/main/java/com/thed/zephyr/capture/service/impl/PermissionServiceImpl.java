@@ -218,6 +218,13 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    public boolean canAddCommentPermission(String issueKey) {
+        if (checkPermissionForType(null, null, null, issueKey, ApplicationConstants.COMMENT_ISSUE, null))
+            return true;
+        return false;
+    }
+
+    @Override
     public boolean isSysadmin(String user) {
         if (checkPermissionForType(null, null, null, null, ApplicationConstants.SYSTEM_ADMIN, user)) return true;
         return false;

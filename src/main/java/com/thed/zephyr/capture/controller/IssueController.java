@@ -1,6 +1,8 @@
 package com.thed.zephyr.capture.controller;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
+import com.atlassian.jira.rest.client.api.RestClientException;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.util.IssueSearchList;
@@ -9,6 +11,7 @@ import com.thed.zephyr.capture.service.jira.IssueSearchService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
@@ -19,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.thymeleaf.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -58,6 +62,7 @@ public class IssueController {
             throw new CaptureRuntimeException(HttpStatus.UNAUTHORIZED.toString(), i18n.getMessage("template.validate.create.cannot.create.issue"));
         }
         log.info("Issue Create Request for Issue : {}", createRequest.toString());
+
         if (!permissionService.hasCreateIssuePermission()) {
             throw new CaptureRuntimeException(HttpStatus.FORBIDDEN.toString(),i18n.getMessage("template.validate.create.cannot.create.issue"));
         }
@@ -66,18 +71,34 @@ public class IssueController {
     }
 
     @RequestMapping(value = "/issue/{issueKey}/comment", method = RequestMethod.POST, produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> addComments(@PathVariable(value = "issueKey",required = true)  String issueKey, @RequestBody String comment) {
+    public ResponseEntity<?> addComments(@PathVariable(value = "issueKey",required = true)  String issueKey, @RequestBody String comment) throws JSONException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if(auth == null || !auth.isAuthenticated()) {
             throw new CaptureRuntimeException(HttpStatus.UNAUTHORIZED.toString(), i18n.getMessage("template.validate.create.cannot.create.issue"));
         }
         log.info("Add Comment Request for Issue : {}", issueKey);
-        if (!permissionService.hasEditIssuePermission(issueKey)) {
+        if (!permissionService.hasEditIssuePermission(issueKey) || !permissionService.canAddCommentPermission(issueKey)) {
             throw new CaptureRuntimeException(HttpStatus.FORBIDDEN.toString(),i18n.getMessage("template.validate.create.cannot.create.issue"));
         }
         try {
             issueService.addComment(issueKey,comment);
-        } catch (Exception e) {
+        } catch(RestClientException e) {
+            JSONArray errorArray = new JSONArray();
+            e.getErrorCollections().stream().forEach(errorCollection -> {
+                errorCollection.getErrorMessages().stream().forEach(errorMessage -> {
+                    try {
+                        JSONObject jsonObject = new JSONObject();
+                        jsonObject.put("errorMessage", errorMessage);
+                        errorArray.put(jsonObject);
+                    } catch (JSONException e1) {
+                        e1.printStackTrace();
+                    }
+                });
+            });
+            JSONObject responseJson = new JSONObject();
+            responseJson.put("errors",errorArray);
+            return new ResponseEntity<>(responseJson.toString(),HttpStatus.BAD_REQUEST);
+        } catch(Exception e) {
             log.error("Failed to add Comment to issue",e);
             throw new CaptureRuntimeException(HttpStatus.INTERNAL_SERVER_ERROR.toString(),i18n.getMessage("capture.add.comment.error"));
         }

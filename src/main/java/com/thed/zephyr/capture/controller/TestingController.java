@@ -3,10 +3,13 @@ package com.thed.zephyr.capture.controller;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.TestSectionResponse;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.jira.IssueService;
+import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -48,11 +51,12 @@ public class TestingController {
             if(!permissionService.hasBrowsePermission(projectKey)) {
                 throw new CaptureRuntimeException(HttpStatus.UNAUTHORIZED.toString(), i18n.getMessage("template.validate.create.cannot.browse.project"));
             }
-            Issue issue = issueService.getIssueObject(issueId);
-            if(Objects.isNull(issue)) {
+
+            CaptureIssue captureIssue = issueService.searchPropertiesByJql(issueId,CaptureCustomFieldsUtils.getAllEntityPropertiesKey());
+            if(Objects.isNull(captureIssue)) {
                 throw new CaptureValidationException(HttpStatus.BAD_REQUEST.toString(), i18n.getMessage("session.issue.invalid"));
             }
-            TestSectionResponse testSectionResponse = issueService.getIssueSessionDetails(issue);
+            TestSectionResponse testSectionResponse = issueService.getIssueSessionDetails(captureIssue);
             log.info("End of getTestSessionStatus().");
             return ResponseEntity.ok(testSectionResponse);
         } catch(Exception ex) {

@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
+import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.*;
@@ -7,6 +8,9 @@ import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldVal
 import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
+import com.atlassian.jira.rest.client.internal.json.IssueJsonParser;
+import com.atlassian.util.concurrent.Promise;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.IssueRaisedBean;
 import com.thed.zephyr.capture.model.Session;
@@ -27,6 +31,7 @@ import com.thed.zephyr.capture.service.jira.issue.IssueFields;
 import com.thed.zephyr.capture.service.jira.issue.ResourceId;
 import com.thed.zephyr.capture.util.*;
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.joda.time.DateTime;
@@ -36,11 +41,14 @@ import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.URI;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -84,6 +92,9 @@ public class IssueServiceImpl implements IssueService {
     private ITenantAwareCache tenantAwareCache;
     @Autowired
     private DynamicProperty dynamicProperty;
+    @Autowired
+    private AtlassianHostRestClients atlassianHostRestClients;
+
 
     @Override
     public Issue getIssueObject(String issueIdOrKey) {
@@ -111,7 +122,7 @@ public class IssueServiceImpl implements IssueService {
                     		issue.getResolution().getName(), issue.getResolution().getSelf()) : null;
                     return new CaptureIssue(issue.getSelf(),
                             issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution);
+                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution,null);
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
         } catch (Exception exp) {
@@ -164,55 +175,31 @@ public class IssueServiceImpl implements IssueService {
                     		issue.getResolution().getName(), issue.getResolution().getSelf()) : null;
                     captureIssues.add(new CaptureIssue(issue.getSelf(),
                             issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution));
+                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution,null));
                 });
         return captureIssues;
     }
 
     @Override
-    public TestSectionResponse getIssueSessionDetails(Issue issue) throws JSONException {
+    public TestSectionResponse getIssueSessionDetails(CaptureIssue issue) throws JSONException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String ctdId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
         Session raisedDuring = sessionService.getSessionRaisedDuring(ctdId, issue.getId());
-        SessionDtoSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(host.getUserKey().get(), ctdId, issue.getProject().getId(), issue.getId());
+        SessionDtoSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(host.getUserKey().get(), ctdId, issue.getProjectId(), issue.getId());
         TestSectionResponse testSectionResponse = new TestSectionResponse();
         testSectionResponse.setSessions(sessionByRelatedIssueId.getContent());
         testSectionResponse.setRaisedDuring(raisedDuring);
-        StringBuilder basePath = new StringBuilder();
-        basePath.append(JiraConstants.REST_API_BASE_ISSUE).append("/").append(issue.getKey()).append("/properties/");
-        String userAgentPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ", "_");
-        String userAgent = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), userAgentPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ", "_"));
-
-        String browserNamePath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase().replace(" ", "_");
-        String browser = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), browserNamePath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase().replace(" ", "_"));
-
-        String documentPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ", "_");
-        String document = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), documentPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ", "_"));
-
-        String screenPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase().replace(" ", "_");
-        String screen = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), screenPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase().replace(" ", "_"));
-
-        String operatingSystemPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase().replace(" ", "_");
-        String operatingSystem = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), operatingSystemPath, CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase().replace(" ", "_"));
-
-        String urlPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ", "_");
-        String url = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), urlPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ", "_"));
-
-        String jQueryVersionPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ", "_");
-        String jQueryVersion = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), jQueryVersionPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ", "_"));
-
-
         CaptureEnvironment captureEnvironment = new CaptureEnvironment();
-        captureEnvironment.setUserAgent(userAgent);
-        captureEnvironment.setBrowser(browser);
-        captureEnvironment.setjQueryVersion(jQueryVersion);
-        captureEnvironment.setDocumentMode(document);
-        captureEnvironment.setScreenResolution(screen);
-        captureEnvironment.setUrl(url);
-        captureEnvironment.setOperatingSystem(operatingSystem);
-        captureEnvironment.setBrowserIcon(CaptureUtil.getBrowserIcon(browser));
-        captureEnvironment.setOsIcon(CaptureUtil.getOSIcon(operatingSystem));
+        captureEnvironment.setUserAgent(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME,"-"));
+        captureEnvironment.setBrowser(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME,null));
+        captureEnvironment.setjQueryVersion(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME,"-"));
+        captureEnvironment.setDocumentMode(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE,"-"));
+        captureEnvironment.setScreenResolution(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME,"-"));
+        captureEnvironment.setUrl(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME,"-"));
+        captureEnvironment.setOperatingSystem(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME,null));
+        captureEnvironment.setBrowserIcon(CaptureUtil.getBrowserIcon(captureEnvironment.getBrowser()));
+        captureEnvironment.setOsIcon(CaptureUtil.getOSIcon(captureEnvironment.getOperatingSystem()));
         testSectionResponse.setCaptureEnvironment(captureEnvironment);
 
         TestingStatus testingStatus = new TestingStatus();
@@ -278,12 +265,11 @@ public class IssueServiceImpl implements IssueService {
         IssueInput issueInput = createIssueInput(issueFields, request);
         BasicIssue basicIssue = postJiraRestClient.getIssueClient().createIssue(issueInput).claim();
         Issue issue = getIssueObject(basicIssue.getKey());
-
         //Set Context Params
         captureContextIssueFieldsService.populateContextFields(request, issue, createRequest.getContext());
         CaptureResolution resolution = issue.getResolution() != null ? new CaptureResolution(issue.getResolution().getId(), 
         		issue.getResolution().getName(), issue.getResolution().getSelf()) : null;
-        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution);
+        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution,null);
         if (StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {
@@ -307,6 +293,81 @@ public class IssueServiceImpl implements IssueService {
         Issue issue = getIssueObject(issueKey);
         JSONObject jsonObject = new JSONObject(comment);
         postJiraRestClient.getIssueClient().addComment(issue.getCommentsUri(),Comment.valueOf(jsonObject.get("comment").toString())).claim();
+    }
+
+    public CaptureIssue searchPropertiesByJql(String issueKey, String allProperties) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        AcHostModel acHostModel = (AcHostModel) host.getHost();
+        CaptureIssue captureIssue = null;
+        try {
+            captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKey(issueKey), new Callable<CaptureIssue>() {
+                @Override
+                public CaptureIssue call() throws Exception {
+                    CaptureIssue finalCaptureIssue = null;
+                    URI targetUrl= UriComponentsBuilder.fromUriString(acHostModel.getBaseUrl())
+                            .path(JiraConstants.REST_API_SEARCH)
+                            .queryParam("jql","issue="+issueKey+"&properties="+allProperties)
+                            .build()
+                            .toUri();
+
+                    HttpHeaders httpHeaders = new HttpHeaders();
+                    httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+                    String resourceUrl = targetUrl.toString();
+                    HttpEntity<String> requestUpdate = new HttpEntity<>(httpHeaders);
+                    ResponseEntity<JsonNode> jsonNodeResponseEntity = atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.GET,requestUpdate,JsonNode.class);
+                    JSONObject jsonObject = new JSONObject(jsonNodeResponseEntity.getBody().toString());
+                    Object issueObject = jsonObject.get("issues");
+                    if(issueObject != null) {
+                        JSONArray jsonArray = (JSONArray) issueObject;
+                        if(jsonArray.length() > 0) {
+                            JSONObject issue = jsonArray.getJSONObject(0);
+                            JSONObject fields = issue.getJSONObject("fields");
+                            JSONObject issuetype = fields != null && fields.has("issuetype") ? fields.getJSONObject("issuetype") : null;
+                            JSONObject resolution = fields != null && fields.has("resolution") ? fields.getJSONObject("resolution") : null;
+                            JSONObject properties = issue.has("properties") ? issue.getJSONObject("properties") : null;
+                            String captureBrowserName = properties.has(CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase()) ? properties.getJSONObject(CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase()).getString("content") : "-";
+                            String captureOS = properties.has(CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase()) ? properties.getJSONObject(CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase()).getString("content") : "-";
+                            String captureDocument = properties.has(CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase()) ? properties.getJSONObject(CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase()).getString("content") : "-";
+                            String captureUserAgent = properties.has(CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase()) ? properties.getJSONObject(CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase()).getString("content") : "-";
+                            String captureScreenRes = properties.has(CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase()) ? properties.getJSONObject(CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase()).getString("content") : "-";
+
+                            //Unfortunately Jira only allows max of 5 properties to be fetched as query
+                            StringBuilder basePath = new StringBuilder();
+                            basePath.append(JiraConstants.REST_API_BASE_ISSUE).append("/").append(issueKey).append("/properties/");
+                            String urlPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ", "_");
+                            String captureJiraURL = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), urlPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ", "_"));
+
+                            String jQueryVersionPath = basePath.toString() + CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ", "_");
+                            String capturejQuery = captureContextIssueFieldsService.getContextFields(host.getHost().getBaseUrl(), jQueryVersionPath, CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ", "_"));
+
+                            Map<String,String> propertiesMap = new HashMap<>();
+                            propertiesMap.put(CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME,captureBrowserName);
+                            propertiesMap.put(CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME,captureJiraURL);
+                            propertiesMap.put(CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME,captureOS);
+                            propertiesMap.put(CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE,captureDocument);
+                            propertiesMap.put(CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME,capturejQuery);
+                            propertiesMap.put(CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME,captureUserAgent);
+                            propertiesMap.put(CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME,captureScreenRes);
+
+                            CaptureResolution captureResolution = null;
+                            if(resolution != null) {
+                                captureResolution = new CaptureResolution(resolution.getLong("id"),resolution.getString("name"),new URI(resolution.getString("self")));
+                            }
+                            finalCaptureIssue = new CaptureIssue(new URI(issue.getString("self")), issue.getString("key"), issue.getLong("id"),
+                                    issuetype != null ? issuetype.getString("iconUrl") : "", fields.getString("summary"), fields.getJSONObject("project").getLong("id"),
+                                    fields.getJSONObject("project").getString("key"), fields.getJSONObject("reporter") != null ? fields.getJSONObject("reporter").getString("name") : "",
+                                    captureResolution, propertiesMap);
+                        }
+                    }
+                    return finalCaptureIssue;
+                }
+            }, dynamicProperty.getIntProp(ApplicationConstants.ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+        } catch (Exception exp) {
+            log.error("Exception while getting the issue from JIRA." + exp.getMessage(), exp);
+        }
+        log.debug("ISSUE: --> {}", captureIssue != null ? captureIssue.getSummary() : "-");
+        return captureIssue;
     }
 
     private IssueInput createIssueInput(IssueFields issueFields, HttpServletRequest request) {

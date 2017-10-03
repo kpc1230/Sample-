@@ -24,11 +24,13 @@ public interface IssueService {
     
     List<CaptureIssue> getCaptureIssuesByIssueRaiseBean(List<IssueRaisedBean> issuesRaised);
 
-    TestSectionResponse getIssueSessionDetails(Issue issue) throws JSONException;
+    TestSectionResponse getIssueSessionDetails(CaptureIssue issue) throws JSONException;
 
     CaptureIssue createIssue(HttpServletRequest request, String testSessionId, IssueCreateRequest createRequest);
 
     void setIssueTestStausAndTestSession(String issueKey, String testingStatus,String sessionids);
 
     void addComment(String issueKey, String comment) throws JSONException;
+
+    CaptureIssue searchPropertiesByJql(String issueKey, String allProperties);
 }

@@ -2,10 +2,10 @@ package com.thed.zephyr.capture.util;
 
 
 import com.thed.zephyr.capture.model.CustomFieldMetadata;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -74,4 +74,14 @@ public class CaptureCustomFieldsUtils {
         return metadataMap;
     }
 
+
+    public static String getAllEntityPropertiesKey() {
+        List<String> allProperties = new ArrayList<>();
+        allProperties.add(CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase());
+        allProperties.add(CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase());
+        allProperties.add(CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase());
+        allProperties.add(CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase());
+        allProperties.add(CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase());
+        return StringUtils.join(allProperties,",");
+    }
 }

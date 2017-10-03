@@ -81,6 +81,8 @@ public class ApplicationConstants {
     public static final String CREATE_ISSUE_PERMISSION = "CREATE_ISSUE";
     public static final String EDIT_ISSUE_PERMISSION = "EDIT_ISSUE";
     public static final String BROWSE_PROJECT_PERMISSION = "BROWSE_PROJECTS";
+    public static final String COMMENT_ISSUE = "COMMENT_ISSUE";
+
     public static final String SYSTEM_ADMIN = "SYSTEM_ADMIN";
     public static final String ASSIGNABLE_USER = "ASSIGNABLE_USER";
     public static final String PROJECT_ADMIN = "PROJECT_ADMIN";

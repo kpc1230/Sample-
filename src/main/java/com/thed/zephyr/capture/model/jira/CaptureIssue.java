@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.Map;
 
 /**
  * Created by niravshah on 8/30/17.
@@ -22,8 +23,10 @@ public class CaptureIssue implements Serializable {
     private final String summary;
     private final String reporter;
     private final CaptureResolution resolution;
+    private final Map<String,String> properties;
 
-    public CaptureIssue(URI self, String key, Long id, String iconPath, String summary, Long projectId, String projectKey,String reporter,CaptureResolution resolution) {
+    public CaptureIssue(URI self, String key, Long id, String iconPath, String summary, Long projectId, String projectKey,String reporter,CaptureResolution resolution,
+                        Map<String,String> properties) {
         this.iconPath = iconPath;
         this.self = self;
         this.key = key;
@@ -33,6 +36,7 @@ public class CaptureIssue implements Serializable {
         this.projectKey = projectKey;
         this.reporter = reporter;
         this.resolution = resolution;
+        this.properties=properties;
     }
 
     public URI getSelf() {
@@ -74,4 +78,9 @@ public class CaptureIssue implements Serializable {
 	public CaptureResolution getResolution() {
 		return resolution;
 	}
+
+
+    public Map<String, String> getProperties() {
+        return properties;
+    }
 }
