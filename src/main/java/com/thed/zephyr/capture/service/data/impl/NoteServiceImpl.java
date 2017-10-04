@@ -173,7 +173,7 @@ public class NoteServiceImpl implements NoteService {
 	@Override
 	public NoteSearchList getNotesBySessionId(String loggedUser, String ctId, String sessionId, Integer page, Integer limit) {
 		Pageable pageable = CaptureUtil.getPageRequest(page, limit);
-		Page<Note> notes = noteRepository.findByCtIdAndSessionId(ctId, sessionId, pageable);
+		Page<Note> notes = noteRepository.findByCtIdAndSessionIdOrderByCreatedTimeAsc(ctId, sessionId, pageable);
 		List<Note> content = notes != null?notes.getContent():new ArrayList<>();
 		Long total = notes != null?notes.getTotalElements():0;
 		NoteSearchList result = new NoteSearchList(convertNoteTO(loggedUser, content), page, limit, total);
