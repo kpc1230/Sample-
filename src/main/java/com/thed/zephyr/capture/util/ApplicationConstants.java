@@ -170,4 +170,22 @@ public class ApplicationConstants {
 
     /** ES constants **/
     public static final String ES_INDEX_NAME = "capture";
+    public static final String ES_SESSION_TYPE_NAME = "session";
+    
+    /** Job progress status constants **/
+    public static final int JOB_STATUS_INPROGRESS = 0;
+    public static final int JOB_STATUS_COMPLETED = 1;
+    public static final int JOB_STATUS_FAILED =2;
+    public static final int DEFAULT_DELETE_HISTORY_EXPIRED =30;
+    public static final String IN_PROGRESS_JOBS_MAP = "in_progress_job_map";
+    public static final String COMPLETED_JOBS_MAP = "completed_job_map";
+    public static final Long DEFAULT_EXPIRE_TIME_FOR_IN_PROGRESS_JOB_PROGRESS = 10L;
+    public static final Long DEFAULT_EXPIRE_TIME_FOR_COMPLETED_JOB_PROGRESS = 1L;
+    public static final int DEFAULT_COMPLETED_JOB_MAP_SIZE = 1000;
+    public static final int MAX_LIFE_TIME_FOR_JOBS_DURING_CLEAN_COMPLETED_JOB_MAP = 1200000;//in ms
+    public static final String CLEAN_JOB_PROGRESS_COMPLETED_MAP_LOCK_KEY = "clean_job_progress_completed_map_lock_key";
+    public static final String REINDEX_CAPTURE_ES_DATA = "reindex_capture_es_data";
+    public static final int INDEX_JOB_STATUS_INPROGRESS = 0;
+    public static final int INDEX_JOB_STATUS_COMPLETED = 1;
+    public static final int INDEX_JOB_STATUS_FAILED = 2;
 }

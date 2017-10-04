@@ -32,5 +32,6 @@ public class JiraConstants {
     public static final String REST_API_USER_SEARCH = "/rest/api/2/user/search";
     public static final String REST_ADD_ON_PROPERTY = "/rest/atlassian-connect/1/addons/{addon-key}/properties";
     public static final String REST_API_USER = "/rest/api/2/user";
+    public static final String REST_API_PROJECT_2 = "/rest/api/2/project/";
 
 }

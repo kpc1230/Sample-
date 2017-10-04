@@ -14,15 +14,18 @@ import java.net.URI;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CaptureProject implements Serializable{
 
-    private final URI self;
+    private URI self;
 
-    private final String key;
-
-    @Nullable
-    private final Long id;
+    private String key;
 
     @Nullable
-    private final String name;
+    private Long id;
+
+    @Nullable
+    private String name;
+    
+    public CaptureProject() {
+    }
 
 
     public CaptureProject(URI self, String key, Long id, String name) {

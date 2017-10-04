@@ -2,6 +2,8 @@ package com.thed.zephyr.capture.service.data;
 
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.exception.HazelcastInstanceNotDefinedException;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.CompleteSessionRequest;
 import com.thed.zephyr.capture.model.IssueRaisedBean;
 import com.thed.zephyr.capture.model.Participant;
@@ -278,5 +280,7 @@ public interface SessionService {
 	void updateProjectNameForSessions(String ctid, Long projectId, String projectName);
 
 	void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId);
+	
+	void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctid) throws HazelcastInstanceNotDefinedException;
 }
 

@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.aggregation.AggregatedPage;
+import org.springframework.data.elasticsearch.core.query.DeleteQuery;
 import org.springframework.data.elasticsearch.core.query.FetchSourceFilter;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.SearchQuery;
@@ -94,4 +95,10 @@ public class SessionESRepositoryImpl {
             return assigneesList;
     	});
     }
+	
+	public void deleteSessionsByCtId(String ctId) {
+		DeleteQuery deleteQuery = new DeleteQuery();
+		deleteQuery.setQuery(QueryBuilders.matchQuery(ApplicationConstants.TENANT_ID_FIELD, ctId));		
+		elasticsearchTemplate.delete(deleteQuery, Session.class);
+	}
 }

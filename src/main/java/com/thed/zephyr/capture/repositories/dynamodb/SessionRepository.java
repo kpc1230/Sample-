@@ -19,6 +19,8 @@ public interface SessionRepository extends CrudRepository<Session, String> {
 
 	Page<Session> queryByCtIdAndProjectId(String ctId, Long projectId, Pageable pageable);
 	
+	Page<Session> findByCtId(String ctid, Pageable pageable);
+	
 	List<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm);
 	
 	List<Session> fetchPrivateSessionsForUser(String ctId, String user);

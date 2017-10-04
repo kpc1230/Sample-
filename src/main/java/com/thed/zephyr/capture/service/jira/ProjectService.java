@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.jira;
 
 import com.atlassian.jira.rest.client.api.domain.BasicProject;
 import com.atlassian.jira.rest.client.api.domain.Project;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 
 import java.util.ArrayList;
@@ -16,5 +17,6 @@ public interface ProjectService {
     ArrayList<BasicProject> getProjects();
     CaptureProject getCaptureProject(Long projectId);
     CaptureProject getCaptureProject(String projectKey);
+    CaptureProject getCaptureProjectFromThread(AcHostModel acHostModel, String projectIdOrKey);
 
 }

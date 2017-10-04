@@ -38,4 +38,6 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
     		Optional<String> sortField, boolean sortAscending, int startAt, int size);
     
     Set<String> fetchAllAssigneesForCtId(String ctId);
+    
+    void deleteSessionsByCtId(String ctId);
 }

@@ -4,12 +4,16 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.IgnoreJwt;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.addon.AddonInfoService;
+import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
+import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.DynamicProperty;
+import com.thed.zephyr.capture.util.UniqueIdGenerator;
+
 import org.apache.commons.collections.map.HashedMap;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -51,6 +56,9 @@ public class ApplicationController {
 
     @Autowired
     private AddonInfoService addonInfoService;
+    
+    @Autowired
+    private SessionService sessionService;
 
     @RequestMapping(value = "/adminGenConf")
     public String getGeneralConfigurationPage(@AuthenticationPrincipal AtlassianHostUser hostUser,
@@ -162,14 +170,14 @@ public class ApplicationController {
     @RequestMapping(value = "/capture-i18n")
     @ResponseBody
     @IgnoreJwt
-    public ResponseEntity getI18NMessages() {
+    public ResponseEntity<?> getI18NMessages() {
         Map<String, String> messages = getI18NMessagesBasedOnSessionLocale();
         return ResponseEntity.ok(messages);
     }
 
     @RequestMapping(value = "/clearCache")
     @ResponseBody
-    public ResponseEntity clearCache(@AuthenticationPrincipal AtlassianHostUser hostUser) {
+    public ResponseEntity<?> clearCache(@AuthenticationPrincipal AtlassianHostUser hostUser) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         tenantAwareCache.clearTenantCache(acHostModel);
         Map<String,String> map = new HashedMap();
@@ -181,5 +189,20 @@ public class ApplicationController {
         Locale locale = LocaleContextHolder.getLocale();
         String basename = "i18n/capture-i18n";
         return i18n.getKeyValues(basename, locale);
+    }
+    
+    @PostMapping(value = "/reindex")
+    public ResponseEntity<?> reindex(@AuthenticationPrincipal AtlassianHostUser hostUser) {
+    	try {
+    		log.info("Start of reindex()");
+            AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+            String jobProgressId = new UniqueIdGenerator().getStringId();
+            sessionService.reindexSessionDataIntoES(acHostModel, jobProgressId, acHostModel.getCtId());
+            log.info("End of reindex()");
+            return ResponseEntity.ok(jobProgressId);
+    	} catch(Exception ex) {
+    		log.error("Erro in reindex() -> ", ex);
+    		throw new CaptureRuntimeException(ex);
+    	}
     }
 }

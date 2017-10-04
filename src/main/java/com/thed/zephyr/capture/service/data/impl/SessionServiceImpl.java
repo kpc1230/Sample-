@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.comparators.IdSessionComparator;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.exception.HazelcastInstanceNotDefinedException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.CompleteSessionRequest.CompleteSessionIssueLinkRequest;
 import com.thed.zephyr.capture.model.Session.Status;
@@ -26,9 +27,11 @@ import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
 import com.thed.zephyr.capture.predicates.UserIsParticipantPredicate;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
+import com.thed.zephyr.capture.service.JobProgressService;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
+import com.thed.zephyr.capture.service.cache.LockService;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
@@ -54,6 +57,7 @@ import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -92,7 +96,10 @@ public class SessionServiceImpl implements SessionService {
 	private PermissionService permissionService;
 	@Autowired
 	private UserService userService;
-
+	@Autowired
+	private JobProgressService jobProgressService;
+	@Autowired
+	private LockService lockService;
 	@Autowired
 	private CaptureContextIssueFieldsService captureContextIssueFieldsService;
 
@@ -1320,7 +1327,7 @@ public class SessionServiceImpl implements SessionService {
 	
 	@Override
 	public void updateProjectNameForSessions(String ctid, Long projectId, String projectName) {
-		new Thread(() -> {
+		CompletableFuture.runAsync(() -> {
 			int index = 0;
 			int maxResults = 20;
 			AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctid, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
@@ -1331,7 +1338,7 @@ public class SessionServiceImpl implements SessionService {
 			}
 			index = index  + maxResults;
 			Long total = pageResponse.getTotalElements();
-			while(index <= total.intValue()) {
+			while(index < total.intValue()) {
 				pageResponse = sessionESRepository.searchSessions(ctid, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
 						Optional.empty(), true, index, maxResults);
 				for(Session session : pageResponse.getContent()) {
@@ -1339,7 +1346,69 @@ public class SessionServiceImpl implements SessionService {
 					sessionESRepository.save(session);
 				}
 			}
-		}).start();
+		});
+	}
+
+	@Override
+	public void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctid) throws HazelcastInstanceNotDefinedException {
+		jobProgressService.createJobProgress(acHostModel, ApplicationConstants.REINDEX_CAPTURE_ES_DATA, ApplicationConstants.JOB_STATUS_INPROGRESS, jobProgressId);
+		CompletableFuture.runAsync(() -> {
+			try {
+				if (!lockService.tryLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA, 5)){
+	                log.warn("Re-index executions process already in progress.");
+	                jobProgressService.setErrorMessage(acHostModel, jobProgressId, i18n.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.reindex.executions.inprogress"));
+	            }
+				if(log.isDebugEnabled()) log.debug("Re-Indexing Session type data begin:");
+				deleteSessionDataForCtid(ctid);
+				loadSessionDataFromDBToES(acHostModel, jobProgressId);				
+				jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
+				lockService.deleteLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);				
+			} catch(Exception ex) {
+				log.error("Error in reindexSessionDataIntoES() - ", ex);
+				try {
+					jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_FAILED, jobProgressId);
+					String errorMessage = i18n.getMessage("capture.common.internal.server.error");
+	                jobProgressService.setErrorMessage(acHostModel, jobProgressId, errorMessage);
+	                lockService.deleteLock(acHostModel.getCtId(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);
+				} catch (HazelcastInstanceNotDefinedException e) {
+					log.warn("Error in releassing the lock in catch block - ", ex);
+				}                
+			}
+		});
+	}
+	
+	private void deleteSessionDataForCtid(String ctid) {
+		sessionESRepository.deleteSessionsByCtId(ctid);
+		log.info("Successfully deleted all the sessions related to tenant id -> " + ctid);
+	}
+	
+	
+	private void loadSessionDataFromDBToES(AcHostModel acHostModel, String jobProgressId) throws HazelcastInstanceNotDefinedException {
+		CaptureProject project = null;
+		int maxResults = 6;
+		Long total = 0L;
+		int index = 0;
+		Page<Session> pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(0, maxResults));
+		for(Session session : pageResponse.getContent()) {
+			project = projectService.getCaptureProjectFromThread(acHostModel, String.valueOf(session.getProjectId()));
+			session.setProjectName(project != null ? project.getName() : null);
+			sessionESRepository.save(session);
+		}
+		total = pageResponse.getTotalElements();
+		index = index + maxResults;
+		jobProgressService.setTotalSteps(acHostModel, jobProgressId, total.intValue());
+		jobProgressService.addCompletedSteps(acHostModel, jobProgressId, pageResponse.getNumberOfElements());
+		while(index < total.intValue()) {
+			pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(index / maxResults , maxResults));
+			for(Session session : pageResponse.getContent()) {
+				project = projectService.getCaptureProjectFromThread(acHostModel, String.valueOf(session.getProjectId()));
+				session.setProjectName(project != null ? project.getName() : null);
+				sessionESRepository.save(session);
+			}
+			total = pageResponse.getTotalElements();
+			index = index + maxResults;
+			jobProgressService.addCompletedSteps(acHostModel, jobProgressId,  pageResponse.getNumberOfElements());
+		}
 	}
 
 }
