@@ -244,11 +244,14 @@ public class IssueServiceImpl implements IssueService {
         }
 
         testingStatus.setCompleteCount(new Double(completedCount.get()));
+        testingStatus.setInProgressCount(new Double(inProgressCount.get()));
+        testingStatus.setNotStartedCount(new Double(notStartedCount.get()));
+
         Double notStartedPercent = 0.0, inProgressPercent = 0.0, completePercent = 0.0;
         if (testingStatus.getTotalCount().intValue() != 0) {
-            notStartedPercent = Math.floor((notStartedCount.get() / testingStatus.getTotalCount().intValue()) * 100);
-            inProgressPercent = Math.floor((inProgressCount.get() / testingStatus.getTotalCount().intValue()) * 100);
-            completePercent = Math.floor((completedCount.get() / testingStatus.getTotalCount().intValue()) * 100);
+            notStartedPercent = Math.floor(((notStartedCount.get()* 100) / testingStatus.getTotalCount().intValue()));
+            inProgressPercent = Math.floor(((inProgressCount.get()* 100) / testingStatus.getTotalCount().intValue()));
+            completePercent = Math.floor(((completedCount.get()* 100) / testingStatus.getTotalCount().intValue()));
         }
 
         testingStatus.setNotStartedPercent(notStartedPercent);

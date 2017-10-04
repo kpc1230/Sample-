@@ -8,17 +8,21 @@ public class TestingStatus  {
     private Double notStartedPercent;
     private Double inProgressPercent;
     private Double completePercent;
+    private Double inProgressCount;
+    private Double notStartedCount;
     private Double completeCount;
     private Double totalCount;
     private Double totalSessions;
     private String testingStatusEnum;
 
-    public TestingStatus(Double notStartedPercent, Double inProgressPercent, Double completePercent, Double completeCount, Double totalCount) {
+    public TestingStatus(Double notStartedPercent, Double inProgressPercent, Double completePercent, Double completeCount,Double inProgressCount,Double notStartedCount,Double totalCount) {
         this.notStartedPercent = notStartedPercent;
         this.inProgressPercent = inProgressPercent;
         this.completePercent = completePercent;
         this.completeCount = completeCount;
         this.totalCount = totalCount;
+        this.inProgressCount = inProgressCount;
+        this.notStartedCount = notStartedCount;
     }
 
     public TestingStatus() {
@@ -79,6 +83,22 @@ public class TestingStatus  {
 
     public void setTotalSessions(Double totalSessions) {
         this.totalSessions = totalSessions;
+    }
+
+    public Double getInProgressCount() {
+        return inProgressCount;
+    }
+
+    public void setInProgressCount(Double inProgressCount) {
+        this.inProgressCount = inProgressCount;
+    }
+
+    public Double getNotStartedCount() {
+        return notStartedCount;
+    }
+
+    public void setNotStartedCount(Double notStartedCount) {
+        this.notStartedCount = notStartedCount;
     }
 
     public enum TestingStatusEnum {
