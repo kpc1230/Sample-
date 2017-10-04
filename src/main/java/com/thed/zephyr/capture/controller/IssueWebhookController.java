@@ -34,9 +34,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 
 @RestController
@@ -85,6 +83,10 @@ public class IssueWebhookController {
                     if(session != null) {
                         sessionService.addRaisedInSession(hostUser.getUserKey().get(), issueId, session.getId());
                     }
+                    Set<Long> issues = new HashSet<>();
+                    issues.add(issueId);
+                    //Updating issue testing status in order to sync JQL with Testing section
+                    sessionService.setIssueTestStausAndTestSession(issues,ctid,projectId);
                 } else {
                     log.error("Issue creation details are empty from JIRA");
                     throw new CaptureValidationException("Issue ID is null");
