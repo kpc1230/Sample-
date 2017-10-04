@@ -801,7 +801,7 @@ public class SessionController extends CaptureAbstractController{
 	public ResponseEntity<?> fetchAllAssignees() throws CaptureValidationException {
 		log.info("Start of fetchAllAssignees()");
 		try {
-			Set<String> assigneesList = sessionService.fetchAllAssignees();
+			List<CaptureUser> assigneesList = sessionService.fetchAllAssignees();
 			log.info("End of fetchAllAssignees()");
 			return ResponseEntity.ok(assigneesList);
 		} catch(Exception ex) {

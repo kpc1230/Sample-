@@ -321,9 +321,20 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public Set<String> fetchAllAssignees() {
+	public List<CaptureUser> fetchAllAssignees() {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		return sessionESRepository.fetchAllAssigneesForCtId(ctId);
+		List<CaptureUser> userList = new ArrayList<>();
+		Set<String> users= sessionESRepository.fetchAllAssigneesForCtId(ctId);
+		if(users!=null&&users.size()>0){
+			users.forEach(usekey->{
+				CaptureUser cUser= userService.findUserByKey(usekey);
+				if (cUser != null) {
+					userList.add(cUser);
+				}
+			});
+		}
+
+		return userList;
 	}
 
 	@Override

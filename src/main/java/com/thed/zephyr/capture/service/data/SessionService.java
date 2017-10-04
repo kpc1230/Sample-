@@ -9,6 +9,7 @@ import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.SessionRequest;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.SessionDto;
@@ -219,7 +220,7 @@ public interface SessionService {
 	/**
 	 * @return -- Returns the List of unique assignees for the logged in user tenant id.
 	 */
-	Set<String> fetchAllAssignees();
+	List<CaptureUser> fetchAllAssignees();
 
 	Session getSessionRaisedDuring(String ctId, Long raisedIssueId);
 
