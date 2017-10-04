@@ -133,12 +133,12 @@ public class SessionController extends CaptureAbstractController{
 			if (captureProject != null) {
 				// Check that the creator and assignee have assign issue permissions in the project
 				if (!permissionService.canCreateSession(loggedUserKey, captureProject)) {
-					throw new CaptureRuntimeException(i18n.getMessage("session.creator.fail.permissions"));
+					throw new CaptureValidationException(i18n.getMessage("session.creator.fail.permissions"));
 				}
 				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), captureProject)) {
-					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{sessionRequest.getAssignee()}));
+					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{sessionRequest.getAssignee()}));
 				} else if(!permissionService.canBeAssignedSession(loggedUserKey, captureProject)) {
-					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
+					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
 				}
 			}
 			Session createdSession = sessionService.createSession(loggedUserKey, sessionRequest);
@@ -235,7 +235,7 @@ public class SessionController extends CaptureAbstractController{
 			String user = getUser();
 			Session session = sessionService.getSession(sessionId);
 			if (session != null && !permissionService.canSeeSession(user, session)) {
-				throw new CaptureRuntimeException(i18n.getMessage("session.update.not.editable"));
+				throw new CaptureValidationException(i18n.getMessage("session.update.not.editable"));
 			} else if(Objects.isNull(session)) {
 				throw new CaptureValidationException(i18n.getMessage("session.not.exist.message"));
 			}
@@ -880,12 +880,12 @@ public class SessionController extends CaptureAbstractController{
 			if (Objects.nonNull(captureProject)) {
 				// Check that the creator and assignee have assign issue permissions in the project
 				if (!permissionService.canCreateSession(loggedUserKey, captureProject)) {
-					throw new CaptureRuntimeException(i18n.getMessage("session.creator.fail.permissions"));
+					throw new CaptureValidationException(i18n.getMessage("session.creator.fail.permissions"));
 				}
 				if (loadedSession.getAssignee() != null && !permissionService.canBeAssignedSession(loadedSession.getAssignee(), captureProject)) {
-					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loadedSession.getAssignee()}));
+					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loadedSession.getAssignee()}));
 				} else if(!permissionService.canBeAssignedSession(loggedUserKey, captureProject)) {
-					throw new CaptureRuntimeException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
+					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
 				}
 			}
 			Session newSession = sessionService.cloneSession(loggedUserKey, loadedSession, name);
