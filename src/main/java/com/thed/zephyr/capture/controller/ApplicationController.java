@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -199,7 +200,9 @@ public class ApplicationController {
             String jobProgressId = new UniqueIdGenerator().getStringId();
             sessionService.reindexSessionDataIntoES(acHostModel, jobProgressId, acHostModel.getCtId());
             log.info("End of reindex()");
-            return ResponseEntity.ok(jobProgressId);
+            Map<String, String> response = new HashMap<>();
+            response.put("jobProgressId", jobProgressId);
+            return ResponseEntity.ok(response);
     	} catch(Exception ex) {
     		log.error("Erro in reindex() -> ", ex);
     		throw new CaptureRuntimeException(ex);

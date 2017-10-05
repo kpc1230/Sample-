@@ -1362,6 +1362,8 @@ public class SessionServiceImpl implements SessionService {
 				deleteSessionDataForCtid(ctid);
 				loadSessionDataFromDBToES(acHostModel, jobProgressId);				
 				jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
+				String message = i18n.getMessage("capture.job.progress.status.success.message");
+				jobProgressService.setMessage(acHostModel, jobProgressId, message);
 				lockService.deleteLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);				
 			} catch(Exception ex) {
 				log.error("Error in reindexSessionDataIntoES() - ", ex);
