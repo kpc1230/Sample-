@@ -1,18 +1,5 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
@@ -22,6 +9,18 @@ import com.thed.zephyr.capture.model.util.IssueSearchList;
 import com.thed.zephyr.capture.model.view.IssueSearchDto;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.IssueSearchService;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author manjunath
@@ -52,7 +51,7 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     private IssueSearchList getIssuesForIssueTerm(String projectKey, String issueTerm, boolean appendEpicIssueType) {
     	try {
     		SearchResult searchResult = null;
-    		if(StringUtils.isBlank(issueTerm) || !issueTerm.startsWith(projectKey)) {
+    		if(StringUtils.isBlank(issueTerm)) {
     			return new IssueSearchList(new ArrayList<>(1), 0, 11, 0);
     		}
     		Matcher match = patttern.matcher(issueTerm);
