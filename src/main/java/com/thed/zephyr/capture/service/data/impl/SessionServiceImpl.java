@@ -1385,12 +1385,12 @@ public class SessionServiceImpl implements SessionService {
 	
 	private void loadSessionDataFromDBToES(AcHostModel acHostModel, String jobProgressId) throws HazelcastInstanceNotDefinedException {
 		CaptureProject project = null;
-		int maxResults = 6;
+		int maxResults = 20;
 		Long total = 0L;
 		int index = 0;
 		Page<Session> pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(0, maxResults));
 		for(Session session : pageResponse.getContent()) {
-			project = projectService.getCaptureProjectFromThread(acHostModel, String.valueOf(session.getProjectId()));
+			project = projectService.getCaptureProjectViaAddon(acHostModel, String.valueOf(session.getProjectId()));
 			session.setProjectName(project != null ? project.getName() : null);
 			sessionESRepository.save(session);
 		}
@@ -1401,7 +1401,7 @@ public class SessionServiceImpl implements SessionService {
 		while(index < total.intValue()) {
 			pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(index / maxResults , maxResults));
 			for(Session session : pageResponse.getContent()) {
-				project = projectService.getCaptureProjectFromThread(acHostModel, String.valueOf(session.getProjectId()));
+				project = projectService.getCaptureProjectViaAddon(acHostModel, String.valueOf(session.getProjectId()));
 				session.setProjectName(project != null ? project.getName() : null);
 				sessionESRepository.save(session);
 			}

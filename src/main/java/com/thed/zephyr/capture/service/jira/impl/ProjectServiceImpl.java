@@ -97,7 +97,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
     
     @Override
-    public CaptureProject getCaptureProjectFromThread(AcHostModel acHostModel, String projectIdOrKey) {        
+    public CaptureProject getCaptureProjectViaAddon(AcHostModel acHostModel, String projectIdOrKey) {        
         CaptureProject captureProject = null;
         try {
             captureProject = tenantAwareCache.getOrElse(acHostModel, buildProjectCacheKey(projectIdOrKey), new Callable<CaptureProject>() {

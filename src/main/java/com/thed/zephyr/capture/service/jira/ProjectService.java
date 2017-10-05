@@ -17,6 +17,6 @@ public interface ProjectService {
     ArrayList<BasicProject> getProjects();
     CaptureProject getCaptureProject(Long projectId);
     CaptureProject getCaptureProject(String projectKey);
-    CaptureProject getCaptureProjectFromThread(AcHostModel acHostModel, String projectIdOrKey);
+    CaptureProject getCaptureProjectViaAddon(AcHostModel acHostModel, String projectIdOrKey);
 
 }
