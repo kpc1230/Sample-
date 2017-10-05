@@ -287,13 +287,7 @@ public class IssueServiceImpl implements IssueService {
         return captureIssue;
     }
 
-    @Override
-    public void setIssueTestStausAndTestSession(String issueId, String testingStatus,String sessionids){
-        captureContextIssueFieldsService.populateIssueTestStatusAndTestSessions(getCaptureIssue(String.valueOf(issueId)).getKey(),i18n.getMessage(testingStatus),sessionids);
-        return;
-    }
-
-    @Override
+   @Override
     public void addComment(String issueKey, String comment) throws JSONException {
         Issue issue = getIssueObject(issueKey);
         JSONObject jsonObject = new JSONObject(comment);

@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.core.util.DateUtils;
 import com.atlassian.core.util.InvalidDurationException;
 import com.atlassian.jira.rest.client.api.domain.Issue;
@@ -48,6 +49,8 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.elasticsearch.core.aggregation.AggregatedPage;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
@@ -1284,51 +1287,66 @@ public class SessionServiceImpl implements SessionService {
 		setIssueTestStausAndTestSession(createdSession.getRelatedIssueIds(),createdSession.getCtId(),createdSession.getProjectId());
 	}
 
-	@Override
-	public void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId) {
-		if (relatedIssues != null) {
-			relatedIssues.forEach(issueId -> {
-				StringBuilder sessionIdBuilder = new StringBuilder();
-				String testingStatuKey = null;
-				int createdCount = 0, startedCount = 0, completedCount = 0;
-				Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(ctId, projectId, issueId, CaptureUtil.getPageRequest(0, 1000));
-				boolean emptyList =  sessions.getContent()!=null&&sessions.getContent().isEmpty() ? true :false;
-				if (Objects.nonNull(sessions.getContent())) {
-					for (Session session : sessions.getContent()) {
-						sessionIdBuilder.append(session.getId()).append(",");
+    @Override
+    public void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId) {
+        log.debug("setIssueTestStausAndTestSession method started ...");
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        String baseUri = host.getHost().getBaseUrl();
+        if (relatedIssues != null) {
+            CompletableFuture.runAsync(() -> {
+                log.debug("Master Thread::::::started with relatedIssues: {}, ctId: {}, projectId: {}",relatedIssues,ctId,projectId);
+                relatedIssues.forEach(issueId -> {
+                    CompletableFuture.runAsync(() -> {
+                        log.debug("Child Thread::::::started populate JIRA testing status for Issue: {}", issueId);
+                        StringBuilder sessionIdBuilder = new StringBuilder();
+                        String testingStatuKey = null;
+                        int createdCount = 0, startedCount = 0, completedCount = 0;
+                        Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(ctId, projectId, issueId, CaptureUtil.getPageRequest(0, 1000));
+                        boolean emptyList = sessions.getContent() != null && sessions.getContent().isEmpty() ? true : false;
+                        if (Objects.nonNull(sessions.getContent())) {
+                            for (Session session : sessions.getContent()) {
+                                sessionIdBuilder.append(session.getId()).append(",");
 
-						if (Status.CREATED.equals(session.getStatus())) {
-							createdCount++;
-						} else if (Status.COMPLETED.equals(session.getStatus())) {
-							completedCount++;
-						} else {
-							startedCount++;
-							// If a status other than created and completed appears, then it is in progress
-							testingStatuKey =TestingStatus.TestingStatusEnum.IN_PROGRESS.getI18nKey();
-						}
+                                if (Status.CREATED.equals(session.getStatus())) {
+                                    createdCount++;
+                                } else if (Status.COMPLETED.equals(session.getStatus())) {
+                                    completedCount++;
+                                } else {
+                                    startedCount++;
+                                    // If a status other than created and completed appears, then it is in progress
+                                    testingStatuKey = TestingStatus.TestingStatusEnum.IN_PROGRESS.getI18nKey();
+                                }
 
-					}
-					if(sessionIdBuilder.length()>0){
-						sessionIdBuilder.replace(sessionIdBuilder.length()-1,sessionIdBuilder.length(),"");
+                            }
+                            if (sessionIdBuilder.length() > 0) {
+                                sessionIdBuilder.replace(sessionIdBuilder.length() - 1, sessionIdBuilder.length(), "");
 
-					}
-				}
-				if(StringUtils.isBlank(testingStatuKey)) {
-					if (createdCount == 0 && startedCount == 0 && completedCount != 0) {
-						// If all the sessions are 'completed' then return complete
-						testingStatuKey =TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey();
-					} else if (emptyList || (createdCount != 0 && startedCount == 0  && completedCount == 0)) {
-						// If all the sessions are 'created' then return not started
-						testingStatuKey = TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey();
-					} else {
-						// Otherwise the sessions are either 'completed' or 'created'
-						testingStatuKey = TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey();
-					}
-				}
-				issueService.setIssueTestStausAndTestSession(String.valueOf(issueId),testingStatuKey,sessionIdBuilder.toString());
-			});
-		}
-	}
+                            }
+                        }
+                        if (StringUtils.isBlank(testingStatuKey)) {
+                            if (createdCount == 0 && startedCount == 0 && completedCount != 0) {
+                                // If all the sessions are 'completed' then return complete
+                                testingStatuKey = TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey();
+                            } else if (emptyList || (createdCount != 0 && startedCount == 0 && completedCount == 0)) {
+                                // If all the sessions are 'created' then return not started
+                                testingStatuKey = TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey();
+                            } else {
+                                // Otherwise the sessions are either 'completed' or 'created'
+                                testingStatuKey = TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey();
+                            }
+                        }
+                        captureContextIssueFieldsService.populateIssueTestStatusAndTestSessions(String.valueOf(issueId), i18n.getMessage(testingStatuKey), sessionIdBuilder.toString(), baseUri);
+                        log.debug("Child Thread::::::Ended populate JIRA testing status for Issue: {}", issueId);
+                    });
+
+                });
+                log.debug("Master Thread::::::Ended for relatedIssues: {}, ctId: {}, projectId: {}",relatedIssues,ctId,projectId);
+            });
+
+        }
+        log.debug("setIssueTestStausAndTestSession completed ...");
+    }
 	
 	@Override
 	public void updateProjectNameForSessions(String ctid, Long projectId, String projectName) {
