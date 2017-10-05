@@ -9,6 +9,7 @@ import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.NoteRepository;
+import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
@@ -40,6 +41,8 @@ public class NoteServiceImpl implements NoteService {
 	PermissionService permissionService;
 	@Autowired
 	UserService userService;
+	@Autowired
+	SessionESRepository sessionESRepository;
 
 	@Override
 	public NoteRequest create(NoteRequest noteRequest) throws CaptureValidationException {
@@ -225,6 +228,8 @@ public class NoteServiceImpl implements NoteService {
 		CaptureUser user = userService.findUserByKey(noteReq.getUser());
 		noteReq.setAuthorDisplayName(user.getDisplayName());
 		noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
+		Session session = sessionESRepository.findById(noteReq.getSessionId());
+		noteReq.setSessionName(session.getName());
 	}
 
 	@Override

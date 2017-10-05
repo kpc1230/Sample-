@@ -14,6 +14,7 @@ final public class NoteRequest {
     private String id;
     private String ctId;
     private String sessionId;
+	private String sessionName;
     private Date createdTime;
     private String user;
     private String authorDisplayName;
@@ -220,4 +221,11 @@ final public class NoteRequest {
 		this.sessionActivityId = sessionActivityId;
 	}
 
+	public String getSessionName() {
+		return sessionName;
+	}
+
+	public void setSessionName(String sessionName) {
+		this.sessionName = sessionName;
+	}
 }
