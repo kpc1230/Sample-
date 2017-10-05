@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
+import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,8 @@ public class UserWebhookController {
     private Logger log;
     @Autowired
     private ITenantAwareCache tenantAwareCache;
+    @Autowired
+    private SessionService sessionService;
 
 
     @RequestMapping(value = "/created", method = RequestMethod.POST)
@@ -56,11 +59,15 @@ public class UserWebhookController {
             }
             String username = userNode.get("name").asText();
             String userKey = userNode.get("key").asText();
+            String displayName = userNode.get("displayName").asText();
             if (null != username) {
                 tenantAwareCache.delete(acHostModel, ApplicationConstants.USER_CACHE_KEY_PREFIX + username);
             }
             if (null != userKey) {
                 tenantAwareCache.delete(acHostModel, ApplicationConstants.USER_CACHE_KEY_PREFIX + userKey);
+            }
+            if(displayName != null) {
+            	sessionService.updateUserDisplayNamesForSessions(ctid, userKey, displayName);
             }
         } catch (Exception e) {
             log.warn("Unable to handle the user updating webhook: ", e);

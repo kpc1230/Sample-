@@ -188,4 +188,10 @@ public class ApplicationConstants {
     public static final int INDEX_JOB_STATUS_INPROGRESS = 0;
     public static final int INDEX_JOB_STATUS_COMPLETED = 1;
     public static final int INDEX_JOB_STATUS_FAILED = 2;
+    
+    public static final String SORTFIELD_ES_CREATED = "timeCreated";
+    public static final String SORTFIELD_ES_SESSION_NAME = "name.lower_case_sort";
+    public static final String SORTFIELD_ES_PROJECT = "projectName.lower_case_sort";
+    public static final String SORTFIELD_ES_ASSIGNEE = "userDisplayName.lower_case_sort";
+    public static final String SORTFIELD_ES_STATUS = "statusOrder";
 }
