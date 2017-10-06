@@ -86,7 +86,7 @@ public class InviteServiceImpl implements InviteService{
         model.put("sessionlink",SESSION_LINK);
         model.put("sessionid",session.getId());
         model.put("firstline",i18n.getMessage("capture.session.invite.body.firstline", new Object[]{loggedUser.getDisplayName()}));
-        model.put("secondline",i18n.getMessage("capture.session.invite.body.link",new Object[]{SESSION_LINK}));
+        model.put("secondline",i18n.getMessage("capture.session.invite.body.link",new Object[]{SESSION_LINK,SESSION_LINK}));
         model.put("note",NOTE);
 
         String BODY = VelocityEngineUtils.mergeTemplateIntoString(this.engine, "email/body.vm", "UTF-8", model);

@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.core.util.DateUtils;
 import com.atlassian.core.util.InvalidDurationException;
 import com.atlassian.jira.rest.client.api.domain.Issue;
@@ -48,6 +49,8 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.elasticsearch.core.aggregation.AggregatedPage;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
@@ -125,7 +128,9 @@ public class SessionServiceImpl implements SessionService {
 		session.setProjectId(sessionRequest.getProjectId());
 		session.setProjectName(sessionRequest.getProjectName());
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
-		session.setAssignee(!StringUtils.isBlank(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
+		session.setAssignee(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
+		CaptureUser user = userService.findUserByKey(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
+		session.setUserDisplayName(user != null ? user.getDisplayName() : null);
         Session createdSession = sessionRepository.save(session);
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
 		sessionESRepository.save(createdSession);
@@ -141,8 +146,10 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public UpdateResult updateSession(String loggedUserKey, Session session, SessionRequest sessionRequest) {
-		if(!Objects.isNull(sessionRequest.getAssignee())) {
+		if(!StringUtils.isEmpty(sessionRequest.getAssignee())) {
 			session.setAssignee(sessionRequest.getAssignee());
+			CaptureUser user = userService.findUserByKey(sessionRequest.getAssignee());
+			if(user != null) session.setUserDisplayName(user.getDisplayName());
 		}
         session.setName(sessionRequest.getName());
         if(Objects.nonNull(sessionRequest.getAdditionalInfo())) {
@@ -466,7 +473,7 @@ public class SessionServiceImpl implements SessionService {
 		updateSessionWithIssueId(sessions, issueId,user);
 		Page<Session> sessions2 = sessionESRepository.findByCtIdAndStatusAndCreator(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
 		updateSessionWithIssueId(sessions2, issueId,user);
-		Page<Session> sessions3 = sessionESRepository.findByCtIdAndStatusAndParticipants(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+		Page<Session> sessions3 = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
 		updateSessionWithIssueId(sessions3, issueId,user);
     }
     @Override
@@ -537,28 +544,30 @@ public class SessionServiceImpl implements SessionService {
 	 * @param session -- Request session by the user to join.
 	 */
 	private void addParticipantToSession(String user, Session session) {
-		Participant newParticipant = new ParticipantBuilder(user).setTimeJoined(new Date()).build();
-		 boolean currentlyParticipating = false;
+		Date currteDate = new Date();
+		Participant newParticipant = new ParticipantBuilder(user).setTimeJoined(currteDate).build();
+		boolean currentlyParticipating = false;
         if(!Objects.isNull(session.getParticipants())) {
         	for(Participant p : session.getParticipants()) {
         		if(p.getUser().equals(user)) {
         			currentlyParticipating = true;
+        			p.setTimeLeft(null);
+        			p.setTimeJoined(new Date());
+        			newParticipant = p;
         			break;
         		}
         	}
         	if(!currentlyParticipating) {
         		session.getParticipants().add(newParticipant);
-        		//Store participant info in sessionActivity
-    			sessionActivityService.addParticipantJoined(session, new Date(), newParticipant,user);
         	}
         } else {
         	List<Participant> participantsList = Lists.newArrayList();
         	participantsList.add(newParticipant);
         	session.setParticipants(participantsList);
-
-			sessionActivityService.addParticipantJoined(session, new Date(), newParticipant,user);
-
-        }
+        }        
+        //Store participant info in sessionActivity
+		if(Objects.nonNull(newParticipant))
+			sessionActivityService.addParticipantJoined(session, currteDate, newParticipant,user);
     }
 	
 	/**
@@ -634,6 +643,7 @@ public class SessionServiceImpl implements SessionService {
             sessionActivityService.addParticipantLeft(session, new Date(), leaver);
         }
 		Session savedSession = sessionRepository.save(session);
+		session.setStatusOrder(getStatusOrder(session.getStatus()));
 		sessionESRepository.save(savedSession);
     }
 
@@ -1119,7 +1129,7 @@ public class SessionServiceImpl implements SessionService {
 		CaptureUser user = null;
 		String userAvatarSrc = null, userLargeAvatarSrc = null;
 		Map<String, CaptureUser> usersMap = new HashMap<>();
-		if (Status.STARTED.equals(session.getStatus())) {
+		if (Status.STARTED.equals(session.getStatus()) || Status.COMPLETED.equals(session.getStatus())) {
             activeParticipantCount++; // If started then add the assignee
         }
 		
@@ -1279,74 +1289,90 @@ public class SessionServiceImpl implements SessionService {
 		setIssueTestStausAndTestSession(createdSession.getRelatedIssueIds(),createdSession.getCtId(),createdSession.getProjectId());
 	}
 
-	@Override
-	public void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId) {
-		if (relatedIssues != null) {
-			relatedIssues.forEach(issueId -> {
-				StringBuilder sessionIdBuilder = new StringBuilder();
-				String testingStatuKey = null;
-				int createdCount = 0, startedCount = 0, completedCount = 0;
-				Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(ctId, projectId, issueId, CaptureUtil.getPageRequest(0, 1000));
-				boolean emptyList =  sessions.getContent()!=null&&sessions.getContent().isEmpty() ? true :false;
-				if (Objects.nonNull(sessions.getContent())) {
-					for (Session session : sessions.getContent()) {
-						sessionIdBuilder.append(session.getId()).append(",");
+    @Override
+    public void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId) {
+        log.debug("setIssueTestStausAndTestSession method started ...");
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        String baseUri = host.getHost().getBaseUrl();
+        if (relatedIssues != null) {
+            CompletableFuture.runAsync(() -> {
+                log.debug("Master Thread::::::started with relatedIssues: {}, ctId: {}, projectId: {}",relatedIssues,ctId,projectId);
+                relatedIssues.forEach(issueId -> {
+                    CompletableFuture.runAsync(() -> {
+                        log.debug("Child Thread::::::started populate JIRA testing status for Issue: {}", issueId);
+                        StringBuilder sessionIdBuilder = new StringBuilder();
+                        String testingStatuKey = null;
+                        int createdCount = 0, startedCount = 0, completedCount = 0;
+                        Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(ctId, projectId, issueId, CaptureUtil.getPageRequest(0, 1000));
+                        boolean emptyList = sessions.getContent() != null && sessions.getContent().isEmpty() ? true : false;
+                        if (Objects.nonNull(sessions.getContent())) {
+                            for (Session session : sessions.getContent()) {
+                                sessionIdBuilder.append(session.getId()).append(",");
 
-						if (Status.CREATED.equals(session.getStatus())) {
-							createdCount++;
-						} else if (Status.COMPLETED.equals(session.getStatus())) {
-							completedCount++;
-						} else {
-							startedCount++;
-							// If a status other than created and completed appears, then it is in progress
-							testingStatuKey =TestingStatus.TestingStatusEnum.IN_PROGRESS.getI18nKey();
-						}
+                                if (Status.CREATED.equals(session.getStatus())) {
+                                    createdCount++;
+                                } else if (Status.COMPLETED.equals(session.getStatus())) {
+                                    completedCount++;
+                                } else {
+                                    startedCount++;
+                                    // If a status other than created and completed appears, then it is in progress
+                                    testingStatuKey = TestingStatus.TestingStatusEnum.IN_PROGRESS.getI18nKey();
+                                }
 
-					}
-					if(sessionIdBuilder.length()>0){
-						sessionIdBuilder.replace(sessionIdBuilder.length()-1,sessionIdBuilder.length(),"");
+                            }
+                            if (sessionIdBuilder.length() > 0) {
+                                sessionIdBuilder.replace(sessionIdBuilder.length() - 1, sessionIdBuilder.length(), "");
 
-					}
-				}
-				if(StringUtils.isBlank(testingStatuKey)) {
-					if (createdCount == 0 && startedCount == 0 && completedCount != 0) {
-						// If all the sessions are 'completed' then return complete
-						testingStatuKey =TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey();
-					} else if (emptyList || (createdCount != 0 && startedCount == 0  && completedCount == 0)) {
-						// If all the sessions are 'created' then return not started
-						testingStatuKey = TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey();
-					} else {
-						// Otherwise the sessions are either 'completed' or 'created'
-						testingStatuKey = TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey();
-					}
-				}
-				issueService.setIssueTestStausAndTestSession(String.valueOf(issueId),testingStatuKey,sessionIdBuilder.toString());
-			});
-		}
-	}
+                            }
+                        }
+                        if (StringUtils.isBlank(testingStatuKey)) {
+                            if (createdCount == 0 && startedCount == 0 && completedCount != 0) {
+                                // If all the sessions are 'completed' then return complete
+                                testingStatuKey = TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey();
+                            } else if (emptyList || (createdCount != 0 && startedCount == 0 && completedCount == 0)) {
+                                // If all the sessions are 'created' then return not started
+                                testingStatuKey = TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey();
+                            } else {
+                                // Otherwise the sessions are either 'completed' or 'created'
+                                testingStatuKey = TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey();
+                            }
+                        }
+                        captureContextIssueFieldsService.populateIssueTestStatusAndTestSessions(String.valueOf(issueId), i18n.getMessage(testingStatuKey), sessionIdBuilder.toString(), baseUri);
+                        log.debug("Child Thread::::::Ended populate JIRA testing status for Issue: {}", issueId);
+                    });
+
+                });
+                log.debug("Master Thread::::::Ended for relatedIssues: {}, ctId: {}, projectId: {}",relatedIssues,ctId,projectId);
+            });
+
+        }
+        log.debug("setIssueTestStausAndTestSession completed ...");
+    }
 	
 	@Override
 	public void updateProjectNameForSessions(String ctid, Long projectId, String projectName) {
 		CompletableFuture.runAsync(() -> {
 			int index = 0;
 			int maxResults = 20;
-			AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctid, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
-					Optional.empty(), true, index, maxResults);
-			for(Session session : pageResponse.getContent()) {
-				session.setProjectName(projectName);
-				sessionESRepository.save(session);
-			}
+			AggregatedPage<Session> pageResponse = updateProjectNameIntoES(ctid, projectId, projectName, index, maxResults);
 			index = index  + maxResults;
 			Long total = pageResponse.getTotalElements();
 			while(index < total.intValue()) {
-				pageResponse = sessionESRepository.searchSessions(ctid, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
-						Optional.empty(), true, index, maxResults);
-				for(Session session : pageResponse.getContent()) {
-					session.setProjectName(projectName);
-					sessionESRepository.save(session);
-				}
+				pageResponse = updateProjectNameIntoES(ctid, projectId, projectName, index, maxResults);
+				index = index + maxResults;
 			}
 		});
+	}
+	
+	private AggregatedPage<Session> updateProjectNameIntoES(String ctid, Long projectId, String projectName, int index, int maxResults) {
+		AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctid, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
+				Optional.empty(), true, index, maxResults);
+		for(Session session : pageResponse.getContent()) {
+			session.setProjectName(projectName);
+			sessionESRepository.save(session);
+		}
+		return pageResponse;
 	}
 
 	@Override
@@ -1386,31 +1412,73 @@ public class SessionServiceImpl implements SessionService {
 	
 	
 	private void loadSessionDataFromDBToES(AcHostModel acHostModel, String jobProgressId) throws HazelcastInstanceNotDefinedException {
-		CaptureProject project = null;
 		int maxResults = 20;
 		Long total = 0L;
 		int index = 0;
-		Page<Session> pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(0, maxResults));
-		for(Session session : pageResponse.getContent()) {
-			project = projectService.getCaptureProjectViaAddon(acHostModel, String.valueOf(session.getProjectId()));
-			session.setProjectName(project != null ? project.getName() : null);
-			sessionESRepository.save(session);
-		}
+		Page<Session> pageResponse = loadSessionDataIntoES(acHostModel, jobProgressId, index, maxResults);
 		total = pageResponse.getTotalElements();
 		index = index + maxResults;
 		jobProgressService.setTotalSteps(acHostModel, jobProgressId, total.intValue());
 		jobProgressService.addCompletedSteps(acHostModel, jobProgressId, pageResponse.getNumberOfElements());
 		while(index < total.intValue()) {
-			pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(index / maxResults , maxResults));
-			for(Session session : pageResponse.getContent()) {
-				project = projectService.getCaptureProjectViaAddon(acHostModel, String.valueOf(session.getProjectId()));
-				session.setProjectName(project != null ? project.getName() : null);
-				sessionESRepository.save(session);
-			}
-			total = pageResponse.getTotalElements();
+			pageResponse = loadSessionDataIntoES(acHostModel, jobProgressId, index, maxResults);
 			index = index + maxResults;
 			jobProgressService.addCompletedSteps(acHostModel, jobProgressId,  pageResponse.getNumberOfElements());
 		}
+	}
+	
+	private Page<Session> loadSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, int index, int maxResults) {
+		CaptureProject project = null;
+		CaptureUser user = null;
+		Page<Session> pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(index / maxResults, maxResults));
+		for(Session session : pageResponse.getContent()) {
+			project = projectService.getCaptureProjectViaAddon(acHostModel, String.valueOf(session.getProjectId()));
+			user = userService.findUserByKey(acHostModel, session.getAssignee());
+			session.setProjectName(project != null ? project.getName() : null);
+			session.setUserDisplayName(user != null ? user.getDisplayName() : null);
+			session.setStatusOrder(getStatusOrder(session.getStatus()));
+			sessionESRepository.save(session);
+		}
+		return pageResponse;
+	}
+	
+	private int getStatusOrder(Status status) {
+        switch (status) {
+            case CREATED:
+                return 1;
+            case STARTED:
+                return 2;
+            case PAUSED:
+                return 3;
+            case COMPLETED:
+                return 4;
+        }
+        return 0;
+    }
+	
+	@Override
+	public void updateUserDisplayNamesForSessions(String ctid, String userKey, String userDisplayName) {
+		CompletableFuture.runAsync(() -> {
+			int index = 0;
+			int maxResults = 20;
+			AggregatedPage<Session> pageResponse = updateUserDisplayNameIntoES(ctid, userKey, userDisplayName, index, maxResults);
+			index = index  + maxResults;
+			Long total = pageResponse.getTotalElements();
+			while(index < total.intValue()) {
+				pageResponse = updateUserDisplayNameIntoES(ctid, userKey, userDisplayName, index, maxResults);
+				index = index + maxResults;
+			}
+		});
+	}
+	
+	private AggregatedPage<Session> updateUserDisplayNameIntoES(String ctid, String userKey, String userDisplayName, int index, int maxResults) {
+		AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(),
+				Optional.empty(), true, index, maxResults);
+		for(Session session : pageResponse.getContent()) {
+			session.setUserDisplayName(userDisplayName);
+			sessionESRepository.save(session);
+		}
+		return pageResponse;
 	}
 
 }

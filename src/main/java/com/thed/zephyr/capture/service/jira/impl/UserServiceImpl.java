@@ -168,8 +168,12 @@ public class UserServiceImpl implements UserService{
     public CaptureUser findUserByKey(String key) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        String uri = host.getHost().getBaseUrl();
         AcHostModel acHostModel = (AcHostModel) host.getHost();
+        return findUserByKey(acHostModel, key);
+    }
+    
+    public CaptureUser findUserByKey(AcHostModel acHostModel, String key) {
+        String uri = acHostModel.getBaseUrl();
         CaptureUser captureUser = null;
         try {
             captureUser = tenantAwareCache.getOrElse(acHostModel, buildUserCacheKey(key), new Callable<CaptureUser>() {

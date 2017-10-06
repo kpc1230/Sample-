@@ -28,8 +28,6 @@ public interface IssueService {
 
     CaptureIssue createIssue(HttpServletRequest request, String testSessionId, IssueCreateRequest createRequest);
 
-    void setIssueTestStausAndTestSession(String issueKey, String testingStatus,String sessionids);
-
     void addComment(String issueKey, String comment) throws JSONException;
 
     CaptureIssue searchPropertiesByJql(String issueKey, String allProperties);

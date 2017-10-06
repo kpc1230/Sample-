@@ -1,5 +1,7 @@
 package com.thed.zephyr.capture.service.data;
 
+import java.io.UnsupportedEncodingException;
+
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.NoteFilter;
 import com.thed.zephyr.capture.model.NoteRequest;
@@ -11,11 +13,11 @@ import com.thed.zephyr.capture.model.util.NoteSearchList;
  */
 public interface NoteService {
 
-	NoteRequest create(NoteRequest noteSessionActivity) throws CaptureValidationException;
+	NoteRequest create(NoteRequest noteSessionActivity) throws CaptureValidationException, UnsupportedEncodingException;
 
 	NoteRequest getNoteSessionActivity(String noteSessionActivityId) throws CaptureValidationException;
 
-	NoteRequest update(NoteRequest noteSessionActivity) throws CaptureValidationException;
+	NoteRequest update(NoteRequest noteSessionActivity) throws CaptureValidationException, UnsupportedEncodingException ;
 
 	Boolean delete(String noteSessionActivityId) throws CaptureValidationException;
 

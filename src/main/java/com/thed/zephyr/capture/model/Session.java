@@ -32,7 +32,6 @@ public class Session  implements Comparable<Session>, Serializable{
     @DynamoDBIndexHashKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_PROJECT_ID)
     private String ctId;
     private String creator;
-    @MultiField(mainField = @Field(type = FieldType.String), otherFields = @InnerField(type = FieldType.String, suffix = "lower_case_sort", indexAnalyzer = "case_insensitive_sort", searchAnalyzer = "case_insensitive_sort"))
     private String assignee;
     @MultiField(mainField = @Field(type = FieldType.String), otherFields = @InnerField(type = FieldType.String, suffix = "lower_case_sort", indexAnalyzer = "case_insensitive_sort", searchAnalyzer = "case_insensitive_sort"))
     private String name;
@@ -61,6 +60,11 @@ public class Session  implements Comparable<Session>, Serializable{
     @DynamoDBTypeConverted(converter = ParticipantCollectionConverter.class)
     private Collection<Participant> participants;
     private String defaultTemplateId;
+    @MultiField(mainField = @Field(type = FieldType.String), otherFields = @InnerField(type = FieldType.String, suffix = "lower_case_sort", indexAnalyzer = "case_insensitive_sort", searchAnalyzer = "case_insensitive_sort"))
+    @DynamoDBIgnore
+    private String userDisplayName;
+    @DynamoDBIgnore
+    private int statusOrder;
 
     public Session() {
     }
@@ -227,6 +231,22 @@ public class Session  implements Comparable<Session>, Serializable{
 
 	public void setProjectName(String projectName) {
 		this.projectName = projectName;
+	}
+
+	public String getUserDisplayName() {
+		return userDisplayName;
+	}
+
+	public void setUserDisplayName(String userDisplayName) {
+		this.userDisplayName = userDisplayName;
+	}
+
+	public int getStatusOrder() {
+		return statusOrder;
+	}
+
+	public void setStatusOrder(int statusOrder) {
+		this.statusOrder = statusOrder;
 	}
 
 	/**

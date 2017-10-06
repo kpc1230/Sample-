@@ -50,7 +50,7 @@ public class SessionESRepositoryImpl {
 			boolQueryBuilder.must(projectQueryBuilder);
     	}
     	
-    	if(assignee.isPresent() && !StringUtils.isBlank(assignee.get())) { //Check if assignee is selected then add to query.
+    	if(assignee.isPresent() && !StringUtils.isEmpty(assignee.get())) { //Check if assignee is selected then add to query.
     		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.ASSIGNEE_FIELD, assignee.get());
 			boolQueryBuilder.must(assigneeQueryBuilder);
 
@@ -62,17 +62,30 @@ public class SessionESRepositoryImpl {
     		});
 			boolQueryBuilder.must(statusQueryBuilder);
     	}
-    	if(searchTerm.isPresent() && !StringUtils.isBlank(searchTerm.get())) { //Check if user typed any search term against session name then add to query.
+    	if(searchTerm.isPresent() && !StringUtils.isEmpty(searchTerm.get())) { //Check if user typed any search term against session name then add to query.
     		RegexpQueryBuilder statusQueryBuilder = QueryBuilders.regexpQuery(ApplicationConstants.SESSION_NAME_FIELD,  ".*" + searchTerm.get().toLowerCase() + ".*");
 			boolQueryBuilder.must(statusQueryBuilder);
     	}
     	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort("id").order(sortAscending ? SortOrder.ASC : SortOrder.DESC);
-    	if(sortField.isPresent() && !StringUtils.isBlank(sortField.get())) {
+    	if(sortField.isPresent() && !StringUtils.isEmpty(sortField.get())) {
     		String fieldToSort = sortField.get();
-    		if("sessionname".equalsIgnoreCase(fieldToSort)) fieldToSort = "name.lower_case_sort";
-    		if("created".equalsIgnoreCase(fieldToSort)) fieldToSort = "timeCreated";
-    		if("project".equalsIgnoreCase(fieldToSort)) fieldToSort = "projectName.lower_case_sort";
-    		if("assignee".equalsIgnoreCase(fieldToSort)) fieldToSort = "assignee.lower_case_sort";
+    		switch(fieldToSort.toLowerCase()) {
+	    		case ApplicationConstants.SORTFIELD_SESSION_NAME:
+	    			fieldToSort = ApplicationConstants.SORTFIELD_ES_SESSION_NAME;
+	    			break;
+	    		case ApplicationConstants.SORTFIELD_CREATED:
+	    			fieldToSort = ApplicationConstants.SORTFIELD_ES_CREATED;
+	    			break;
+	    		case ApplicationConstants.SORTFIELD_PROJECT:
+	    			fieldToSort = ApplicationConstants.SORTFIELD_ES_PROJECT;
+	    			break;
+		    	case ApplicationConstants.SORTFIELD_ASSIGNEE:
+					fieldToSort = ApplicationConstants.SORTFIELD_ES_ASSIGNEE;
+					break;
+				case ApplicationConstants.SORTFIELD_STATUS:
+	    			fieldToSort = ApplicationConstants.SORTFIELD_ES_STATUS;
+	    			break;
+			}
     		sortFieldBuilder = SortBuilders.fieldSort(fieldToSort).order(sortAscending ? SortOrder.ASC : SortOrder.DESC);
     	}
     	Pageable pageable = CaptureUtil.getPageRequest((startAt / size), size);

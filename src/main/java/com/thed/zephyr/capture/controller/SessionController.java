@@ -558,15 +558,15 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			Participant leftParticipant = new Participant();
+			UpdateResult updateResult = sessionService.leaveSession(loggedUserKey, loadedSession);
+			if (!updateResult.isValid()) {
+                return badRequest(updateResult.getErrorCollection());
+            }
 			if(Objects.nonNull(loadedSession.getParticipants())) {
 				List<Participant> listP = loadedSession.getParticipants().stream().filter(p -> p.getUser().equals(loggedUserKey)).collect(Collectors.toList());
 				if(listP.size() > 0)
 					leftParticipant = listP.get(0);
 			}
-			UpdateResult updateResult = sessionService.leaveSession(loggedUserKey, loadedSession);
-			if (!updateResult.isValid()) {
-                return badRequest(updateResult.getErrorCollection());
-            }
 			sessionService.update(updateResult);
 			log.info("End of leaveSession()");
 			return ResponseEntity.ok(leftParticipant);
@@ -742,10 +742,15 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
-			if (assignee != null && !permissionService.canBeAssignedSession(assignee, captureProject)) {
+			if (!StringUtils.isEmpty(assignee) && !permissionService.canBeAssignedSession(assignee, captureProject)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{assignee}));
 			}
+			if (StringUtils.isEmpty(assignee)) {
+				throw new CaptureValidationException(i18n.getMessage("session.cud.field.assignee.empty"));
+			}
 			loadedSession.setAssignee(assignee);//set assignee to session
+			CaptureUser user = userService.findUserByKey(assignee);
+			if(user != null) loadedSession.setUserDisplayName(user.getDisplayName());
 			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loadedSession, assignee);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());

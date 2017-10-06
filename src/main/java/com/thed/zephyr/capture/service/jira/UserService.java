@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.jira;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
 
 /**
@@ -22,5 +23,7 @@ public interface UserService {
     CaptureUser findUserByName(String username);
 
     CaptureUser findUserByKey(String key);
+    
+    CaptureUser findUserByKey(AcHostModel acHostModel, String key);
 
 }

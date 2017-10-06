@@ -21,5 +21,5 @@ public interface CaptureContextIssueFieldsService {
 
     void removeRaisedIssue(Session loadedSession, String issueKey);
 
-    void populateIssueTestStatusAndTestSessions(String issueKey,String testSessions,String testStatus);
+    void populateIssueTestStatusAndTestSessions(String issueKey,String testStatus,String testSessions, String baseUrl);
 }
