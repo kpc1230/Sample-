@@ -436,6 +436,9 @@ public class SessionServiceImpl implements SessionService {
 				}
 			}
 		}
+		if(Objects.isNull(raisedDuring)) {
+			return null;
+		}
 		return constructSessionDto(loggedUserKey, raisedDuring, false);
 	}
 
