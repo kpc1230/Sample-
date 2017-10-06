@@ -192,8 +192,14 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         }
         String testSessionsPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueKey + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_TEST_SESSIONS.toLowerCase().replace(" ", "_");
         try {
-            StringBuilder sb = new StringBuilder(testSessions);
-            setEntityProperties(sb, baseUrl, testSessionsPath);
+            if(StringUtils.isNotBlank(testSessions)){
+                StringBuilder sb = new StringBuilder(testSessions);
+                setEntityProperties(sb, baseUrl, testSessionsPath);
+            }else {
+                removeEntityProperties(baseUrl, testSessionsPath);
+            }
+
+
         } catch (Exception e) {
             log.error("Error populateIssueTestStatusAndTestSessions",e);
         }
@@ -213,5 +219,20 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         String resourceUrl = targetUrl.toString();
         HttpEntity<String> requestUpdate = new HttpEntity<>(request.toString(),httpHeaders);
         atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.PUT,requestUpdate,Void.class);
+    }
+    private void removeEntityProperties(String baseUrl, String path) throws JSONException {
+        URI targetUrl= UriComponentsBuilder.fromUriString(baseUrl)
+                .path(path)
+                .build()
+                .encode()
+                .toUri();
+        log.debug("removeEntityProperties --> {}",targetUrl);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        JSONObject request = new JSONObject();
+      //  request.put("content",sb.toString());
+        String resourceUrl = targetUrl.toString();
+        HttpEntity<String> requestUpdate = new HttpEntity<>(request.toString(),httpHeaders);
+        atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.DELETE,requestUpdate,Void.class);
     }
 }
