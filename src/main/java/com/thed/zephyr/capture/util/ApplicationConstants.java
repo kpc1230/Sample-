@@ -194,4 +194,6 @@ public class ApplicationConstants {
     public static final String SORTFIELD_ES_PROJECT = "projectName.lower_case_sort";
     public static final String SORTFIELD_ES_ASSIGNEE = "userDisplayName.lower_case_sort";
     public static final String SORTFIELD_ES_STATUS = "statusOrder";
+
+    public static final String FEEDBACK_SEND_EMAIL = "feedback.send.email";
 }

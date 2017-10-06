@@ -1,0 +1,5 @@
+<div style="border: 1px solid #EEE;padding: 5px;background: #EFEFEF;border-radius: 5px;">
+     <p>Name  :$name</p>
+     <p>Email :$email</p>
+     <p>Description : $description</p>
+</div>
