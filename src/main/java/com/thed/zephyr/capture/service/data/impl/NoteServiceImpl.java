@@ -1,8 +1,5 @@
 package com.thed.zephyr.capture.service.data.impl;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,9 +46,8 @@ public class NoteServiceImpl implements NoteService {
 	
 
 	@Override
-	public NoteRequest create(NoteRequest noteRequest) throws CaptureValidationException, UnsupportedEncodingException {
-		String decodedData = URLDecoder.decode(noteRequest.getNoteData(), Charset.defaultCharset().name());
-		List<String> tagList = CaptureUtil.parseTags(decodedData);
+	public NoteRequest create(NoteRequest noteRequest) throws CaptureValidationException {
+		List<String> tagList = CaptureUtil.parseTags(noteRequest.getNoteData());
 		Set<String> tags = null;
 		if(tagList != null && !tagList.isEmpty()){
 			tags = tagList.stream().collect(Collectors.toSet());
@@ -66,7 +62,7 @@ public class NoteServiceImpl implements NoteService {
 						new Date(),
 						noteRequest.getUser(),
 						noteRequest.getProjectId(),
-						decodedData,
+						noteRequest.getNoteData(),
 						resolution,
 						tags
 				);
@@ -87,14 +83,13 @@ public class NoteServiceImpl implements NoteService {
 	}
 
 	@Override
-	public NoteRequest update(NoteRequest noteRequest) throws CaptureValidationException, UnsupportedEncodingException  {
-		String decodedData = URLDecoder.decode(noteRequest.getNoteData(), Charset.defaultCharset().name());
+	public NoteRequest update(NoteRequest noteRequest) throws CaptureValidationException  {
 		NoteSessionActivity existing = (NoteSessionActivity)validateAndGetSessionActivity(noteRequest);
 		//For update, rawNoteData should be used.
 		NoteSessionActivity.Resolution resolution = existing.getResolutionState();
-		if(!decodedData.equals(existing.getNoteData())){
+		if(!noteRequest.getNoteData().equals(existing.getNoteData())){
 //			Set<String> existingTags = ((NoteSessionActivity)existing).getTags();
-			Set<String> tags = CaptureUtil.parseTagsAsSet(decodedData);
+			Set<String> tags = CaptureUtil.parseTagsAsSet(noteRequest.getNoteData());
 			if(CollectionUtils.isEmpty(tags)){
 				resolution = NoteSessionActivity.Resolution.NON_ACTIONABLE;
 			}else if (tags.size() > 0){
@@ -102,7 +97,7 @@ public class NoteServiceImpl implements NoteService {
 					resolution = NoteSessionActivity.Resolution.INITIAL;
 				}
 			}
-			((NoteSessionActivity)existing).setNoteData(decodedData);
+			((NoteSessionActivity)existing).setNoteData(noteRequest.getNoteData());
 			((NoteSessionActivity)existing).setTags(tags);
 
 		}
