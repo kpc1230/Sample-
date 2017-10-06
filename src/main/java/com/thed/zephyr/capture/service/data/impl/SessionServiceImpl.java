@@ -473,7 +473,7 @@ public class SessionServiceImpl implements SessionService {
 		updateSessionWithIssueId(sessions, issueId,user);
 		Page<Session> sessions2 = sessionESRepository.findByCtIdAndStatusAndCreator(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
 		updateSessionWithIssueId(sessions2, issueId,user);
-		Page<Session> sessions3 = sessionESRepository.findByCtIdAndStatusAndParticipants(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+		Page<Session> sessions3 = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
 		updateSessionWithIssueId(sessions3, issueId,user);
     }
     @Override
