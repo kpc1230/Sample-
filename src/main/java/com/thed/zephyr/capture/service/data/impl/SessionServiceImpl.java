@@ -191,10 +191,13 @@ public class SessionServiceImpl implements SessionService {
                 return new UpdateResult(deactivateResult.getErrorCollection(), session);
             }
 			//make active session status paused
-			Session activeSession = activeSessionResult.getSession();
-			activeSession.setStatus(Status.PAUSED);
-			UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
-			update(updateResult);
+			if(Objects.nonNull(activeSessionResult.getSession())) {
+				Session activeSession = activeSessionResult.getSession();
+				activeSession.setStatus(Status.PAUSED);
+				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
+				update(updateResult);
+				sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
+			}
         }
         session.setStatus(Status.STARTED);
         return new UpdateResult(validateUpdate(loggedUserKey, session), deactivateResult, loggedUserKey, true, false);

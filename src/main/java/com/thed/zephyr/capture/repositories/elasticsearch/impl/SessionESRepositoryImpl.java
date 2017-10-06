@@ -66,7 +66,7 @@ public class SessionESRepositoryImpl {
     		RegexpQueryBuilder statusQueryBuilder = QueryBuilders.regexpQuery(ApplicationConstants.SESSION_NAME_FIELD,  ".*" + searchTerm.get().toLowerCase() + ".*");
 			boolQueryBuilder.must(statusQueryBuilder);
     	}
-    	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort("id").order(sortAscending ? SortOrder.ASC : SortOrder.DESC);
+    	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort(ApplicationConstants.SORTFIELD_ES_CREATED).order(SortOrder.DESC);
     	if(sortField.isPresent() && !StringUtils.isEmpty(sortField.get())) {
     		String fieldToSort = sortField.get();
     		switch(fieldToSort.toLowerCase()) {
