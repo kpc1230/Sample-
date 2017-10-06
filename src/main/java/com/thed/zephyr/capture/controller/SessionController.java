@@ -558,15 +558,15 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			Participant leftParticipant = new Participant();
+			UpdateResult updateResult = sessionService.leaveSession(loggedUserKey, loadedSession);
+			if (!updateResult.isValid()) {
+                return badRequest(updateResult.getErrorCollection());
+            }
 			if(Objects.nonNull(loadedSession.getParticipants())) {
 				List<Participant> listP = loadedSession.getParticipants().stream().filter(p -> p.getUser().equals(loggedUserKey)).collect(Collectors.toList());
 				if(listP.size() > 0)
 					leftParticipant = listP.get(0);
 			}
-			UpdateResult updateResult = sessionService.leaveSession(loggedUserKey, loadedSession);
-			if (!updateResult.isValid()) {
-                return badRequest(updateResult.getErrorCollection());
-            }
 			sessionService.update(updateResult);
 			log.info("End of leaveSession()");
 			return ResponseEntity.ok(leftParticipant);

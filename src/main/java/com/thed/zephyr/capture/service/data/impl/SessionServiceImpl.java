@@ -544,28 +544,30 @@ public class SessionServiceImpl implements SessionService {
 	 * @param session -- Request session by the user to join.
 	 */
 	private void addParticipantToSession(String user, Session session) {
-		Participant newParticipant = new ParticipantBuilder(user).setTimeJoined(new Date()).build();
-		 boolean currentlyParticipating = false;
+		Date currteDate = new Date();
+		Participant newParticipant = new ParticipantBuilder(user).setTimeJoined(currteDate).build();
+		boolean currentlyParticipating = false;
         if(!Objects.isNull(session.getParticipants())) {
         	for(Participant p : session.getParticipants()) {
         		if(p.getUser().equals(user)) {
         			currentlyParticipating = true;
+        			p.setTimeLeft(null);
+        			p.setTimeJoined(new Date());
+        			newParticipant = p;
         			break;
         		}
         	}
         	if(!currentlyParticipating) {
         		session.getParticipants().add(newParticipant);
-        		//Store participant info in sessionActivity
-    			sessionActivityService.addParticipantJoined(session, new Date(), newParticipant,user);
         	}
         } else {
         	List<Participant> participantsList = Lists.newArrayList();
         	participantsList.add(newParticipant);
         	session.setParticipants(participantsList);
-
-			sessionActivityService.addParticipantJoined(session, new Date(), newParticipant,user);
-
-        }
+        }        
+        //Store participant info in sessionActivity
+		if(Objects.nonNull(newParticipant))
+			sessionActivityService.addParticipantJoined(session, currteDate, newParticipant,user);
     }
 	
 	/**
@@ -1127,7 +1129,7 @@ public class SessionServiceImpl implements SessionService {
 		CaptureUser user = null;
 		String userAvatarSrc = null, userLargeAvatarSrc = null;
 		Map<String, CaptureUser> usersMap = new HashMap<>();
-		if (Status.STARTED.equals(session.getStatus())) {
+		if (Status.STARTED.equals(session.getStatus()) || Status.COMPLETED.equals(session.getStatus())) {
             activeParticipantCount++; // If started then add the assignee
         }
 		

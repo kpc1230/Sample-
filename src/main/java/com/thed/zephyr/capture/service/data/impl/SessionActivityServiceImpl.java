@@ -65,8 +65,6 @@ public class SessionActivityServiceImpl implements SessionActivityService {
             }
         }
         if (Objects.nonNull(participantToRemove)) {
-            session.getParticipants().remove(participantToRemove);
-            session.setParticipants(session.getParticipants().size() > 0 ? session.getParticipants() : null);
             participantToRemove.setTimeLeft(timestamp);
             sessionActivity = new UserLeftSessionActivity(
                     session.getId(), session.getCtId(), participantToRemove.getTimeLeft(), participantToRemove.getUser(), session.getProjectId(), participantToRemove);
