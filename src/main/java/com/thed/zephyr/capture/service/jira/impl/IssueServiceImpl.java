@@ -8,8 +8,6 @@ import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldVal
 import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
-import com.atlassian.jira.rest.client.internal.json.IssueJsonParser;
-import com.atlassian.util.concurrent.Promise;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.IssueRaisedBean;
@@ -20,6 +18,7 @@ import com.thed.zephyr.capture.model.jira.CaptureResolution;
 import com.thed.zephyr.capture.model.jira.TestSectionResponse;
 import com.thed.zephyr.capture.model.jira.TestingStatus;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
+import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
@@ -185,11 +184,11 @@ public class IssueServiceImpl implements IssueService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String ctdId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-        Session raisedDuring = sessionService.getSessionRaisedDuring(ctdId, issue.getId());
+        SessionDto raisedDuringSessionDto = sessionService.getSessionRaisedDuring(host.getUserKey().get(), ctdId, issue.getId());
         SessionDtoSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(host.getUserKey().get(), ctdId, issue.getProjectId(), issue.getId());
         TestSectionResponse testSectionResponse = new TestSectionResponse();
         testSectionResponse.setSessions(sessionByRelatedIssueId.getContent());
-        testSectionResponse.setRaisedDuring(raisedDuring);
+        testSectionResponse.setRaisedDuring(raisedDuringSessionDto);
         CaptureEnvironment captureEnvironment = new CaptureEnvironment();
         if (issue.getProperties() != null) {
             captureEnvironment.setUserAgent(issue.getProperties().getOrDefault(CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME,"-"));

@@ -414,7 +414,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public Session getSessionRaisedDuring(String ctId, Long raisedIssueId) {
+	public SessionDto getSessionRaisedDuring(String loggedUserKey, String ctId, Long raisedIssueId) {
 		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndIssueId(ctId, raisedIssueId, CaptureUtil.getPageRequest(0, 1000));
 		List<Session> content = sessions != null?sessions.getContent():new ArrayList<>();
 		SessionSearchList result = new SessionSearchList();
@@ -436,7 +436,7 @@ public class SessionServiceImpl implements SessionService {
 				}
 			}
 		}
-		return raisedDuring;
+		return constructSessionDto(loggedUserKey, raisedDuring, false);
 	}
 
 	@Override

@@ -224,7 +224,7 @@ public interface SessionService {
 	 */
 	List<CaptureUser> fetchAllAssignees();
 
-	Session getSessionRaisedDuring(String ctId, Long raisedIssueId);
+	SessionDto getSessionRaisedDuring(String loggedUserKey, String ctId, Long raisedIssueId);
 
 	SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String ctId, Long projectId, Long relatedIssueId);
 
