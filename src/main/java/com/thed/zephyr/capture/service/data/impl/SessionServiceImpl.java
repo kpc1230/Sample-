@@ -191,7 +191,7 @@ public class SessionServiceImpl implements SessionService {
                 return new UpdateResult(deactivateResult.getErrorCollection(), session);
             }
 			//make active session status paused
-			if(Objects.nonNull(activeSessionResult.getSession())) {
+			if(Objects.nonNull(activeSessionResult.getSession()) && loggedUserKey.equals(activeSessionResult.getSession().getAssignee())) {
 				Session activeSession = activeSessionResult.getSession();
 				activeSession.setStatus(Status.PAUSED);
 				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
@@ -226,6 +226,14 @@ public class SessionServiceImpl implements SessionService {
                 if (!deactivateResult.isValid()) {
                     errorCollection.addAllErrors(deactivateResult.getErrorCollection());
                 }
+                //make active session status paused
+    			if(Objects.nonNull(activeSessionResult.getSession()) && loggedUserKey.equals(activeSessionResult.getSession().getAssignee())) {
+    				Session activeSession = activeSessionResult.getSession();
+    				activeSession.setStatus(Status.PAUSED);
+    				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
+    				update(updateResult);
+    				sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
+    			}
             }
         }
         if (errorCollection.hasErrors()) {
