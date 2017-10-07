@@ -21,6 +21,7 @@ public class ApplicationConstants {
     public static final String TEMPLATE_TABLE_NAME = "template";
     public static final String VARIABLE_TABLE_NAME = "variable";
     public static final String SESSION_ACTIVITY_TABLE_NAME = "session_activity";
+    public static final String DYNAMODB_TABEL_NAME_PREFIX = "dynamodb.table.name.prefix";
 
     /** DynamoDB table throughput **/
     public static final long TENANT_TABLE_READ_CAPACITY_UNITS = 2l;

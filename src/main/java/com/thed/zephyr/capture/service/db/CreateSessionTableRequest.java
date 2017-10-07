@@ -16,9 +16,9 @@ public class CreateSessionTableRequest {
 
     }
 
-    public CreateTableRequest build(){
+    public CreateTableRequest build(String sessionTableName){
         CreateTableRequest createTableRequest = new CreateTableRequest()
-                .withTableName(ApplicationConstants.SESSION_TABLE_NAME)
+                .withTableName(sessionTableName)
                 .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits(ApplicationConstants.SESSION_TABLE_READ_CAPACITY_UNITS)
                         .withWriteCapacityUnits(ApplicationConstants.SESSION_TABLE_WRITE_CAPACITY_UNITS))

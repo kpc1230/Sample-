@@ -7,6 +7,7 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.client.transport.TransportClient;
@@ -65,11 +66,11 @@ public class EsConfig {
             //Give to ES time to create index
             Thread.sleep(500);
         }
-        client.admin().indices().close(new CloseIndexRequest(EsClusterName));
-        client.admin().indices().prepareUpdateSettings(EsClusterName).setSettings(Settings.builder().loadFromSource(XContentFactory.jsonBuilder()
-        		.startObject().startObject("analysis").startObject("analyzer").startObject("case_insensitive_sort")
-        		.field("tokenizer", "keyword").field("filter", "lowercase").string()).build()).get();
-        client.admin().indices().open(new OpenIndexRequest(EsClusterName));
+        client.admin().indices().close(new CloseIndexRequest(ApplicationConstants.ES_INDEX_NAME));
+        client.admin().indices().prepareUpdateSettings(ApplicationConstants.ES_INDEX_NAME).setSettings(Settings.builder().loadFromSource(XContentFactory.jsonBuilder()
+                .startObject().startObject("analysis").startObject("analyzer").startObject("case_insensitive_sort")
+                .field("tokenizer", "keyword").field("filter", "lowercase").string()).build()).get();
+        client.admin().indices().open(new OpenIndexRequest(ApplicationConstants.ES_INDEX_NAME));
 
         return client; 
     }

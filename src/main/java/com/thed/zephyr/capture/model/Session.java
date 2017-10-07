@@ -21,7 +21,7 @@ import java.util.*;
 /**
  * Created by aliakseimatsarski on 8/14/17.
  */
-@Document(indexName = "capture", type = "session")
+@Document(indexName = ApplicationConstants.ES_INDEX_NAME, type = "session")
 @DynamoDBTable(tableName = ApplicationConstants.SESSION_TABLE_NAME)
 public class Session  implements Comparable<Session>, Serializable{
 

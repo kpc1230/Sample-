@@ -16,9 +16,9 @@ public class CreateTenantTableRequest {
 
     }
 
-    public CreateTableRequest build(){
+    public CreateTableRequest build(String tabelName){
         CreateTableRequest createTableRequest = new CreateTableRequest()
-                .withTableName(ApplicationConstants.TENANT_TABLE_NAME)
+                .withTableName(tabelName)
                 .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits(ApplicationConstants.TENANT_TABLE_READ_CAPACITY_UNITS)
                         .withWriteCapacityUnits(ApplicationConstants.TENANT_TABLE_WRITE_CAPACITY_UNITS))

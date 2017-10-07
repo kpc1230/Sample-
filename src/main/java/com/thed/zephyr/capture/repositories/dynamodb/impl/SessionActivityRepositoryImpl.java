@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.thed.zephyr.capture.service.db.DynamoDBTableNameResolver;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,10 +42,13 @@ public class SessionActivityRepositoryImpl {
     private DynamoDB dynamodb;
     @Autowired
     private DynamoDBMapper dynamoDBMapper;
+    @Autowired
+    private DynamoDBTableNameResolver dynamoDBTableNameResolver;
 
 
     public SessionActivity findOne(String id){
-        Table table = dynamodb.getTable(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME);
+        String tableName = dynamoDBTableNameResolver.getTableNameWithPrefix(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME);
+        Table table = dynamodb.getTable(tableName);
         Item item = table.getItem("id", id);
         if(item == null){
         	return null;
@@ -69,7 +73,8 @@ public class SessionActivityRepositoryImpl {
     	}
     	querySpec.withQueryFilters(queryFilters.toArray(new QueryFilter[queryFilters.size()]));
         List<SessionActivity> result = new ArrayList<>();
-        Table table = dynamodb.getTable(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME);
+        String tableName = dynamoDBTableNameResolver.getTableNameWithPrefix(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME);
+        Table table = dynamodb.getTable(tableName);
         Index index = table.getIndex(ApplicationConstants.GSI_SESSIONID_TIMESTAMP);
         ItemCollection<QueryOutcome> activityItemList = index.query(querySpec);
         IteratorSupport<Item, QueryOutcome> iterator = activityItemList.iterator();

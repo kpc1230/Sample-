@@ -17,7 +17,6 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
 
     @Autowired
     private Logger log;
-
     @Autowired
     private AcHostModelRepository acHostModelRepository;
 

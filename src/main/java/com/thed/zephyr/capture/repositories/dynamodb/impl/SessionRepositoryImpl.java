@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.thed.zephyr.capture.service.db.DynamoDBTableNameResolver;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -41,9 +42,10 @@ public class SessionRepositoryImpl {
 
     @Autowired
     private DynamoDB dynamodb;
-    
     @Autowired
     private DynamoDBMapper dynamoDBMapper;
+	@Autowired
+	private DynamoDBTableNameResolver dynamoDBTableNameResolver;
     
     private Map<String, String> strFieldNames = new HashMap<>();    
     /**
@@ -199,7 +201,8 @@ public class SessionRepositoryImpl {
      * @return -- Returns the fetched data against the query.
      */
     private ItemCollection<QueryOutcome> fetchData(QuerySpec querySpec) {
-    	Table table = dynamodb.getTable(ApplicationConstants.SESSION_TABLE_NAME);
+		String tableName = dynamoDBTableNameResolver.getTableNameWithPrefix(ApplicationConstants.SESSION_TABLE_NAME);
+    	Table table = dynamodb.getTable(tableName);
     	Index index = table.getIndex(ApplicationConstants.GSI_CT_ID_PROJECT_ID);
     	return index.query(querySpec);
     }

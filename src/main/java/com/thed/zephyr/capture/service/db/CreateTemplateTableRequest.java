@@ -17,9 +17,9 @@ public class CreateTemplateTableRequest {
 
     }
 
-    public CreateTableRequest build(){
+    public CreateTableRequest build(String templateTableName){
         CreateTableRequest createTableRequest = new CreateTableRequest()
-                .withTableName(ApplicationConstants.TEMPLATE_TABLE_NAME)
+                .withTableName(templateTableName)
                 .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits(ApplicationConstants.TEMPLATE_TABLE_READ_CAPACITY_UNITS)
                         .withWriteCapacityUnits(ApplicationConstants.TEMPLATE_TABLE_WRITE_CAPACITY_UNITS))

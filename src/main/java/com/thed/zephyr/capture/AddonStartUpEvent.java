@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 
@@ -26,6 +27,10 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
     private Logger log;
     @Autowired
     private AmazonDynamoDB amazonDynamoDB;
+    @Autowired
+    private Environment environment;
+    @Autowired
+    private DynamoDBTableNameResolver dynamoDBTableNameResolver;
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
@@ -35,116 +40,102 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         createSessionTableIfNotExist(tables, dynamoDB);
         createTemplateTableIfNotExist(tables, dynamoDB);
         createSessionActivityTableIfNotExist(tables, dynamoDB);
-        createNoteTableIfNotExist(tables, dynamoDB);
         createVariableTableIfNotExist(tables, dynamoDB);
     }
 
 	private void createTenantTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
+        String tenantTableName = dynamoDBTableNameResolver.getTableNameWithPrefix(ApplicationConstants.TENANT_TABLE_NAME);
         for (Table table:tables){
-            if(StringUtils.equals(ApplicationConstants.TENANT_TABLE_NAME, table.getTableName())){
+            if(StringUtils.equals(tenantTableName, table.getTableName())){
                 log.debug("The table:{} already created, skip creation", table.getTableName());
                 return;
             }
         }
         log.info("Creating Tenant DynamoDB table ...");
         try {
-            CreateTableRequest createTableRequest = new CreateTenantTableRequest().build();
+            CreateTableRequest createTableRequest = new CreateTenantTableRequest().build(tenantTableName);
             Table table = dynamoDB.createTable(createTableRequest);
             table.waitForActive();
             log.info("The Tenant table was successfully created");
         } catch (InterruptedException e) {
-            log.error("Error during creation DynamoDB table:{}", ApplicationConstants.TENANT_TABLE_NAME);
+            log.error("Error during creation DynamoDB table:{}", tenantTableName);
         }
     }
 
     private void createSessionTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
+        String sessionTableName = dynamoDBTableNameResolver.getTableNameWithPrefix(ApplicationConstants.SESSION_TABLE_NAME);
         for (Table table:tables){
-            if(StringUtils.equals(ApplicationConstants.SESSION_TABLE_NAME, table.getTableName())){
+            if(StringUtils.equals(sessionTableName, table.getTableName())){
                 log.debug("The table:{} already created, skip creation", table.getTableName());
                 return;
             }
         }
         log.info("Creating Session DynamoDB table ...");
         try {
-            CreateTableRequest createTableRequest = new CreateSessionTableRequest().build();
+            CreateTableRequest createTableRequest = new CreateSessionTableRequest().build(sessionTableName);
             Table table = dynamoDB.createTable(createTableRequest);
             table.waitForActive();
             log.info("The Session table was successfully created");
         } catch (InterruptedException e) {
-            log.error("Error during creation DynamoDB table:{}", ApplicationConstants.SESSION_TABLE_NAME);
+            log.error("Error during creation DynamoDB table:{}", sessionTableName);
         }
     }
 
     private void createTemplateTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
+        String templateTableName = dynamoDBTableNameResolver.getTableNameWithPrefix(ApplicationConstants.TEMPLATE_TABLE_NAME);
         for (Table table:tables){
-            if(StringUtils.equals(ApplicationConstants.TEMPLATE_TABLE_NAME, table.getTableName())){
+            if(StringUtils.equals(templateTableName, table.getTableName())){
                 log.debug("The table:{} already created, skip creation", table.getTableName());
                 return;
             }
         }
         log.info("Creating Template DynamoDB table ...");
         try {
-            CreateTableRequest createTableRequest = new CreateTemplateTableRequest().build();
+            CreateTableRequest createTableRequest = new CreateTemplateTableRequest().build(templateTableName);
             Table table = dynamoDB.createTable(createTableRequest);
             table.waitForActive();
             log.info("The Template table was successfully created");
         } catch (InterruptedException e) {
-            log.error("Error during creation DynamoDB table:{}", ApplicationConstants.TEMPLATE_TABLE_NAME);
+            log.error("Error during creation DynamoDB table:{}", templateTableName);
         }
     }
 
 
     private void createSessionActivityTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
+        String sessionActivityTableName = dynamoDBTableNameResolver.getTableNameWithPrefix(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME);
         for (Table table : tables) {
-            if (StringUtils.equals(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME, table.getTableName())) {
+            if (StringUtils.equals(sessionActivityTableName, table.getTableName())) {
                 log.debug("The table:{} already created, skip creation", table.getTableName());
                 return;
             }
         }
         log.info("Creating SessionActivity DynamoDB table ...");
         try {
-            CreateTableRequest createTableRequest = new CreateSessionActivityTableRequest().build();
+            CreateTableRequest createTableRequest = new CreateSessionActivityTableRequest().build(sessionActivityTableName);
             Table table = dynamoDB.createTable(createTableRequest);
             table.waitForActive();
             log.info("The SessionActivity table was successfully created");
         } catch (InterruptedException e) {
-            log.error("Error during creation DynamoDB table:{}", ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME);
-        }
-    }
-
-    private void createNoteTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB){
-        for (Table table : tables) {
-            if (StringUtils.equals(ApplicationConstants.NOTE_TABLE_NAME, table.getTableName())) {
-                log.debug("The table:{} already created, skip creation", table.getTableName());
-                return;
-            }
-        }
-        log.info("Creating Note DynamoDB table ...");
-        try {
-            CreateTableRequest createTableRequest = new CreateNoteTableRequest().build();
-            Table table = dynamoDB.createTable(createTableRequest);
-            table.waitForActive();
-            log.info("The Note table was successfully created");
-        } catch (InterruptedException e) {
-            log.error("Error during creation DynamoDB table:{}", ApplicationConstants.NOTE_TABLE_NAME);
+            log.error("Error during creation DynamoDB table:{}", sessionActivityTableName);
         }
     }
 
     private  void createVariableTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB){
+        String variableTableName = dynamoDBTableNameResolver.getTableNameWithPrefix(ApplicationConstants.VARIABLE_TABLE_NAME);
         for (Table table : tables) {
-            if (StringUtils.equals(ApplicationConstants.VARIABLE_TABLE_NAME, table.getTableName())) {
+            if (StringUtils.equals(variableTableName, table.getTableName())) {
                 log.debug("The table:{} already created, skip creation", table.getTableName());
                 return;
             }
         }
         log.info("Creating Variable DynamoDB table ...");
         try {
-            CreateTableRequest createTableRequest = new CreateVariableTableRequest().build();
+            CreateTableRequest createTableRequest = new CreateVariableTableRequest().build(variableTableName);
             Table table = dynamoDB.createTable(createTableRequest);
             table.waitForActive();
             log.info("The Variable table was successfully created");
         } catch (InterruptedException e) {
-            log.error("Error during creation DynamoDB table:{}", ApplicationConstants.VARIABLE_TABLE_NAME);
+            log.error("Error during creation DynamoDB table:{}", variableTableName);
         }
     }
 }

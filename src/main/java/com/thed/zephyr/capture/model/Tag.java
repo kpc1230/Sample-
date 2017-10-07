@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -11,7 +12,7 @@ import java.util.TreeSet;
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
-@Document(indexName = "capture", type = "tag")
+@Document(indexName = ApplicationConstants.ES_INDEX_NAME, type = "tag")
 public class Tag implements Comparable<Tag>{
     // Static tag types with special meanings
     public static final String QUESTION = "#?";

@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 import org.springframework.data.annotation.Id;
@@ -14,7 +15,7 @@ import java.util.Set;
 /**
  * Created by aliakseimatsarski on 8/14/17.
  */
-@Document(indexName = "capture", type = "note")
+@Document(indexName = ApplicationConstants.ES_INDEX_NAME, type = "note")
 final public class Note {
 
     @Id

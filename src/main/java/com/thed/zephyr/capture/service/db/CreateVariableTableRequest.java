@@ -16,9 +16,9 @@ public class CreateVariableTableRequest {
 
     }
 
-    public CreateTableRequest build(){
+    public CreateTableRequest build(String variableTableName){
         CreateTableRequest createTableRequest = new CreateTableRequest()
-                .withTableName(ApplicationConstants.VARIABLE_TABLE_NAME)
+                .withTableName(variableTableName)
                 .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits(ApplicationConstants.VARIABLE_TABLE_READ_CAPACITY_UNITS)
                         .withWriteCapacityUnits(ApplicationConstants.VARIABLE_TABLE_WRITE_CAPACITY_UNITS))

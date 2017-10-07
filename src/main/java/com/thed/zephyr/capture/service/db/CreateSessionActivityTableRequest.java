@@ -16,9 +16,9 @@ public class CreateSessionActivityTableRequest {
 
     }
 
-    public CreateTableRequest build(){
+    public CreateTableRequest build(String sessionActivityTableName){
         CreateTableRequest createTableRequest = new CreateTableRequest()
-                .withTableName(ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME)
+                .withTableName(sessionActivityTableName)
                 .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits(ApplicationConstants.SESSION_ACTIVITY_TABLE_READ_CAPACITY_UNITS)
                         .withWriteCapacityUnits(ApplicationConstants.SESSION_ACTIVITY_TABLE_WRITE_CAPACITY_UNITS))
