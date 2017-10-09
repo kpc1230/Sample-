@@ -741,6 +741,7 @@ public class SessionController extends CaptureAbstractController{
 			isLocked = true;
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
+			String oldAssingee = loadedSession.getAssignee();
 			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
 			if (!StringUtils.isEmpty(assignee) && !permissionService.canBeAssignedSession(assignee, captureProject)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{assignee}));
@@ -757,7 +758,7 @@ public class SessionController extends CaptureAbstractController{
             }
 			sessionService.update(updateResult);
 			//Save assigned user to the session as activity.
-			sessionActivityService.addAssignee(loadedSession, new Date(), loggedUserKey, assignee);
+			sessionActivityService.addAssignee(loadedSession, new Date(), oldAssingee, assignee);
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession, false);
 			log.info("End of assignSession()");
 			return ResponseEntity.ok(sessionDto);
@@ -923,7 +924,7 @@ public class SessionController extends CaptureAbstractController{
 				throw new CaptureValidationException(i18n.getMessage("base.url.invalid.message", new Object[]{baseUrl}));
 			}
 			SessionResult sessionResult = sessionService.getActiveSession(userKey, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
-			if(!sessionResult.isValid() || sessionResult.getSession().getStatus() == Status.COMPLETED) {
+			if(!sessionResult.isValid() || sessionResult.getSession().getStatus() != Status.STARTED) {
 				return ResponseEntity.ok().build();
 			}
 			log.info("End of getActiveSessionUser()");
