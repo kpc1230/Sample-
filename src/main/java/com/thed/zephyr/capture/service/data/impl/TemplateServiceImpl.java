@@ -144,9 +144,9 @@ public class TemplateServiceImpl implements TemplateService {
 	private TemplateSearchList convert(Page<Template> templatePage, Integer offset, Integer limit) {
 		List<TemplateRequest> returnList = new ArrayList<>();
 		if (templatePage != null && templatePage.getContent().size() > 0) {
-			Project project = getProject(templatePage.getContent().get(0).getProjectId());
 			Map<String, CaptureUser> userMap = getUserMap(templatePage.getContent());
 			templatePage.getContent().forEach(template -> {
+				Project project = getProject(template.getProjectId());
 				CaptureUser user = userMap.get(template.getCreatedBy());
 				if(permissionService.canUseTemplate(user.getKey(), template.getProjectId())){
 					returnList.add(TemplateBuilder.createTemplateRequest(template, project, user));
