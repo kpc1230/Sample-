@@ -926,7 +926,7 @@ public class SessionController extends CaptureAbstractController{
 				throw new CaptureValidationException(i18n.getMessage("base.url.invalid.message", new Object[]{baseUrl}));
 			}
 			SessionResult sessionResult = sessionService.getActiveSession(userKey, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
-			if(!sessionResult.isValid() || sessionResult.getSession().getStatus() != Status.STARTED) {
+			if(!sessionResult.isValid() || !Status.STARTED.name().equals(sessionResult.getSession().getStatus().name())) {
 				return ResponseEntity.ok().build();
 			}
 			log.info("End of getActiveSessionUser()");
