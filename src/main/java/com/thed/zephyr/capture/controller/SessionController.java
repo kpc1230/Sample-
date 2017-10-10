@@ -654,6 +654,8 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult);
 			//Save removed raised issue information as activity.
 			sessionActivityService.removeRaisedIssue(loadedSession, captureIssue, dateTime, loggedUserKey);
+			//This is to removed raisedinsession from issue entity
+			sessionService.addUnRaisedInSession(loggedUserKey,issueKey,updateResult.getSession());
 			log.info("End of unraiseIssueSessionRequest()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {

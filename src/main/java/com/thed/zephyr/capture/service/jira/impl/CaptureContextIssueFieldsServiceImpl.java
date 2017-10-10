@@ -176,7 +176,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
 
             atlassianHostRestClients.authenticatedAsAddon().delete(targetUrl);
         } catch (Exception e) {
-            log.error("Error adding RaisedIn Issue to Session:{}", loadedSession.getId());
+            log.error("Error removeRaisedIssue to Session:{}", loadedSession.getId());
         }
     }
 
