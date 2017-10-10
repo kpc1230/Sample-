@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -263,142 +262,36 @@ public class CaptureUtil {
 	private static String getAtlassiaonWikiformatted(String line) {
 		StringBuilder finalData = new StringBuilder();
 		String[] words = line.split("[ ]+");
-		boolean isBlockQuote = false;
 		for(String word : words) {
 			String tagName = null;
 			String cssClass = null;
-			switch(word) {
-				case Tag.QUESTION: 
-					tagName = Tag.QUESTION_TAG_NAME;
-					cssClass = "tag-question";
-					break;
-				case Tag.FOLLOWUP:
-					cssClass = "tag-followUp";
-					tagName = Tag.FOLLOWUP_TAG_NAME;
-					break;
-				case Tag.ASSUMPTION: 
-					tagName = Tag.ASSUMPTION_TAG_NAME;
-					cssClass = "tag-assumption";
-					break;
-				case Tag.IDEA:
-					cssClass = "tag-idea";
-					tagName = Tag.IDEA_TAG_NAME;
-					break;
-				default:
-					if(line.startsWith("bq.") && !isBlockQuote) {
-						finalData.append("<blockquote>");
-						isBlockQuote = true;
-					}
-					getTextFormatted(word, finalData);
-			}
+			if(word.length() >= 2) { //replacing if start tag is there.
+				String startTag = word.substring(0, 2);
+				switch(startTag) {
+					case Tag.QUESTION: 
+						tagName = Tag.QUESTION_TAG_NAME;
+						cssClass = "tag-question";
+						break;
+					case Tag.FOLLOWUP:
+						cssClass = "tag-followUp";
+						tagName = Tag.FOLLOWUP_TAG_NAME;
+						break;
+					case Tag.ASSUMPTION: 
+						tagName = Tag.ASSUMPTION_TAG_NAME;
+						cssClass = "tag-assumption";
+						break;
+					case Tag.IDEA:
+						cssClass = "tag-idea";
+						tagName = Tag.IDEA_TAG_NAME;	
+				}
+			}	
 			if(Objects.nonNull(tagName) && Objects.nonNull(cssClass)) {
-				finalData.append(" <span class=\"note-tag ").append(cssClass).append("\"></span>");
+				finalData.append(" <span class=\"note-tag ").append(cssClass).append("\"></span>").append(word.length() > 2 ? word.substring(2) : "");
+			} else {
+				finalData.append(" " + word);
 			}
-		}
-		if(isBlockQuote) {
-			finalData.append("</blockquote>");
 		}
 		return finalData.toString();
-	}
-	
-	public static String getTextFormatted(String word, StringBuilder finalData) {
-		Stack<Character> stack = new Stack<>();
-		int wordLen = word.length();
-		String str = "";
-		for(int i=0; i < wordLen; i++) {
-			String tagName = null;
-			String cssClass = null;
-			char ch = word.charAt(i);
-			switch(ch) {
-				case '*':
-					if(!stack.isEmpty() && stack.peek() == ch) {
-						stack.pop();
-						finalData.append("<b>").append(str).append("</b>");
-					} else {
-						stack.push(ch);
-						finalData.append(str);
-					}
-					str = "";
-					break;
-				case '_':
-					if(!stack.isEmpty() && stack.peek() == ch) {
-						stack.pop();
-						finalData.append("<em>").append(str).append("</em>");
-					} else {
-						stack.push(ch);
-						finalData.append(str);
-					}
-					str = "";
-					break;
-				case '+':
-					if(!stack.isEmpty() && stack.peek() == ch) {
-						stack.pop();
-						finalData.append("<ins>").append(str).append("</ins>");
-					} else {
-						stack.push(ch);
-						finalData.append(str);
-					}
-					str = "";
-					break;
-				case '^':
-					if(!stack.isEmpty() && stack.peek() == ch) {
-						stack.pop();
-						finalData.append("<sup>").append(str).append("</sup>");
-					} else {
-						stack.push(ch);
-						finalData.append(str);
-					}
-					str = "";
-					break;
-				case '~':
-					if(!stack.isEmpty() && stack.peek() == ch) {
-						stack.pop();
-						finalData.append("<sub>").append(str).append("</sub>");
-					} else {
-						stack.push(ch);
-						finalData.append(str);
-					}
-					str = "";
-					break;
-				case '-':
-					if(!stack.isEmpty() && stack.peek() == ch) {
-						stack.pop();
-						finalData.append("<del>").append(str).append("</del>");
-					} else {
-						stack.push(ch);
-						finalData.append(str);
-					}
-					str = "";
-					break;
-				default:
-					str = str + ch;
-					switch(str) {
-						case Tag.QUESTION: 
-							tagName = Tag.QUESTION_TAG_NAME;
-							cssClass = "tag-question";
-							break;
-						case Tag.FOLLOWUP:
-							cssClass = "tag-followUp";
-							tagName = Tag.FOLLOWUP_TAG_NAME;
-							break;
-						case Tag.ASSUMPTION: 
-							tagName = Tag.ASSUMPTION_TAG_NAME;
-							cssClass = "tag-assumption";
-							break;
-						case Tag.IDEA:
-							cssClass = "tag-idea";
-							tagName = Tag.IDEA_TAG_NAME;
-					}
-					if(Objects.nonNull(tagName) && Objects.nonNull(cssClass) && i == 1) {
-						finalData.append(" <span class=\"note-tag ").append(cssClass).append("\"></span>");
-						str = str.substring(0, str.length() - 2);
-					}
-			}
-		}
-		if(str.length() > 0) {
-			finalData.append(str);
-		}
-		return finalData.append(" ").toString();
 	}
 	
 	private static String getTagData(String noteData, String tag) {
