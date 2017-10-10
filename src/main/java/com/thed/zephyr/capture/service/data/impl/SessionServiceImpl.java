@@ -195,6 +195,7 @@ public class SessionServiceImpl implements SessionService {
 				Session activeSession = activeSessionResult.getSession();
 				activeSession.setStatus(Status.PAUSED);
 				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
+				clearActiveSessionFromCache(loggedUserKey);
 				update(updateResult);
 				sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
 			}
