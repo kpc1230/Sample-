@@ -32,7 +32,7 @@ public class JobProgressController {
     private Logger log;
 	
 	@Autowired
-	private CaptureI18NMessageSource i18n;
+	private CaptureI18NMessageSource captureI18NMessageSource;
 	
 	@GetMapping(value = "/{jobProgressTicket}")
 	public ResponseEntity<?> getJobProgress(@PathVariable String jobProgressTicket, @AuthenticationPrincipal AtlassianHostUser hostUser) {
@@ -41,7 +41,7 @@ public class JobProgressController {
 			AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
 			Map<String, Object> progressMap = jobProgressService.checkJobProgress(acHostModel, jobProgressTicket);
             if (null == progressMap) {
-            	String errorMessage = i18n.getMessage("capture.job.progress.status.error");
+            	String errorMessage = captureI18NMessageSource.getMessage("capture.job.progress.status.error");
                 log.error("Can't get JobProgress from cache jobProgressTicket: " + jobProgressTicket);
                 throw new CaptureRuntimeException(errorMessage);
             }			

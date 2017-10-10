@@ -92,7 +92,7 @@ public class SessionServiceImpl implements SessionService {
 	@Autowired
 	private ProjectService projectService;
 	@Autowired
-	private CaptureI18NMessageSource i18n;
+	private CaptureI18NMessageSource captureI18NMessageSource;
 	@Autowired
 	private SessionESRepository sessionESRepository;
 	@Autowired
@@ -166,7 +166,7 @@ public class SessionServiceImpl implements SessionService {
 	public void deleteSession(String sessionId) {
 		Session session = getSession(sessionId);
 		if(Objects.isNull(session)) {
-			throw new CaptureRuntimeException(i18n.getMessage("session.delete.already"));
+			throw new CaptureRuntimeException(captureI18NMessageSource.getMessage("session.delete.already"));
 		}
 		sessionRepository.delete(sessionId);
 		sessionESRepository.delete(sessionId);
@@ -215,10 +215,10 @@ public class SessionServiceImpl implements SessionService {
         DeactivateResult deactivateResult = null;
         if (!Objects.isNull(session) && !StringUtils.isEmpty(loggedUserKey)) {
             if (!session.isShared()) {
-                errorCollection.addError(i18n.getMessage("session.join.not.shared", new Object[]{session.getName()}));
+                errorCollection.addError(captureI18NMessageSource.getMessage("session.join.not.shared", new Object[]{session.getName()}));
             }
             if (!Status.STARTED.equals(session.getStatus())) {
-                errorCollection.addError(i18n.getMessage("session.join.not.started" , new Object[]{session.getName()}));
+                errorCollection.addError(captureI18NMessageSource.getMessage("session.join.not.started" , new Object[]{session.getName()}));
             }
             SessionResult activeSessionResult = getActiveSession(loggedUserKey, null); // Deactivate current active session
             if (activeSessionResult.isValid()) {
@@ -283,7 +283,7 @@ public class SessionServiceImpl implements SessionService {
         CaptureIssue issue = issueService.getCaptureIssue(issueKey);
         boolean isPresent = false;
         if (Objects.isNull(issue)) {
-            throw new CaptureValidationException(i18n.getMessage("session.issue.invalid", new Object[]{issueKey}));
+            throw new CaptureValidationException(captureI18NMessageSource.getMessage("session.issue.invalid", new Object[]{issueKey}));
         }
         if (!Objects.isNull(session.getIssuesRaised())) {
             for(IssueRaisedBean issueRaisedBean : session.getIssuesRaised()) {
@@ -293,7 +293,7 @@ public class SessionServiceImpl implements SessionService {
             	}
             }
             if(!isPresent) {
-            	errorCollection.addError(i18n.getMessage("validation.service.unraise.notexist"));
+            	errorCollection.addError(captureI18NMessageSource.getMessage("validation.service.unraise.notexist"));
             }
         }
         if (errorCollection.hasErrors()) {
@@ -803,32 +803,32 @@ public class SessionServiceImpl implements SessionService {
         } else {
             loadedSession = sessionRepository.findOne(newSession.getId()); // Load in the session to check that it still exists
             if (Objects.isNull(loadedSession)) {
-                errorCollection.addError(i18n.getMessage("session.invalid.id", new Object[]{newSession.getId()}));
+                errorCollection.addError(captureI18NMessageSource.getMessage("session.invalid.id", new Object[]{newSession.getId()}));
             } else {
                 if (!Objects.isNull(newSession.getAssignee()) && !newSession.getAssignee().equals(loadedSession.getAssignee()) && Status.STARTED.equals(newSession.getStatus())) { // If the assignee has changed, then the new session should be paused
-                    errorCollection.addError(i18n.getMessage("session.assigning.active.session.violation"));
+                    errorCollection.addError(captureI18NMessageSource.getMessage("session.assigning.active.session.violation"));
                 }
                 if (Status.COMPLETED.equals(loadedSession.getStatus()) && !Status.COMPLETED.equals(newSession.getStatus())) { // Status can't go backwards from COMPLETED
-                    errorCollection.addError(i18n.getMessage("session.reopen.completed.violation"));
+                    errorCollection.addError(captureI18NMessageSource.getMessage("session.reopen.completed.violation"));
                 }
                 if (!newSession.getCreator().equals(loadedSession.getCreator())) { // Check that certain fields haven't changed - creator + time created (paranoid check)
-                    errorCollection.addError(i18n.getMessage("session.change.creator.violation"));
+                    errorCollection.addError(captureI18NMessageSource.getMessage("session.change.creator.violation"));
                 }
                 if (!loadedSession.getTimeCreated().equals(newSession.getTimeCreated())) {
-                    errorCollection.addError(i18n.getMessage("session.change.timecreated.violation"));
+                    errorCollection.addError(captureI18NMessageSource.getMessage("session.change.timecreated.violation"));
                 }
             }
             if (!newSession.getStatus().equals(loadedSession.getStatus()) && Status.COMPLETED.equals(newSession.getStatus())) { // If we just completed the session, we want to update the time finished
                 if (newSession.getTimeFinished() == null) {
                 	newSession.setTimeFinished(new Date());
                 } else {
-                    errorCollection.addError(i18n.getMessage("session.change.timefinished.violation"));
+                    errorCollection.addError(captureI18NMessageSource.getMessage("session.change.timefinished.violation"));
                 }
             }
         }
         int participantLimit = Integer.parseInt(dynamicProperty.getStringProp(ApplicationConstants.PARTICIPANT_LIMIT_DYNAMIC_KEY, "10").get());
         if(!Objects.isNull(newSession.getParticipants()) && newSession.getParticipants().size() > participantLimit) {
-        	errorCollection.addError(i18n.getMessage("session.relatedissues.exceed", new Object[]{newSession.getParticipants().size(), participantLimit}));
+        	errorCollection.addError(captureI18NMessageSource.getMessage("session.relatedissues.exceed", new Object[]{newSession.getParticipants().size(), participantLimit}));
         }
         if (errorCollection.hasErrors()) {
             return new UpdateResult(errorCollection, newSession);
@@ -1194,12 +1194,12 @@ public class SessionServiceImpl implements SessionService {
 			}
 
             return new FullSessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, permissions, estimatedTimeSpent,
-                    i18n.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc,
+            		captureI18NMessageSource.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc,
                     user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeFinished(), session.getTimeLogged(), CaptureUtil.createSessionLink(session.getId()));
         } else {
             Integer issusRaisedCount = Objects.nonNull(session.getIssuesRaised()) ? session.getIssuesRaised().size() : 0;
 			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, estimatedTimeSpent,
-					i18n.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc,
+					captureI18NMessageSource.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc,
 					userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeLogged(), CaptureUtil.createSessionLink(session.getId()));
 		}
 	}
@@ -1352,7 +1352,7 @@ public class SessionServiceImpl implements SessionService {
                                 testingStatuKey = TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey();
                             }
                         }
-                        captureContextIssueFieldsService.populateIssueTestStatusAndTestSessions(String.valueOf(issueId), i18n.getMessage(testingStatuKey), sessionIdBuilder.toString(), baseUri);
+                        captureContextIssueFieldsService.populateIssueTestStatusAndTestSessions(String.valueOf(issueId), captureI18NMessageSource.getMessage(testingStatuKey), sessionIdBuilder.toString(), baseUri);
                         log.debug("Child Thread::::::Ended populate JIRA testing status for Issue: {}", issueId);
                     });
 
@@ -1396,20 +1396,20 @@ public class SessionServiceImpl implements SessionService {
 			try {
 				if (!lockService.tryLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA, 5)){
 	                log.warn("Re-index executions process already in progress.");
-	                jobProgressService.setErrorMessage(acHostModel, jobProgressId, i18n.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.reindex.executions.inprogress"));
+	                jobProgressService.setErrorMessage(acHostModel, jobProgressId, captureI18NMessageSource.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.reindex.executions.inprogress"));
 	            }
 				if(log.isDebugEnabled()) log.debug("Re-Indexing Session type data begin:");
 				deleteSessionDataForCtid(ctid);
 				loadSessionDataFromDBToES(acHostModel, jobProgressId);				
 				jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
-				String message = i18n.getMessage("capture.job.progress.status.success.message");
+				String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
 				jobProgressService.setMessage(acHostModel, jobProgressId, message);
 				lockService.deleteLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);				
 			} catch(Exception ex) {
 				log.error("Error in reindexSessionDataIntoES() - ", ex);
 				try {
 					jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_FAILED, jobProgressId);
-					String errorMessage = i18n.getMessage("capture.common.internal.server.error");
+					String errorMessage = captureI18NMessageSource.getMessage("capture.common.internal.server.error");
 	                jobProgressService.setErrorMessage(acHostModel, jobProgressId, errorMessage);
 	                lockService.deleteLock(acHostModel.getCtId(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);
 				} catch (HazelcastInstanceNotDefinedException e) {
