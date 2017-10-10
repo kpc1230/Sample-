@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Created by niravshah on 8/28/17.
@@ -61,12 +62,12 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
             StringBuilder sb = new StringBuilder().append(browser.browser).append(" ").append(browser.version);
             String userAgentPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_USERAGENT_NAME.toLowerCase().replace(" ","_");
             try {
-                setEntityProperties(sbUserAgent, baseUri, userAgentPath);
+                setEntityPropertiesByThread(sbUserAgent, baseUri, userAgentPath);
 
                 if (StringUtils.isNotBlank(browser.browser)) {
                     sb = new StringBuilder().append(browser.browser).append(" ").append(browser.version);
                     String browserPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_BROWSER_NAME.toLowerCase().replace(" ","_");
-                    setEntityProperties(sb, baseUri, browserPath);
+                    setEntityPropertiesByThread(sb, baseUri, browserPath);
                 }
                 // Update OS
                 UserAgentSniffer.SniffedOS os = UserAgentSniffer.sniffOS(userAgent);
@@ -82,29 +83,29 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                     }
 
                     String osPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTUREE_OS_NAME.toLowerCase().replace(" ","_");
-                    setEntityProperties(sb, baseUri, osPath);
+                    setEntityPropertiesByThread(sb, baseUri, osPath);
                 }
 
                 if (context != null) {
                     String url = context.get("url");
                     if (StringUtils.isNotBlank(url)) {
                         String urlPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_URL_NAME.toLowerCase().replace(" ","_");
-                        setEntityProperties(new StringBuilder(url), baseUri, urlPath);
+                        setEntityPropertiesByThread(new StringBuilder(url), baseUri, urlPath);
                     }
                     String screenRes = context.get("screenRes");
                     if (StringUtils.isNotBlank(screenRes)) {
                         String screenPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_SCREEN_RES_NAME.toLowerCase().replace(" ","_");
-                        setEntityProperties(new StringBuilder(screenRes), baseUri, screenPath);
+                        setEntityPropertiesByThread(new StringBuilder(screenRes), baseUri, screenPath);
                     }
                     String jQueryVersion = context.get("jQueryVersion");
                     if (StringUtils.isNotBlank(jQueryVersion)) {
                         String jQueryPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_JQUERY_VERSION_NAME.toLowerCase().replace(" ","_");
-                        setEntityProperties(new StringBuilder(jQueryVersion), baseUri, jQueryPath);
+                        setEntityPropertiesByThread(new StringBuilder(jQueryVersion), baseUri, jQueryPath);
                     }
                     String documentMode = context.get("documentMode");
                     if (StringUtils.isNotBlank(documentMode)) {
                         String documentPath = JiraConstants.REST_API_BASE_ISSUE  + "/" + issue.getKey() + "/properties"+ "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_DOCUMENT_MODE.toLowerCase().replace(" ","_");
-                        setEntityProperties(new StringBuilder(documentMode), baseUri, documentPath);
+                        setEntityPropertiesByThread(new StringBuilder(documentMode), baseUri, documentPath);
                     }
                 }
             } catch(Exception e) {
@@ -134,7 +135,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                 }
             }
         } catch (Exception e) {
-            log.error("Error Retrieving Context Parameters", e);
+            log.warn("Error Retrieving Context Parameters", e.getMessage());
         }
         return StringUtils.EMPTY;
     }
@@ -205,6 +206,18 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         }
         log.debug("populateIssueTestStatusAndTestSessions Completed");
     }
+    private void setEntityPropertiesByThread(StringBuilder sb, String baseUrl, String path) {
+        CompletableFuture.runAsync(() -> {
+            log.debug("Adding JIRA Issue context field Started.. baseUri :{}, path : {} , value : {} ", baseUrl, path, sb);
+            try {
+                setEntityProperties(sb, baseUrl, path);
+            } catch (Exception e) {
+                log.error("Error populating Context Parameters", e);
+            }
+            log.debug("Adding JIRA Issue context field Completed.. baseUri :{}, path : {} , value : {} ", baseUrl, path, sb);
+        });
+    }
+
     private void setEntityProperties(StringBuilder sb, String baseUrl, String path) throws JSONException {
         URI targetUrl= UriComponentsBuilder.fromUriString(baseUrl)
                 .path(path)

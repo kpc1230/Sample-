@@ -52,7 +52,7 @@ public class AttachmentController {
         final JSONArray json;
         try {
             json = new JSONArray(requestBody);
-            String fullIconUrl = attachmentService.addAttachments(issueKey,testSessionId,json);
+            String fullIconUrl = attachmentService.addAttachmentsByThreads(issueKey,testSessionId,json);
             return new ResponseEntity<>(new AttachmentResponse(fullIconUrl),HttpStatus.OK);
         } catch(CaptureRuntimeException e) {
             log.error("Error adding attachment",e);
