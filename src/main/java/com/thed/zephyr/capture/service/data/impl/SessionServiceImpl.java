@@ -509,7 +509,7 @@ public class SessionServiceImpl implements SessionService {
                 for(IssueRaisedBean issueRaisedBean : issues) {
                 	if(!issuesRaisedMap.containsKey(issueRaisedBean.getIssueId())) {
                 		session.getIssuesRaised().add(issueRaisedBean);
-                		sessionActivityService.addRaisedIssue(session, issueRaisedBean, dateTime, loggedUser); //Save removed raised issue information as activity.
+                		sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser); //Save removed raised issue information as activity.
             			issueRaisedIds.add(issueRaisedBean.getIssueId());
                 	}
                 }
@@ -555,7 +555,7 @@ public class SessionServiceImpl implements SessionService {
 			}
 			save(session, new ArrayList<>());
 			if (issueAdded) {
-				sessionActivityService.addRaisedIssue(session, issueRaisedBean, dateTime, loggedUser); //Save removed raised issue information as activity.
+				sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser); //Save removed raised issue information as activity.
 			}
 
 		});

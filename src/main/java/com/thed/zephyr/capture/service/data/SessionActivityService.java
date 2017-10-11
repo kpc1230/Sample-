@@ -25,8 +25,6 @@ public interface SessionActivityService {
 
    // Boolean deleteNote(String noteSessionActivityId);
 
-    SessionActivity addRaisedIssue(Session session, Issue issue, Date timeRaised, String creator);
-
     SessionActivity removeRaisedIssue(Session session, CaptureIssue captureIssue, Date timeRaised, String creator);
 
     SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author);
@@ -45,8 +43,8 @@ public interface SessionActivityService {
      * @return -- Returns the saved session activity object.
      */
     SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignee);
-    
-    SessionActivity addRaisedIssue(Session session, IssueRaisedBean issueRaisedBean, Date timeRaised, String creator);
+
+    SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator);
 
     SessionActivity getSessionActivity(String id);
     
