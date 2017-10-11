@@ -7,6 +7,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.exception.HazelcastInstanceNotDefinedException;
@@ -655,7 +656,7 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUser = getUser();
 			validateInputParameters(projectId, status);
 			boolean sortAscending = sortOrder.orElse(ApplicationConstants.SORT_ASCENDING).equalsIgnoreCase(ApplicationConstants.SORT_ASCENDING);
-			SessionDtoSearchList sessionDtoSearchList = sessionService.searchSession(loggedUser, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
+			SessionDtoSearchList sessionDtoSearchList = sessionService.searchSession(loggedUser, projectId, assignee, translateStatuses(status), searchTerm, sortField, sortAscending, startAt, size);
 			log.info("End of searchSession()");
 			return ResponseEntity.ok(sessionDtoSearchList);
 		} catch(CaptureValidationException ex) {
@@ -748,10 +749,12 @@ public class SessionController extends CaptureAbstractController{
 	public ResponseEntity<?> fetchSessionStatuses() {
 		log.info("Start of fetchSessionStatuses()");
 		List<Status> statusList = sessionService.getSessionStatuses();
-		List<String> convertedStatusList = new ArrayList<>(statusList.size());
+		List<String> convertedStatusList = new ArrayList<>(statusList.size() + 1);
 		statusList.stream().forEach(status -> {
-			convertedStatusList.add(status.name());
+			String name = status.name();
+			convertedStatusList.add(StringUtils.capitalize(name.toLowerCase()));
 		});
+		convertedStatusList.add(ApplicationConstants.INCOMEPLETE_STATUS);
 		log.info("End of fetchSessionStatuses()");
 		return ResponseEntity.ok(convertedStatusList);
 	}
@@ -912,8 +915,12 @@ public class SessionController extends CaptureAbstractController{
 		}
 		if(status.isPresent()) {
 			status.get().stream().forEach(paramStatus -> {
-				Status fetchedStatus = Status.valueOf(paramStatus);
-				if(Objects.isNull(fetchedStatus)) throw new CaptureRuntimeException(i18n.getMessage("session.status.invalid"));
+				if(!ApplicationConstants.INCOMEPLETE_STATUS.equals(paramStatus)) {
+					paramStatus = StringUtils.uncapitalize(paramStatus).toUpperCase();
+					Status fetchedStatus = Status.valueOf(paramStatus);
+					if(Objects.isNull(fetchedStatus)) 
+						throw new CaptureRuntimeException(i18n.getMessage("session.status.invalid"));
+				}
 			});
 		}
 	}
@@ -973,4 +980,20 @@ public class SessionController extends CaptureAbstractController{
 		}
 
 	}
+	
+	private Optional<List<String>> translateStatuses(Optional<List<String>> statuses) {
+        Set<String> toReturn = Sets.newHashSet();
+        if (statuses.isPresent() && statuses.get().size() > 0) {
+            for (String status : statuses.get()) {
+                if (ApplicationConstants.INCOMEPLETE_STATUS.equals(status)) {
+                	toReturn.add(Status.CREATED.name());
+                    toReturn.add(Status.STARTED.name());
+                    toReturn.add(Status.PAUSED.name());
+                } else {
+                	toReturn.add(StringUtils.uncapitalize(status).toUpperCase());
+                }
+            }
+        }
+        return Optional.of(new ArrayList<>(toReturn));
+    }
 }

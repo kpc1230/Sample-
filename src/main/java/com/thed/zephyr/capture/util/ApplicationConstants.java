@@ -197,4 +197,6 @@ public class ApplicationConstants {
     public static final String SORTFIELD_ES_STATUS = "statusOrder";
 
     public static final String FEEDBACK_SEND_EMAIL = "feedback.send.email";
+    
+    public static final String INCOMEPLETE_STATUS = "Incomplete";
 }
