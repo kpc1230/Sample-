@@ -7,6 +7,7 @@ import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.Attachment;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.input.AttachmentInput;
+import com.atlassian.jira.rest.client.internal.json.AttachmentJsonParser;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.PermissionService;
@@ -186,30 +187,15 @@ public class AttachmentServiceImpl implements AttachmentService {
                 File imageDataTempFile = null;
                 try {
                     imageDataTempFile = byteArrayToTempFile(filename,decodedImageData);
-                    addAttachmentToIssue(issue,imageDataTempFile);
+                    addAttachmentToIssue(issue,imageDataTempFile,testSessionId,host.getHost().getBaseUrl());
                 } catch (CaptureRuntimeException e) {
                     log.debug("Error creating temp file for attachment: " + e);
                     throw e;
                 }   catch (Exception e) {
                     log.debug("Error creating temp file for attachment: " + e);
                     throw e;
-                } finally {
-                  /*  if(imageDataTempFile != null) {
-                        imageDataTempFile.delete();
-                    }*/
                 }
             }
-        }
-        if(StringUtils.isNotBlank(testSessionId)) {
-            Session session = sessionService.getSession(testSessionId);
-            Issue updatedIssue = getJiraRestClient.getIssueClient().getIssue(issueKey).claim();
-            Attachment jiraAttachment = getLastUploadedAttachmentByIssue(updatedIssue);
-            com.thed.zephyr.capture.model.jira.Attachment attachment = new
-                    com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
-                    jiraAttachment.getAuthor().getName(), jiraAttachment.getCreationDate().getMillis(),
-                    jiraAttachment.getSize(), jiraAttachment.getMimeType(),
-                    jiraAttachment.getContentUri());
-            sessionActivityService.addAttachment(session, updatedIssue, attachment, new Date(jiraAttachment.getCreationDate().getMillis()), attachment.getAuthor());
         }
         return CaptureUtil.getFullIconUrl(issue,host);
     }
@@ -252,9 +238,9 @@ public class AttachmentServiceImpl implements AttachmentService {
         }
     }
 
-    public void addAttachmentToIssue(Issue issue, File imageDataTempFile) throws IOException {
+    public void addAttachmentToIssue(Issue issue, File imageDataTempFile,String testSessionId,String baseUrl) throws IOException {
         CompletableFuture.runAsync(() -> {
-            log.debug("Thread addAttachmentToIssue started for the issue key : {} , with Attachment : {} ", issue.getKey(), imageDataTempFile.getName());
+            log.debug("Thread addAttachmentToIssue started for the issue key : {} , with Attachment : {} , baseUrl : {} ", issue.getKey(), imageDataTempFile.getName(),baseUrl);
             LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
             String response;
             HttpStatus httpStatus = HttpStatus.CREATED;
@@ -267,23 +253,42 @@ public class AttachmentServiceImpl implements AttachmentService {
 
                 org.springframework.http.HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new org.springframework.http.HttpEntity<>(map, headers);
                 response = atlassianHostRestClients.authenticatedAsAddon().postForObject(issue.getAttachmentsUri(), requestEntity, String.class);
-
+                if(response!=null){
+                    JSONArray jsonArray = new JSONArray(response);
+                    if (jsonArray != null && jsonArray.length() > 0) {
+                        JSONObject attachement=(JSONObject)jsonArray.get(0);
+                        AttachmentJsonParser attachmentJsonParser = new AttachmentJsonParser();
+                        Attachment jiraAttachment = attachmentJsonParser.parse(attachement);
+                        if(StringUtils.isNotBlank(testSessionId)) {
+                            Session session = sessionService.getSession(testSessionId);
+                            try{
+                               com.thed.zephyr.capture.model.jira.Attachment attachment = new
+                                        com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
+                                        jiraAttachment.getAuthor().getName(), jiraAttachment.getCreationDate().getMillis(),
+                                        jiraAttachment.getSize(), jiraAttachment.getMimeType(),
+                                        jiraAttachment.getContentUri());
+                                sessionActivityService.addAttachment(session, issue, attachment, new Date(jiraAttachment.getCreationDate().getMillis()), attachment.getAuthor());
+                            } catch (Exception exp) {
+                                 log.error("Exception while adding the attachment to session activity "+exp.getMessage(),exp);
+                            }
+                        }
+                    }
+                }
             } catch (HttpStatusCodeException e) {
                 httpStatus = HttpStatus.valueOf(e.getStatusCode().value());
                 response = e.getResponseBodyAsString();
-                log.error("Exception while Attachment upload to JIRA. the issue key : {} , with Attachment : {} ", issue.getKey(), imageDataTempFile.getName());
+                log.error("Exception while Attachment upload to JIRA. the issue key : {} , with Attachment : {} , baseUrl : {} ", issue.getKey(), imageDataTempFile.getName(),baseUrl);
                 log.error("httpStatus : {} , response : {} ", httpStatus, response, e);
             } catch (Exception e) {
                 httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
                 response = e.getMessage();
-                log.error("Exception while Attachment upload to JIRA. the issue key : {} , with Attachment : {} ", issue.getKey(), imageDataTempFile.getName());
+                log.error("Exception while Attachment upload to JIRA. the issue key : {} , with Attachment : {} , baseUrl : {} ", issue.getKey(), imageDataTempFile.getName(),baseUrl);
                 log.error("httpStatus : {} , response : {} ", httpStatus, response, e);
             }finally {
                     if(imageDataTempFile != null) {
                         imageDataTempFile.delete();
                     }
             }
-
             log.debug("Thread addAttachmentToIssue completed for the issue key : {} , with Attachment : {} ", issue.getKey(), imageDataTempFile.getName());
         });
     }
