@@ -162,6 +162,12 @@ public class AttachmentServiceImpl implements AttachmentService {
     public String addAttachmentsByThreads(String issueKey, String testSessionId, JSONArray jsonArray) throws CaptureRuntimeException, JSONException,RestClientException,IOException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
+        String user = hostUser.getUserKey().get();
+        if(null != user && StringUtils.isNotEmpty(user)){
+            hostUser = new AtlassianHostUser(hostUser.getHost(),Optional.of(user));
+        }
+
         log.info("Attachment Upload request for Issue : {}", issueKey);
         Issue issue = getJiraRestClient.getIssueClient().getIssue(issueKey).claim();
         if (issue == null) {
@@ -187,7 +193,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                 File imageDataTempFile = null;
                 try {
                     imageDataTempFile = byteArrayToTempFile(filename,decodedImageData);
-                    addAttachmentToIssue(issue,imageDataTempFile,testSessionId,host.getHost().getBaseUrl());
+                    addAttachmentToIssue(issue,imageDataTempFile,testSessionId,host.getHost().getBaseUrl(),hostUser);
                 } catch (CaptureRuntimeException e) {
                     log.debug("Error creating temp file for attachment: " + e);
                     throw e;
@@ -238,7 +244,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         }
     }
 
-    public void addAttachmentToIssue(Issue issue, File imageDataTempFile,String testSessionId,String baseUrl) throws IOException {
+    public void addAttachmentToIssue(Issue issue, File imageDataTempFile,String testSessionId,String baseUrl,AtlassianHostUser hostUser) throws IOException {
         CompletableFuture.runAsync(() -> {
             log.debug("Thread addAttachmentToIssue started for the issue key : {} , with Attachment : {} , baseUrl : {} ", issue.getKey(), imageDataTempFile.getName(),baseUrl);
             LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
@@ -252,7 +258,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                 headers.set("X-Atlassian-Token", "nocheck");
 
                 org.springframework.http.HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new org.springframework.http.HttpEntity<>(map, headers);
-                response = atlassianHostRestClients.authenticatedAsAddon().postForObject(issue.getAttachmentsUri(), requestEntity, String.class);
+                response = atlassianHostRestClients.authenticatedAs(hostUser).postForObject(issue.getAttachmentsUri(), requestEntity, String.class);
                 if(response!=null){
                     JSONArray jsonArray = new JSONArray(response);
                     if (jsonArray != null && jsonArray.length() > 0) {
@@ -264,7 +270,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                             try{
                                com.thed.zephyr.capture.model.jira.Attachment attachment = new
                                         com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
-                                        jiraAttachment.getAuthor().getName(), jiraAttachment.getCreationDate().getMillis(),
+                                        hostUser.getUserKey().get(), jiraAttachment.getCreationDate().getMillis(),
                                         jiraAttachment.getSize(), jiraAttachment.getMimeType(),
                                         jiraAttachment.getContentUri());
                                 sessionActivityService.addAttachment(session, issue, attachment, new Date(jiraAttachment.getCreationDate().getMillis()), attachment.getAuthor());
