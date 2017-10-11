@@ -55,6 +55,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -143,12 +144,14 @@ public class SessionController extends CaptureAbstractController{
 				}
 			}
 			Session createdSession = sessionService.createSession(loggedUserKey, sessionRequest);
-			//Save status changed information as activity.
-        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
-        	if(!loggedUserKey.equals(createdSession.getAssignee())) {
-        		 //Save if the assigned user and logged in user are different into the session as activity.
-    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, createdSession.getAssignee());
-        	}        		
+			CompletableFuture.runAsync(() -> {
+				//Save status changed information as activity.
+	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
+	        	if(!loggedUserKey.equals(createdSession.getAssignee())) {
+	        		 //Save if the assigned user and logged in user are different into the session as activity.
+	    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, createdSession.getAssignee());
+	        	}
+			});        		
 	        if(sessionRequest.getStartNow()) { //User requested to start the session.
 	        	UpdateResult updateResult = sessionService.startSession(loggedUserKey, createdSession);
 	        	if (!updateResult.isValid()) {
@@ -156,7 +159,9 @@ public class SessionController extends CaptureAbstractController{
                 }
 	        	sessionService.update(updateResult); //Updating the session object into database.
 	        	//Save status changed information as activity.
-	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
+	        	CompletableFuture.runAsync(() -> {
+	        		sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
+	        	});
 	        }
 			log.info("End of createSession()");
 			return ResponseEntity.ok(sessionService.constructSessionDto(loggedUserKey, createdSession, false));
@@ -372,7 +377,9 @@ public class SessionController extends CaptureAbstractController{
         	sessionService.update(updateResult);
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
-        	sessionActivityService.setStatus(session, new Date(), loggedUserKey);
+        	CompletableFuture.runAsync(() -> {
+        		sessionActivityService.setStatus(session, new Date(), loggedUserKey);
+        	});
         	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 			log.info("End of pauseSession()");
 			return ResponseEntity.ok(sessionDto);
@@ -491,7 +498,9 @@ public class SessionController extends CaptureAbstractController{
             }
 			Session session = completeSessionResult.getSessionUpdateResult().getSession();
 			//Save status changed information as activity.
-			sessionActivityService.setStatus(session, new Date(), loggedUserKey);
+			CompletableFuture.runAsync(() -> {
+				sessionActivityService.setStatus(session, new Date(), loggedUserKey);
+			});
 			sessionService.update(completeSessionResult.getSessionUpdateResult());
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 			log.info("End of completeSession()");
@@ -621,7 +630,9 @@ public class SessionController extends CaptureAbstractController{
             }
 			sessionService.update(updateResult);
 			//Save removed raised issue information as activity.
-			sessionActivityService.removeRaisedIssue(loadedSession, captureIssue, dateTime, loggedUserKey);
+			CompletableFuture.runAsync(() -> {
+				sessionActivityService.removeRaisedIssue(loadedSession, captureIssue, dateTime, loggedUserKey);
+			});
 			//This is to removed raisedinsession from issue entity
 			sessionService.addUnRaisedInSession(loggedUserKey,issueKey,updateResult.getSession());
 			log.info("End of unraiseIssueSessionRequest()");
@@ -728,7 +739,9 @@ public class SessionController extends CaptureAbstractController{
             }
 			sessionService.update(updateResult);
 			//Save assigned user to the session as activity.
-			sessionActivityService.addAssignee(loadedSession, new Date(), oldAssingee, assignee);
+			CompletableFuture.runAsync(() -> {
+				sessionActivityService.addAssignee(loadedSession, new Date(), oldAssingee, assignee);
+			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession, false);
 			log.info("End of assignSession()");
 			return ResponseEntity.ok(sessionDto);
@@ -868,7 +881,9 @@ public class SessionController extends CaptureAbstractController{
 			}
 			Session newSession = sessionService.cloneSession(loggedUserKey, loadedSession, name);
 			//Save status changed information as activity.
-        	sessionActivityService.setStatus(newSession, new Date(), loggedUserKey);
+        	CompletableFuture.runAsync(() -> {
+        		sessionActivityService.setStatus(newSession, new Date(), loggedUserKey);
+        	});
         	if(!loggedUserKey.equals(newSession.getAssignee())) {
         		 //Save if the assigned user and logged in user are different into the session as activity.
     			sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, newSession.getAssignee());
@@ -961,7 +976,9 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult);
 			Session session = updateResult.getSession();
 			//Save status changed information as activity.
-			sessionActivityService.setStatus(session, new Date(), loggedUserKey,firstTimeStart);
+			CompletableFuture.runAsync(() -> {
+				sessionActivityService.setStatus(session, new Date(), loggedUserKey,firstTimeStart);
+			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 			log.info("End of startOrResumeSession()");
 			return ResponseEntity.ok(sessionDto);

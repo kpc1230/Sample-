@@ -133,7 +133,9 @@ public class SessionServiceImpl implements SessionService {
 		session.setUserDisplayName(user != null ? user.getDisplayName() : null);
         Session createdSession = sessionRepository.save(session);
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
-		sessionESRepository.save(createdSession);
+		CompletableFuture.runAsync(() -> {
+			sessionESRepository.save(createdSession);
+		});
 		//Update test staus and test sessions for related issues
 		setIssueTestStausAndTestSession(createdSession);
 		return createdSession;
@@ -197,7 +199,9 @@ public class SessionServiceImpl implements SessionService {
 				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
 				clearActiveSessionFromCache(loggedUserKey);
 				update(updateResult);
-				sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
+				CompletableFuture.runAsync(() -> {
+					sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
+				});
 			}
         }
         session.setStatus(Status.STARTED);
@@ -233,7 +237,9 @@ public class SessionServiceImpl implements SessionService {
     				activeSession.setStatus(Status.PAUSED);
     				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
     				update(updateResult);
-    				sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
+    				CompletableFuture.runAsync(() -> {
+    					sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
+    				});
     			}
             }
         }
@@ -658,11 +664,15 @@ public class SessionServiceImpl implements SessionService {
 	private void save(Session session, List<String> leavers) {
     	for (String leaver : leavers) {
             clearActiveSessionFromCache(leaver);
-            sessionActivityService.addParticipantLeft(session, new Date(), leaver);
+            CompletableFuture.runAsync(() -> {
+            	sessionActivityService.addParticipantLeft(session, new Date(), leaver);
+            });
         }
 		Session savedSession = sessionRepository.save(session);
 		session.setStatusOrder(getStatusOrder(session.getStatus()));
-		sessionESRepository.save(savedSession);
+		CompletableFuture.runAsync(() -> {
+			sessionESRepository.save(savedSession);
+		});
     }
 
 
@@ -694,7 +704,9 @@ public class SessionServiceImpl implements SessionService {
                 session.setTimeLogged(timeLogged);
                 return new DeactivateResult(validateUpdate(user, session), leavingUsers);
             } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user))) { // Just leave if it isn't
-                sessionActivityService.addParticipantLeft(session, new Date(), user);
+                CompletableFuture.runAsync(() -> {
+                	sessionActivityService.addParticipantLeft(session, new Date(), user);
+                });
             }
         }
         return new DeactivateResult(validateUpdate(user, session), user);
