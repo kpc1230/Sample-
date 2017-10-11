@@ -273,7 +273,6 @@ public class AttachmentServiceImpl implements AttachmentService {
                                         hostUser.getUserKey().get(), jiraAttachment.getCreationDate().getMillis(),
                                         jiraAttachment.getSize(), jiraAttachment.getMimeType(),
                                         jiraAttachment.getContentUri());
-                                sessionActivityService.addAttachment(session, issue, attachment, new Date(jiraAttachment.getCreationDate().getMillis()), attachment.getAuthor());
                             } catch (Exception exp) {
                                  log.error("Exception while adding the attachment to session activity "+exp.getMessage(),exp);
                             }

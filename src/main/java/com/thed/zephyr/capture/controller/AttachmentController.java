@@ -38,17 +38,20 @@ public class AttachmentController {
     private CaptureI18NMessageSource i18n;
 
     @RequestMapping(value = "/issue-attach-new", method = RequestMethod.POST)
-    public ResponseEntity<String> uploadAttachments(final @RequestParam("issueKey") String issueKey,
-                                           @RequestParam("files") MultipartFile[] multipartFiles) {
+    public ResponseEntity<String> uploadAttachments(
+            @RequestParam("issueKey") String issueKey,
+            @RequestParam("files") MultipartFile[] multipartFiles) {
         String fullIconUrl = attachmentService.addAttachments(multipartFiles,issueKey);
-        log.info("uploadAttachments() --> for IssueKey {} " + issueKey);
+        log.info("UploadAttachments() --> for IssueKey {} " + issueKey);
         return new ResponseEntity<>(fullIconUrl,HttpStatus.OK);
     }
 
     @RequestMapping(value = "/issue-attach", method = RequestMethod.POST)
-    public ResponseEntity<?> uploadAttachments(final @RequestParam("issueKey") String issueKey,
-                                                    final @RequestParam(value = "testSessionId",required = false) String testSessionId,@RequestBody String requestBody) {
-        log.info("uploadAttachments() --> for IssueKey {} " + requestBody);
+    public ResponseEntity<?> uploadAttachments(
+            @RequestParam("issueKey") String issueKey,
+            @RequestParam(value = "testSessionId",required = false) String testSessionId,
+            @RequestBody String requestBody) {
+        log.info("UploadAttachments() --> for IssueKey {} " + requestBody);
         final JSONArray json;
         try {
             json = new JSONArray(requestBody);
