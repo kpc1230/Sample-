@@ -94,12 +94,7 @@ public class SessionActivityServiceImpl implements SessionActivityService {
 
     @Override
     public SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator) {
-
-        IssueRaisedSessionActivity sessionActivity =
-                new IssueRaisedSessionActivity(
-                        session.getId(),
-                        session.getCtId(),
-                        timeRaised, creator, session.getProjectId(), issueId);
+        IssueRaisedSessionActivity sessionActivity = new IssueRaisedSessionActivity(session, timeRaised, creator, issueId);
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }

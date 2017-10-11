@@ -21,6 +21,11 @@ public class IssueRaisedSessionActivity extends SessionActivity {
         this.issueId = issueId;
     }
 
+    public IssueRaisedSessionActivity(Session session, Date timestamp, String user, Long issueId){
+        super(session.getId(), session.getCtId(), timestamp, user, session.getProjectId());
+        this.issueId = issueId;
+    }
+
     public Long getIssueId() {
         return issueId;
     }
