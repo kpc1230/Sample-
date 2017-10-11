@@ -17,6 +17,8 @@ public interface SessionActivityService {
 
     SessionActivity setStatus(Session session, Date timestamp, String user);
 
+    SessionActivity setStatus(Session session, Date timestamp, String user,boolean firstStarted);
+
     SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user);
 
     SessionActivity addParticipantLeft(Session session, Date timestamp, String user);

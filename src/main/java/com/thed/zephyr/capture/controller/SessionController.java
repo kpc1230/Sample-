@@ -332,50 +332,17 @@ public class SessionController extends CaptureAbstractController{
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
-	
+
 	@PutMapping(value = "/{sessionId}/start", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> startSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
 										  @PathVariable("sessionId") String sessionId) throws CaptureValidationException {
-		log.info("Start of startSession() --> params " + sessionId);
-		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-		boolean isLocked = false;
-		try {
-			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
-				log.error("Not able to get the lock on session " + sessionId);
-				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
-			}
-			isLocked = true;
-			String loggedUserKey = getUser();
-			Session loadedSession  = validateAndGetSession(sessionId);
-			// If the session status is changed, we better have been allowed to do that!
-			if (!Status.STARTED.equals(loadedSession.getStatus())
-					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
-				throw new CaptureValidationException(i18n.getMessage("session.status.change.permissions.violation"));
-			}
-			UpdateResult updateResult = sessionService.startSession(loggedUserKey, loadedSession);
-			if (!updateResult.isValid()) {
-                return badRequest(updateResult.getErrorCollection());
-            }
-        	sessionService.update(updateResult);
-        	Session session = updateResult.getSession();
-        	//Save status changed information as activity.
-        	sessionActivityService.setStatus(session, new Date(), loggedUserKey);
-        	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
-			log.info("End of startSession()");
-			return ResponseEntity.ok(sessionDto);
-		} catch(CaptureValidationException ex) {
-			throw ex;
-		} catch(Exception ex) {
-			log.error("Error in startSession() -> ", ex);
-			throw new CaptureRuntimeException(ex.getMessage(), ex);
-		} finally {
-			if(isLocked) {
-				try {
-					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
-				} catch (HazelcastInstanceNotDefinedException e) {
-				}
-			}
-		}
+		return startOrResumeSession(hostUser,sessionId,true);
+	}
+
+	@PutMapping(value = "/{sessionId}/resume", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> resumeSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
+										   @PathVariable("sessionId") String sessionId) throws CaptureValidationException {
+		return startOrResumeSession(hostUser,sessionId,false);
 	}
 	
 	@PutMapping(value = "/{sessionId}/pause", produces = {MediaType.APPLICATION_JSON_VALUE})
@@ -963,5 +930,47 @@ public class SessionController extends CaptureAbstractController{
 
 		return ImmutableList.copyOf(sessionActivityItems);
 	}
-	
+	private ResponseEntity<?> startOrResumeSession(AtlassianHostUser hostUser,String sessionId,boolean firstTimeStart)throws CaptureValidationException {
+		log.info("Start of startOrResumeSession() --> params " + sessionId);
+		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
+		boolean isLocked = false;
+		try {
+			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
+				log.error("Not able to get the lock on session " + sessionId);
+				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
+			}
+			isLocked = true;
+			String loggedUserKey = getUser();
+			Session loadedSession  = validateAndGetSession(sessionId);
+			// If the session status is changed, we better have been allowed to do that!
+			if (!Status.STARTED.equals(loadedSession.getStatus())
+					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
+				throw new CaptureValidationException(i18n.getMessage("session.status.change.permissions.violation"));
+			}
+			UpdateResult updateResult = sessionService.startSession(loggedUserKey, loadedSession);
+			if (!updateResult.isValid()) {
+				return badRequest(updateResult.getErrorCollection());
+			}
+			sessionService.update(updateResult);
+			Session session = updateResult.getSession();
+			//Save status changed information as activity.
+			sessionActivityService.setStatus(session, new Date(), loggedUserKey,firstTimeStart);
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
+			log.info("End of startOrResumeSession()");
+			return ResponseEntity.ok(sessionDto);
+		} catch(CaptureValidationException ex) {
+			throw ex;
+		} catch(Exception ex) {
+			log.error("Error in startOrResumeSession() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		} finally {
+			if(isLocked) {
+				try {
+					lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
+				} catch (HazelcastInstanceNotDefinedException e) {
+				}
+			}
+		}
+
+	}
 }

@@ -44,6 +44,25 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
+    public SessionActivity setStatus(Session session, Date timestamp, String user,boolean firstStarted) {
+        if (session.getStatus() != null) {
+           StatusSessionActivity sessionActivity =
+                    new StatusSessionActivity(
+                            session.getId(),
+                            session.getCtId(),
+                            timestamp,
+                            user,
+                            session.getProjectId(),
+                            session.getStatus(),
+                            firstStarted
+                    );
+            sessionActivityRepository.save(sessionActivity);
+            return sessionActivity;
+        }
+        return null;
+    }
+
+    @Override
     public SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user) {
         UserJoinedSessionActivity sessionActivity =
                 new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), user, session.getProjectId(), participant);
