@@ -4,6 +4,7 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.util.IssueSearchList;
 import com.thed.zephyr.capture.service.PermissionService;
@@ -56,7 +57,7 @@ public class IssueController {
     private IssueSearchService issueSearchService;
 
     @RequestMapping(value = "/issue-ext", method = RequestMethod.POST)
-    public ResponseEntity<CaptureIssue> createIssue(final HttpServletRequest request, final @RequestParam(value = "testSessionId",required = false)  String testSessionId, @Valid @RequestBody final IssueCreateRequest createRequest) {
+    public ResponseEntity<CaptureIssue> createIssue(final HttpServletRequest request, final @RequestParam(value = "testSessionId",required = false)  String testSessionId, @Valid @RequestBody final IssueCreateRequest createRequest) throws CaptureValidationException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if(auth == null || !auth.isAuthenticated()) {
             throw new CaptureRuntimeException(HttpStatus.UNAUTHORIZED.toString(), i18n.getMessage("template.validate.create.cannot.create.issue"));

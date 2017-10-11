@@ -9,6 +9,7 @@ import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.IssueRaisedBean;
 import com.thed.zephyr.capture.model.Session;
@@ -262,7 +263,7 @@ public class IssueServiceImpl implements IssueService {
     }
 
     @Override
-    public CaptureIssue createIssue(HttpServletRequest request, String testSessionId, IssueCreateRequest createRequest) {
+    public CaptureIssue createIssue(HttpServletRequest request, String testSessionId, IssueCreateRequest createRequest) throws CaptureValidationException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         IssueFields issueFields = createRequest.fields();
@@ -368,7 +369,7 @@ public class IssueServiceImpl implements IssueService {
         return captureIssue;
     }
 
-    private IssueInput createIssueInput(IssueFields issueFields, HttpServletRequest request) {
+    private IssueInput createIssueInput(IssueFields issueFields, HttpServletRequest request) throws CaptureValidationException {
         IssueInputBuilder issueInputBuilder = new IssueInputBuilder();
         issueInputBuilder.setIssueTypeId(Long.valueOf(issueFields.issueType().id()));
         if (issueFields.assignee() != null) {
@@ -457,9 +458,14 @@ public class IssueServiceImpl implements IssueService {
         }
 
         if (issueFields.getDuedate() != null) {
+            try {
             DateTimeFormatter inFormatter = DateTimeFormat.forPattern("d/MMM/yy");
             DateTime dateTime = inFormatter.parseDateTime(issueFields.getDuedate());
             issueInputBuilder.setDueDate(dateTime.toDateTime(DateTimeZone.UTC));
+            } catch (Exception ex) {
+                log.error("Error while formatting the date ",ex);
+                throw new CaptureValidationException(ex.getMessage());
+            }
         }
 
         ResourceId parentId = issueFields.parent();
