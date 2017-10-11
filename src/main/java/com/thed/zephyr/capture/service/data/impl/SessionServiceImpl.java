@@ -496,9 +496,17 @@ public class SessionServiceImpl implements SessionService {
         List<CaptureIssue> raisedIssues = Lists.newArrayList();
         Date dateTime = new Date();
         Session session = getSession(sessionId);
-        if(session !=null){
+        if(session != null){
+        	List<Long> issueRaisedIds = new ArrayList<>();
             if (session.getIssuesRaised() != null) {
-                session.getIssuesRaised().addAll(issues);
+            	Map<Long, IssueRaisedBean> issuesRaisedMap = session.getIssuesRaised().stream().collect(Collectors.toMap(IssueRaisedBean::getIssueId, v -> v));
+                for(IssueRaisedBean issueRaisedBean : issues) {
+                	if(!issuesRaisedMap.containsKey(issueRaisedBean.getIssueId())) {
+                		session.getIssuesRaised().add(issueRaisedBean);
+                		sessionActivityService.addRaisedIssue(session, issueRaisedBean, dateTime, loggedUser); //Save removed raised issue information as activity.
+            			issueRaisedIds.add(issueRaisedBean.getIssueId());
+                	}
+                }
             } else {
             	Set<IssueRaisedBean> issuesRaised = new TreeSet<>();
                 issuesRaised.addAll(issues);
@@ -515,13 +523,8 @@ public class SessionServiceImpl implements SessionService {
 					}
                 }
             }
+    		captureContextIssueFieldsService.addRaisedInIssueField(loggedUser, issueRaisedIds, sessionId);
         }
-        List<Long> issueRaisedIds = new ArrayList<>();
-        issues.stream().forEach(issueRaisedBean -> {
-        	sessionActivityService.addRaisedIssue(session, issueRaisedBean, dateTime, loggedUser); //Save removed raised issue information as activity.
-			issueRaisedIds.add(issueRaisedBean.getIssueId());
-        });
-		captureContextIssueFieldsService.addRaisedInIssueField(loggedUser, issueRaisedIds, sessionId);
         return raisedIssues;
     }
 	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser) {
