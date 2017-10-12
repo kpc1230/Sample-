@@ -923,6 +923,35 @@ public class SessionController extends CaptureAbstractController{
 		}
 	}
 
+	@IgnoreJwt
+	@CrossOrigin
+	@GetMapping(value = "/user/active/link", produces = {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<?> getActiveSessionLink(@RequestParam String userName, @RequestParam String baseUrl) {
+		log.info("Start of getActiveSessionLink()");
+		try {
+			String userKey = userService.findActiveUserByUserName(userName, baseUrl).getKey();
+			if(StringUtils.isBlank(userKey)) {
+				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userKey}));
+			}
+			if(StringUtils.isBlank(baseUrl)) {
+				throw new CaptureValidationException(i18n.getMessage("base.url.invalid.message", new Object[]{baseUrl}));
+			}
+			SessionResult sessionResult = sessionService.getActiveSession(userKey, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
+			if(sessionResult != null && sessionResult.getSession() != null && sessionResult.getSession().getStatus() != null
+					&& !Status.STARTED.name().equals(sessionResult.getSession().getStatus().name())) {
+				return ResponseEntity.ok().build();
+			}
+			Session session = sessionResult.getSession();
+			if(session==null){return ResponseEntity.ok().build();}
+			String activeSessionLink = i18n.getMessage("capture.active.session.link", new Object[]{baseUrl,session.getId(), session.getName()});
+			log.info("End of getActiveSessionLink()");
+			return ResponseEntity.ok(activeSessionLink);
+		} catch(Exception ex) {
+			log.error("Error in getActiveSessionLink() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		}
+	}
+
 	private void validateInputParameters(Optional<Long> projectId, Optional<List<String>> status) throws CaptureValidationException {
 		if(projectId.isPresent()) {
 			CaptureProject project = projectService.getCaptureProject(projectId.get());

@@ -197,6 +197,23 @@ public class UserServiceImpl implements UserService{
         return captureUser;
     }
 
+    public CaptureUser findActiveUserByUserName(String username, String baseUrl) {
+        try {
+            URI targetUrl = UriComponentsBuilder.fromUriString(baseUrl)
+                    .path(JiraConstants.REST_API_USER)
+                    .queryParam("username", username)
+                    .build()
+                    .encode()
+                    .toUri();
+
+            CaptureUser response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, CaptureUser.class);
+            return response;
+        }catch (Exception ex){
+            log.error("Error during getting active user by user key from jira.", ex);
+        }
+        return null;
+    }
+
     private String buildUserCacheKey(String userIdOrKey){
         return ApplicationConstants.USER_CACHE_KEY_PREFIX+userIdOrKey;
     }
