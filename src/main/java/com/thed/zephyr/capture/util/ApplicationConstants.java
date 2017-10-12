@@ -64,8 +64,6 @@ public class ApplicationConstants {
     public static final String OS_LINUX = "linux";
     public static final String OS_WINDOWS = "windows";
 
-    //   public static final String GSI_STATUS = "idx_status";
-
     /*** LockService ***/
     public static final String HZ_LOCK_IMAP_NAME = "capture_cloud_lock_imap";
     public static final Integer DEFAULT_LOCK_TIMEOUT_SEC = 5;
@@ -126,7 +124,7 @@ public class ApplicationConstants {
     public static final String SESSION_NAME_FIELD = "name";
     public static final String SHARED_FIELD = "shared";
 
-    /** email fields **/
+    /** Email fields **/
     public static final String FROM_EMAIL = "aws.ses.from";
     public static final String AWS_SES_REGION = "aws.ses.region";
     public static final String AWS_SMTP_USERNAME = "aws.smtp.username";
@@ -155,15 +153,21 @@ public class ApplicationConstants {
     /** Issue cache const **/
     public static final String ISSUE_CACHE_KEY_PREFIX = "issue-";
     public static final String ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP = "issue.cache.expiration";
+
     /** Permission cache const **/
     public static final String PERMISSION_CACHE_KEY_PREFIX = "permission-";
     public static final String PERMISSION_CACHE_EXPIRATION_DYNAMIC_PROP = "permission.cache.expiration";
+
     /** Project cache const **/
     public static final String PROJECT_CACHE_KEY_PREFIX = "project-";
     public static final String PROJECT_CACHE_EXPIRATION_DYNAMIC_PROP = "project.cache.expiration";
+
     /** User cache const **/
     public static final String USER_CACHE_KEY_PREFIX = "user-";
     public static final String USER_CACHE_EXPIRATION_DYNAMIC_PROP = "user.cache.expiration";
+
+    /** Tenant cache const **/
+    public static final String LOCATION_ACHOST = "tenants";
 
     public static final String SESSION_LOCK_KEY = "session_";
 

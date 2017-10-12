@@ -24,23 +24,10 @@ public class TenantAwareCacheWrapper implements ITenantAwareCache {
 
     @Autowired
     private Logger log;
-
-    @Autowired
-    private AcHostModel acHostModel;
-
     @Autowired
     private HazelcastInstance hazelcastInstance;
-
     @Autowired
     private CacheManager cacheManager;
-
-    @Autowired
-    private LockService lockService;
-
-    @Override
-    public Object get(String key) {
-        return get(acHostModel, key);
-    }
 
     @Override
     public Object get(AcHostModel acHostModel, String key) {
@@ -52,31 +39,6 @@ public class TenantAwareCacheWrapper implements ITenantAwareCache {
             return hazelcastInstance.getMap(tenantId).get(key);
         } else {
             return cacheManager.getCache(key);
-        }
-    }
-
-    public IMap<String, Object> getMap(String tenantId) {
-        return hazelcastInstance.getMap(tenantId);
-    }
-
-    ;
-
-    @Override
-    public <T> T getOrElse(String key, Callable<T> block, int expiration) throws Exception {
-        String tenantId = acHostModel.getClientKey();
-        if (tenantId != null) {
-            @SuppressWarnings("unchecked")
-            T val1 = (T) get(key);
-            if (val1 == null) {
-                T val2 = block.call();
-                if (val2 != null)    //Null values not allowed
-                    set(key, val2, expiration);
-                return val2;
-            }
-
-            return val1;
-        } else {
-            return (T) hazelcastInstance.getCacheManager().getCache(key);
         }
     }
 
@@ -97,11 +59,6 @@ public class TenantAwareCacheWrapper implements ITenantAwareCache {
         } else {
             return (T) hazelcastInstance.getCacheManager().getCache(key);
         }
-    }
-
-    @Override
-    public void set(String key, Object value) {
-        set(acHostModel, key, value);
     }
 
     @Override
@@ -130,31 +87,6 @@ public class TenantAwareCacheWrapper implements ITenantAwareCache {
     }
 
     @Override
-    public void set(String key, Object value, Integer timeout) {
-        String tenantId = acHostModel.getClientKey();
-        if (tenantId != null && key != null)
-            hazelcastInstance.getMap(tenantId).set(key, value, timeout, TimeUnit.SECONDS);
-    }
-
-    @Override
-    public void add(String key, int expiration, Object value) throws ExecutionException, InterruptedException {
-        String tenantId = acHostModel.getClientKey();
-        if (tenantId != null && key != null) {
-            hazelcastInstance.getMap(tenantId).put(key, value, expiration, TimeUnit.SECONDS);
-        }
-    }
-
-    @Override
-    public Boolean delete(String key) throws ExecutionException, InterruptedException {
-        String tenantId = acHostModel.getClientKey();
-        if (key != null) {
-            hazelcastInstance.getMap(tenantId).delete(key);
-            return true;
-        }
-        return false;
-    }
-
-    @Override
     public void remove(AcHostModel acHostModel, String key) {
         String tenantId = acHostModel.getClientKey();
         if (tenantId != null && key != null) {
@@ -162,14 +94,6 @@ public class TenantAwareCacheWrapper implements ITenantAwareCache {
         } else {
             hazelcastInstance.getCacheManager().getCache(key);
         }
-    }
-
-    @Override
-    public Future getAsync(String key) {
-        String tenantId = acHostModel.getClientKey();
-        if (key != null)
-            return hazelcastInstance.getMap(tenantId).getAsync(key);
-        return null;
     }
 
     @Override
