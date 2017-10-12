@@ -7,7 +7,6 @@ import com.atlassian.core.util.InvalidDurationException;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.thed.zephyr.capture.comparators.IdSessionComparator;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.exception.HazelcastInstanceNotDefinedException;
@@ -346,10 +345,10 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public SessionExtensionResponse getSessionsForExtension(String user) {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		List<Session> privateSessionsList = sessionRepository.fetchPrivateSessionsForUser(ctId, user);
-		List<Session> sharedSessionsList = sessionRepository.fetchSharedSessionsForUser(ctId, user);
-		List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, privateSessionsList.size(), new IdSessionComparator(true));
-		List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, sharedSessionsList.size(), new IdSessionComparator(true));
+		List<Session> privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user).getContent();
+		List<Session> sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user).getContent();
+		List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, privateSessionsList.size());
+		List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, sharedSessionsList.size());
 		return new SessionExtensionResponse(privateSessionsDto, sharedSessionsDto);
 	}
 
@@ -376,7 +375,7 @@ public class SessionServiceImpl implements SessionService {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
 		List<Session> sessionsList = pageResponse.getContent();
-		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, sessionsList, size, null);
+		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, sessionsList, size);
 		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, pageResponse.getTotalElements());
 		return sessionDtoSearchList;
 	}
@@ -1103,9 +1102,8 @@ public class SessionServiceImpl implements SessionService {
 	 * @param comparator -- Comparator can be assignee, project, session name, shared, created time etc.,
 	 * @return -- Returns the list of light session object based on startAt and size parameters.
 	 */
-	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, List<Session> sessionsList, int size, Comparator<Session> comparator) {
+	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, List<Session> sessionsList, int size) {
 		List<SessionDto> sessionDtoList = new ArrayList<>(size);
-		if(Objects.nonNull(comparator)) Collections.sort(sessionsList);	
 		SessionDto sessionDto = null;
 		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, null);
 		for(Session session : sessionsList) {

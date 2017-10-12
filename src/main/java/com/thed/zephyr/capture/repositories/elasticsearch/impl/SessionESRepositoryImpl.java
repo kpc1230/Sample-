@@ -26,6 +26,7 @@ import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.stereotype.Component;
 
 import com.thed.zephyr.capture.model.Session;
+import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 
@@ -108,6 +109,48 @@ public class SessionESRepositoryImpl {
             return assigneesList;
     	});
     }
+	
+	public AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user) {
+		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
+		boolQueryBuilder.must(ctidQueryBuilder);
+		
+		MatchQueryBuilder statusQueryBuilder = (QueryBuilders.matchQuery(ApplicationConstants.STATUS_FIELD, Status.COMPLETED.name()));
+		boolQueryBuilder.mustNot(statusQueryBuilder);
+		
+    	if(!StringUtils.isEmpty(user)) {
+    		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.ASSIGNEE_FIELD, user);
+			boolQueryBuilder.must(assigneeQueryBuilder);
+
+    	}
+		
+    	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort(ApplicationConstants.SORTFIELD_ES_CREATED).order(SortOrder.DESC);
+    	Pageable pageable = CaptureUtil.getPageRequest(0, 50);
+		SearchQuery query = new NativeSearchQueryBuilder().withFilter(boolQueryBuilder).withSort(sortFieldBuilder).withPageable(pageable).build();
+		return elasticsearchTemplate.queryForPage(query, Session.class);
+	}
+	
+	public AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user) {
+		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
+		boolQueryBuilder.must(ctidQueryBuilder);
+		
+		MatchQueryBuilder sharedQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.SHARED_FIELD, true);
+		boolQueryBuilder.must(sharedQueryBuilder);
+		
+		MatchQueryBuilder statusQueryBuilder = (QueryBuilders.matchQuery(ApplicationConstants.STATUS_FIELD, Status.STARTED.name()));
+		boolQueryBuilder.must(statusQueryBuilder);
+		
+    	if(!StringUtils.isEmpty(user)) {
+    		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.ASSIGNEE_FIELD, user);
+			boolQueryBuilder.mustNot(assigneeQueryBuilder);
+
+    	}		
+    	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort(ApplicationConstants.SORTFIELD_ES_CREATED).order(SortOrder.DESC);
+    	Pageable pageable = CaptureUtil.getPageRequest(0, 50);
+		SearchQuery query = new NativeSearchQueryBuilder().withFilter(boolQueryBuilder).withSort(sortFieldBuilder).withPageable(pageable).build();
+		return elasticsearchTemplate.queryForPage(query, Session.class);
+	}
 	
 	public void deleteSessionsByCtId(String ctId) {
 		DeleteQuery deleteQuery = new DeleteQuery();
