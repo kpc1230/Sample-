@@ -536,26 +536,52 @@ public class SessionServiceImpl implements SessionService {
 	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser) {
 		List<Session> listOfSessionsAsParticipant = sessions != null ? sessions.getContent() : new ArrayList<>();
 		Date dateTime = new Date();
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
 		IssueRaisedBean issueRaisedBean = new IssueRaisedBean(issueId, dateTime);
 		listOfSessionsAsParticipant.forEach(session -> {
+			String sessionId = session.getId();
+			String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
+			boolean isLocked = false;
 			boolean issueAdded = true;
-			if (session.getIssuesRaised() != null) {
-				for(IssueRaisedBean tempBean : session.getIssuesRaised()) {
-					if(tempBean.getIssueId().equals(issueRaisedBean.getIssueId())) {
-						issueAdded = false;
-						break;
+			Session sessionLatest = null;
+			try {
+				if (!lockService.tryLock(host.getHost().getClientKey(), lockKey, 5)) {
+					log.error("Not able to get the lock on session " + sessionId);
+					throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
+				}
+				isLocked = true;
+				sessionLatest = getSession(sessionId);
+				if (sessionLatest != null) {
+					if (sessionLatest.getIssuesRaised() != null) {
+						for (IssueRaisedBean tempBean : sessionLatest.getIssuesRaised()) {
+							if (tempBean.getIssueId().equals(issueRaisedBean.getIssueId())) {
+								issueAdded = false;
+								break;
+							}
+						}
+						if (issueAdded) sessionLatest.getIssuesRaised().add(issueRaisedBean);
+					} else {
+						Set<IssueRaisedBean> issuesRaised = new TreeSet<>();
+						issuesRaised.add(issueRaisedBean);
+						sessionLatest.setIssuesRaised(issuesRaised);
+						issueAdded = true;
+					}
+					save(sessionLatest, new ArrayList<>());
+				}
+			} catch (Exception ex) {
+				log.error("Error in updateSessionWithIssueId() -> ", ex);
+				throw new CaptureRuntimeException(ex.getMessage(), ex);
+			} finally {
+				if (isLocked) {
+					try {
+						lockService.deleteLock(host.getHost().getClientKey(), lockKey);
+					} catch (HazelcastInstanceNotDefinedException e) {
 					}
 				}
-				if(issueAdded) session.getIssuesRaised().add(issueRaisedBean);
-			} else {
-				Set<IssueRaisedBean> issuesRaised = new TreeSet<>();
-				issuesRaised.add(issueRaisedBean);
-				session.setIssuesRaised(issuesRaised);
-				issueAdded = true;
 			}
-			save(session, new ArrayList<>());
 			if (issueAdded) {
-				sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser); //Save removed raised issue information as activity.
+				sessionActivityService.addRaisedIssue(sessionLatest, issueRaisedBean.getIssueId(), dateTime, loggedUser); //Save removed raised issue information as activity.
 			}
 
 		});
