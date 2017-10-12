@@ -77,9 +77,10 @@ public class ProjectServiceImpl implements ProjectService {
         CaptureProject captureProject = null;
         try {
             captureProject = tenantAwareCache.getOrElse(acHostModel, buildProjectCacheKey(projectIdOrKey), new Callable<CaptureProject>() {
-                Project project = getProjectObjByKey(projectIdOrKey);
                 @Override
                 public CaptureProject call() throws Exception {
+                    Project project = getProjectObjByKey(projectIdOrKey);
+                    log.debug("Getting project from Jira.");
                     return new CaptureProject(project.getSelf(),
                             project.getKey(), project.getId(),
                             project.getName());

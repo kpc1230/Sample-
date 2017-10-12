@@ -16,17 +16,13 @@ public interface ITenantAwareCache {
 
     <T> T getOrElse(AcHostModel acHostModel, String key, Callable<T> block, int expiration) throws Exception;
 
-    void set(AcHostModel acHostModel, String key, Object value);
+    Object set(AcHostModel acHostModel, String key, Object value);
 
     Boolean delete(AcHostModel acHostModel, String key);
 
-    void set(AcHostModel acHostModel, String key, Object value, Integer expireTime, TimeUnit timeUnit);
+    Object set(AcHostModel acHostModel, String key, Object value, Integer expireTime, TimeUnit timeUnit);
 
     void remove(AcHostModel acHostModel, String key);
 
     void clearTenantCache(AcHostModel acHostModel);
-
-    void displayTenantCache(AcHostModel acHostModel);
-
-
 }

@@ -1,19 +1,14 @@
 package com.thed.zephyr.capture.service.cache.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
-import com.thed.zephyr.capture.service.cache.LockService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -26,91 +21,119 @@ public class TenantAwareCacheWrapper implements ITenantAwareCache {
     private Logger log;
     @Autowired
     private HazelcastInstance hazelcastInstance;
-    @Autowired
-    private CacheManager cacheManager;
 
     @Override
     public Object get(AcHostModel acHostModel, String key) {
-        if (!StringUtils.isNotBlank(key)) {
-            return null;
+        Object result = null;
+        String clientKey = acHostModel.getClientKey();
+        try{
+            validateArgs(key, clientKey);
+            result = hazelcastInstance.getMap(clientKey).get(key);
+        } catch (IllegalArgumentException exception){
+            log.warn("The key or clientKey are null during getting the object from cache key:{} clientKey:{}", key, clientKey, exception);
+            result = null;
+        } catch (Exception exception){
+            log.error("Error during getting object from cache key:{} clientKey:{}", key, clientKey, exception);
+            result = null;
         }
-        String tenantId = acHostModel.getClientKey();
-        if (tenantId != null && key != null) {
-            return hazelcastInstance.getMap(tenantId).get(key);
-        } else {
-            return cacheManager.getCache(key);
-        }
+
+        return result;
     }
 
     @Override
     public <T> T getOrElse(AcHostModel acHostModel, String key, Callable<T> block, int expiration) throws Exception {
-        String tenantId = acHostModel.getClientKey();
-        if (tenantId != null) {
-            @SuppressWarnings("unchecked")
-            T val1 = (T) get(acHostModel, key);
-            if (val1 == null) {
-                T val2 = block.call();
-                if (val2 != null)    //Null values not allowed
-                    set(acHostModel, key, val2, expiration, TimeUnit.SECONDS);
-                return val2;
-            }
+        @SuppressWarnings("unchecked")
+        T val = (T) get(acHostModel, key);
+        if (val == null) {
+            val = block.call();
 
-            return val1;
-        } else {
-            return (T) hazelcastInstance.getCacheManager().getCache(key);
+            return val != null?(T)set(acHostModel, key, val, expiration, TimeUnit.SECONDS):null;
         }
+
+        return val;
     }
 
     @Override
-    public void set(AcHostModel acHostModel, String key, Object value) {
-        String tenantId = acHostModel.getClientKey();
-        if (tenantId != null && key != null)
-            hazelcastInstance.getMap(tenantId).set(key, value);
+    public Object set(AcHostModel acHostModel, String key, Object value) {
+        Object result = value;
+        String clientKey = acHostModel.getClientKey();
+        try{
+            validateArgs(key, clientKey);
+            hazelcastInstance.getMap(clientKey).set(key, value);
+        } catch (IllegalArgumentException exception){
+            log.warn("The key or clientKey are null during setting the object into cache key:{} clientKey:{}", key, clientKey, exception);
+            result = null;
+        } catch (Exception exception){
+            log.error("Error during setting object into cache key:{} clientKey:{}", key, clientKey, exception);
+            result = null;
+        }
 
+        return result;
     }
 
     @Override
     public Boolean delete(AcHostModel acHostModel, String key) {
-        String tenantId = acHostModel.getClientKey();
-        if (key != null) {
-            hazelcastInstance.getMap(tenantId).delete(key);
+        String clientKey = acHostModel.getClientKey();
+        try{
+            validateArgs(key, clientKey);
+            hazelcastInstance.getMap(clientKey).delete(key);
             return true;
+        } catch (IllegalArgumentException exception){
+            log.warn("The key or clientKey are null during delete the object from cache key:{} clientKey:{}", key, clientKey, exception);
+        } catch (Exception exception){
+            log.error("Error during delete object from cache key:{} clientKey:{}", key, clientKey, exception);
         }
+
         return false;
     }
 
     @Override
-    public void set(AcHostModel acHostModel, String key, Object value, Integer expireTime, TimeUnit timeUnit) {
-        String tenantId = acHostModel.getClientKey();
-        if (tenantId != null && key != null)
-            hazelcastInstance.getMap(tenantId).set(key, value, expireTime, timeUnit);
+    public Object set(AcHostModel acHostModel, String key, Object value, Integer expireTime, TimeUnit timeUnit) {
+        Object result = value;
+        String clientKey = acHostModel.getClientKey();
+        try{
+            validateArgs(key, clientKey);
+            hazelcastInstance.getMap(clientKey).set(key, value, expireTime, timeUnit);
+        } catch (IllegalArgumentException exception){
+            log.warn("The key or clientKey are null during getting the object from cache key:{} clientKey:{}", key, clientKey, exception);
+            result = null;
+        } catch (Exception exception){
+            log.error("Error during set value to cache key:{} clientKey:{}", key, clientKey, exception);
+            result = null;
+        }
+
+        return result;
     }
 
     @Override
     public void remove(AcHostModel acHostModel, String key) {
-        String tenantId = acHostModel.getClientKey();
-        if (tenantId != null && key != null) {
-            hazelcastInstance.getMap(tenantId).remove(key);
-        } else {
-            hazelcastInstance.getCacheManager().getCache(key);
+        String clientKey = acHostModel.getClientKey();
+        try{
+            validateArgs(key, clientKey);
+            hazelcastInstance.getMap(clientKey).remove(key);
+        } catch (IllegalArgumentException exception){
+            log.warn("The key or clientKey are null during remove the object from cache key:{} clientKey:{}", key, clientKey, exception);
+        } catch (Exception exception){
+            log.error("Error during remove object from cache key:{} clientKey:{}", key, clientKey, exception);
         }
     }
 
     @Override
     public void clearTenantCache(AcHostModel acHostModel) {
-        String tenantId = acHostModel.getClientKey();
-        if (tenantId != null) {
-            hazelcastInstance.getMap(tenantId).clear();
+        String clientKey = acHostModel.getClientKey();
+        try{
+            validateArgs("key", clientKey);
+            hazelcastInstance.getMap(clientKey).clear();
+        } catch (IllegalArgumentException exception){
+            log.warn("The clientKey is null during clear iMap in cache clientKey:{}", clientKey, exception);
+        } catch (Exception exception){
+            log.error("Error during clear iMap in cache clientKey:{}", clientKey, exception);
         }
     }
 
-    @Override
-    public void displayTenantCache(AcHostModel acHostModel) {
-        String tenantId = acHostModel.getClientKey();
-        if (tenantId != null) {
-            hazelcastInstance.getMap(tenantId).forEach((k, v) -> {
-                log.debug("Cache Key available : " + k);
-            });
+    private void validateArgs(String key, String clientKey){
+        if (StringUtils.isBlank(key) || StringUtils.isBlank(clientKey)){
+            throw  new IllegalArgumentException();
         }
     }
 }

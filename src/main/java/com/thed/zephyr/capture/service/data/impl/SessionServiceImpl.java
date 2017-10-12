@@ -1125,7 +1125,6 @@ public class SessionServiceImpl implements SessionService {
 	 *
 	 * @param sessionsList -- List of sessions fetched from database.
 	 * @param size -- Number of elements to fetch.
-	 * @param comparator -- Comparator can be assignee, project, session name, shared, created time etc.,
 	 * @return -- Returns the list of light session object based on startAt and size parameters.
 	 */
 	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, List<Session> sessionsList, int size) {
