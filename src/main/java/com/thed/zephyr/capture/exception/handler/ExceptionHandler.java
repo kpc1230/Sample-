@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.exception.handler;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.exception.model.ErrorDto;
+import net.minidev.json.JSONArray;
 import org.apache.commons.collections.map.HashedMap;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -52,6 +53,7 @@ public class ExceptionHandler {
 		Map<String,String> errorMsg = new HashedMap();
 		errorMsg.put(key,e.getMessage());
 		errorMap.put("errors",errorMsg);
+		errorMap.put("errorMessages",new JSONArray());
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMap);
 	}
 	
