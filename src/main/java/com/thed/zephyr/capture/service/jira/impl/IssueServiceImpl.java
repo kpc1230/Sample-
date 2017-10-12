@@ -463,7 +463,7 @@ public class IssueServiceImpl implements IssueService {
             issueInputBuilder.setDueDate(dateTime.toDateTime(DateTimeZone.UTC));
             } catch (Exception ex) {
                 log.error("Error while formatting the date ",ex);
-                throw new CaptureValidationException(ex.getMessage());
+                throw new CaptureValidationException(null,"duedate",ex.getMessage());
             }
         }
 

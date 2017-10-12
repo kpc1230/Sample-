@@ -1,17 +1,18 @@
 package com.thed.zephyr.capture.exception.handler;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.thed.zephyr.capture.exception.CaptureRuntimeException;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.exception.model.ErrorDto;
+import org.apache.commons.collections.map.HashedMap;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 
-import com.thed.zephyr.capture.exception.CaptureRuntimeException;
-import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.exception.model.ErrorDto;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Custom Exception Handler class for this application. Creates user friendly error object with code and the message.
@@ -45,11 +46,13 @@ public class ExceptionHandler {
 	 * @return -- Returns the Response entity which holds the custom error object.
 	 */
 	@org.springframework.web.bind.annotation.ExceptionHandler(value = CaptureValidationException.class)
-	public ResponseEntity<ErrorDto> handleCaptureValidationException(CaptureValidationException e) {
-		ErrorDto errorDto  = new ErrorDto();
-		errorDto.setErrorCode(e.getErrorCode());
-		errorDto.setErrorMessage(e.getMessage());
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorDto);
+	public ResponseEntity<?> handleCaptureValidationException(CaptureValidationException e) {
+		Map<String,Object> errorMap = new HashedMap();
+		String key = e.getField() != null ?e.getField() : (e.getErrorCode() != null ? e.getErrorCode() : "error");
+		Map<String,String> errorMsg = new HashedMap();
+		errorMsg.put(key,e.getMessage());
+		errorMap.put("errors",errorMsg);
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMap);
 	}
 	
 	/**

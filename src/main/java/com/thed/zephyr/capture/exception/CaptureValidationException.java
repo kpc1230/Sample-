@@ -15,6 +15,8 @@ public class CaptureValidationException extends Exception {
 	private static final long serialVersionUID = 5863052012063669155L;
 	
 	private String errorCode;
+
+	private String field;
 	
 	public CaptureValidationException(String errorCode, String message, Throwable cause) {
 		super(message, cause);
@@ -25,7 +27,13 @@ public class CaptureValidationException extends Exception {
 		super(message);
 		this.errorCode = errorCode;
 	}
-	
+
+	public CaptureValidationException(String errorCode,String field, String message) {
+		super(message);
+		this.errorCode = errorCode;
+		this.field = field;
+	}
+
 	public CaptureValidationException(String message, Throwable cause) {
 		super(message, cause);
 	}
@@ -43,5 +51,9 @@ public class CaptureValidationException extends Exception {
 	 */
 	public String getErrorCode() {
 		return errorCode;
+	}
+
+	public String getField() {
+		return field;
 	}
 }
