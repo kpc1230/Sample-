@@ -672,6 +672,12 @@ public class SessionServiceImpl implements SessionService {
 		Session savedSession = sessionRepository.save(session);
 		session.setStatusOrder(getStatusOrder(session.getStatus()));
 		CompletableFuture.runAsync(() -> {
+			log.debug("Save session in ES id:{}", savedSession.getId());
+			Session currentSession = sessionESRepository.findById(savedSession.getId());
+			if(currentSession != null){
+				savedSession.setUserDisplayName(currentSession.getUserDisplayName());
+				savedSession.setProjectName(currentSession.getProjectName());
+			}
 			sessionESRepository.save(savedSession);
 		});
     }
