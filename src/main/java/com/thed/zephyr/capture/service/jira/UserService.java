@@ -26,4 +26,6 @@ public interface UserService {
     
     CaptureUser findUserByKey(AcHostModel acHostModel, String key);
 
+    CaptureUser findActiveUserByUserName(String username, String baseUrl);
+
 }
