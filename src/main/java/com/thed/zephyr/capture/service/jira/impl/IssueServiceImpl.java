@@ -49,6 +49,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -463,7 +464,10 @@ public class IssueServiceImpl implements IssueService {
             issueInputBuilder.setDueDate(dateTime.toDateTime(DateTimeZone.UTC));
             } catch (Exception ex) {
                 log.error("Error while formatting the date ",ex);
-                throw new CaptureValidationException(ex.getMessage());
+                Date date = new Date();
+                SimpleDateFormat formatter = new SimpleDateFormat("d/MMM/yy");
+                String strDate= formatter.format(date);
+                throw new CaptureValidationException(null,"duedate",i18n.getMessage("issue.create.duedate.validation.error", new Object[]{"d/MMM/yy",strDate}));
             }
         }
 

@@ -136,12 +136,13 @@ public class IssueWebhookController {
                                                 while (jsonNodeAttachmentIterator.hasNext()) {
                                                     JsonNode attachmentNode = jsonNodeAttachmentIterator.next();
                                                     if (attachmentNode.get("id").asInt() == Integer.valueOf(changelogItem.getTo())) {
+                                                        String userKey =attachmentNode.get("author").get("key").asText();
                                                         Attachment jiraAttachment = attachmentJsonParser.parse(new JSONObject(attachmentNode.toString()));
                                                         if (jiraAttachment != null) {
                                                             try {
                                                                 com.thed.zephyr.capture.model.jira.Attachment attachment = new
                                                                         com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
-                                                                        jiraAttachment.getAuthor().getName(), jiraAttachment.getCreationDate().getMillis(),
+                                                                        userKey, jiraAttachment.getCreationDate().getMillis(),
                                                                         jiraAttachment.getSize(), jiraAttachment.getMimeType(),
                                                                         jiraAttachment.getContentUri());
                                                                 Issue issue = issueService.getIssueObject(issueNode.get("key").asText());

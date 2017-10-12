@@ -40,4 +40,8 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
     Set<String> fetchAllAssigneesForCtId(String ctId);
     
     void deleteSessionsByCtId(String ctId);
+    
+    AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user);
+	
+    AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user);
 }
