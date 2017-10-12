@@ -172,6 +172,7 @@ public class SessionServiceImpl implements SessionService {
 		}
 		sessionRepository.delete(sessionId);
 		sessionESRepository.delete(sessionId);
+		sessionActivityService.deleteAllSessionActivities(sessionId);
         if (session.getId().equals(getActiveSessionIdFromCache(session.getAssignee(), null))) { // Clear it as assignees active session
             clearActiveSessionFromCache(session.getAssignee());
         }
@@ -1092,7 +1093,6 @@ public class SessionServiceImpl implements SessionService {
 	 * Sorts the sessions list and returns list of session dto object based on startAt and size parameters.
 	 *
 	 * @param sessionsList -- List of sessions fetched from database.
-	 * @param startAt -- Start position
 	 * @param size -- Number of elements to fetch.
 	 * @param comparator -- Comparator can be assignee, project, session name, shared, created time etc.,
 	 * @return -- Returns the list of light session object based on startAt and size parameters.
@@ -1115,9 +1115,6 @@ public class SessionServiceImpl implements SessionService {
 	/**
 	 * Calculates the actual size from the passed parameters.
 	 *
-	 * @param maxSize -- Number of elements returned from the db.
-	 * @param startIndex -- Start position.
-	 * @param size -- Number of elements to fetch.
 	 * @return -- Returns the actual size.
 	 *//*
 	private int getActualSize(final int maxSize, final int startIndex, final int size) {

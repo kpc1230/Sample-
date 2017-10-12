@@ -49,4 +49,6 @@ public interface SessionActivityService {
     SessionActivity getSessionActivity(String id);
     
     List<SessionActivity> getAllSessionActivityByPropertyExist(String sessionId, Optional<String> propertyName);
+
+    void deleteAllSessionActivities(String sessionId);
 }

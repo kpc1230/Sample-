@@ -6,6 +6,7 @@ import com.thed.zephyr.capture.model.jira.Attachment;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,8 @@ public class SessionActivityServiceImpl implements SessionActivityService {
 
     @Autowired
     private SessionActivityRepository sessionActivityRepository;
+    @Autowired
+    private Logger log;
 
     @Override
     public SessionActivity setStatus(Session session, Date timestamp, String user) {
@@ -147,5 +150,14 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     @Override
     public List<SessionActivity> getAllSessionActivityByPropertyExist(String sessionId, Optional<String> propertyName) {
         return sessionActivityRepository.findBySessionId(sessionId, propertyName);
+    }
+
+    @Override
+    public void deleteAllSessionActivities(String sessionId) {
+        List<SessionActivity> sessionActivities = sessionActivityRepository.findBySessionId(sessionId);
+        for (SessionActivity sessionActivity:sessionActivities){
+            log.debug("SessionActivity deleted id:{}", sessionActivity.getId());
+            sessionActivityRepository.delete(sessionActivity);
+        }
     }
 }
