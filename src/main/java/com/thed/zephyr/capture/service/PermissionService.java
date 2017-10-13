@@ -19,8 +19,6 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
 
      boolean hasEditIssuePermission(Long issueId);
 
-     boolean hasBrowsePermission(String projectKey);
-
      boolean hasBrowsePermission(Long projectId);
 
      boolean isSysadmin(String user);

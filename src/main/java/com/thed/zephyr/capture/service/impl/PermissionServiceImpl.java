@@ -3,13 +3,11 @@ package com.thed.zephyr.capture.service.impl;
 import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
-import com.atlassian.jira.rest.client.api.domain.Permission;
 import com.atlassian.jira.rest.client.api.domain.Permissions;
 import com.atlassian.jira.rest.client.api.domain.input.MyPermissionsInput;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
@@ -23,7 +21,6 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jettison.json.JSONException;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -31,6 +28,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by niravshah on 8/15/17.
@@ -68,23 +66,18 @@ public class PermissionServiceImpl implements PermissionService {
         return permissions;
     }
 
-    private Map<String, Boolean> getPermissionMapForProject(Long projectId, String projectKey, String user) {
+    private Map<String, Boolean> getPermissionMapForProject(Long projectId, String user) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         AcHostModel acHostModel = (AcHostModel) host.getHost();
         String caheKey = projectId != null ? String.valueOf(projectId) : "";
-        caheKey += projectKey != null ? projectKey : "";
         caheKey += "-user-";
         caheKey += user != null ? user : host.getUserKey().get();
         Map<String, Boolean> map = null;
         try {
             map = tenantAwareCache.getOrElse(acHostModel, ApplicationConstants.PERMISSION_CACHE_KEY_PREFIX + "project-" + caheKey, () -> {
-                Map<String, Boolean> map2 = new HashMap<>();
-                Permissions permi = getPermissionForProject(projectId, projectKey, user);
-                permi.getPermissionMap().forEach((k, v) -> {
-                    map2.put(k, v.havePermission());
-                });
-                return map2.size() > 0 ? map2 : null;
+                Map<String, Boolean> permissionsMap = getPermissionForProject(projectId, user);
+                return permissionsMap.size() > 0 ? permissionsMap : null;
             }, dynamicProperty.getIntProp(ApplicationConstants.PERMISSION_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
         } catch (Exception exp) {
             exp.printStackTrace();
@@ -134,32 +127,28 @@ public class PermissionServiceImpl implements PermissionService {
         return map != null && map.size() > 0 ? map : new HashMap<>();
     }
 
-    private Permissions getPermissionForProject(Long projectId, String projectKey, String user) {
+    private Map<String, Boolean> getPermissionForProject(Long projectId, String user) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
         if(null != user && StringUtils.isNotEmpty(user)){
             hostUser = new AtlassianHostUser(hostUser.getHost(),Optional.of(user));
         }
         String url = JiraConstants.REST_API_MYPERMISSIONS;
-        if (StringUtils.isNotBlank(projectKey)){
-            url = url + "?projectKey=" + projectKey;
-        } else if(projectId != null){
+        if(projectId != null) {
             url = url + "?projectId=" + projectId.toString();
         }
         String permissionsStr = restClients.authenticatedAs(hostUser)
                 .getForObject(url, String.class);
-        Permissions permissions = parsePermissions(permissionsStr);
-
-        return permissions;
+       return parsePermissions(permissionsStr);
     }
 
 
-    private boolean checkPermissionForType(Long projectId, String projectKey, Long issueId, String issueKey, String permissionType, String user) {
+    private boolean checkPermissionForType(Long projectId, Long issueId, String issueKey, String permissionType, String user) {
 
         Map<String, Boolean> perMap = null;
 
-        if (StringUtils.isNotBlank(projectKey) || null != projectId) {
-            perMap = getPermissionMapForProject(projectId, projectKey, user);
+        if (null != projectId) {
+            perMap = getPermissionMapForProject(projectId, user);
         } else if (StringUtils.isNotBlank(issueKey) || null != issueId) {
             perMap = getPermissionMapForIssue(issueId, issueKey);
         } else {
@@ -179,74 +168,67 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean hasCreateAttachmentPermission(String issueIdOrKey) {
-        if (checkPermissionForType(null, null, null, issueIdOrKey, ApplicationConstants.CREATE_ATTACHMENT_PERMISSION, null))
+        if (checkPermissionForType(null, null, issueIdOrKey, ApplicationConstants.CREATE_ATTACHMENT_PERMISSION, null))
             return true;
         return false;
     }
 
     @Override
     public boolean hasCreateIssuePermission() {
-        if (checkPermissionForType(null, null, null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, null)) return true;
+        if (checkPermissionForType(null, null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, null)) return true;
         return false;
     }
 
     @Override
     public boolean hasEditIssuePermission(String issueIdOrKey) {
-        if (checkPermissionForType(null, null, null, issueIdOrKey, ApplicationConstants.EDIT_ISSUE_PERMISSION, null))
+        if (checkPermissionForType(null, null, issueIdOrKey, ApplicationConstants.EDIT_ISSUE_PERMISSION, null))
             return true;
         return false;
     }
 
     @Override
     public boolean hasEditIssuePermission(Long issueId) {
-        if (checkPermissionForType(null, null, issueId, null, ApplicationConstants.EDIT_ISSUE_PERMISSION, null)) return true;
-        return false;
-    }
-
-    @Override
-    public boolean hasBrowsePermission(String projectKey) {
-        if (checkPermissionForType(null, projectKey, null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, null))
-            return true;
+        if (checkPermissionForType(null, issueId, null, ApplicationConstants.EDIT_ISSUE_PERMISSION, null)) return true;
         return false;
     }
 
     @Override
     public boolean hasBrowsePermission(Long projectId) {
-        if (checkPermissionForType(projectId, null, null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, null))
+        if (checkPermissionForType(projectId, null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, null))
             return true;
         return false;
     }
 
     @Override
     public boolean canAddCommentPermission(String issueKey) {
-        if (checkPermissionForType(null, null, null, issueKey, ApplicationConstants.COMMENT_ISSUE, null))
+        if (checkPermissionForType(null, null, issueKey, ApplicationConstants.COMMENT_ISSUE, null))
             return true;
         return false;
     }
 
     @Override
     public boolean isSysadmin(String user) {
-        if (checkPermissionForType(null, null, null, null, ApplicationConstants.SYSTEM_ADMIN, user)) return true;
+        if (checkPermissionForType(null, null, null, ApplicationConstants.SYSTEM_ADMIN, user)) return true;
         return false;
     }
 
     @Override
     public boolean canCreateSession(String user, CaptureProject project) {
-        if (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
+        if (checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
             return true;
         return false;
     }
 
     @Override
     public boolean canBeAssignedSession(String user, CaptureProject project) {
-        if (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
+        if (checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
             return true;
         return false;
     }
 
     @Override
     public boolean canAssignSession(String user, CaptureProject project) {
-        if (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
+        if (checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
             return true;
         return false;
     }
@@ -254,14 +236,14 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public boolean canJoinSession(String user, Session session) {
         return !session.getAssignee().equals(user) && session.isShared()
-                && (checkPermissionForType(session.getProjectId(), null, null, null, ApplicationConstants.ASSIGNABLE_USER, user))
+                && (checkPermissionForType(session.getProjectId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
                 && session.getStatus().equals(Session.Status.STARTED);
     }
 
     @Override
     public boolean canJoinSession(String user, LightSession session) {
         CaptureProject project = session.getProject();
-        return project != null ? (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.ASSIGNABLE_USER, user)) : false;
+        return project != null ? (checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user)) : false;
     }
 
     @Override
@@ -323,13 +305,13 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canEditSession(String user, Session session) {
-        return checkPermissionForType(session.getProjectId(), null, null, null, ApplicationConstants.PROJECT_ADMIN, user)
+        return checkPermissionForType(session.getProjectId(), null, null, ApplicationConstants.PROJECT_ADMIN, user)
                 || session.getAssignee().equals(user) || session.getCreator().equals(user);
     }
 
     @Override
     public boolean canEditLightSession(String user, LightSession session) {
-        return checkPermissionForType(null, session.getProject().getKey(), null, null, ApplicationConstants.PROJECT_ADMIN, user)
+        return checkPermissionForType(session.getProject().getId(), null, null, ApplicationConstants.PROJECT_ADMIN, user)
                 || session.getAssignee().equals(user) || session.getCreator().equals(user);
     }
 
@@ -346,20 +328,20 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public boolean canUnraiseIssueInSession(String user, CaptureIssue issue) {
         boolean isReporter = isReporter(issue, user);
-        boolean isAssignableUser = checkPermissionForType(null, issue.getProjectKey(), null, null, ApplicationConstants.ASSIGNABLE_USER, user);
-        boolean isProjectAdmin = checkPermissionForType(null, issue.getProjectKey(), null, null, ApplicationConstants.PROJECT_ADMIN, user);
+        boolean isAssignableUser = checkPermissionForType(issue.getProjectId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user);
+        boolean isProjectAdmin = checkPermissionForType(issue.getProjectId(), null, null, ApplicationConstants.PROJECT_ADMIN, user);
         return isReporter || isAssignableUser || isProjectAdmin;
     }
 
     @Override
     public boolean canSeeIssue(String user, CaptureIssue issue) {
-        boolean canSeeIssue = checkPermissionForType(null, issue.getProjectKey(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
+        boolean canSeeIssue = checkPermissionForType(issue.getProjectId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
         return canSeeIssue;
     }
 
     @Override
     public boolean canCreateInProject(String user, CaptureProject project) {
-        boolean canCreate = checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
+        boolean canCreate = checkPermissionForType(project.getId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
         return canCreate;
     }
 
@@ -384,14 +366,14 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canSeeRelatedProject = checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
+        boolean canSeeRelatedProject = checkPermissionForType(project.getId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
 
         return canSeeRelatedProject;
     }
 
     @Override
     public boolean canSeeSession(String user, LightSession session) {
-        boolean canSeeRelatedProject = checkPermissionForType(null, session.getProject().getKey(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
+        boolean canSeeRelatedProject = checkPermissionForType(session.getProject().getId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
         return canSeeRelatedProject;
     }
 
@@ -400,7 +382,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canCreate = (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, user));
+        boolean canCreate = (checkPermissionForType(project.getId(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, user));
         return canCreate;
     }
 
@@ -409,7 +391,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canEdit = (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, user));
+        boolean canEdit = (checkPermissionForType(project.getId(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, user));
         return canEdit;
     }
 
@@ -423,7 +405,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canUse = (checkPermissionForType(null, project.getKey(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, user));
+        boolean canUse = (checkPermissionForType(project.getId(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, user));
         return canUse;
     }
 
@@ -431,31 +413,19 @@ public class PermissionServiceImpl implements PermissionService {
         return user.equals(issue.getReporter());
     }
 
-    private Permissions parsePermissions(String permissionsStr) {
-        List<Permission> permissions = Lists.newArrayList();
+    private Map<String, Boolean> parsePermissions(String permissionsStr) {
+    	Map<String, Boolean> permissionsMap = new ConcurrentHashMap<>();
         ObjectMapper om = new ObjectMapper();
         try{
             JsonNode jsonPermissions = om.readTree(permissionsStr);
             JsonNode jsonPermissionsObject = jsonPermissions.get("permissions");
-            Iterator it = jsonPermissionsObject.iterator();
-            while (it.hasNext()) {
-                JsonNode permissionObject = (JsonNode)it.next();
-                Permission permission = parsePermission(permissionObject);
-                permissions.add(permission);
-            }
+            jsonPermissionsObject.spliterator().forEachRemaining(permissionObject -> {
+            	permissionsMap.put(permissionObject.get("key").asText(), permissionObject.get("havePermission").asBoolean());
+            });
         } catch (Exception exception){
             log.error("Error during parse permission object.", exception);
         }
 
-        return new Permissions(permissions);
-    }
-
-    private Permission parsePermission(JsonNode json) throws JSONException {
-        Integer id = json.get("id").asInt();
-        String key = json.get("key").asText();
-        String name = json.get("name").asText();
-        String description = json.get("description").asText();
-        boolean havePermission = json.get("havePermission").asBoolean();
-        return new Permission(id, key, name, description, havePermission);
+        return permissionsMap;
     }
 }
