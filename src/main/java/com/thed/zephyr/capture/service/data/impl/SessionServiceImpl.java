@@ -516,6 +516,11 @@ public class SessionServiceImpl implements SessionService {
             	Set<IssueRaisedBean> issuesRaised = new TreeSet<>();
                 issuesRaised.addAll(issues);
                 session.setIssuesRaised(issuesRaised);
+                if(issues != null && issues.size() > 0) {
+                	issues.stream().forEach(issueRaisedBean -> {
+                		sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser); //Save removed raised issue information as activity.
+                	});
+                }
             }
             save(session, new ArrayList<>());
             if(Objects.nonNull(session.getIssuesRaised())) {
