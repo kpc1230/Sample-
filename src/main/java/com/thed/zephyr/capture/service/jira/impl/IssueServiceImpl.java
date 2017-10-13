@@ -4,11 +4,12 @@ import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.*;
-import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldValue;
-import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
-import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
-import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
+import com.atlassian.jira.rest.client.api.domain.input.*;
+import com.atlassian.jira.rest.client.internal.json.gen.CommentJsonGenerator;
+import com.atlassian.jira.rest.client.internal.json.gen.LinkIssuesInputGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.xml.bind.v2.TODO;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.IssueRaisedBean;
@@ -24,7 +25,9 @@ import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
+import com.thed.zephyr.capture.service.jira.IssueLinkTypeService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.service.jira.issue.IssueFields;
@@ -95,6 +98,8 @@ public class IssueServiceImpl implements IssueService {
     private DynamicProperty dynamicProperty;
     @Autowired
     private AtlassianHostRestClients atlassianHostRestClients;
+    @Autowired
+    private IssueLinkTypeService issueLinkTypeService;
 
 
     @Override
@@ -292,6 +297,51 @@ public class IssueServiceImpl implements IssueService {
         Issue issue = getIssueObject(issueKey);
         JSONObject jsonObject = new JSONObject(comment);
         postJiraRestClient.getIssueClient().addComment(issue.getCommentsUri(),Comment.valueOf(jsonObject.get("comment").toString())).claim();
+    }
+
+    @Override
+    public void linkIssues(List<SessionServiceImpl.CompleteSessionIssueLink> issueLinks , AtlassianHostUser hostUser) {
+
+        List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(hostUser);
+        IssuelinksType linkType = linkTypes.stream().filter(o -> o.getName().equals(ApplicationConstants.CAPTURE_TESTING_ISSUE_LINKTYPE)).findFirst().get();
+        String linkTypeToSend = null;
+        if(linkType!=null){
+            linkTypeToSend = linkType.getName();
+        }else {
+            String outgoingName = i18n.getMessage("bonfire.issue.link.outgoing");
+            String incomingName = i18n.getMessage("bonfire.issue.link.incoming");
+            IssuelinksType createReq = new IssuelinksType(null, null, ApplicationConstants.CAPTURE_TESTING_ISSUE_LINKTYPE, incomingName, outgoingName);
+            IssuelinksType resp1 =  issueLinkTypeService.createIssuelinkType(createReq,hostUser);
+           linkTypeToSend = resp1.getName();
+        }
+        String linkTypeStr = new String(linkTypeToSend);
+        String url = hostUser.getHost().getBaseUrl()+JiraConstants.REST_API_ISSUE_LINK;
+        issueLinks.forEach(issueLink -> {
+            log.debug("linkIssues Staretd for Raised : {}, Related : {} ",issueLink.getRaised(),issueLink.getRelated());
+            JSONObject reqJson = new JSONObject();
+            ResponseEntity<JsonNode> resp =null;
+        try {
+            reqJson.put("type", (new JSONObject()).put("name", linkTypeStr));
+            reqJson.put("inwardIssue", (new JSONObject()).put("key", issueLink.getRaised().getKey()));
+            reqJson.put("outwardIssue", (new JSONObject()).put("key", issueLink.getRelated().getKey()));
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<String> requestUpdate = new HttpEntity<>(reqJson.toString(),httpHeaders);
+            resp = atlassianHostRestClients.authenticatedAs(hostUser).exchange(url, HttpMethod.POST,requestUpdate,JsonNode.class);
+        }catch (Exception exp){
+          log.error("Error in linkIssue : "+exp.getMessage(),exp);
+        }
+
+        });
+    }
+
+    public JSONObject generate(LinkIssuesInput linkIssuesInput) throws JSONException {
+        JSONObject res = new JSONObject();
+        res.put("type", (new JSONObject()).put("name", linkIssuesInput.getLinkType()));
+        res.put("inwardIssue", (new JSONObject()).put("key", linkIssuesInput.getFromIssueKey()));
+        res.put("outwardIssue", (new JSONObject()).put("key", linkIssuesInput.getToIssueKey()));
+
+        return res;
     }
 
     public CaptureIssue searchPropertiesByJql(String issueKey, String allProperties) {

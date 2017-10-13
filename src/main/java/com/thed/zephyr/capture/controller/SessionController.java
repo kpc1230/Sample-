@@ -502,7 +502,18 @@ public class SessionController extends CaptureAbstractController{
 				sessionActivityService.setStatus(session, new Date(), loggedUserKey);
 			});
 			sessionService.update(completeSessionResult.getSessionUpdateResult());
+			List<SessionServiceImpl.CompleteSessionIssueLink> issueLinks = completeSessionResult.getIssuesToLink();
+			if(issueLinks!=null&&issueLinks.size()>0){
+				CompletableFuture.runAsync(() -> {
+					log.debug("Thread to Link Issues started");
+					issueService.linkIssues(issueLinks, hostUser);
+					log.debug("Thread to Link Issues Complted");
+				});
+			}
+
+
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
+
 			log.info("End of completeSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {

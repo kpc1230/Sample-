@@ -203,4 +203,6 @@ public class ApplicationConstants {
     public static final String FEEDBACK_SEND_EMAIL = "feedback.send.email";
     
     public static final String INCOMEPLETE_STATUS = "Incomplete";
+
+    public static final String CAPTURE_TESTING_ISSUE_LINKTYPE = "Zephyr Capture testing";
 }
