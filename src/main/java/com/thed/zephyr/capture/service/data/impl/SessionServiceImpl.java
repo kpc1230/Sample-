@@ -388,8 +388,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull) {
 		CaptureProject project = projectService.getCaptureProject(session.getProjectId());
-		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, null);
-		boolean isActive = session.getId().equals(activeSessionId);
+		boolean isActive = Status.STARTED.equals(session.getStatus());
 		return createSessionDto(loggedInUser, session, isActive, project, isSendFull);
 	}
 
