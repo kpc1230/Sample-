@@ -64,7 +64,7 @@ public class SessionESRepositoryImpl {
 			boolQueryBuilder.must(statusQueryBuilder);
     	}
     	if(searchTerm.isPresent() && !StringUtils.isEmpty(searchTerm.get())) { //Check if user typed any search term against session name then add to query.
-    		RegexpQueryBuilder statusQueryBuilder = QueryBuilders.regexpQuery(ApplicationConstants.SESSION_NAME_FIELD,  ".*" + searchTerm.get().toLowerCase() + ".*");
+    		RegexpQueryBuilder statusQueryBuilder = QueryBuilders.regexpQuery(ApplicationConstants.SORTFIELD_ES_SESSION_NAME,  ".*" + searchTerm.get().toLowerCase() + ".*");
 			boolQueryBuilder.must(statusQueryBuilder);
     	}
     	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort(ApplicationConstants.SORTFIELD_ES_CREATED).order(SortOrder.DESC);
