@@ -10,6 +10,7 @@ import com.thed.zephyr.capture.model.jira.TestSectionResponse;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import org.codehaus.jettison.json.JSONException;
+import org.joda.time.DateTime;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -35,4 +36,5 @@ public interface IssueService {
 
     CaptureIssue searchPropertiesByJql(String issueKey, String allProperties);
     void linkIssues(List<SessionServiceImpl.CompleteSessionIssueLink> issueLinks , AtlassianHostUser hostUser);
+    void addTimeTrakingToIssue(Issue issue, DateTime sessionCreationOn, Long durationInMilliSeconds,String comment, AtlassianHostUser hostUser);
 }

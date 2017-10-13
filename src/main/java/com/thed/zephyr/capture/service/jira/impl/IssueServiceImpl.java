@@ -5,20 +5,12 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.*;
 import com.atlassian.jira.rest.client.api.domain.input.*;
-import com.atlassian.jira.rest.client.internal.json.gen.CommentJsonGenerator;
-import com.atlassian.jira.rest.client.internal.json.gen.LinkIssuesInputGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.xml.bind.v2.TODO;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.IssueRaisedBean;
 import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.model.jira.CaptureEnvironment;
-import com.thed.zephyr.capture.model.jira.CaptureIssue;
-import com.thed.zephyr.capture.model.jira.CaptureResolution;
-import com.thed.zephyr.capture.model.jira.TestSectionResponse;
-import com.thed.zephyr.capture.model.jira.TestingStatus;
+import com.thed.zephyr.capture.model.jira.*;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
@@ -55,6 +47,7 @@ import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -317,7 +310,7 @@ public class IssueServiceImpl implements IssueService {
         String linkTypeStr = new String(linkTypeToSend);
         String url = hostUser.getHost().getBaseUrl()+JiraConstants.REST_API_ISSUE_LINK;
         issueLinks.forEach(issueLink -> {
-            log.debug("linkIssues Staretd for Raised : {}, Related : {} ",issueLink.getRaised(),issueLink.getRelated());
+            log.debug("linkIssues Staretd for Raised : {}, Related : {} ",issueLink.getRaised().getKey(),issueLink.getRelated().getKey());
             JSONObject reqJson = new JSONObject();
             ResponseEntity<JsonNode> resp =null;
         try {
@@ -335,13 +328,20 @@ public class IssueServiceImpl implements IssueService {
         });
     }
 
-    public JSONObject generate(LinkIssuesInput linkIssuesInput) throws JSONException {
-        JSONObject res = new JSONObject();
-        res.put("type", (new JSONObject()).put("name", linkIssuesInput.getLinkType()));
-        res.put("inwardIssue", (new JSONObject()).put("key", linkIssuesInput.getFromIssueKey()));
-        res.put("outwardIssue", (new JSONObject()).put("key", linkIssuesInput.getToIssueKey()));
-
-        return res;
+    @Override
+    public void addTimeTrakingToIssue(Issue issue,DateTime sessionCreationOn, Long durationInMilliSeconds,String comment, AtlassianHostUser hostUser) {
+        try {
+            Long durationinMinitus = TimeUnit.MILLISECONDS.toMinutes(durationInMilliSeconds);
+            int min = java.lang.Math.toIntExact(durationinMinitus);
+            if (min > 0) {
+                WorklogInput worklogInput = WorklogInput.create(issue.getSelf(), comment, sessionCreationOn, min);
+                postJiraRestClient.getIssueClient().addWorklog(issue.getWorklogUri(), worklogInput).claim();
+            } else {
+                log.warn("Cannot log the time if it is zero min : {}", min);
+            }
+        } catch (Exception exp) {
+            log.error("Exception while getting the issue from JIRA." + exp.getMessage(), exp);
+        }
     }
 
     public CaptureIssue searchPropertiesByJql(String issueKey, String allProperties) {
@@ -536,6 +536,4 @@ public class IssueServiceImpl implements IssueService {
     private String buildIssueCacheKey(String issueIdOrKey) {
         return ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + issueIdOrKey;
     }
-
-
 }

@@ -39,6 +39,7 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.validator.SessionValidator;
 import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -50,7 +51,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.ws.rs.QueryParam;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
@@ -503,15 +503,18 @@ public class SessionController extends CaptureAbstractController{
 			});
 			sessionService.update(completeSessionResult.getSessionUpdateResult());
 			List<SessionServiceImpl.CompleteSessionIssueLink> issueLinks = completeSessionResult.getIssuesToLink();
-			if(issueLinks!=null&&issueLinks.size()>0){
-				CompletableFuture.runAsync(() -> {
+			DateTime timestamp = new DateTime(completeSessionResult.getSessionUpdateResult().getSession().getTimeCreated());
+			CompletableFuture.runAsync(() -> {
+				if (issueLinks != null && issueLinks.size() > 0) {
 					log.debug("Thread to Link Issues started");
 					issueService.linkIssues(issueLinks, hostUser);
-					log.debug("Thread to Link Issues Complted");
-				});
+					log.debug("Thread to Link Issues Completed");
+				}
+			});
+			if (completeSessionResult.getLogTimeIssue() != null) {
+				String comment=i18n.getMessage("issue.service.logwork.comment.prefix", new Object[]{completeSessionResult.getSessionUpdateResult().getSession().getName()});
+				issueService.addTimeTrakingToIssue(completeSessionResult.getLogTimeIssue(), timestamp, completeSessionResult.getMillisecondsDuration(),comment,hostUser);
 			}
-
-
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 
 			log.info("End of completeSession()");
