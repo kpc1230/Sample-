@@ -89,7 +89,7 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
                     String timeInMilliSec = keyParts[2];
                     String jiraToken = keyParts[3];
                     tokenHolder.setTokenKey(jiraToken);
-                    if (validateKeyExpiry(timeInMilliSec)) {
+                    if (!validateKeyExpiry(timeInMilliSec)) {
                         return false;
                     }
                     AcHostModel acHostModel = acHostModelRepository.findOne(clientKey);
@@ -110,11 +110,11 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
 
     private boolean validateKeyExpiry(String timeInMilliSec) {
         long keyGeneratedTime = Long.valueOf(timeInMilliSec);
-        long expiredin = dynamicProperty.getLongProp(ApplicationConstants.BE_ACCESS_KEY_EXPIRATION_TIME, (15 * 24 * 60 * 60 * 1000)).get();
-        if (keyGeneratedTime + expiredin >= System.currentTimeMillis()) {
-            return false;
+        long expiredIn = dynamicProperty.getLongProp(ApplicationConstants.BE_ACCESS_KEY_EXPIRATION_TIME, (15 * 24 * 60 * 60 * 1000)).get();
+        if (keyGeneratedTime + expiredIn >= System.currentTimeMillis()) {
+            return true;
         }
-        return true;
+        return false;
     }
 
 
