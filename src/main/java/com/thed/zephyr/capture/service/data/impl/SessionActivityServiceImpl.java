@@ -134,12 +134,10 @@ public class SessionActivityServiceImpl implements SessionActivityService {
 
     @Override
     public SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignee) {
-        if (!assigner.equals(assignee)) {
-            UserAssignedSessionActivity sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, assigner, session.getProjectId(), assignee);
-            sessionActivityRepository.save(sessionActivity);
-            return sessionActivity;
-        }
-        return null;
+        UserAssignedSessionActivity sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, assigner, session.getProjectId(), assignee);
+        sessionActivityRepository.save(sessionActivity);
+
+        return sessionActivity;
     }
 
     @Override

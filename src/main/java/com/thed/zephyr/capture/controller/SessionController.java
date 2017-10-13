@@ -736,7 +736,7 @@ public class SessionController extends CaptureAbstractController{
 			isLocked = true;
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			String oldAssingee = loadedSession.getAssignee();
+			String assigner = hostUser.getUserKey().get();
 			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
 			if (!StringUtils.isEmpty(assignee) && !permissionService.canBeAssignedSession(assignee, captureProject)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{assignee}));
@@ -754,7 +754,7 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult);
 			//Save assigned user to the session as activity.
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.addAssignee(loadedSession, new Date(), oldAssingee, assignee);
+				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, assignee);
 			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession, false);
 			log.info("End of assignSession()");
