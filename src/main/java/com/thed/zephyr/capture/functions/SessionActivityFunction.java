@@ -1,15 +1,17 @@
 package com.thed.zephyr.capture.functions;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.service.jira.IssueService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.WikiParser;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Class converts the session activity which has issue id to map in order
@@ -22,9 +24,11 @@ import com.thed.zephyr.capture.util.CaptureUtil;
 public class SessionActivityFunction implements Function<SessionActivity, Object> {
 	
 	private IssueService issueService;
+	private WikiParser wikiParser;
 	
-	public SessionActivityFunction(IssueService issueService) {
+	public SessionActivityFunction(IssueService issueService, WikiParser wikiParser) {
 		this.issueService = issueService;
+		this.wikiParser = wikiParser;
 	}
 
 	@Override
@@ -52,6 +56,10 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 			return finalSescionActivityMap;
 		} else if(sessionActivity instanceof NoteSessionActivity){
 			NoteSessionActivity noteSessionActivity = (NoteSessionActivity) sessionActivity;
+			String noteData = noteSessionActivity.getNoteData();
+			if(noteData != null){
+				noteSessionActivity.setNoteData(wikiParser.parseWiki(noteData, ApplicationConstants.HTML));
+			}
 			addNoteActivityInToMap(finalSescionActivityMap, noteSessionActivity);
 			return finalSescionActivityMap;
 		}

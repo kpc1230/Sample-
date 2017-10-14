@@ -38,10 +38,7 @@ import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
-import com.thed.zephyr.capture.util.ApplicationConstants;
-import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
-import com.thed.zephyr.capture.util.CaptureUtil;
-import com.thed.zephyr.capture.util.DynamicProperty;
+import com.thed.zephyr.capture.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -104,7 +101,8 @@ public class SessionServiceImpl implements SessionService {
 	private LockService lockService;
 	@Autowired
 	private CaptureContextIssueFieldsService captureContextIssueFieldsService;
-
+	@Autowired
+	private WikiParser wikiParser;
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -375,7 +373,11 @@ public class SessionServiceImpl implements SessionService {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
 		List<Session> sessionsList = pageResponse.getContent();
-		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, sessionsList, size);
+		List<Session> convertedSessList = new ArrayList<>();
+		sessionsList.forEach(session -> {
+			convertedSessList.add(convertAdditionalInfoWiki(session));
+		});
+		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, convertedSessList, size);
 		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, pageResponse.getTotalElements());
 		return sessionDtoSearchList;
 	}
@@ -389,7 +391,20 @@ public class SessionServiceImpl implements SessionService {
 	public SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull) {
 		CaptureProject project = projectService.getCaptureProject(session.getProjectId());
 		boolean isActive = Status.STARTED.equals(session.getStatus());
+		convertAdditionalInfoWiki(session);
 		return createSessionDto(loggedInUser, session, isActive, project, isSendFull);
+	}
+
+	/**
+	 * Convert additional info to wiki
+	 * @param session
+	 */
+	private Session convertAdditionalInfoWiki(Session session) {
+		String additionalInfo = session.getAdditionalInfo();
+		if(additionalInfo != null){
+			session.setAdditionalInfo(wikiParser.parseWiki(additionalInfo,ApplicationConstants.HTML));
+		}
+		return session;
 	}
 
 	@Override

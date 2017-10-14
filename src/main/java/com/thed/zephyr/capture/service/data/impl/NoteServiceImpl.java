@@ -11,8 +11,10 @@ import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.NoteService;
 import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.WikiParser;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -41,7 +43,8 @@ public class NoteServiceImpl implements NoteService {
 	UserService userService;
 	@Autowired
 	SessionESRepository sessionESRepository;
-	
+	@Autowired
+	private WikiParser wikiParser;
 
 	@Override
 	public NoteRequest create(NoteRequest noteRequest) throws CaptureValidationException {
@@ -176,10 +179,18 @@ public class NoteServiceImpl implements NoteService {
 	public NoteSearchList getNotesBySessionId(String loggedUser, String ctId, String sessionId, Integer page, Integer limit) {
 		Pageable pageable = CaptureUtil.getPageRequest(page, limit);
 		Page<Note> notes = noteRepository.findByCtIdAndSessionIdOrderByCreatedTimeAsc(ctId, sessionId, pageable);
-		List<Note> content = notes != null?notes.getContent():new ArrayList<>();
+		List<Note> listNotes = new ArrayList<>();
 		Long total = notes != null?notes.getTotalElements():0;
-		NoteSearchList result = new NoteSearchList(convertNoteTO(loggedUser, content), page, limit, total);
-
+		if(total>0){
+			notes.getContent().forEach(note -> {
+				String noteData = note.getNoteData();
+				if(noteData != null) {
+					note.setNoteData(wikiParser.parseWiki(noteData,ApplicationConstants.HTML));
+				}
+				listNotes.add(note);
+			});
+		}
+		NoteSearchList result = new NoteSearchList(convertNoteTO(loggedUser, listNotes), page, limit, total);
 		return result;
 	}
 

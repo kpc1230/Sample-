@@ -37,6 +37,7 @@ import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.WikiParser;
 import com.thed.zephyr.capture.validator.SessionValidator;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
@@ -87,6 +88,9 @@ public class SessionController extends CaptureAbstractController{
 	@Autowired
 	private LockService lockService;
 
+	@Autowired
+	private WikiParser wikiParser;
+
 	@InitBinder("sessionRequest")
 	public void setupBinder(WebDataBinder binder) {
 	    binder.addValidators(sessionValidator);
@@ -103,8 +107,12 @@ public class SessionController extends CaptureAbstractController{
 			CaptureProject project = projectService.getCaptureProject(projectId);
 			SessionSearchList sessionsSearch = sessionService.getSessionsForProject(projectId, offset, limit);
 			sessionsSearch.getContent().stream().forEach(session -> {
+				String additionalInfo = session.getAdditionalInfo();
+				if(additionalInfo != null){
+					additionalInfo = wikiParser.parseWiki(additionalInfo, ApplicationConstants.HTML);
+				}
 				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-						project, session.getDefaultTemplateId(), session.getAdditionalInfo(), CaptureUtil.createWikiData(session.getAdditionalInfo()), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
+						project, session.getDefaultTemplateId(), additionalInfo, CaptureUtil.createWikiData(session.getAdditionalInfo()), session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
 				sessionDtoList.add(lightSession);
 			});
 			LightSessionSearchList response = new LightSessionSearchList(sessionDtoList, sessionsSearch.getOffset(), sessionsSearch.getLimit(), sessionsSearch.getTotal());
@@ -683,7 +691,7 @@ public class SessionController extends CaptureAbstractController{
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
-	
+
 	@GetMapping(value = "/{sessionId}/activities", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> sessionActivities(@PathVariable("sessionId") String sessionId,
 											 @RequestParam("offset") Optional<Integer> offset,
@@ -703,7 +711,7 @@ public class SessionController extends CaptureAbstractController{
 				ActivityStreamFilterUI activityStreamFilterUI = new ActivityStreamFilterUI(notesFilterStateUI);
 				sessionActivities =  getSessionActivityItems(sessionActivities,activityStreamFilterUI,getUser());
 			}
-			List<?> finalSessionActivities = sessionActivities.stream().map(new SessionActivityFunction(issueService)).collect(Collectors.toList());
+			List<?> finalSessionActivities = sessionActivities.stream().map(new SessionActivityFunction(issueService, wikiParser)).collect(Collectors.toList());
 			log.info("End of sessionActivities()");
 			return ResponseEntity.ok(finalSessionActivities);
 		} catch(Exception ex) {

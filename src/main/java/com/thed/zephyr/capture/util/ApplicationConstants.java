@@ -89,6 +89,8 @@ public class ApplicationConstants {
     public static final String RAISED_ISSUE = "raisedIssues";
     public static final String RELATED_ISSUE = "relatedIssues";
     public static final String SESSION_ACTIVITIES = "sessionActivities";
+    public static final String HTML = "html";
+    public static final String TEXT = "text";
 
     /*** for MetadataField ***/
     public static String PROJECTS = "projects";

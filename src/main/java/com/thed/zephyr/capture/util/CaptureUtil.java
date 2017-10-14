@@ -1,16 +1,11 @@
 package com.thed.zephyr.capture.util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
+import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.IssueType;
+import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.model.Tag;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.tomcat.util.codec.binary.Base64;
@@ -22,12 +17,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.IssueType;
-import com.thed.zephyr.capture.model.AcHostModel;
-import com.thed.zephyr.capture.model.Tag;
-import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 public class CaptureUtil {
@@ -240,14 +233,14 @@ public class CaptureUtil {
 				case "": {
 					if(isPrevNewLine) {
 						isPrevNewLine = false;
-						data.append("</p>");
+						data.append("");
 					}
 					break;
 				} default: {
 					if(!isFirstLine && isPrevNewLine) {
 						data.append("<br/>");
 					} else {
-						data.append("<p>");
+						data.append("");
 					}
 					data.append(getAtlassiaonWikiformatted(line));
 					isFirstLine = false;
@@ -255,7 +248,7 @@ public class CaptureUtil {
 				}			
 			}
 		}
-		data.append("</p>");
+		data.append("");
 		return data.toString();
 	}
 	
