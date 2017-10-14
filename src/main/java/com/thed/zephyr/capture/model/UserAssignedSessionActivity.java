@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.model;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import org.joda.time.DateTime;
 
 import java.util.Date;
@@ -10,6 +11,9 @@ import java.util.Date;
 public class UserAssignedSessionActivity extends SessionActivity {
 
     private String assignee;
+
+    @DynamoDBIgnore
+    private String assigneeDisplayName;
 
     public UserAssignedSessionActivity() {
     }
@@ -25,6 +29,14 @@ public class UserAssignedSessionActivity extends SessionActivity {
 
     public void setAssignee(String assignee) {
         this.assignee = assignee;
+    }
+
+    public String getAssigneeDisplayName() {
+        return assigneeDisplayName;
+    }
+
+    public void setAssigneeDisplayName(String assigneeDisplayName) {
+        this.assigneeDisplayName = assigneeDisplayName;
     }
 
     @Override

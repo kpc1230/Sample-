@@ -187,9 +187,9 @@ public class NoteController extends CaptureAbstractController {
         NoteSearchList result = null;
         try {
             result = noteService.getNotesByProjectId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, noteFilter, page, limit);
-        } catch (Exception ex) {
-            log.error("Error during getNotesByProjectId.", ex);
-            throw new CaptureRuntimeException(ex.getMessage());
+        } catch (Exception exception) {
+            log.error("Error during getting notes by projectId:{} method:POST page:{} limit:{}", projectId, page, limit, exception);
+            throw new CaptureRuntimeException(exception.getMessage());
         }
         log.debug("getNotesByProjectId end for the session:{}", projectId);
         return ResponseEntity.ok(result);
@@ -223,9 +223,9 @@ public class NoteController extends CaptureAbstractController {
         NoteSearchList result = null;
         try {
             result = noteService.getNotesByProjectId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, populateNoteFilter(notesFilterStateUI), page, limit);
-        } catch (Exception ex) {
-            log.error("Error during getNotesByProjectId.", ex);
-            throw new CaptureRuntimeException(ex.getMessage());
+        } catch (Exception exception) {
+            log.error("Error during getting notes by projectId:{} method:GET page:{} limit:{}", projectId, page, limit, exception);
+            throw new CaptureRuntimeException(exception.getMessage());
         }
         log.debug("getNotesByProjectId end for the session:{}", projectId);
         return ResponseEntity.ok(result);
@@ -244,9 +244,9 @@ public class NoteController extends CaptureAbstractController {
         NoteSearchList result = null;
         try {
             result = noteService.getNotesBySessionId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), sessionId, page, limit);
-        } catch (Exception ex) {
-            log.error("Error during getNotesByProjectId.", ex);
-            throw new CaptureRuntimeException(ex.getMessage());
+        } catch (Exception exception) {
+            log.error("Error during getting notes by sessionId:{} page:{} limit:{}", sessionId, page, limit, exception);
+            throw new CaptureRuntimeException(exception.getMessage());
         }
 
         return ResponseEntity.ok(result);

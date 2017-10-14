@@ -34,6 +34,9 @@ abstract public class SessionActivity {
 
     private Long projectId;
 
+    @DynamoDBIgnore
+    private String displayName;
+
     public SessionActivity() {
         this.clazz = this.getClass().getCanonicalName();
     }
@@ -101,6 +104,14 @@ abstract public class SessionActivity {
 
     public void setProjectId(Long projectId) {
         this.projectId = projectId;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     @Override

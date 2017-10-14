@@ -6,11 +6,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.thed.zephyr.capture.model.IssueAttachmentSessionActivity;
-import com.thed.zephyr.capture.model.IssueRaisedSessionActivity;
-import com.thed.zephyr.capture.model.IssueUnraisedSessionActivity;
-import com.thed.zephyr.capture.model.NoteSessionActivity;
-import com.thed.zephyr.capture.model.SessionActivity;
+import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.util.CaptureUtil;
@@ -59,12 +55,12 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 			addNoteActivityInToMap(finalSescionActivityMap, noteSessionActivity);
 			return finalSescionActivityMap;
 		}
+
 		return sessionActivity;
 	}
 
 	@SuppressWarnings("unchecked")
-	private void addNoteActivityInToMap(Map<String, Object> finalSessionActivityMap,
-			NoteSessionActivity noteSessionActivity) {
+	private void addNoteActivityInToMap(Map<String, Object> finalSessionActivityMap, NoteSessionActivity noteSessionActivity) {
 		ObjectMapper m = new ObjectMapper();
 		finalSessionActivityMap.putAll(m.convertValue(noteSessionActivity, Map.class));
 		String rawNoteData = noteSessionActivity.getNoteData();
@@ -80,6 +76,7 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 		finalSescionActivityMap.put("user", sessionActivity.getUser());
 		finalSescionActivityMap.put("clazz", sessionActivity.getClazz());
 		finalSescionActivityMap.put("projectId", sessionActivity.getProjectId());
+		finalSescionActivityMap.put("displayName", sessionActivity.getDisplayName());
 	}
 	
 	private void addIssueInToMap(Map<String, Object> finalSescionActivityMap, CaptureIssue issue, Long issuedId) {

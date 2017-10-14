@@ -6,6 +6,7 @@ import com.thed.zephyr.capture.model.jira.Attachment;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
+import com.thed.zephyr.capture.service.jira.UserService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,8 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     private SessionActivityRepository sessionActivityRepository;
     @Autowired
     private Logger log;
+    @Autowired
+    private UserService userService;
 
     @Override
     public SessionActivity setStatus(Session session, Date timestamp, String user) {
@@ -129,7 +132,9 @@ public class SessionActivityServiceImpl implements SessionActivityService {
 
     @Override
     public List<SessionActivity> getAllSessionActivityBySession(String sessionId, Pageable pageRequest) {
-        return sessionActivityRepository.findBySessionId(sessionId);
+        List<SessionActivity> sessionActivities = sessionActivityRepository.findBySessionId(sessionId);
+        populateDisplayNames(sessionActivities);
+        return sessionActivities;
     }
 
     @Override
@@ -157,5 +162,15 @@ public class SessionActivityServiceImpl implements SessionActivityService {
             log.debug("SessionActivity deleted id:{}", sessionActivity.getId());
             sessionActivityRepository.delete(sessionActivity);
         }
+    }
+
+    private void populateDisplayNames(List<SessionActivity> sessionActivities){
+        sessionActivities.stream().forEach(sessionActivity -> {
+            sessionActivity.setDisplayName(userService.findUserByKey(sessionActivity.getUser()).getDisplayName());
+            if (sessionActivity instanceof UserAssignedSessionActivity){
+                UserAssignedSessionActivity userAssignedSessionActivity = (UserAssignedSessionActivity)sessionActivity;
+                userAssignedSessionActivity.setAssigneeDisplayName(userService.findUserByKey(userAssignedSessionActivity.getAssignee()).getDisplayName());
+            }
+        });
     }
 }

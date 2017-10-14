@@ -70,28 +70,20 @@ public class SessionController extends CaptureAbstractController{
 	
 	@Autowired
     private Logger log;
-	
 	@Autowired
 	private SessionValidator sessionValidator;
-	
 	@Autowired
 	private ProjectService projectService;
-
 	@Autowired
 	private SessionActivityService sessionActivityService;
-
 	@Autowired
 	private PermissionService permissionService;
-
 	@Autowired
 	private IssueService issueService;
-
 	@Autowired
 	private InviteService inviteService;
-	
 	@Autowired
 	private UserService userService;
-	
 	@Autowired
 	private LockService lockService;
 
@@ -696,8 +688,7 @@ public class SessionController extends CaptureAbstractController{
 	public ResponseEntity<?> sessionActivities(@PathVariable("sessionId") String sessionId,
 											 @RequestParam("offset") Optional<Integer> offset,
 											 @RequestParam("limit") Optional<Integer> limit,
-											   HttpServletRequest request
-	) throws CaptureValidationException {
+											   HttpServletRequest request) throws CaptureValidationException {
 		log.info("Start of sessionActivities() --> params " + sessionId);
 		try {
 			List<SessionActivity> sessionActivities = sessionActivityService.getAllSessionActivityBySession(sessionId,
