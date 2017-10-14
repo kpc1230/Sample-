@@ -1,9 +1,7 @@
 package com.thed.zephyr.capture.service.data.impl;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.NoteSearchList;
@@ -11,18 +9,18 @@ import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.NoteRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.PermissionService;
+import com.thed.zephyr.capture.service.data.NoteService;
+import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.service.data.NoteService;
-import com.thed.zephyr.capture.service.jira.UserService;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Venkatareddy on 08/28/2017.
@@ -126,8 +124,8 @@ public class NoteServiceImpl implements NoteService {
 			throw new CaptureValidationException(i18n.getMessage("note.invalid", new Object[]{noteRequest.getId()}));
 		} else if (!noteRequest.getSessionId().equals(existing.getSessionId())){
 			throw new CaptureValidationException(i18n.getMessage("session.invalid.id", new Object[]{noteRequest.getSessionId()}));
-		} else if (!noteRequest.getUser().equals(existing.getUser())){
-			throw new CaptureValidationException(i18n.getMessage("note.update.permission.violation"));
+//		} else if (!noteRequest.getUser().equals(existing.getUser())){
+//			throw new CaptureValidationException(i18n.getMessage("note.update.permission.violation"));
 		}
 		if (!permissionService.canEditNote(noteRequest.getUser(), noteRequest.getSessionId(), (NoteSessionActivity)existing)) {
 			throw new CaptureValidationException(i18n.getMessage("note.update.permission.violation"));
