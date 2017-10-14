@@ -13,6 +13,7 @@ import com.thed.zephyr.capture.model.jira.FieldOption;
 import com.thed.zephyr.capture.service.jira.IssueTypeService;
 import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.JiraConstants;
 import net.minidev.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
@@ -45,6 +46,8 @@ public class MetadataServiceImpl implements MetadataService {
     private IssueTypeService issueTypeService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private CaptureI18NMessageSource i18n;
 
     @Override
     public Map<String, Object> createFieldScreenRenderer(CaptureProject captureProject) {
@@ -109,20 +112,24 @@ public class MetadataServiceImpl implements MetadataService {
                         JsonNode options = vN.has(ALLOWED_VALUES) ? vN.get(ALLOWED_VALUES):
                                 new ObjectMapper().createArrayNode();
                         List<FieldOption> fieldOptions = new ArrayList<>();
+                        String key = vN.get(KEY).asText();
+                        if(key.equals("assignee")){
+                            fieldOptions = addAssigneeOptions();
+                        }
+                        List<FieldOption> finalFieldOptions = fieldOptions;
                         options.forEach(jsonNode1 -> {
                             String name = jsonNode1.has("name") ? jsonNode1.get("name").asText():
                                     jsonNode1.get("value").asText();
                             String value = jsonNode1.has("id") ? jsonNode1.get("id").asText(): null;
                             if(StringUtils.isNotEmpty(name)
                                     && StringUtils.isNotEmpty(value)) {
-                                fieldOptions.add(new FieldOption(name,value));
+                                finalFieldOptions.add(new FieldOption(name,value));
                             }
                         });
 
-                        String key = vN.get(KEY).asText();
                         ObjectNode objectNode = (ObjectNode)vN;
                         if(!key.equalsIgnoreCase("issuelinks")){
-                            objectNode.set(OPTIONS, new ObjectMapper().valueToTree(fieldOptions));
+                            objectNode.set(OPTIONS, new ObjectMapper().valueToTree(finalFieldOptions));
                         }else{
                             if(issuelinksTypesList.size()>0){
                                 objectNode.set(OPTIONS, new ObjectMapper().convertValue(issuelinksTypesList,JsonNode.class));
@@ -177,5 +184,16 @@ public class MetadataServiceImpl implements MetadataService {
          return resultMap;
     }
 
-
+    private List<FieldOption> addAssigneeOptions() {
+        List<FieldOption> fieldOpts = new ArrayList<>();
+        // -1 is used by JIRA to for automatically assignment.
+        // -2 will be used by us to say assign to me
+        // If the user decides to make usernames -1 or -2 then this won't work so well... This problem exists with JIRA. Realistically no one would
+        // need a username -1 or -2
+        // Automatic needs to be first so it defaults
+        fieldOpts.add(new FieldOption(i18n.getMessage("issue.assignee.automatic"), "-1"));
+        fieldOpts.add(new FieldOption(i18n.getMessage("issue.assignee.tome"), "-2"));
+        fieldOpts.add(new FieldOption(i18n.getMessage("issue.assignee.unassigned"), ""));
+        return fieldOpts;
+    }
 }
