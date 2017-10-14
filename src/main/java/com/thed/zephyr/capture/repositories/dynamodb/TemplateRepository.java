@@ -23,12 +23,22 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	 */
 	@EnableScan
 	@EnableScanCount
-	public Page<Template> findByCtIdAndSharedAndProjectId(String ctId,Boolean shared, Long projectId, Pageable pageable);
+	public Page<Template> findByCtIdAndSharedAndProjectId(String ctId, Boolean shared, Long projectId, Pageable pageable);
+
+	/**
+	 * Find all the Template objects using ctId and Shared as true.
+	 * @param ctId
+	 * @param shared
+	 * @param pageable
+	 * @return - Paginated Template objects.
+	 */
+	@EnableScan
+	@EnableScanCount
+	public Page<Template> findByCtIdAndShared(String ctId, Boolean shared, Pageable pageable);
 
 	/**
 	 * Find all the Template objects using favourite as true and owner.
 	 * @param favourite
-	 * @param owner
 	 * @param pageable
 	 * @return - Paginated Template objects.
 	 */

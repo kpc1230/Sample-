@@ -1,12 +1,11 @@
 package com.thed.zephyr.capture.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import org.joda.time.DateTime;
-
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Objects;
 
 public class TemplateRequest {
 	public static String FIELD_ISSUETYPE = "issueType";
@@ -171,4 +170,31 @@ public class TemplateRequest {
 		this.variables = variables;
 	}
 
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof TemplateRequest)) return false;
+		TemplateRequest that = (TemplateRequest) o;
+		return isVariablesChanged() == that.isVariablesChanged() &&
+				Objects.equals(getName(), that.getName()) &&
+				Objects.equals(getShared(), that.getShared()) &&
+				Objects.equals(getFavourited(), that.getFavourited()) &&
+				Objects.equals(getSource(), that.getSource()) &&
+				Objects.equals(getId(), that.getId()) &&
+				Objects.equals(getProjectId(), that.getProjectId()) &&
+				Objects.equals(getProjectKey(), that.getProjectKey()) &&
+				Objects.equals(getProjectIconUrl(), that.getProjectIconUrl()) &&
+				Objects.equals(getOwnerName(), that.getOwnerName()) &&
+				Objects.equals(getTimeCreated(), that.getTimeCreated()) &&
+				Objects.equals(getTimeUpdated(), that.getTimeUpdated()) &&
+				Objects.equals(getTimeVariablesUpdated(), that.getTimeVariablesUpdated()) &&
+				Objects.equals(getTimeFavourited(), that.getTimeFavourited()) &&
+				Objects.equals(getOwnerDisplayName(), that.getOwnerDisplayName()) &&
+				Objects.equals(getVariables(), that.getVariables());
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getShared(), getFavourited(), getSource(), getId(), getProjectId(), getProjectKey(), getProjectIconUrl(), getOwnerName(), getTimeCreated(), getTimeUpdated(), getTimeVariablesUpdated(), getTimeFavourited(), isVariablesChanged(), getOwnerDisplayName(), getVariables());
+	}
 }

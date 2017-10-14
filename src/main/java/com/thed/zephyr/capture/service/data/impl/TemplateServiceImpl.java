@@ -1,19 +1,5 @@
 package com.thed.zephyr.capture.service.data.impl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import com.thed.zephyr.capture.service.PermissionService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
@@ -24,12 +10,20 @@ import com.thed.zephyr.capture.model.Variable;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.TemplateRepository;
+import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.TemplateService;
 import com.thed.zephyr.capture.service.data.VariableService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Venkatareddy on 08/18/2017.
@@ -99,8 +93,29 @@ public class TemplateServiceImpl implements TemplateService {
 
 	@Override
 	public TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit) {
-		Page<Template> templatePage = repository.findByCtIdAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),userName, getPageRequest(offset, limit));
-		return convert(templatePage, offset, limit);
+		Page<Template> templatePage = null;
+		TemplateSearchList templateResult = null;
+		//Since this Crud repository doesn't support OR query we had to make 2 calls
+		Page<Template> tmp1 = repository.findByCtIdAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),userName, getPageRequest(offset, limit));
+		Page<Template> tmp2 = repository.findByCtIdAndShared(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, getPageRequest(offset, limit));
+		if(tmp1 != null && tmp1.getSize()>0) {
+			templatePage = tmp1;
+		}
+		if(tmp2 != null && tmp2.getSize()>0){
+			if(templatePage != null) {
+				TemplateSearchList tmpList = convert(templatePage,offset,limit);
+				Set<TemplateRequest> listTempReq = new HashSet<>(tmpList.getContent());
+				TemplateSearchList tmpList2 = convert(tmp2,offset,limit);
+				tmpList2.getContent().forEach(templateRequest -> {
+					listTempReq.add(templateRequest);
+				});
+				List<TemplateRequest> tmpReq = new ArrayList<>(listTempReq);
+				templateResult = new TemplateSearchList(tmpReq, offset, limit, tmpReq.size());
+			}else{
+				templateResult = convert(tmp2,offset,limit);
+			}
+		}
+		return templateResult;
 	}
 
 	@Override
