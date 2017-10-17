@@ -1,7 +1,9 @@
 package com.thed.zephyr.capture.repositories.elasticsearch.impl;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -40,6 +42,31 @@ public class SessionESRepositoryImpl {
 	@Autowired
 	private ElasticsearchTemplate elasticsearchTemplate;
 	
+	private static Map<Character, Character> escapeCharactersMap = new HashMap<>();
+	
+	static {
+		escapeCharactersMap.put('~', '~');
+		escapeCharactersMap.put('`', '`');
+		escapeCharactersMap.put('#', '#');
+		escapeCharactersMap.put('%', '%');
+		escapeCharactersMap.put('^', '^');
+		escapeCharactersMap.put('&', '&');
+		escapeCharactersMap.put('*', '*');
+		escapeCharactersMap.put('(', '(');
+		escapeCharactersMap.put(')', ')');
+		escapeCharactersMap.put('+', '+');
+		escapeCharactersMap.put('{', '{');
+		escapeCharactersMap.put('}', '}');
+		escapeCharactersMap.put('[', '[');
+		escapeCharactersMap.put('|', '|');
+		escapeCharactersMap.put('"', '"');
+		escapeCharactersMap.put('<', '<');
+		escapeCharactersMap.put('?', '?');
+		escapeCharactersMap.put('@', '@');
+		escapeCharactersMap.put('.', '.');
+		escapeCharactersMap.put('\\', '\\');
+	}
+	
 	public AggregatedPage<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm,
 			Optional<String> sortField, boolean sortAscending, int startAt, int size) {
 		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
@@ -64,7 +91,18 @@ public class SessionESRepositoryImpl {
 			boolQueryBuilder.must(statusQueryBuilder);
     	}
     	if(searchTerm.isPresent() && !StringUtils.isEmpty(searchTerm.get())) { //Check if user typed any search term against session name then add to query.
-    		RegexpQueryBuilder statusQueryBuilder = QueryBuilders.regexpQuery(ApplicationConstants.SORTFIELD_ES_SESSION_NAME,  ".*" + searchTerm.get().toLowerCase() + ".*");
+    		String term = searchTerm.get().toLowerCase();
+    		StringBuilder escapedSearchTerm = new StringBuilder();
+    		for(int i =0;i < term.length(); i++) {
+    			char ch = term.charAt(i);
+    			if(!Character.isLetterOrDigit(ch)
+    					&& escapeCharactersMap.containsKey(ch)) {
+    				escapedSearchTerm.append("\\" + ch);
+    			} else {
+    				escapedSearchTerm.append(ch);
+    			}
+    		}
+    		RegexpQueryBuilder statusQueryBuilder = QueryBuilders.regexpQuery(ApplicationConstants.SORTFIELD_ES_SESSION_NAME,  ".*" + escapedSearchTerm.toString() + ".*");
 			boolQueryBuilder.must(statusQueryBuilder);
     	}
     	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort(ApplicationConstants.SORTFIELD_ES_CREATED).order(SortOrder.DESC);
