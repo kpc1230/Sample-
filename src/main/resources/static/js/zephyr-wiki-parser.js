@@ -343,7 +343,6 @@ var ZephyrWikiParser = function() {
 		}
 		
 		html = parseParagraphs(html);
-		html = html.replace(/\n/g, "</br>");
 		
 	  	return html;
  	};

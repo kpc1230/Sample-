@@ -281,7 +281,11 @@ public class CaptureUtil {
 			if(Objects.nonNull(tagName) && Objects.nonNull(cssClass)) {
 				finalData.append(" <span class=\"note-tag ").append(cssClass).append("\"></span>").append(word.length() > 2 ? word.substring(2) : "");
 			} else {
-				finalData.append(" " + word);
+				if(word.matches("^(https|http|ftp|ftps)://(.)+$")) {
+					finalData.append(" <a href=\"").append(word).append("\">").append(word).append("</a>");
+				} else {
+					finalData.append(" " + word);
+				}
 			}
 		}
 		return finalData.toString();
