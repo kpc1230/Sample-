@@ -1,0 +1,6 @@
+body{
+    height: 800px;
+}
+#demo-dialog .aui-dialog2-content {
+	max-height: 210px !important;
+}

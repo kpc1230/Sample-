@@ -28,6 +28,7 @@
           "value": "Getting Started"
         },
         "key": "getting-started-page",
+        "weight": 2,
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents"
       },
       {
@@ -36,6 +37,7 @@
           "value": "Get browser extension"
         },
         "key": "get-browser-extension-page",
+        "weight": 3,
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-contents",
         "conditions": [
           {
@@ -49,6 +51,7 @@
           "value": "Browse Test Sessions"
         },
         "key": "browse-test-session-url",
+        "weight": 1,
         "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session",
         "conditions": [
           {
@@ -263,6 +266,33 @@
     ],
     "webItems": [
       {
+        "key": "zephyr-adg-flag",
+        "url": "/adg-config",
+        "context": "addon",
+        "location": "bonfire-top-menu-dropdown/bonfire-top-main-menu-session",
+        "weight": 6,
+        "tooltip": {
+          "value": "Switcher for ADG UI"
+        },
+        "name": {
+          "value": "ADG UI"
+        },
+        "target": {
+          "type": "dialog",
+          "options": {
+            "height": "340px",
+            "width": "600px",
+            "chrome": "false"
+          }
+        },
+        "conditions": [
+          {
+            "condition": "user_is_logged_in",
+            "invert": false
+          }
+        ]
+      },
+      {
         "url": "captureconfig-general",
         "key": "capture-config",
         "context": "page",
@@ -439,7 +469,7 @@
           "value": ""
         },
         "location": "bonfire-top-menu-dropdown",
-        "weight": 1,
+        "weight": 2,
         "key": "bonfire-top-main-menu-session"
       },
       {
@@ -447,7 +477,7 @@
           "value": ""
         },
         "location": "bonfire-top-menu-dropdown",
-        "weight": 2,
+        "weight": 5,
         "key": "bonfire-top-main-menu-contents"
       }
     ],

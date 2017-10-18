@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8"/>
+    <title>Getting Started Page</title>
+    <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui.min.css" media="all" />
+    <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui-experimental.min.css" media="all" />
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-experimental.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-datepicker.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-soy.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/adg-config.css}" />
+    <script th:src="@{${atlassianConnectAllJsUrl}}" type="text/javascript"></script>
+
+</head>
+<body>
+<div class="container">
+
+    <!-- Render the dialog -->
+    <section role="dialog" id="demo-dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true" data-aui-modal="true">
+        <!-- Dialog header -->
+        <header class="aui-dialog2-header">
+            <!-- The dialog's title -->
+            <h2 class="aui-dialog2-header-main">ADG Zephyr Config</h2>
+            <!-- Actions to render on the right of the header -->
+        </header>
+        <!-- Main dialog content -->
+        <div class="aui-dialog2-content">
+            <div class="config-container">
+                <span>Preview Beta ADG style for Zephyr</span>&nbsp;&nbsp;&nbsp;
+                <input type="checkbox" id="adg-flag-chbx" disabled="disabled" />
+            </div>
+            <div style="
+                padding-top: 40px;
+                font-size: 10px;
+            ">
+                <b>*** PREVIEW FOR ZEPHYR BETA ADG SHOULD ONLY BE USED WITH NEW JIRA UI </b>
+            </div>
+        </div>
+        <!-- Dialog footer -->
+        <footer class="aui-dialog2-footer">
+            <!-- Actions to render on the right of the footer -->
+            <div class="aui-dialog2-footer-actions">
+                <button id="close-adg-dialog" class="aui-button aui-button-link">Close</button>
+            </div>
+        </footer>
+    </section>
+
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.15/require.js"></script>
+<script th:src="@{/js/adg-config.js}"></script>
+<script type="text/javascript" th:inline="javascript" id="connect-loader" data-options="sizeToParent:true;">
+    //<![CDATA[
+
+    (function() {
+        var getUrlParam = function (param) {
+            var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
+            return decodeURIComponent(codedParam);
+        };
+
+        var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
+        var options = document.getElementById('connect-loader').getAttribute('data-options');
+
+        var script = document.createElement("script");
+        script.src = baseUrl + '/atlassian-connect/all.js';
+
+        var style = document.createElement("link");
+        style.rel = "stylesheet";
+        style.href = baseUrl + '/atlassian-connect/all.css';
+        if(options) {
+            script.setAttribute('data-options', options);
+        }
+
+        document.getElementsByTagName("head")[0].appendChild(script);
+        document.getElementsByTagName("head")[0].appendChild(style);
+
+        var userKey = /*[[${userKey}]]*/ 'userKey';
+        ZEPHYR.ADG.CONFIG.init(userKey);
+
+        AJS.$('#close-adg-dialog').on('click', function(e) {
+            e.preventDefault();
+            AP.require('dialog', function(popup){
+                popup.close();
+            });
+        });
+
+    })();
+
+    // ]]>
+</script>
+</body>
+</html>

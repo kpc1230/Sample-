@@ -207,4 +207,9 @@ public class ApplicationConstants {
     public static final String INCOMEPLETE_STATUS = "Incomplete";
 
     public static final String CAPTURE_TESTING_ISSUE_LINKTYPE = "Zephyr Capture testing";
+
+    public static final String ADG3_MODE = "adg3mode";
+    public static final String ADG3_FLAG_USER_PROP = "adg-flag";
+    public static final String ADG3_FLAG_CACHE_PREFIX = "adg-flag-cache";
+
 }

@@ -301,4 +301,7 @@ public class CaptureUtil {
 	public static String createSessionLink(String sessionId){
 		return String.format(ApplicationConstants.SESSION_URL_TEMPLATE, sessionId);
 	}
+    public  static String createADGFlagCacheKey(String userKey){
+        return String.valueOf(ApplicationConstants.ADG3_FLAG_CACHE_PREFIX + "_" + userKey);
+    }
 }
