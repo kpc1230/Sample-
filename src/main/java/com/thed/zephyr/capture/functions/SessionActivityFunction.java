@@ -7,6 +7,8 @@ import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.WikiParser;
+import emoji4j.EmojiUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,7 +60,9 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 			NoteSessionActivity noteSessionActivity = (NoteSessionActivity) sessionActivity;
 			String noteData = noteSessionActivity.getNoteData();
 			if(noteData != null){
-				noteSessionActivity.setNoteData(wikiParser.parseWiki(noteData, ApplicationConstants.HTML));
+				String wikify = wikiParser.parseWiki(noteData, ApplicationConstants.HTML);
+				String noteHtmlData = EmojiUtils.emojify(StringEscapeUtils.unescapeHtml(wikify));
+				noteSessionActivity.setNoteData(noteHtmlData);
 			}
 			addNoteActivityInToMap(finalSescionActivityMap, noteSessionActivity);
 			return finalSescionActivityMap;

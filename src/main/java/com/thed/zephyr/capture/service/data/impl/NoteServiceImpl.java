@@ -15,7 +15,9 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.WikiParser;
+import emoji4j.EmojiUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -185,7 +187,9 @@ public class NoteServiceImpl implements NoteService {
 			notes.getContent().forEach(note -> {
 				String noteData = note.getNoteData();
 				if(noteData != null) {
-					note.setNoteData(wikiParser.parseWiki(noteData,ApplicationConstants.HTML));
+					String wikify = wikiParser.parseWiki(noteData, ApplicationConstants.HTML);
+					String noteHtmlData = EmojiUtils.emojify(StringEscapeUtils.unescapeHtml(wikify));
+					note.setNoteData(noteHtmlData);
 				}
 				listNotes.add(note);
 			});
@@ -239,6 +243,10 @@ public class NoteServiceImpl implements NoteService {
 		noteReq.setAuthorDisplayName(user.getDisplayName());
 		noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
 		Session session = sessionESRepository.findById(noteReq.getSessionId());
+		String noteData = noteReq.getNoteData();
+		String wikify = wikiParser.parseWiki(noteData, ApplicationConstants.HTML);
+		String noteHtmlData = EmojiUtils.emojify(StringEscapeUtils.unescapeHtml(wikify));
+		noteReq.setNoteData(noteHtmlData);
 		noteReq.setSessionName(session.getName());
 	}
 
