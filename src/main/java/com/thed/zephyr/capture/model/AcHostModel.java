@@ -178,7 +178,8 @@ public class AcHostModel extends AtlassianHost implements Serializable{
         HOST_UNREACHABLE,
         PLUGIN_DISABLED,
         DELETED,
-        UNINSTALLED
+        UNINSTALLED,
+        TEMPORARY
     }
 
     @Override
