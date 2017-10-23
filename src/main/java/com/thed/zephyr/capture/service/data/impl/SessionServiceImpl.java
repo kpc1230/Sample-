@@ -103,6 +103,8 @@ public class SessionServiceImpl implements SessionService {
 	private CaptureContextIssueFieldsService captureContextIssueFieldsService;
 	@Autowired
 	private WikiParser wikiParser;
+	@Autowired
+	private EmojiUtil emojiUtil;
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -391,7 +393,6 @@ public class SessionServiceImpl implements SessionService {
 	public SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull) {
 		CaptureProject project = projectService.getCaptureProject(session.getProjectId());
 		boolean isActive = Status.STARTED.equals(session.getStatus());
-		convertAdditionalInfoWiki(session);
 		return createSessionDto(loggedInUser, session, isActive, project, isSendFull);
 	}
 
@@ -1225,7 +1226,8 @@ public class SessionServiceImpl implements SessionService {
 			}
 		}
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), CaptureUtil.createWikiData(session.getAdditionalInfo()), session.getTimeCreated(), null);
+				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), EmojiUtil.emojify(
+						CaptureUtil.createWikiData(wikiParser,session.getAdditionalInfo())), session.getTimeCreated(), null);
 		if(!usersMap.containsKey(session.getAssignee())) {
 			user = userService.findUserByKey(session.getAssignee());
 		} else {

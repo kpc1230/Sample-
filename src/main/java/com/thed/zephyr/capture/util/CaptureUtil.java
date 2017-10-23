@@ -220,36 +220,41 @@ public class CaptureUtil {
 		return tagList;
 	}
 
-    public static String createWikiData(String rawData){
-    	return StringUtils.isNotEmpty(rawData) ? createNoteData(rawData) : null;
+    public static String createWikiData(WikiParser wikiParser, String rawData){
+        String convStr = null;
+        if(StringUtils.isNotEmpty(rawData)){
+            convStr = wikiParser.parseWiki(rawData, ApplicationConstants.HTML);
+            convStr = createNoteData(convStr);
+        }
+    	return convStr;
     }
 	public static String createNoteData(String noteData) {
-		StringBuilder data = new StringBuilder();
-		String[] lines = noteData.split("\\r?\\n");
-		boolean isPrevNewLine = true;
-		boolean isFirstLine = true;
-		for(String line : lines) {
-			switch(line.trim()) {
-				case "": {
-					if(isPrevNewLine) {
-						isPrevNewLine = false;
-						data.append("");
-					}
-					break;
-				} default: {
-					if(!isFirstLine && isPrevNewLine) {
-						data.append("<br/>");
-					} else {
-						data.append("");
-					}
-					data.append(getAtlassiaonWikiformatted(line));
-					isFirstLine = false;
-					isPrevNewLine = true;
-				}			
-			}
-		}
-		data.append("");
-		return data.toString();
+//		StringBuilder data = new StringBuilder();
+//		String[] lines = noteData.split("\\r?\\n");
+//		boolean isPrevNewLine = true;
+//		boolean isFirstLine = true;
+//		for(String line : lines) {
+//			switch(line.trim()) {
+//				case "": {
+//					if(isPrevNewLine) {
+//						isPrevNewLine = false;
+//						data.append("");
+//					}
+//					break;
+//				} default: {
+//					if(!isFirstLine && isPrevNewLine) {
+//						data.append("<br/>");
+//					} else {
+//						data.append("");
+//					}
+//					data.append(getAtlassiaonWikiformatted(line));
+//					isFirstLine = false;
+//					isPrevNewLine = true;
+//				}
+//			}
+//		}
+//		data.append("");
+		return StringUtils.isNotEmpty(noteData)?getAtlassiaonWikiformatted(noteData):noteData;
 	}
 	
 	private static String getAtlassiaonWikiformatted(String line) {
@@ -288,7 +293,7 @@ public class CaptureUtil {
 				}
 			}
 		}
-		return finalData.toString();
+		return finalData.toString().replace("\n","<br />");
 	}
 	
 	private static String getTagData(String noteData, String tag) {

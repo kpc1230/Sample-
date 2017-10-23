@@ -11,13 +11,11 @@ import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.NoteService;
 import com.thed.zephyr.capture.service.jira.UserService;
-import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.EmojiUtil;
 import com.thed.zephyr.capture.util.WikiParser;
-import emoji4j.EmojiUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +45,8 @@ public class NoteServiceImpl implements NoteService {
 	SessionESRepository sessionESRepository;
 	@Autowired
 	private WikiParser wikiParser;
+	@Autowired
+	private EmojiUtil emojiUtil;
 
 	@Override
 	public NoteRequest create(NoteRequest noteRequest) throws CaptureValidationException {
@@ -187,9 +187,8 @@ public class NoteServiceImpl implements NoteService {
 			notes.getContent().forEach(note -> {
 				String noteData = note.getNoteData();
 				if(noteData != null) {
-					String wikify = wikiParser.parseWiki(noteData, ApplicationConstants.HTML);
-					String noteHtmlData = EmojiUtils.emojify(StringEscapeUtils.unescapeHtml(wikify));
-					note.setNoteData(noteHtmlData);
+					String wikify = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser, noteData));
+					note.setNoteData(wikify);
 				}
 				listNotes.add(note);
 			});
@@ -244,9 +243,8 @@ public class NoteServiceImpl implements NoteService {
 		noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
 		Session session = sessionESRepository.findById(noteReq.getSessionId());
 		String noteData = noteReq.getNoteData();
-		String wikify = wikiParser.parseWiki(noteData, ApplicationConstants.HTML);
-		String noteHtmlData = EmojiUtils.emojify(StringEscapeUtils.unescapeHtml(wikify));
-		noteReq.setNoteData(noteHtmlData);
+		String wikify = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser,noteData));
+		noteReq.setNoteData(wikify);
 		noteReq.setSessionName(session.getName());
 	}
 

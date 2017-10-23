@@ -191,8 +191,6 @@ var ZephyrWikiParser = function() {
 				grafsOut.push(str);
 			}
 			else if (str.search(/\S/) >= 0) {
-				str = str.replace(/^([ \t]*)/g,"<p>");
-				str += "</p>";
 				grafsOut.push(str);
 			}
 
@@ -285,9 +283,9 @@ var ZephyrWikiParser = function() {
 		});
 	};
 	var parseLists = function(str) {
-	    return str.replace(/(?:(?:(?:^|\n)[\*|#]+\s.+)+)/g, function (match) {
-	        var listType = match.match(/(^|\n)#/) ? 'ol' : 'ul';
-	        match = match.replace(/(^|\n)[\*#][^\s]{0,1}/g, "$1");
+	    return str.replace(/(?:(?:(?:^|\n)[\*|#|-]+\s.+)+)/g, function (match) {
+	        var listType = match.match(/(^|\n)-/) ? 'ul style="list-style-type: square;" ': match.match(/(^|\n)#/) ? 'ol' : 'ul';
+	        match = match.replace(/(^|\n)[\*#-][^\s]{0,1}/g, "$1");
 	        return '<'
 	                + listType + '><li>'
 	                + match.replace(/^\n/, '')
