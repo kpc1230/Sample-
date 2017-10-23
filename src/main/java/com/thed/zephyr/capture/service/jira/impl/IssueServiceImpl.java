@@ -296,8 +296,13 @@ public class IssueServiceImpl implements IssueService {
     public void linkIssues(List<SessionServiceImpl.CompleteSessionIssueLink> issueLinks , AtlassianHostUser hostUser) {
 
         List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(hostUser);
-        IssuelinksType linkType = linkTypes.stream().filter(o -> o.getName().equals(ApplicationConstants.CAPTURE_TESTING_ISSUE_LINKTYPE)).findFirst().get();
+        IssuelinksType linkType = null;
         String linkTypeToSend = null;
+        try {
+            linkType = linkTypes.stream().filter(o -> o.getName().equals(ApplicationConstants.CAPTURE_TESTING_ISSUE_LINKTYPE)).findFirst().get();
+        }catch (NoSuchElementException exp){
+            log.error("The Issue Types not exist adding one", exp.getMessage());
+        }
         if(linkType!=null){
             linkTypeToSend = linkType.getName();
         }else {
