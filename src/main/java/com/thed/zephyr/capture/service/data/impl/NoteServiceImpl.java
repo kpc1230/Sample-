@@ -11,13 +11,11 @@ import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.NoteService;
 import com.thed.zephyr.capture.service.jira.UserService;
-import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.EmojiUtil;
 import com.thed.zephyr.capture.util.WikiParser;
-import emoji4j.EmojiUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +45,8 @@ public class NoteServiceImpl implements NoteService {
 	SessionESRepository sessionESRepository;
 	@Autowired
 	private WikiParser wikiParser;
+	@Autowired
+	private EmojiUtil emojiUtil;
 
 	@Override
 	public NoteRequest create(NoteRequest noteRequest) throws CaptureValidationException {
@@ -185,12 +185,6 @@ public class NoteServiceImpl implements NoteService {
 		Long total = notes != null?notes.getTotalElements():0;
 		if(total>0){
 			notes.getContent().forEach(note -> {
-				String noteData = note.getNoteData();
-				if(noteData != null) {
-					String wikify = wikiParser.parseWiki(noteData, ApplicationConstants.HTML);
-					String noteHtmlData = EmojiUtils.emojify(StringEscapeUtils.unescapeHtml(wikify));
-					note.setNoteData(noteHtmlData);
-				}
 				listNotes.add(note);
 			});
 		}
@@ -221,7 +215,7 @@ public class NoteServiceImpl implements NoteService {
 		if(permissionService.canEditNote(userName, note.getAuthor(), note)){
 			noteReq.setCanEdit(true);
 		}
-		populateRequiredData(baseUri, noteReq, userName);
+		populateRequiredData(noteReq, note.getNoteData());
 		return noteReq;
 	}
 
@@ -233,20 +227,22 @@ public class NoteServiceImpl implements NoteService {
 	}
 	
 	private NoteRequest convertNoteSessionActivityTO(NoteSessionActivity noteSA){
+		String rawNoteData = noteSA.getNoteData();
 		NoteRequest noteReq = new NoteRequest(noteSA, noteSA.getTags());
 		noteReq.setCanEdit(true);
-		populateRequiredData(CaptureUtil.getCurrentClientBaseUrl(), noteReq, noteSA.getUser());
+		populateRequiredData(noteReq, rawNoteData);
 		return noteReq;
 	}
-	private void populateRequiredData(String baseUri, final NoteRequest noteReq, String userName){
+	private void populateRequiredData(final NoteRequest noteReq, final String rawNote){
+
 		CaptureUser user = userService.findUserByKey(noteReq.getUser());
 		noteReq.setAuthorDisplayName(user.getDisplayName());
 		noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
 		Session session = sessionESRepository.findById(noteReq.getSessionId());
-		String noteData = noteReq.getNoteData();
-		String wikify = wikiParser.parseWiki(noteData, ApplicationConstants.HTML);
-		String noteHtmlData = EmojiUtils.emojify(StringEscapeUtils.unescapeHtml(wikify));
-		noteReq.setNoteData(noteHtmlData);
+		String noteData = rawNote;
+		String wikify = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser,noteData));
+		noteReq.setNoteData(wikify);
+		noteReq.setRawNoteData(rawNote);
 		noteReq.setSessionName(session.getName());
 	}
 
