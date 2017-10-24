@@ -283,17 +283,13 @@ var ZephyrWikiParser = function() {
 		});
 	};
 	var parseLists = function(str) {
-	    return str.replace(/(?:(?:(?:^|\n)[\*|#|-]+\s.+)+)/g, function (match) {
-	        var listType = match.match(/(^|\n)-/) ? 'ul style="list-style-type: square;" ': match.match(/(^|\n)#/) ? 'ol' : 'ul';
-	        match = match.replace(/(^|\n)[\*#-][^\s]{0,1}/g, "$1");
-	        return '<'
-	                + listType + '><li>'
-	                + match.replace(/^\n/, '')
-	                .split(/\n/).join('</li><li>')
-	                + '</li></' + listType
-	                + '>';
-	    });
-	};
+        return str.replace(/(?:(?:(?:^|\n)[\*#-].*)+)/g, function (m) {
+            var type = m.match(/(^|\n)-/) ? 'ul style="list-style-type: square;" ': m.match(/(^|\n)#/) ? 'ol' : 'ul';
+            m = m.replace(/(^|\n)[\*#-][ ]{0,1}/g, "$1");
+            m = parseLists(m);
+            return '<' + type + '><li>' + m.replace(/^\n/, '').split(/\n/).join('</li><li>') + '</li></' + type + '>';
+        });
+    };
 
  	this.wikiToHTML = function(str) {
  		var html = str, j, x;

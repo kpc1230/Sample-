@@ -60,11 +60,12 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 		} else if(sessionActivity instanceof NoteSessionActivity){
 			NoteSessionActivity noteSessionActivity = (NoteSessionActivity) sessionActivity;
 			String noteData = noteSessionActivity.getNoteData();
+			String wikify = noteData;
 			if(noteData != null){
-				String wikify = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser,noteData));
-				noteSessionActivity.setNoteData(wikify);
+				 wikify = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser,noteData));
+				 noteSessionActivity.setNoteData(wikify);
 			}
-			addNoteActivityInToMap(finalSescionActivityMap, noteSessionActivity);
+			addNoteActivityInToMap(finalSescionActivityMap, noteSessionActivity, noteData, wikify);
 			return finalSescionActivityMap;
 		}
 
@@ -72,12 +73,13 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 	}
 
 	@SuppressWarnings("unchecked")
-	private void addNoteActivityInToMap(Map<String, Object> finalSessionActivityMap, NoteSessionActivity noteSessionActivity) {
+	private void addNoteActivityInToMap(Map<String, Object> finalSessionActivityMap,
+										NoteSessionActivity noteSessionActivity,
+										String rawNoteData, String wikify) {
 		ObjectMapper m = new ObjectMapper();
 		finalSessionActivityMap.putAll(m.convertValue(noteSessionActivity, Map.class));
-		String rawNoteData = noteSessionActivity.getNoteData();
 		finalSessionActivityMap.put("rawNoteData", rawNoteData);
-		finalSessionActivityMap.put("noteData", CaptureUtil.createNoteData( rawNoteData));
+		finalSessionActivityMap.put("noteData", wikify);
 	}
 
 	private void addSessionActivityInToMap(Map<String, Object> finalSescionActivityMap, SessionActivity sessionActivity) {
