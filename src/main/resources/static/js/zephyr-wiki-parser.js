@@ -283,7 +283,7 @@ var ZephyrWikiParser = function() {
 		});
 	};
 	var parseLists = function(str) {
-        return str.replace(/(?:(?:(?:^|\n)[\*#-].*)+)/g, function (m) {
+        return str.replace(/(?:(?:(?:^|\n)[\*#-]+(\s).*)+)/g, function (m) {
             var type = m.match(/(^|\n)-/) ? 'ul style="list-style-type: square;" ': m.match(/(^|\n)#/) ? 'ol' : 'ul';
             m = m.replace(/(^|\n)[\*#-][ ]{0,1}/g, "$1");
             m = parseLists(m);

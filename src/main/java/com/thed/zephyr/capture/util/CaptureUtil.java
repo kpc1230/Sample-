@@ -259,7 +259,8 @@ public class CaptureUtil {
 	
 	private static String getAtlassiaonWikiformatted(String line) {
 		StringBuilder finalData = new StringBuilder();
-		String[] words = line.split("[ ]+");
+        String lineStr = line.replace("\n","<br /> ");
+		String[] words = lineStr.split("[\\s]+");
 		for(String word : words) {
 			String tagName = null;
 			String cssClass = null;
