@@ -282,12 +282,13 @@ public class CaptureUtil {
 						cssClass = "tag-idea";
 						tagName = Tag.IDEA_TAG_NAME;	
 				}
-			}	
+			}
+			String target = String.format(" target=\"".concat("%s")+"\"","_parent");
 			if(Objects.nonNull(tagName) && Objects.nonNull(cssClass)) {
 				finalData.append(" <span class=\"note-tag ").append(cssClass).append("\"></span>").append(word.length() > 2 ? word.substring(2) : "");
 			} else {
 				if(word.matches("^(https|http|ftp|ftps)://(.)+$")) {
-					finalData.append(" <a href=\"").append(word).append("\">").append(word).append("</a>");
+					finalData.append(" <a ".concat(target)+" href=\"").append(word).append("\">").append(word).append("</a>");
 				} else {
 					finalData.append(" " + word);
 				}

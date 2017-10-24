@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.util;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -49,9 +50,12 @@ public class EmojiUtil  {
 //        jiraEmojis.put("<3","heart");
 //        jiraEmojis.put("</3","broken_heart");
         String result = str;
-        for (Map.Entry<String, String> entry : jiraEmojis.entrySet()) {
-            if(result.toLowerCase().contains(entry.getKey().toLowerCase())){
-                result = result.replace(entry.getKey(),"<img src=\""+emoUrl+entry.getValue()+ext+"\"></img>");;
+        if(StringUtils.isNotEmpty(result)) {
+            for (Map.Entry<String, String> entry : jiraEmojis.entrySet()) {
+                if (result.toLowerCase().contains(entry.getKey().toLowerCase())) {
+                    result = result.replace(entry.getKey(), "<img src=\"" + emoUrl + entry.getValue() + ext + "\"></img>");
+                    ;
+                }
             }
         }
         return result;
