@@ -298,7 +298,7 @@ public class SessionController extends CaptureAbstractController{
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, updateResult.getSession(), true);
 			//Updating session for removed related issue to JIRA
 			if (removedRelatedIssues != null && removedRelatedIssues.size() > 0) {
-				sessionService.setIssueTestStausAndTestSession(removedRelatedIssues,loadedSession.getCtId(),loadedSession.getProjectId());
+				sessionService.setIssueTestStausAndTestSession(removedRelatedIssues,loadedSession.getCtId(),loadedSession.getProjectId(),hostUser.getHost().getBaseUrl());
 			}
 			log.info("End of updateSession()");
 			return ResponseEntity.ok(sessionDto);
@@ -318,7 +318,7 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@DeleteMapping(value = "/{sessionId}", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> deleteSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException  {
+	public ResponseEntity<?> deleteSession(@AuthenticationPrincipal AtlassianHostUser hostUser,@PathVariable("sessionId") String sessionId) throws CaptureValidationException  {
 		log.info("Start of deleteSession() --> params " + sessionId);
 		if(StringUtils.isEmpty(sessionId)) {
 			throw new CaptureValidationException(i18n.getMessage("session.invalid.id", new Object[]{sessionId}));
@@ -332,7 +332,7 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.deleteSession(sessionId);
 			//This is to update related issues testing status and test session
 			if(loadedSession!=null&&loadedSession.getRelatedIssueIds()!=null&&loadedSession.getRelatedIssueIds().size()>0){
-				sessionService.setIssueTestStausAndTestSession(loadedSession.getRelatedIssueIds(),loadedSession.getCtId(),loadedSession.getProjectId());
+				sessionService.setIssueTestStausAndTestSession(loadedSession.getRelatedIssueIds(),loadedSession.getCtId(),loadedSession.getProjectId(),hostUser.getHost().getBaseUrl());
 			}
 
 			log.info("End of deleteSession()");

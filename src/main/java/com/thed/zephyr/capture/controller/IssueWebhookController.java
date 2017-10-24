@@ -85,7 +85,7 @@ public class IssueWebhookController {
                         Set<Long> issues = new HashSet<>();
                         issues.add(issueId);
                         //Updating issue testing status in order to sync JQL with Testing section
-                        sessionService.setIssueTestStausAndTestSession(issues,ctid,projectId);
+                        sessionService.setIssueTestStausAndTestSession(issues,ctid,projectId,hostUser.getHost().getBaseUrl());
                     }
                 } else {
                     log.error("Issue creation details are empty from JIRA");

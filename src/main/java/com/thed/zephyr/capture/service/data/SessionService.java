@@ -279,7 +279,7 @@ public interface SessionService {
 	 */
 	void updateProjectNameForSessions(String ctid, Long projectId, String projectName);
 
-	void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId);
+	void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId,String baseUrl);
 	
 	void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctid) throws HazelcastInstanceNotDefinedException;
 	

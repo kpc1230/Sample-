@@ -132,11 +132,13 @@ public class SessionServiceImpl implements SessionService {
 		session.setUserDisplayName(user != null ? user.getDisplayName() : null);
         Session createdSession = sessionRepository.save(session);
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
+        String baseUrl = getBaseUrl();
 		CompletableFuture.runAsync(() -> {
 			sessionESRepository.save(createdSession);
+			setIssueTestStausAndTestSession(createdSession,baseUrl);
 		});
 		//Update test staus and test sessions for related issues
-		setIssueTestStausAndTestSession(createdSession);
+
 		return createdSession;
 	}
 
@@ -262,7 +264,7 @@ public class SessionServiceImpl implements SessionService {
             saveUpdatedSession(result);
         }
 		//Update test status and test sesions to JIRA isssues
-		setIssueTestStausAndTestSession(result.getSession());
+		setIssueTestStausAndTestSession(result.getSession(),getBaseUrl());
         return result;
     }
 	
@@ -1362,16 +1364,16 @@ public class SessionServiceImpl implements SessionService {
 		return Duration.ofMillis(timeSpent.getMillis());
 	}
 
-	private void setIssueTestStausAndTestSession(Session createdSession) {
-		setIssueTestStausAndTestSession(createdSession.getRelatedIssueIds(),createdSession.getCtId(),createdSession.getProjectId());
+	private void setIssueTestStausAndTestSession(Session createdSession,String baseUrl) {
+		setIssueTestStausAndTestSession(createdSession.getRelatedIssueIds(),createdSession.getCtId(),createdSession.getProjectId(),baseUrl);
 	}
 
     @Override
-    public void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId) {
+    public void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId, String baseUrl) {
         log.debug("setIssueTestStausAndTestSession method started ...");
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        String baseUri = host.getHost().getBaseUrl();
+     //   Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+      //  AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+      //  String baseUri = host.getHost().getBaseUrl();
         if (relatedIssues != null) {
             CompletableFuture.runAsync(() -> {
                 log.debug("Master Thread::::::started with relatedIssues: {}, ctId: {}, projectId: {}",relatedIssues,ctId,projectId);
@@ -1415,7 +1417,7 @@ public class SessionServiceImpl implements SessionService {
                                 testingStatuKey = TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey();
                             }
                         }
-                        captureContextIssueFieldsService.populateIssueTestStatusAndTestSessions(String.valueOf(issueId), captureI18NMessageSource.getMessage(testingStatuKey), sessionIdBuilder.toString(), baseUri);
+                        captureContextIssueFieldsService.populateIssueTestStatusAndTestSessions(String.valueOf(issueId), captureI18NMessageSource.getMessage(testingStatuKey), sessionIdBuilder.toString(), baseUrl);
                         log.debug("Child Thread::::::Ended populate JIRA testing status for Issue: {}", issueId);
                     });
 
@@ -1556,6 +1558,12 @@ public class SessionServiceImpl implements SessionService {
 			sessionESRepository.save(session);
 		}
 		return pageResponse;
+	}
+
+	private String getBaseUrl() {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+		return host.getHost().getBaseUrl();
 	}
 
 }
