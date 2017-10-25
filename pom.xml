@@ -185,7 +185,6 @@
             <artifactId>hazelcast-aws</artifactId>
             <version>2.0.1</version>
         </dependency>
-
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-spring</artifactId>

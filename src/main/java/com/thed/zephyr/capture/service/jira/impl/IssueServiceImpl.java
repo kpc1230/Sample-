@@ -6,6 +6,8 @@ import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.*;
 import com.atlassian.jira.rest.client.api.domain.input.*;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.hazelcast.util.StringUtil;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.IssueRaisedBean;
@@ -59,32 +61,21 @@ public class IssueServiceImpl implements IssueService {
 
     @Autowired
     private Logger log;
-
     @Autowired
     private JiraRestClient jiraRestClient;
-
     @Autowired
     private JiraRestClient getJiraRestClient;
-
     @Autowired
     @Qualifier("jiraRestClientPOST")
     private JiraRestClient postJiraRestClient;
-
     @Autowired
     private CaptureContextIssueFieldsService captureContextIssueFieldsService;
-
-    @Autowired
-    private SessionActivityService sessionActivityService;
-
     @Autowired
     private SessionService sessionService;
-
     @Autowired
     private DynamoDBAcHostRepository dynamoDBAcHostRepository;
-
     @Autowired
     private CaptureI18NMessageSource i18n;
-
     @Autowired
     private ITenantAwareCache tenantAwareCache;
     @Autowired
@@ -466,7 +457,7 @@ public class IssueServiceImpl implements IssueService {
         }
 
 
-        if (issueFields.customFields() != null) {
+        /*if (issueFields.customFields() != null) {
             for (Long custId : issueFields.customFields().keySet()) {
                 String[] values = issueFields.customFields().get(custId);
                 Map<String, Object> valueMap = new HashMap<>();
@@ -474,7 +465,7 @@ public class IssueServiceImpl implements IssueService {
                 FieldInput parentField = new FieldInput(String.valueOf(custId), new ComplexIssueInputFieldValue(valueMap));
                 issueInputBuilder.setFieldInput(parentField);
             }
-        }
+        }*/
 
         if (issueFields.versions() != null) {
             List<String> affectVersions = issueFields.versions().stream().map(ResourceId::id).collect(Collectors.toList());
@@ -525,7 +516,6 @@ public class IssueServiceImpl implements IssueService {
                 throw new CaptureValidationException(null,"duedate",i18n.getMessage("issue.create.duedate.validation.error", new Object[]{"d/MMM/yy",strDate}));
             }
         }
-
         ResourceId parentId = issueFields.parent();
         if (parentId != null) {
             CaptureIssue issue = getCaptureIssue(parentId.id());
@@ -534,8 +524,95 @@ public class IssueServiceImpl implements IssueService {
             FieldInput parentField = new FieldInput("parent", new ComplexIssueInputFieldValue(parent));
             issueInputBuilder.setFieldInput(parentField);
         }
+        if (issueFields.getFields() != null && !issueFields.getFields().isEmpty()){
+            configCustomFields(issueInputBuilder, issueFields);
+        }
 
         return issueInputBuilder.build();
+    }
+
+    private void configCustomFields(IssueInputBuilder issueInputBuilder, IssueFields issueFields){
+        String url = "/rest/api/2/issue/createmeta?expand=projects.issuetypes.fields";
+        ResponseEntity<JsonNode> forEntity = atlassianHostRestClients.authenticatedAsAddon().getForEntity(url, JsonNode.class);
+        JsonNode body = forEntity.getBody();
+        ArrayNode projects = (ArrayNode)body.get("projects");
+        JsonNode project = null;
+        for(JsonNode projectJson:projects){
+            if(StringUtils.equals(projectJson.get("id").asText(), issueFields.project.id())){
+                project = projectJson;
+                break;
+            }
+        }
+        if(project == null){
+            return;
+        }
+        JsonNode issueType = null;
+        ArrayNode issueTypes = (ArrayNode)project.get("issuetypes");
+        for (JsonNode issueTypeJson:issueTypes){
+            if(StringUtils.equals(issueTypeJson.get("id").asText(), issueFields.issueType.id())){
+                issueType = issueTypeJson;
+                break;
+            }
+        }
+        if (issueType == null){
+            return;
+        }
+        JsonNode fields = issueType.get("fields");
+
+        for (Map.Entry<String, String[]> entry:issueFields.getFields().entrySet()){
+            try {
+                String fieldId = entry.getKey();
+                String[] fieldValue = entry.getValue();
+                String fieldType = fields.get(fieldId).get("schema").get("type").asText();
+                String items = fields.get(fieldId).get("schema").get("items") != null?fields.get(fieldId).get("schema").get("items").asText():"";
+                if (StringUtils.equals(fieldType, "string")){
+                    issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
+                } else if(StringUtils.equals(fieldType, "option")){
+                    Map<String, Object> optionValue = new HashMap<>();
+                    optionValue.put("id", fieldValue[0]);
+                    issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(optionValue));
+                } else if(StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "option")){
+                    List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
+                    List<String> values = Arrays.asList(fieldValue);
+                    values.stream().forEach((value) -> {
+                        Map<String, Object> complexValue = new TreeMap<>();
+                        complexValue.put("id", value);
+                        checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
+                    });
+                    issueInputBuilder.setFieldValue(fieldId, checkboxValues);
+                } else if(StringUtils.equals(fieldType, "date") && StringUtils.isNotBlank(fieldValue[0])){
+                 //   SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy");
+
+                 //   Date date = sdf.parse(fieldValue[0]);
+
+                 //   issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
+                } else if(StringUtils.equals(fieldType, "datetime")){
+                    //need the datetime type custom field implementation
+                } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "string")){
+                    List<String> values = Arrays.asList(fieldValue);
+                    issueInputBuilder.setFieldValue(fieldId, values);
+                } else if (StringUtils.equals(fieldType, "number")){
+                    String numberStr = fieldValue[0];
+                    if(StringUtils.isNotBlank(numberStr)){
+                        Double number = Double.valueOf(numberStr);
+                        issueInputBuilder.setFieldValue(fieldId, number);
+                    }
+                } else if(StringUtils.equals(fieldType, "user")){
+                    Map<String, Object> complexValue = new TreeMap<>();
+                    complexValue.put("name", fieldValue[0]);
+                    issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                } else if (StringUtils.equals(fieldType, "option-with-child") && StringUtils.isNotBlank(fieldValue[0]) && StringUtils.isNotBlank(fieldValue[1])){
+                    Map<String, Object> complexValue = new TreeMap<>();
+                    complexValue.put("id",fieldValue[0]);
+                    Map<String, Object> childValue = new TreeMap<>();
+                    childValue.put("id",fieldValue[1]);
+                    complexValue.put("child", new ComplexIssueInputFieldValue(childValue));
+                    issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                }
+            } catch (Exception exception) {
+                log.error("Error during config custom field for Jira issue create request customFieldId:{} issueType:{}", entry.getKey(), issueFields.issueType().id(), exception);
+            }
+        }
     }
 
     private String buildIssueCacheKey(String issueIdOrKey) {

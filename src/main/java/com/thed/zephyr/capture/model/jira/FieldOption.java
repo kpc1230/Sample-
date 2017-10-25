@@ -47,6 +47,10 @@ public class FieldOption {
     }
 
     public List<FieldOption> getChildren() {
+        if (children != null){
+            return children;
+        }
+
         return new ArrayList<>();
     }
 

@@ -48,28 +48,22 @@ import java.util.concurrent.CompletableFuture;
  */
 @Service
 public class AttachmentServiceImpl implements AttachmentService {
+
     @Autowired
     private Logger log;
-
     @Autowired
     @Qualifier("jiraRestClientPOST")
     private JiraRestClient postJiraRestClient;
-
     @Autowired
     private PermissionService permissionService;
-
     @Autowired
     private JiraRestClient getJiraRestClient;
-
     @Autowired
     private UserService userService;
-
     @Autowired
     private SessionActivityService sessionActivityService;
-
     @Autowired
     private SessionService sessionService;
-
     @Autowired
     private AtlassianHostRestClients atlassianHostRestClients;
 

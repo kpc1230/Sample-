@@ -3,6 +3,9 @@ package com.thed.zephyr.capture.controller;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
@@ -11,6 +14,7 @@ import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.jira.IssueSearchService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
+import com.thed.zephyr.capture.service.jira.issue.IssueFields;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -27,6 +31,11 @@ import org.thymeleaf.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -57,18 +66,44 @@ public class IssueController {
     private IssueSearchService issueSearchService;
 
     @RequestMapping(value = "/issue-ext", method = RequestMethod.POST)
-    public ResponseEntity<CaptureIssue> createIssue(final HttpServletRequest request, final @RequestParam(value = "testSessionId",required = false)  String testSessionId, @Valid @RequestBody final IssueCreateRequest createRequest) throws CaptureValidationException {
+    public ResponseEntity<CaptureIssue> createIssue(final HttpServletRequest request, final @RequestParam(value = "testSessionId",required = false)  String testSessionId, @Valid @RequestBody JsonNode jsonBody) throws CaptureValidationException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if(auth == null || !auth.isAuthenticated()) {
             throw new CaptureRuntimeException(HttpStatus.UNAUTHORIZED.toString(), i18n.getMessage("template.validate.create.cannot.create.issue"));
         }
-        log.info("Issue Create Request for Issue : {}", createRequest.toString());
+        ObjectMapper om = new ObjectMapper();
 
-        if (!permissionService.hasCreateIssuePermission()) {
-            throw new CaptureRuntimeException(HttpStatus.FORBIDDEN.toString(),i18n.getMessage("template.validate.create.cannot.create.issue"));
+        try {
+            IssueCreateRequest createRequest = om.readValue(jsonBody.toString(), IssueCreateRequest.class);
+            JsonNode fieldsJson = jsonBody.get("fields");
+            Iterator<String> fieldNames = fieldsJson.fieldNames();
+            while (fieldNames.hasNext()){
+                String fieldName = fieldNames.next();
+                if(StringUtils.contains(fieldName, IssueFields.getCustomfield())){
+                    ArrayNode valuesJson = (ArrayNode)fieldsJson.get(fieldName);
+                    String[] values = new String[valuesJson.size()];
+                    for(int i=0;i<valuesJson.size();i++){
+                        values[i] = valuesJson.get(i).asText();
+                    }
+                    if(createRequest.fields().getFields() == null){
+                        Map<String, String[]> fieldsMap = new TreeMap<>();
+                        createRequest.fields().setFields(fieldsMap);
+                    }
+                    createRequest.fields().getFields().put(fieldName, values);
+                }
+            }
+
+            log.info("Issue Create Request for Issue : {}", createRequest.toString());
+
+            if (!permissionService.hasCreateIssuePermission()) {
+                throw new CaptureRuntimeException(HttpStatus.FORBIDDEN.toString(),i18n.getMessage("template.validate.create.cannot.create.issue"));
+            }
+            CaptureIssue captureIssue = issueService.createIssue(request,testSessionId,createRequest);
+            return new ResponseEntity<>(captureIssue, HttpStatus.OK);
+        } catch (IOException exception) {
+            log.error("Error during create issue.", exception);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        CaptureIssue captureIssue = issueService.createIssue(request,testSessionId,createRequest);
-        return new ResponseEntity<>(captureIssue, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/issue/{issueKey}/comment", method = RequestMethod.POST, produces = APPLICATION_JSON_VALUE)

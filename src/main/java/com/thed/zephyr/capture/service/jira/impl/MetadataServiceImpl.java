@@ -6,6 +6,7 @@ import com.atlassian.jira.rest.client.api.domain.IssueType;
 import com.atlassian.jira.rest.client.api.domain.IssuelinksType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CustomField;
@@ -109,8 +110,7 @@ public class MetadataServiceImpl implements MetadataService {
 
                     for(final JsonNode vN: fN)
                     {
-                        JsonNode options = vN.has(ALLOWED_VALUES) ? vN.get(ALLOWED_VALUES):
-                                new ObjectMapper().createArrayNode();
+                        JsonNode options = vN.has(ALLOWED_VALUES) ? vN.get(ALLOWED_VALUES): new ObjectMapper().createArrayNode();
                         List<FieldOption> fieldOptions = new ArrayList<>();
                         String key = vN.get(KEY).asText();
                         if(key.equals("assignee")){
@@ -121,9 +121,18 @@ public class MetadataServiceImpl implements MetadataService {
                             String name = jsonNode1.has("name") ? jsonNode1.get("name").asText():
                                     jsonNode1.get("value").asText();
                             String value = jsonNode1.has("id") ? jsonNode1.get("id").asText(): null;
+                            List<FieldOption> children = new ArrayList<>();
+                            ArrayNode childrenJson = (ArrayNode)jsonNode1.get("children");
+                            if (childrenJson != null){
+                                for (JsonNode childJson:childrenJson){
+                                    String childText = childJson.get("value").asText();
+                                    String childValue = childJson.get("id").asText();
+                                    children.add(new FieldOption(childText, childValue));
+                                }
+                            }
                             if(StringUtils.isNotEmpty(name)
                                     && StringUtils.isNotEmpty(value)) {
-                                finalFieldOptions.add(new FieldOption(name,value));
+                                finalFieldOptions.add(new FieldOption(name,value, children));
                             }
                         });
 
