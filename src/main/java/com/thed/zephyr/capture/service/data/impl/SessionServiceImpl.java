@@ -136,7 +136,7 @@ public class SessionServiceImpl implements SessionService {
         String baseUrl = getBaseUrl();
 		CompletableFuture.runAsync(() -> {
 			sessionESRepository.save(createdSession);
-			setIssueTestStausAndTestSession(createdSession,baseUrl);
+			setIssueTestStausAndTestSession(createdSession.getRelatedIssueIds(), createdSession.getCtId(), createdSession.getProjectId(), baseUrl);
 		});
 		//Update test staus and test sessions for related issues
 
@@ -266,7 +266,8 @@ public class SessionServiceImpl implements SessionService {
             saveUpdatedSession(result);
         }
 		//Update test status and test sesions to JIRA isssues
-		setIssueTestStausAndTestSession(result.getSession(),getBaseUrl());
+		Session session = result.getSession();
+		setIssueTestStausAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
         return result;
     }
 	
@@ -400,18 +401,6 @@ public class SessionServiceImpl implements SessionService {
 		return createSessionDto(loggedInUser, session, isActive, project, isSendFull);
 	}
 
-	/**
-	 * Convert additional info to wiki
-	 * @param session
-	 */
-	private Session convertAdditionalInfoWiki(Session session) {
-		String additionalInfo = session.getAdditionalInfo();
-		if(additionalInfo != null){
-			session.setAdditionalInfo(wikiParser.parseWiki(additionalInfo,ApplicationConstants.HTML));
-		}
-		return session;
-	}
-
 	@Override
 	public Map<String, Object> getCompleteSessionView(String loggedUser, Session session) {
 		Map<String, Object> map = new HashMap<>();
@@ -516,6 +505,7 @@ public class SessionServiceImpl implements SessionService {
 		Page<Session> sessions3 = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
 		updateSessionWithIssueId(sessions3, issueId,user);
     }
+
     @Override
     public List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<IssueRaisedBean> issues) {
         List<CaptureIssue> raisedIssues = Lists.newArrayList();
@@ -557,6 +547,193 @@ public class SessionServiceImpl implements SessionService {
         }
         return raisedIssues;
     }
+
+	@Override
+	public void setIssueTestStausAndTestSession(Set<Long> relatedIssues, String ctId, Long projectId, String baseUrl) {
+		log.debug("setIssueTestStausAndTestSession method started ...");
+		//   Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		//  AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+		//  String baseUri = host.getHost().getBaseUrl();
+		if (relatedIssues != null) {
+			CompletableFuture.runAsync(() -> {
+				log.debug("Master Thread::::::started with relatedIssues: {}, ctId: {}, projectId: {}",relatedIssues,ctId,projectId);
+				relatedIssues.forEach(issueId -> {
+					CompletableFuture.runAsync(() -> {
+						log.debug("Child Thread::::::started populate JIRA testing status for Issue: {}", issueId);
+						StringBuilder sessionIdBuilder = new StringBuilder();
+						String testingStatuKey = null;
+						int createdCount = 0, startedCount = 0, completedCount = 0;
+						Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(ctId, projectId, issueId, CaptureUtil.getPageRequest(0, 1000));
+						boolean emptyList = sessions.getContent() != null && sessions.getContent().isEmpty() ? true : false;
+						if (Objects.nonNull(sessions.getContent())) {
+							for (Session session : sessions.getContent()) {
+								sessionIdBuilder.append(session.getId()).append(",");
+
+								if (Status.CREATED.equals(session.getStatus())) {
+									createdCount++;
+								} else if (Status.COMPLETED.equals(session.getStatus())) {
+									completedCount++;
+								} else {
+									startedCount++;
+									// If a status other than created and completed appears, then it is in progress
+									testingStatuKey = TestingStatus.TestingStatusEnum.IN_PROGRESS.getI18nKey();
+								}
+
+							}
+							if (sessionIdBuilder.length() > 0) {
+								sessionIdBuilder.replace(sessionIdBuilder.length() - 1, sessionIdBuilder.length(), "");
+
+							}
+						}
+						if (StringUtils.isBlank(testingStatuKey)) {
+							if (createdCount == 0 && startedCount == 0 && completedCount != 0) {
+								// If all the sessions are 'completed' then return complete
+								testingStatuKey = TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey();
+							} else if (emptyList || (createdCount != 0 && startedCount == 0 && completedCount == 0)) {
+								// If all the sessions are 'created' then return not started
+								testingStatuKey = TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey();
+							} else {
+								// Otherwise the sessions are either 'completed' or 'created'
+								testingStatuKey = TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey();
+							}
+						}
+						captureContextIssueFieldsService.populateIssueTestStatusAndTestSessions(String.valueOf(issueId), captureI18NMessageSource.getMessage(testingStatuKey), sessionIdBuilder.toString(), baseUrl);
+						log.debug("Child Thread::::::Ended populate JIRA testing status for Issue: {}", issueId);
+					});
+
+				});
+				log.debug("Master Thread::::::Ended for relatedIssues: {}, ctId: {}, projectId: {}",relatedIssues,ctId,projectId);
+			});
+
+		}
+		log.debug("setIssueTestStausAndTestSession completed ...");
+	}
+
+	@Override
+	public void updateProjectNameForSessions(String ctid, Long projectId, String projectName) {
+		CompletableFuture.runAsync(() -> {
+			int index = 0;
+			int maxResults = 20;
+			AggregatedPage<Session> pageResponse = updateProjectNameIntoES(ctid, projectId, projectName, index, maxResults);
+			index = index  + maxResults;
+			Long total = pageResponse.getTotalElements();
+			while(index < total.intValue()) {
+				pageResponse = updateProjectNameIntoES(ctid, projectId, projectName, index, maxResults);
+				index = index + maxResults;
+			}
+		});
+	}
+
+	@Override
+	public SessionResult getActiveSession(String user, String baseUrl) {
+		String activeSessionId = getActiveSessionIdFromCache(user, baseUrl);
+		if(Objects.isNull(activeSessionId)) {
+			return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
+		}
+		Session activeSession = sessionRepository.findOne(activeSessionId);//better to the whole session object from db.
+		if (Objects.isNull(activeSession)) {
+			if(log.isDebugEnabled()) log.debug(String.format("Unable to load active session with user: %s", user));
+			return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
+		}
+		return new SessionResult(new ErrorCollection(), activeSession);
+	}
+
+	@Override
+	public UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo) {
+		session.setAdditionalInfo(additionalInfo);
+		return validateUpdate(loggedUser, session);
+	}
+
+	@Override
+	public Session cloneSession(String loggedUser, Session cloneSession, String cloneName) {
+		Session session = new Session();
+		session.setCreator(loggedUser);
+		session.setCtId(cloneSession.getCtId());
+		session.setStatus(Status.CREATED);
+		session.setName(cloneName);
+		session.setTimeCreated(new Date());
+		session.setAdditionalInfo(cloneSession.getAdditionalInfo());
+		session.setShared(cloneSession.isShared());
+		session.setRelatedIssueIds(cloneSession.getRelatedIssueIds());
+		session.setProjectId(cloneSession.getProjectId());
+		session.setDefaultTemplateId(cloneSession.getDefaultTemplateId());
+		session.setAssignee(cloneSession.getAssignee());
+		Session createdSession = sessionRepository.save(session);
+		if(log.isDebugEnabled()) log.debug("Cloned Session -- > Session ID - " + createdSession.getId());
+		sessionESRepository.save(createdSession);
+
+		return createdSession;
+	}
+
+	@Override
+	public void addRaisedInSession(String userKey, Long issueRaisedId, String sessionId) {
+		List<Long> issueRaisedIdList = new ArrayList<>();
+		issueRaisedIdList.add(issueRaisedId);
+		captureContextIssueFieldsService.addRaisedInIssueField(userKey,issueRaisedIdList,sessionId);
+	}
+
+	@Override
+	public void addUnRaisedInSession(String userKey, String issueKey, Session session) {
+		captureContextIssueFieldsService.removeRaisedIssue(session,issueKey);
+	}
+
+	@Override
+	public void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctid) throws HazelcastInstanceNotDefinedException {
+		jobProgressService.createJobProgress(acHostModel, ApplicationConstants.REINDEX_CAPTURE_ES_DATA, ApplicationConstants.JOB_STATUS_INPROGRESS, jobProgressId);
+		CompletableFuture.runAsync(() -> {
+			try {
+				if (!lockService.tryLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA, 5)){
+					log.warn("Re-index executions process already in progress.");
+					jobProgressService.setErrorMessage(acHostModel, jobProgressId, captureI18NMessageSource.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.reindex.executions.inprogress"));
+				}
+				if(log.isDebugEnabled()) log.debug("Re-Indexing Session type data begin:");
+				deleteSessionDataForCtid(ctid);
+				loadSessionDataFromDBToES(acHostModel, jobProgressId);
+				jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
+				String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
+				jobProgressService.setMessage(acHostModel, jobProgressId, message);
+				lockService.deleteLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);
+			} catch(Exception ex) {
+				log.error("Error in reindexSessionDataIntoES() - ", ex);
+				try {
+					jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_FAILED, jobProgressId);
+					String errorMessage = captureI18NMessageSource.getMessage("capture.common.internal.server.error");
+					jobProgressService.setErrorMessage(acHostModel, jobProgressId, errorMessage);
+					lockService.deleteLock(acHostModel.getCtId(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);
+				} catch (HazelcastInstanceNotDefinedException e) {
+					log.warn("Error in releassing the lock in catch block - ", ex);
+				}
+			}
+		});
+	}
+
+	@Override
+	public void updateUserDisplayNamesForSessions(String ctid, String userKey, String userDisplayName) {
+		CompletableFuture.runAsync(() -> {
+			int index = 0;
+			int maxResults = 20;
+			AggregatedPage<Session> pageResponse = updateUserDisplayNameIntoES(ctid, userKey, userDisplayName, index, maxResults);
+			index = index  + maxResults;
+			Long total = pageResponse.getTotalElements();
+			while(index < total.intValue()) {
+				pageResponse = updateUserDisplayNameIntoES(ctid, userKey, userDisplayName, index, maxResults);
+				index = index + maxResults;
+			}
+		});
+	}
+
+	/**
+	 * Convert additional info to wiki
+	 * @param session
+	 */
+	private Session convertAdditionalInfoWiki(Session session) {
+		String additionalInfo = session.getAdditionalInfo();
+		if(additionalInfo != null){
+			session.setAdditionalInfo(wikiParser.parseWiki(additionalInfo,ApplicationConstants.HTML));
+		}
+		return session;
+	}
+
 	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser) {
 		List<Session> listOfSessionsAsParticipant = sessions != null ? sessions.getContent() : new ArrayList<>();
 		Date dateTime = new Date();
@@ -731,8 +908,6 @@ public class SessionServiceImpl implements SessionService {
 		});
     }
 
-
-	
 	/**
 	 * Validates the session by the logged in user and also updates the session like status,
 	 * time logged in, removes the users from the participant list who are not active in the session.
@@ -778,20 +953,6 @@ public class SessionServiceImpl implements SessionService {
 	private DeactivateResult validateDeactivateSession(Session session, String user) {
         return validateDeactivateSession(session, user, Status.PAUSED, null);
     }
-
-	@Override
-	public SessionResult getActiveSession(String user, String baseUrl) {
-	    String activeSessionId = getActiveSessionIdFromCache(user, baseUrl);
-	    if(Objects.isNull(activeSessionId)) {
-	    	return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
-	    }
-	    Session activeSession = sessionRepository.findOne(activeSessionId);//better to the whole session object from db.
-	    if (Objects.isNull(activeSession)) {
-	        if(log.isDebugEnabled()) log.debug(String.format("Unable to load active session with user: %s", user));
-	        return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
-	    }
-	    return new SessionResult(new ErrorCollection(), activeSession);
-	}
 	
 	/**
 	 * Clears the active session from the cache for the logged in user.
@@ -1172,18 +1333,6 @@ public class SessionServiceImpl implements SessionService {
 		}
 		return sessionDtoList;
 	}
-
-	/**
-	 * Calculates the actual size from the passed parameters.
-	 *
-	 * @return -- Returns the actual size.
-	 *//*
-	private int getActualSize(final int maxSize, final int startIndex, final int size) {
-		if (startIndex + size > maxSize - 1) {
-			return Math.max(maxSize - startIndex, 0);
-		}
-		return size;
-	}*/
 	
 	private SessionDisplayDto getDisplayHelper(String user, Session session, CaptureProject project) {
         boolean isSessionEditable = permissionService.canEditSession(user, session);
@@ -1249,9 +1398,7 @@ public class SessionServiceImpl implements SessionService {
 			userAvatarSrc = getDecodedUrl(user, "24x24");
 			userLargeAvatarSrc = getDecodedUrl(user, "48x48");
 		}
-		
 		String estimatedTimeSpent = formatShortTimeSpent(calculateEstimatedTimeSpentOnSession(session));
-
 		if(isSendFull) {
 			List<CaptureIssue> relatedIssues = Lists.newArrayList();
 			if(Objects.nonNull(session.getRelatedIssueIds())) {
@@ -1277,44 +1424,6 @@ public class SessionServiceImpl implements SessionService {
 					captureI18NMessageSource.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc,
 					userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeLogged(), CaptureUtil.createSessionLink(session.getId()));
 		}
-	}
-
-	@Override
-	public UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo) {
-		session.setAdditionalInfo(additionalInfo);
-		return validateUpdate(loggedUser, session);
-	}
-
-	@Override
-	public Session cloneSession(String loggedUser, Session cloneSession, String cloneName) {
-		Session session = new Session();
-		session.setCreator(loggedUser);
-		session.setCtId(cloneSession.getCtId());
-		session.setStatus(Status.CREATED);
-		session.setName(cloneName);
-		session.setTimeCreated(new Date());
-		session.setAdditionalInfo(cloneSession.getAdditionalInfo());
-		session.setShared(cloneSession.isShared());
-		session.setRelatedIssueIds(cloneSession.getRelatedIssueIds());
-		session.setProjectId(cloneSession.getProjectId());
-		session.setDefaultTemplateId(cloneSession.getDefaultTemplateId());
-		session.setAssignee(cloneSession.getAssignee());
-        Session createdSession = sessionRepository.save(session);
-        if(log.isDebugEnabled()) log.debug("Cloned Session -- > Session ID - " + createdSession.getId());
-		sessionESRepository.save(createdSession);
-		return createdSession;
-	}
-
-	@Override
-	public void addRaisedInSession(String userKey, Long issueRaisedId, String sessionId) {
-		List<Long> issueRaisedIdList = new ArrayList<>();
-		issueRaisedIdList.add(issueRaisedId);
-		captureContextIssueFieldsService.addRaisedInIssueField(userKey,issueRaisedIdList,sessionId);
-	}
-
-	@Override
-	public void addUnRaisedInSession(String userKey, String issueKey, Session session) {
-		captureContextIssueFieldsService.removeRaisedIssue(session,issueKey);
 	}
 
 	private String getDecodedUrl(CaptureUser user, String key) {
@@ -1373,86 +1482,6 @@ public class SessionServiceImpl implements SessionService {
         }
 		return Duration.ofMillis(timeSpent.getMillis());
 	}
-
-	private void setIssueTestStausAndTestSession(Session createdSession,String baseUrl) {
-		setIssueTestStausAndTestSession(createdSession.getRelatedIssueIds(),createdSession.getCtId(),createdSession.getProjectId(),baseUrl);
-	}
-
-    @Override
-    public void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId, String baseUrl) {
-        log.debug("setIssueTestStausAndTestSession method started ...");
-     //   Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-      //  AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-      //  String baseUri = host.getHost().getBaseUrl();
-        if (relatedIssues != null) {
-            CompletableFuture.runAsync(() -> {
-                log.debug("Master Thread::::::started with relatedIssues: {}, ctId: {}, projectId: {}",relatedIssues,ctId,projectId);
-                relatedIssues.forEach(issueId -> {
-                    CompletableFuture.runAsync(() -> {
-                        log.debug("Child Thread::::::started populate JIRA testing status for Issue: {}", issueId);
-                        StringBuilder sessionIdBuilder = new StringBuilder();
-                        String testingStatuKey = null;
-                        int createdCount = 0, startedCount = 0, completedCount = 0;
-                        Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(ctId, projectId, issueId, CaptureUtil.getPageRequest(0, 1000));
-                        boolean emptyList = sessions.getContent() != null && sessions.getContent().isEmpty() ? true : false;
-                        if (Objects.nonNull(sessions.getContent())) {
-                            for (Session session : sessions.getContent()) {
-                                sessionIdBuilder.append(session.getId()).append(",");
-
-                                if (Status.CREATED.equals(session.getStatus())) {
-                                    createdCount++;
-                                } else if (Status.COMPLETED.equals(session.getStatus())) {
-                                    completedCount++;
-                                } else {
-                                    startedCount++;
-                                    // If a status other than created and completed appears, then it is in progress
-                                    testingStatuKey = TestingStatus.TestingStatusEnum.IN_PROGRESS.getI18nKey();
-                                }
-
-                            }
-                            if (sessionIdBuilder.length() > 0) {
-                                sessionIdBuilder.replace(sessionIdBuilder.length() - 1, sessionIdBuilder.length(), "");
-
-                            }
-                        }
-                        if (StringUtils.isBlank(testingStatuKey)) {
-                            if (createdCount == 0 && startedCount == 0 && completedCount != 0) {
-                                // If all the sessions are 'completed' then return complete
-                                testingStatuKey = TestingStatus.TestingStatusEnum.COMPLETED.getI18nKey();
-                            } else if (emptyList || (createdCount != 0 && startedCount == 0 && completedCount == 0)) {
-                                // If all the sessions are 'created' then return not started
-                                testingStatuKey = TestingStatus.TestingStatusEnum.NOT_STARTED.getI18nKey();
-                            } else {
-                                // Otherwise the sessions are either 'completed' or 'created'
-                                testingStatuKey = TestingStatus.TestingStatusEnum.INCOMPLETE.getI18nKey();
-                            }
-                        }
-                        captureContextIssueFieldsService.populateIssueTestStatusAndTestSessions(String.valueOf(issueId), captureI18NMessageSource.getMessage(testingStatuKey), sessionIdBuilder.toString(), baseUrl);
-                        log.debug("Child Thread::::::Ended populate JIRA testing status for Issue: {}", issueId);
-                    });
-
-                });
-                log.debug("Master Thread::::::Ended for relatedIssues: {}, ctId: {}, projectId: {}",relatedIssues,ctId,projectId);
-            });
-
-        }
-        log.debug("setIssueTestStausAndTestSession completed ...");
-    }
-	
-	@Override
-	public void updateProjectNameForSessions(String ctid, Long projectId, String projectName) {
-		CompletableFuture.runAsync(() -> {
-			int index = 0;
-			int maxResults = 20;
-			AggregatedPage<Session> pageResponse = updateProjectNameIntoES(ctid, projectId, projectName, index, maxResults);
-			index = index  + maxResults;
-			Long total = pageResponse.getTotalElements();
-			while(index < total.intValue()) {
-				pageResponse = updateProjectNameIntoES(ctid, projectId, projectName, index, maxResults);
-				index = index + maxResults;
-			}
-		});
-	}
 	
 	private AggregatedPage<Session> updateProjectNameIntoES(String ctid, Long projectId, String projectName, int index, int maxResults) {
 		AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctid, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
@@ -1462,36 +1491,6 @@ public class SessionServiceImpl implements SessionService {
 			sessionESRepository.save(session);
 		}
 		return pageResponse;
-	}
-
-	@Override
-	public void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctid) throws HazelcastInstanceNotDefinedException {
-		jobProgressService.createJobProgress(acHostModel, ApplicationConstants.REINDEX_CAPTURE_ES_DATA, ApplicationConstants.JOB_STATUS_INPROGRESS, jobProgressId);
-		CompletableFuture.runAsync(() -> {
-			try {
-				if (!lockService.tryLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA, 5)){
-	                log.warn("Re-index executions process already in progress.");
-	                jobProgressService.setErrorMessage(acHostModel, jobProgressId, captureI18NMessageSource.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.reindex.executions.inprogress"));
-	            }
-				if(log.isDebugEnabled()) log.debug("Re-Indexing Session type data begin:");
-				deleteSessionDataForCtid(ctid);
-				loadSessionDataFromDBToES(acHostModel, jobProgressId);				
-				jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
-				String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
-				jobProgressService.setMessage(acHostModel, jobProgressId, message);
-				lockService.deleteLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);				
-			} catch(Exception ex) {
-				log.error("Error in reindexSessionDataIntoES() - ", ex);
-				try {
-					jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_FAILED, jobProgressId);
-					String errorMessage = captureI18NMessageSource.getMessage("capture.common.internal.server.error");
-	                jobProgressService.setErrorMessage(acHostModel, jobProgressId, errorMessage);
-	                lockService.deleteLock(acHostModel.getCtId(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);
-				} catch (HazelcastInstanceNotDefinedException e) {
-					log.warn("Error in releassing the lock in catch block - ", ex);
-				}                
-			}
-		});
 	}
 	
 	private void deleteSessionDataForCtid(String ctid) {
@@ -1544,21 +1543,6 @@ public class SessionServiceImpl implements SessionService {
         }
         return 0;
     }
-	
-	@Override
-	public void updateUserDisplayNamesForSessions(String ctid, String userKey, String userDisplayName) {
-		CompletableFuture.runAsync(() -> {
-			int index = 0;
-			int maxResults = 20;
-			AggregatedPage<Session> pageResponse = updateUserDisplayNameIntoES(ctid, userKey, userDisplayName, index, maxResults);
-			index = index  + maxResults;
-			Long total = pageResponse.getTotalElements();
-			while(index < total.intValue()) {
-				pageResponse = updateUserDisplayNameIntoES(ctid, userKey, userDisplayName, index, maxResults);
-				index = index + maxResults;
-			}
-		});
-	}
 	
 	private AggregatedPage<Session> updateUserDisplayNameIntoES(String ctid, String userKey, String userDisplayName, int index, int maxResults) {
 		AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(),
