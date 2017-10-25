@@ -581,13 +581,17 @@ public class IssueServiceImpl implements IssueService {
                     });
                     issueInputBuilder.setFieldValue(fieldId, checkboxValues);
                 } else if(StringUtils.equals(fieldType, "date") && StringUtils.isNotBlank(fieldValue[0])){
-                 //   SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy");
-
-                 //   Date date = sdf.parse(fieldValue[0]);
-
-                 //   issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy");
+                    Date date = sdf.parse(fieldValue[0]);
+                    sdf = new SimpleDateFormat("YYYY-MM-DD");
+                    String dateStr = sdf.format(date);
+                    issueInputBuilder.setFieldValue(fieldId, dateStr);
                 } else if(StringUtils.equals(fieldType, "datetime")){
-                    //need the datetime type custom field implementation
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy hh:mm a");
+                    Date date = sdf.parse(fieldValue[0]);
+                    sdf = new SimpleDateFormat("YYYY-MM-DD'T'hh:mm:ss.sssZ");
+                    String dateStr = sdf.format(date);
+                    issueInputBuilder.setFieldValue(fieldId, dateStr);
                 } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "string")){
                     List<String> values = Arrays.asList(fieldValue);
                     issueInputBuilder.setFieldValue(fieldId, values);
