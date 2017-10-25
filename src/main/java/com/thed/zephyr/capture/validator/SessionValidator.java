@@ -7,6 +7,7 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang.StringUtils;
@@ -52,11 +53,19 @@ public class SessionValidator implements Validator {
 		if(target  instanceof SessionRequest) {
 			SessionRequest sessionRequest = (SessionRequest) target;
 			if(Objects.isNull(sessionRequest.getProjectKey())) {
-				errors.reject("", i18n.getMessage("session.project.key.needed"));
+				errors.rejectValue("projectKey","", i18n.getMessage("session.project.key.needed"));
+			}
+			if (sessionRequest.getName() !=null&& sessionRequest.getName().length() > CaptureConstants.SESSION_NAME_LENGTH_LIMIT) {
+				errors.rejectValue("name","", i18n.getMessage("session.name.exceed.limit", new Integer[]{sessionRequest.getName().length(),
+						CaptureConstants.SESSION_NAME_LENGTH_LIMIT}));
+			}
+			if (sessionRequest.getAdditionalInfo() != null && sessionRequest.getAdditionalInfo().length() > CaptureConstants.ADDITIONAL_INFO_LENGTH_LIMIT) {
+				errors.rejectValue("additionalInfo","", i18n.getMessage("session.additionalInfo.exceed.limit", new Integer[]{sessionRequest.getAdditionalInfo().length(),
+						CaptureConstants.ADDITIONAL_INFO_LENGTH_LIMIT}));
 			}
 			CaptureProject project = projectService.getCaptureProject(sessionRequest.getProjectKey()); //checking whether the project key is valid or not.
 			if(Objects.isNull(project)) {
-				errors.reject("", i18n.getMessage("session.project.key.invalid", new Object[]{sessionRequest.getProjectKey()}));
+				errors.rejectValue("projectKey","", i18n.getMessage("session.project.key.invalid", new Object[]{sessionRequest.getProjectKey()}));
 			} else {
 				sessionRequest.setProjectId(project.getId());
 				sessionRequest.setProjectName(project.getName());
@@ -79,7 +88,7 @@ public class SessionValidator implements Validator {
 				sessionRequest.setRelatedIssueIds(relatedIssues.size() > 0 ? relatedIssues : null);
 				int issueLimit = Integer.parseInt(dynamicProperty.getStringProp(ApplicationConstants.RELATED_ISSUES_LIMIT_DYNAMIC_KEY, "100").get());
 				if (relatedIssues.size() > issueLimit) { //checking whether related issues are crossed more than the limit.
-					errors.reject("", i18n.getMessage("session.relatedissues.excee", new Object[]{relatedIssues.size(), issueLimit}));
+					errors.rejectValue("relatedIssueIds","", i18n.getMessage("session.relatedissues.exceed", new Object[]{relatedIssues.size(), issueLimit}));
 		        }
 			}
 		}

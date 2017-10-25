@@ -43,14 +43,14 @@ public class NoteSessionActivityValidator implements Validator {
 			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "noteData", "", i18n.getMessage("note.create.empty"));
 			int noteLength = StringUtils.isNullOrEmpty(noteRequest.getNoteData()) ? 0 : noteRequest.getNoteData().length();
 			if (noteRequest.getNoteData() != null && noteLength > ApplicationConstants.MAX_NOTE_LENGTH) {
-                errors.reject("", i18n.getMessage("note.exceed.limit", new Object[]{noteLength, ApplicationConstants.MAX_NOTE_LENGTH}));
+				errors.rejectValue("sessionName","", i18n.getMessage("note.exceed.limit", new Object[]{noteLength, ApplicationConstants.MAX_NOTE_LENGTH}));
             }
 
 			ValidationUtils.rejectIfEmptyOrWhitespace(errors, "sessionId", "", i18n.getMessage("session.invalid.id", new Object[]{noteRequest.getSessionId()}));
 			if(!StringUtils.isNullOrEmpty(noteRequest.getSessionId())){
 				Session s = sessionService.getSession(noteRequest.getSessionId());
 				if(Objects.isNull(s)) {
-					errors.reject("", i18n.getMessage("session.invalid", new Object[]{noteRequest.getSessionId()}));
+					errors.rejectValue("sessionId","", i18n.getMessage("session.invalid", new Object[]{noteRequest.getSessionId()}));
 				}else{
 					noteRequest.setProjectId(s.getProjectId());
 				}

@@ -1,5 +1,7 @@
 package com.thed.zephyr.capture.model;
 
+import com.thed.zephyr.capture.util.CaptureConstants;
+
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Set;
@@ -14,13 +16,11 @@ import java.util.Set;
 public class SessionRequest {
 	
 	@NotNull
-	@Size(min = 1, max = 200)
 	private String name;
 	@NotNull
 	private String projectKey;
 	private Set<String> relatedIssues;
 	private String assignee;
-	@Size(min = 0, max = 5000)
 	private String additionalInfo;
 	private Boolean shared = false;
 	private String defaultTemplateId;

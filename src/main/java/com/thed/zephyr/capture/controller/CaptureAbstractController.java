@@ -1,8 +1,11 @@
 package com.thed.zephyr.capture.controller;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -76,8 +79,19 @@ public abstract class CaptureAbstractController {
 	 * @param errorCollection -- Holds the validation errors information.
 	 * @return -- Returns the constructed response entity.
 	 */
-	protected ResponseEntity<List<ErrorDto>> badRequest(ErrorCollection errorCollection) {		
-		return ResponseEntity.badRequest().body(errorCollection.toErrorDto());
+	protected ResponseEntity<?> badRequest(ErrorCollection errorCollection) {
+		Map<String,Object> errorMap = new HashedMap();
+
+		List<Map<?,?>> listOfErrors = new ArrayList<>();
+		errorCollection.getErrors().stream().forEach(fieldError ->{
+			Map<String,String> errorMsg = new HashedMap();
+			errorMsg.put("errorMessage",fieldError.getMessage());
+			listOfErrors.add(errorMsg);
+		} );
+		//listOfErrors.add(errorMsg);
+		errorMap.put("errors",listOfErrors);
+
+		return ResponseEntity.badRequest().body(errorMap);
 	}
 	
 	public AcHostModel getAcHostModel() {

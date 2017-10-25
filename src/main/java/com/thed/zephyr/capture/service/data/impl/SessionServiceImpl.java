@@ -886,6 +886,14 @@ public class SessionServiceImpl implements SessionService {
                 if (!newSession.getCreator().equals(loadedSession.getCreator())) { // Check that certain fields haven't changed - creator + time created (paranoid check)
                     errorCollection.addError(captureI18NMessageSource.getMessage("session.change.creator.violation"));
                 }
+				if (newSession.getName() !=null&& newSession.getName().length() > CaptureConstants.SESSION_NAME_LENGTH_LIMIT) {
+					errorCollection.addError(captureI18NMessageSource.getMessage("session.name.exceed.limit", new Integer[]{newSession.getName().length(),
+							CaptureConstants.SESSION_NAME_LENGTH_LIMIT}));
+				}
+				if (newSession.getAdditionalInfo() != null && newSession.getAdditionalInfo().length() > CaptureConstants.ADDITIONAL_INFO_LENGTH_LIMIT) {
+					errorCollection.addError(captureI18NMessageSource.getMessage("session.additionalInfo.exceed.limit", new Integer[]{newSession.getAdditionalInfo().length(),
+							CaptureConstants.ADDITIONAL_INFO_LENGTH_LIMIT}));
+				}
                 if (!loadedSession.getTimeCreated().equals(newSession.getTimeCreated())) {
                     errorCollection.addError(captureI18NMessageSource.getMessage("session.change.timecreated.violation"));
                 }

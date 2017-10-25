@@ -11,6 +11,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -64,11 +65,23 @@ public class ExceptionHandler {
 	 * @return -- Returns the list of error objects.
 	 */
 	@org.springframework.web.bind.annotation.ExceptionHandler(value = MethodArgumentNotValidException.class)
-	public ResponseEntity<List<ErrorDto>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+	public ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
 		BindingResult bindingResult = ex.getBindingResult();
-		List<ErrorDto> errosList = bindingResult.getFieldErrors().stream().map(fieldError -> new ErrorDto(fieldError.getCode(), fieldError.getDefaultMessage()))
-				.collect(Collectors.toList());
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errosList);
+		/*List<ErrorDto> errosList = bindingResult.getFieldErrors().stream().map(fieldError -> new ErrorDto(fieldError.getCode(), fieldError.getDefaultMessage()))
+				.collect(Collectors.toList());*/
+		Map<String,Object> errorMap = new HashedMap();
+
+		List<Map<?,?>> listOfErrors = new ArrayList<>();
+		bindingResult.getFieldErrors().stream().forEach(fieldError ->{
+			String key = fieldError.getField() != null ?fieldError.getField() : (fieldError.getCode() != null ? fieldError.getCode() : "error");
+			Map<String,String> errorMsg = new HashedMap();
+			errorMsg.put("errorMessage",fieldError.getDefaultMessage());
+			listOfErrors.add(errorMsg);
+		} );
+		//listOfErrors.add(errorMsg);
+		errorMap.put("errors",listOfErrors);
+
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMap);
 	}
 	
 }
