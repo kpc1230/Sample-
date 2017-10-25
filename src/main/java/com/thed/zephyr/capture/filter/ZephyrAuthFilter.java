@@ -93,10 +93,10 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
                         return false;
                     }
                     AcHostModel acHostModel = acHostModelRepository.findOne(clientKey);
-                    if(null != acHostModel) {
+                    if(null != acHostModel&&acHostModel.getStatus().equals(AcHostModel.TenantStatus.ACTIVE)) {
                         JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(userKey)), new JWTClaimsSet());
                         //Put JwtAuthentication into SecurityContext to mock JwtAuthenticationFilter behavior and allow RequireAuthenticationHandlerInterceptor pass request
-                        SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
+                       SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
                         return true;
                     }else {
                         return false;
