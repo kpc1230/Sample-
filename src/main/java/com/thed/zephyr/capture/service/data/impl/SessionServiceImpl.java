@@ -26,6 +26,7 @@ import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
 import com.thed.zephyr.capture.predicates.UserIsParticipantPredicate;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionRepository;
+import com.thed.zephyr.capture.repositories.elasticsearch.NoteRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.JobProgressService;
 import com.thed.zephyr.capture.service.PermissionService;
@@ -104,7 +105,7 @@ public class SessionServiceImpl implements SessionService {
 	@Autowired
 	private WikiParser wikiParser;
 	@Autowired
-	private EmojiUtil emojiUtil;
+	private NoteRepository noteRepository;
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -174,6 +175,7 @@ public class SessionServiceImpl implements SessionService {
 		sessionRepository.delete(sessionId);
 		sessionESRepository.delete(sessionId);
 		sessionActivityService.deleteAllSessionActivities(sessionId);
+		noteRepository.deleteBySessionId(sessionId);
         if (session.getId().equals(getActiveSessionIdFromCache(session.getAssignee(), null))) { // Clear it as assignees active session
             clearActiveSessionFromCache(session.getAssignee());
         }

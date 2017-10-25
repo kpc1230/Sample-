@@ -243,7 +243,7 @@ public class NoteServiceImpl implements NoteService {
 		String wikify = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser,noteData));
 		noteReq.setNoteData(wikify);
 		noteReq.setRawNoteData(rawNote);
-		noteReq.setSessionName(session.getName());
+		noteReq.setSessionName(Objects.nonNull(session) ? session.getName() : "");
 	}
 
 	@Override

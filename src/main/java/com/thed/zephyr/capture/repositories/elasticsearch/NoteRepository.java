@@ -26,5 +26,7 @@ public interface NoteRepository extends ElasticsearchRepository<Note, String> {
     Page<Note> findByCtIdAndProjectIdAndResolutionState(String ctId, Long projectId, NoteSessionActivity.Resolution resolution, Pageable pageable);
 
     Page<Note> findByCtIdAndSessionIdOrderByCreatedTimeAsc(String ctId, String sessionId, Pageable pageable);
+    
+    void deleteBySessionId(String sessionId);
 
 }
