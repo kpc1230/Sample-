@@ -1,6 +1,5 @@
 package com.thed.zephyr.capture.controller;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,6 +15,7 @@ import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.service.jira.issue.IssueFields;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -27,7 +27,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.thymeleaf.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -66,7 +65,7 @@ public class IssueController {
     private IssueSearchService issueSearchService;
 
     @RequestMapping(value = "/issue-ext", method = RequestMethod.POST)
-    public ResponseEntity<CaptureIssue> createIssue(final HttpServletRequest request, final @RequestParam(value = "testSessionId",required = false)  String testSessionId, @Valid @RequestBody JsonNode jsonBody) throws CaptureValidationException {
+    public ResponseEntity<?> createIssue(final HttpServletRequest request, final @RequestParam(value = "testSessionId",required = false)  String testSessionId, @Valid @RequestBody JsonNode jsonBody) throws CaptureValidationException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if(auth == null || !auth.isAuthenticated()) {
             throw new CaptureRuntimeException(HttpStatus.UNAUTHORIZED.toString(), i18n.getMessage("template.validate.create.cannot.create.issue"));
@@ -75,6 +74,19 @@ public class IssueController {
 
         try {
             IssueCreateRequest createRequest = om.readValue(jsonBody.toString(), IssueCreateRequest.class);
+
+            if(StringUtils.isNotBlank(createRequest.getFields().getSummary()) && createRequest.getFields().getSummary().length() > 255) {
+                JSONObject jsonObject = new JSONObject();
+                try {
+                    jsonObject.put("summary", i18n.getMessage("createissue.error.summary.less.than"));
+                    JSONObject responseJson = new JSONObject();
+                    responseJson.put("errors",jsonObject);
+                    return new ResponseEntity<>(responseJson.toString(),HttpStatus.BAD_REQUEST);
+                } catch (JSONException e) {
+                    log.error("Error Converting to JSON Error:",e);
+                }
+            }
+
             JsonNode fieldsJson = jsonBody.get("fields");
             Iterator<String> fieldNames = fieldsJson.fieldNames();
             while (fieldNames.hasNext()){
