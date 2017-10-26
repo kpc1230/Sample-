@@ -138,10 +138,13 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignee) {
-        UserAssignedSessionActivity sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, assigner, session.getProjectId(), assignee);
-        sessionActivityRepository.save(sessionActivity);
-
+    public SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignee,String oldAssignee) {
+        // Don't do redundant assigns
+        UserAssignedSessionActivity sessionActivity = null;
+        if (oldAssignee == null || !oldAssignee.equals(assignee)) {
+            sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, assigner, session.getProjectId(), assignee);
+            sessionActivityRepository.save(sessionActivity);
+        }
         return sessionActivity;
     }
 

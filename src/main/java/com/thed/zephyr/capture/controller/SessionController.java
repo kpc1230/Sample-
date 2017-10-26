@@ -157,7 +157,7 @@ public class SessionController extends CaptureAbstractController{
 	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
 	        	if(!loggedUserKey.equals(createdSession.getAssignee())) {
 	        		 //Save if the assigned user and logged in user are different into the session as activity.
-	    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, createdSession.getAssignee());
+	    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, createdSession.getAssignee(),null);
 	        	}
 			});        		
 	        if(sessionRequest.getStartNow()) { //User requested to start the session.
@@ -735,6 +735,7 @@ public class SessionController extends CaptureAbstractController{
 			isLocked = true;
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
+			String oldAssignee = loadedSession.getAssignee();
 			String assigner = hostUser.getUserKey().get();
 			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
 			if (!StringUtils.isEmpty(assignee) && !permissionService.canBeAssignedSession(assignee, captureProject)) {
@@ -753,7 +754,7 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult, true);
 			//Save assigned user to the session as activity.
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, assignee);
+				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, assignee,oldAssignee);
 			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession, false);
 			log.info("End of assignSession()");
@@ -896,11 +897,11 @@ public class SessionController extends CaptureAbstractController{
 			//Save status changed information as activity.
         	CompletableFuture.runAsync(() -> {
         		sessionActivityService.setStatus(newSession, new Date(), loggedUserKey);
-        	});
-        	if(!loggedUserKey.equals(newSession.getAssignee())) {
-        		 //Save if the assigned user and logged in user are different into the session as activity.
-    			sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, newSession.getAssignee());
-        	} 
+				if(!loggedUserKey.equals(newSession.getAssignee())) {
+					//Save if the assigned user and logged in user are different into the session as activity.
+					sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, newSession.getAssignee(),null);
+				}
+			});
 			log.info("End of cloneSession()");
 			return ResponseEntity.ok(newSession);
 		} catch(CaptureValidationException ex) {
