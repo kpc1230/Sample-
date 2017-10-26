@@ -287,7 +287,8 @@ public class SessionController extends CaptureAbstractController{
 				}
 			}
             Set<Long> currentRelatedIssues = loadedSession.getRelatedIssueIds() != null?loadedSession.getRelatedIssueIds():new TreeSet<>();
-            Set<Long> updatedRelatedIssues = sessionRequest.getRelatedIssueIds();
+            Set<Long> updatedRelatedIssues = new TreeSet<>();
+            updatedRelatedIssues.addAll(sessionRequest.getRelatedIssueIds());
             updatedRelatedIssues.addAll(currentRelatedIssues);
 			UpdateResult updateResult = sessionService.updateSession(loggedUserKey, loadedSession, sessionRequest);
 			if (!updateResult.isValid()) {
