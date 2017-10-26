@@ -6,6 +6,9 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.TableCollection;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
+import com.atlassian.connect.spring.AddonUninstalledEvent;
+import com.atlassian.connect.spring.AtlassianHostRepository;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.db.*;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.StringUtils;
@@ -13,6 +16,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -28,9 +32,9 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
     @Autowired
     private AmazonDynamoDB amazonDynamoDB;
     @Autowired
-    private Environment environment;
-    @Autowired
     private DynamoDBTableNameResolver dynamoDBTableNameResolver;
+    @Autowired
+    private AtlassianHostRepository atlassianHostRepository;
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
@@ -41,6 +45,19 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         createTemplateTableIfNotExist(tables, dynamoDB);
         createSessionActivityTableIfNotExist(tables, dynamoDB);
         createVariableTableIfNotExist(tables, dynamoDB);
+    }
+
+    @EventListener
+    public void uninstalledEvent(AddonUninstalledEvent addonUninstalledEvent){
+        log.info("Add-on uninstalled event triggered ...");
+        String tenantId = addonUninstalledEvent.getHost().getClientKey();
+        try {
+            AcHostModel acHostModel = (AcHostModel)atlassianHostRepository.findOne(tenantId);
+            acHostModel.setStatus(AcHostModel.TenantStatus.UNINSTALLED);
+            atlassianHostRepository.save(acHostModel);
+        } catch (Exception exception) {
+            log.error("Error during uninstalledEvent", exception);
+        }
     }
 
 	private void createTenantTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {

@@ -1,5 +1,7 @@
 package com.thed.zephyr.capture.filter;
 
+import com.atlassian.connect.spring.AtlassianHostRepository;
+import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.AtlassianConnectProperties;
 import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
@@ -26,6 +28,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -38,10 +41,8 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
 
     @Autowired
     DynamicProperty dynamicProperty;
-
     @Autowired
     private AcHostModelRepository acHostModelRepository;
-
     @Autowired
     private TokenHolder tokenHolder;
 
@@ -93,7 +94,7 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
                         return false;
                     }
                     AcHostModel acHostModel = acHostModelRepository.findOne(clientKey);
-                    if(null != acHostModel&&acHostModel.getStatus().equals(AcHostModel.TenantStatus.ACTIVE)) {
+                    if(null != acHostModel) {
                         JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(userKey)), new JWTClaimsSet());
                         //Put JwtAuthentication into SecurityContext to mock JwtAuthenticationFilter behavior and allow RequireAuthenticationHandlerInterceptor pass request
                        SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);

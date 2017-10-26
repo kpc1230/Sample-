@@ -1,7 +1,9 @@
 package com.thed.zephyr.capture.controller;
 
+import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.addon.AddonInfoService;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +21,12 @@ public class WebhookController {
 
     @Autowired
     private Logger log;
-
+    @Autowired
+    private AtlassianHostRepository atlassianHostRepository;
     @Autowired
     private AddonInfoService addonInfoService;
-
     @Autowired
     private Environment env;
-
     @Autowired
     private DynamicProperty dynamicProperty;
 
@@ -34,7 +35,9 @@ public class WebhookController {
         String tenantId = hostUser.getHost().getClientKey();
         log.info("Plugin enable event for tenantId:{}", tenantId);
         try {
-            //BACKEND DYNAMODB CODE
+            AcHostModel acHostModel = (AcHostModel)atlassianHostRepository.findOne(hostUser.getHost().getClientKey());
+            acHostModel.setStatus(AcHostModel.TenantStatus.ACTIVE);
+            atlassianHostRepository.save(acHostModel);
         } catch (Exception exception) {
             log.error("Error during plugin enable event.", exception);
         }
@@ -47,7 +50,9 @@ public class WebhookController {
         String tenantId = hostUser.getHost().getClientKey();
         log.info("Plugin disabled event for tenantId:{}", tenantId);
         try {
-            //BACKEND DYNAMODB CODE
+            AcHostModel acHostModel = (AcHostModel)atlassianHostRepository.findOne(hostUser.getHost().getClientKey());
+            acHostModel.setStatus(AcHostModel.TenantStatus.PLUGIN_DISABLED);
+            atlassianHostRepository.save(acHostModel);
         } catch (Exception exception) {
             log.error("Error during plugin enable event.", exception);
         }

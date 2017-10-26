@@ -49,13 +49,14 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
 
     @Override
     public AtlassianHost  save(AtlassianHost atlassianHost) {
+        removeTenantFromCache(atlassianHost);
         if(exists(atlassianHost.getClientKey())){
 
             return updateExistingHost(atlassianHost);
         }
         AcHostModel acHostModel = new AcHostModel(atlassianHost);
         acHostModel.setStatus(AcHostModel.TenantStatus.ACTIVE);
-        removeTenantFromCache(atlassianHost);
+
         return acHostModelRepository.save(acHostModel);
     }
 
@@ -149,10 +150,14 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
     }
 
     private AtlassianHost updateExistingHost(AtlassianHost atlassianHost){
+        if (atlassianHost instanceof AcHostModel){
+            return  acHostModelRepository.save((AcHostModel)atlassianHost);
+        }
         AcHostModel oldAcHostModel = (AcHostModel)findOne(atlassianHost.getClientKey());
         AcHostModel acHostModel = new AcHostModel(atlassianHost);
         acHostModel.setCtId(oldAcHostModel.getCtId());
         acHostModel.setStatus(atlassianHost.isAddonInstalled()? AcHostModel.TenantStatus.ACTIVE: AcHostModel.TenantStatus.UNINSTALLED);
+        removeTenantFromCache(atlassianHost);
 
         return  acHostModelRepository.save(acHostModel);
     }

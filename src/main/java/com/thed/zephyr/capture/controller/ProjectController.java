@@ -24,7 +24,7 @@ public class ProjectController {
     private ProjectService projectService;
 
     @GetMapping
-    ResponseEntity<?> getAllProjects() {
+    ResponseEntity<?> getAllProjects() throws Exception {
         log.debug("getAllProjects start");
         List<BasicProject> projects = projectService.getProjects();
         Map<String,List<BasicProject>> resultMap = new HashMap();

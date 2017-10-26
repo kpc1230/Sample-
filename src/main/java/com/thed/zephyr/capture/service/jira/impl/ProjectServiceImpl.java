@@ -31,16 +31,12 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Autowired
     private Logger log;
-
     @Autowired
     private JiraRestClient jiraRestClient;
-
     @Autowired
     private ITenantAwareCache tenantAwareCache;
-
     @Autowired
     private DynamicProperty dynamicProperty;
-    
     @Autowired
     private AtlassianHostRestClients atlassianHostRestClients;
 
@@ -55,8 +51,14 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ArrayList<BasicProject> getProjects() {
-         return Lists.newArrayList(jiraRestClient.getProjectClient().getAllProjects().claim());
+    public ArrayList<BasicProject> getProjects() throws Exception {
+        try{
+            ArrayList<BasicProject> basicProjects = Lists.newArrayList(jiraRestClient.getProjectClient().getAllProjects().claim());
+            return basicProjects;
+        } catch (Exception exception){
+            log.error("Error during getting projects from Jira.", exception);
+            throw new Exception("Error during getting projects.");
+        }
     }
 
     /**
