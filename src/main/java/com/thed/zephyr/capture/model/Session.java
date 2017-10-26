@@ -38,7 +38,7 @@ public class Session  implements Comparable<Session>, Serializable{
     private String additionalInfo;
     @DynamoDBTypeConverted(converter = SessionStatusTypeConverter.class)
     private Status status;
-    //@DynamoDBTypeConverted(converter = LongCollectionConverter.class)
+    @DynamoDBTypeConverted(converter = EmptySetConverter.class)
     private Set<Long> relatedIssueIds;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_PROJECT_ID)
     private Long projectId;

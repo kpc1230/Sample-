@@ -5,6 +5,7 @@ import com.thed.zephyr.capture.util.CaptureConstants;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Set;
+import java.util.TreeSet;
 
 
 /**
@@ -119,7 +120,7 @@ public class SessionRequest {
 	}
 
 	public Set<Long> getRelatedIssueIds() {
-		return relatedIssueIds;
+		return relatedIssueIds != null?relatedIssueIds:new TreeSet<>();
 	}
 
 	public void setRelatedIssueIds(Set<Long> relatedIssueIds) {

@@ -110,7 +110,7 @@ public interface SessionService {
 	 * @param result -- UpdateResult object holds the session object to be saved.
 	 * @return -- Returns the SessionResult object.
 	 */
-	SessionResult update(UpdateResult result);
+	SessionResult update(UpdateResult result, Boolean skipUpdateRelatedIssues);
 	
 	/**
 	 * Leaves the session. 
@@ -279,7 +279,7 @@ public interface SessionService {
 	 */
 	void updateProjectNameForSessions(String ctid, Long projectId, String projectName);
 
-	void setIssueTestStausAndTestSession(Set<Long> relatedIssues,String ctId,Long projectId,String baseUrl);
+	void setIssueTestStatusAndTestSession(Set<Long> relatedIssues, String ctId, Long projectId, String baseUrl);
 	
 	void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctid) throws HazelcastInstanceNotDefinedException;
 	

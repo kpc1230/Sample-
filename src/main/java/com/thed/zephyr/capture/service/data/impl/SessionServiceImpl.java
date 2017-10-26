@@ -136,7 +136,7 @@ public class SessionServiceImpl implements SessionService {
         String baseUrl = getBaseUrl();
 		CompletableFuture.runAsync(() -> {
 			sessionESRepository.save(createdSession);
-			setIssueTestStausAndTestSession(createdSession.getRelatedIssueIds(), createdSession.getCtId(), createdSession.getProjectId(), baseUrl);
+			setIssueTestStatusAndTestSession(createdSession.getRelatedIssueIds(), createdSession.getCtId(), createdSession.getProjectId(), baseUrl);
 		});
 		//Update test staus and test sessions for related issues
 
@@ -202,7 +202,7 @@ public class SessionServiceImpl implements SessionService {
 				activeSession.setStatus(Status.PAUSED);
 				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
 				clearActiveSessionFromCache(loggedUserKey);
-				update(updateResult);
+				update(updateResult, false);
 				CompletableFuture.runAsync(() -> {
 					sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
 				});
@@ -240,7 +240,7 @@ public class SessionServiceImpl implements SessionService {
     				Session activeSession = activeSessionResult.getSession();
     				activeSession.setStatus(Status.PAUSED);
     				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
-    				update(updateResult);
+    				update(updateResult,true);
     				CompletableFuture.runAsync(() -> {
     					sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
     				});
@@ -255,7 +255,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 	
 	@Override
-    public SessionResult update(UpdateResult result) {
+    public SessionResult update(UpdateResult result, Boolean skipUpdateRelatedIssues) {
         if (!result.isValid()) {
             return result;
         }
@@ -266,8 +266,11 @@ public class SessionServiceImpl implements SessionService {
             saveUpdatedSession(result);
         }
 		//Update test status and test sesions to JIRA isssues
-		Session session = result.getSession();
-		setIssueTestStausAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
+		if(!skipUpdateRelatedIssues){
+			Session session = result.getSession();
+			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
+		}
+
         return result;
     }
 	
@@ -549,11 +552,8 @@ public class SessionServiceImpl implements SessionService {
     }
 
 	@Override
-	public void setIssueTestStausAndTestSession(Set<Long> relatedIssues, String ctId, Long projectId, String baseUrl) {
-		log.debug("setIssueTestStausAndTestSession method started ...");
-		//   Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		//  AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-		//  String baseUri = host.getHost().getBaseUrl();
+	public void setIssueTestStatusAndTestSession(Set<Long> relatedIssues, String ctId, Long projectId, String baseUrl) {
+		log.debug("setIssueTestStatusAndTestSession method started ...");
 		if (relatedIssues != null) {
 			CompletableFuture.runAsync(() -> {
 				log.debug("Master Thread::::::started with relatedIssues: {}, ctId: {}, projectId: {}",relatedIssues,ctId,projectId);
@@ -568,7 +568,6 @@ public class SessionServiceImpl implements SessionService {
 						if (Objects.nonNull(sessions.getContent())) {
 							for (Session session : sessions.getContent()) {
 								sessionIdBuilder.append(session.getId()).append(",");
-
 								if (Status.CREATED.equals(session.getStatus())) {
 									createdCount++;
 								} else if (Status.COMPLETED.equals(session.getStatus())) {
@@ -578,11 +577,9 @@ public class SessionServiceImpl implements SessionService {
 									// If a status other than created and completed appears, then it is in progress
 									testingStatuKey = TestingStatus.TestingStatusEnum.IN_PROGRESS.getI18nKey();
 								}
-
 							}
 							if (sessionIdBuilder.length() > 0) {
 								sessionIdBuilder.replace(sessionIdBuilder.length() - 1, sessionIdBuilder.length(), "");
-
 							}
 						}
 						if (StringUtils.isBlank(testingStatuKey)) {
@@ -606,7 +603,7 @@ public class SessionServiceImpl implements SessionService {
 			});
 
 		}
-		log.debug("setIssueTestStausAndTestSession completed ...");
+		log.debug("setIssueTestStatusAndTestSession completed ...");
 	}
 
 	@Override
@@ -897,15 +894,13 @@ public class SessionServiceImpl implements SessionService {
         }
 		Session savedSession = sessionRepository.save(session);
 		session.setStatusOrder(getStatusOrder(session.getStatus()));
-		CompletableFuture.runAsync(() -> {
-			log.debug("Save session in ES id:{}", savedSession.getId());
-			Session currentSession = sessionESRepository.findById(savedSession.getId());
-			if(currentSession != null){
-				savedSession.setUserDisplayName(currentSession.getUserDisplayName());
-				savedSession.setProjectName(currentSession.getProjectName());
-			}
-			sessionESRepository.save(savedSession);
-		});
+		log.debug("Save session in ES id:{}", savedSession.getId());
+		Session currentSession = sessionESRepository.findById(savedSession.getId());
+		if(currentSession != null){
+			savedSession.setUserDisplayName(currentSession.getUserDisplayName());
+			savedSession.setProjectName(currentSession.getProjectName());
+		}
+		sessionESRepository.save(savedSession);
     }
 
 	/**

@@ -6,7 +6,6 @@ import com.atlassian.jira.rest.client.api.domain.ChangelogItem;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.internal.json.AttachmentJsonParser;
 import com.atlassian.jira.rest.client.internal.json.ChangelogItemJsonParser;
-import com.atlassian.jira.rest.client.internal.json.IssueJsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Iterables;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
@@ -85,7 +84,7 @@ public class IssueWebhookController {
                         Set<Long> issues = new HashSet<>();
                         issues.add(issueId);
                         //Updating issue testing status in order to sync JQL with Testing section
-                        sessionService.setIssueTestStausAndTestSession(issues, ctid, projectId, hostUser.getHost().getBaseUrl());
+                        sessionService.setIssueTestStatusAndTestSession(issues, ctid, projectId, hostUser.getHost().getBaseUrl());
                     }
                 } else {
                     log.error("Issue creation details are empty from JIRA");

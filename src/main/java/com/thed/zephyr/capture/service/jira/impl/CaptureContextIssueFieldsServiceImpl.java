@@ -182,7 +182,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
 
 
     @Override
-    public void populateIssueTestStatusAndTestSessions(String issueKey,String testStatus,String testSessions, String baseUrl) {
+    public void populateIssueTestStatusAndTestSessions(String issueKey, String testStatus, String testSessions, String baseUrl) {
         log.debug("populateIssueTestStatusAndTestSessions started: issueKey:{}, testSessions:{}, testStatus:{}, baseUrl:{}", issueKey,testSessions,testStatus,baseUrl);
         String testStatusPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueKey + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_TEST_STATUS.toLowerCase().replace(" ", "_");
         try {

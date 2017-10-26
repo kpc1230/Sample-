@@ -161,7 +161,7 @@ public class SessionController extends CaptureAbstractController{
 	        	if (!updateResult.isValid()) {
                     return badRequest(updateResult.getErrorCollection());
                 }
-	        	sessionService.update(updateResult); //Updating the session object into database.
+	        	sessionService.update(updateResult, false); //Updating the session object into database.
 	        	//Save status changed information as activity.
 	        	CompletableFuture.runAsync(() -> {
 	        		sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
@@ -271,7 +271,6 @@ public class SessionController extends CaptureAbstractController{
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
 			}
 			isLocked = true;
-			Set<Long> removedRelatedIssues = null;
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
 		    if (loadedSession != null) {
@@ -283,23 +282,16 @@ public class SessionController extends CaptureAbstractController{
 					throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{sessionRequest.getAssignee()}));
 				}
 			}
-			if(loadedSession!=null&&loadedSession.getRelatedIssueIds()!=null){
-				if(sessionRequest.getRelatedIssueIds()!=null){
-					removedRelatedIssues = loadedSession.getRelatedIssueIds().stream().filter(elem -> !sessionRequest.getRelatedIssueIds().contains(elem)).collect(Collectors.toSet());
-				}else {
-					removedRelatedIssues = loadedSession.getRelatedIssueIds();
-				}
-			}
+            Set<Long> currentRelatedIssues = loadedSession.getRelatedIssueIds() != null?loadedSession.getRelatedIssueIds():new TreeSet<>();
+            Set<Long> updatedRelatedIssues = sessionRequest.getRelatedIssueIds();
+            updatedRelatedIssues.addAll(currentRelatedIssues);
 			UpdateResult updateResult = sessionService.updateSession(loggedUserKey, loadedSession, sessionRequest);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
-			sessionService.update(updateResult);
+			sessionService.update(updateResult, true);
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, updateResult.getSession(), true);
-			//Updating session for removed related issue to JIRA
-			if (removedRelatedIssues != null && removedRelatedIssues.size() > 0) {
-				sessionService.setIssueTestStausAndTestSession(removedRelatedIssues,loadedSession.getCtId(),loadedSession.getProjectId(),hostUser.getHost().getBaseUrl());
-			}
+            sessionService.setIssueTestStatusAndTestSession(updatedRelatedIssues, loadedSession.getCtId(), loadedSession.getProjectId(), hostUser.getHost().getBaseUrl());
 			log.info("End of updateSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
@@ -332,7 +324,7 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.deleteSession(sessionId);
 			//This is to update related issues testing status and test session
 			if(loadedSession!=null&&loadedSession.getRelatedIssueIds()!=null&&loadedSession.getRelatedIssueIds().size()>0){
-				sessionService.setIssueTestStausAndTestSession(loadedSession.getRelatedIssueIds(),loadedSession.getCtId(),loadedSession.getProjectId(),hostUser.getHost().getBaseUrl());
+				sessionService.setIssueTestStatusAndTestSession(loadedSession.getRelatedIssueIds(),loadedSession.getCtId(),loadedSession.getProjectId(),hostUser.getHost().getBaseUrl());
 			}
 
 			log.info("End of deleteSession()");
@@ -378,7 +370,7 @@ public class SessionController extends CaptureAbstractController{
 					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.status.change.permissions.violation"));
 			}
-        	sessionService.update(updateResult);
+        	sessionService.update(updateResult, false);
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
         	CompletableFuture.runAsync(() -> {
@@ -426,7 +418,7 @@ public class SessionController extends CaptureAbstractController{
 			if (!updateResult.isValid()) {
 				return badRequest(updateResult.getErrorCollection());
 			}
-			sessionService.update(updateResult);
+			sessionService.update(updateResult, true);
 			response.put("user", participant.getUser());
 			response.put("timeJoined", participant.getTimeJoined());
 			response.put("timeLeft", participant.getTimeLeft());
@@ -505,7 +497,7 @@ public class SessionController extends CaptureAbstractController{
 			CompletableFuture.runAsync(() -> {
 				sessionActivityService.setStatus(session, new Date(), loggedUserKey);
 			});
-			sessionService.update(completeSessionResult.getSessionUpdateResult());
+			sessionService.update(completeSessionResult.getSessionUpdateResult(), false);
 			List<SessionServiceImpl.CompleteSessionIssueLink> issueLinks = completeSessionResult.getIssuesToLink();
 			DateTime timestamp = new DateTime(completeSessionResult.getSessionUpdateResult().getSession().getTimeCreated());
 			CompletableFuture.runAsync(() -> {
@@ -562,7 +554,7 @@ public class SessionController extends CaptureAbstractController{
 				if(listP.size() > 0)
 					leftParticipant = listP.get(0);
 			}
-			sessionService.update(updateResult);
+			sessionService.update(updateResult, true);
 			log.info("End of leaveSession()");
 			return ResponseEntity.ok(leftParticipant);
 		} catch(CaptureValidationException ex) {
@@ -590,7 +582,7 @@ public class SessionController extends CaptureAbstractController{
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
-			sessionService.update(updateResult);
+			sessionService.update(updateResult, true);
 			log.info("End of unshareSession()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {
@@ -611,7 +603,7 @@ public class SessionController extends CaptureAbstractController{
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
-			sessionService.update(updateResult);
+			sessionService.update(updateResult, true);
 			log.info("End of shareSession()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {
@@ -646,7 +638,7 @@ public class SessionController extends CaptureAbstractController{
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
-			sessionService.update(updateResult);
+			sessionService.update(updateResult, false);
 			//Save removed raised issue information as activity.
 			CompletableFuture.runAsync(() -> {
 				sessionActivityService.removeRaisedIssue(loadedSession, captureIssue, dateTime, loggedUserKey);
@@ -754,7 +746,7 @@ public class SessionController extends CaptureAbstractController{
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
-			sessionService.update(updateResult);
+			sessionService.update(updateResult, true);
 			//Save assigned user to the session as activity.
 			CompletableFuture.runAsync(() -> {
 				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, assignee);
@@ -857,7 +849,7 @@ public class SessionController extends CaptureAbstractController{
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
-			sessionService.update(updateResult);
+			sessionService.update(updateResult, true);
 			Map<String, String> jsonResponse = new HashMap<>();
 			jsonResponse.put("additionalInfo", emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser, updateResult.getSession().getAdditionalInfo())));
 			jsonResponse.put("rawAdditionalInfo", updateResult.getSession().getAdditionalInfo());
@@ -1019,7 +1011,7 @@ public class SessionController extends CaptureAbstractController{
 			if (!updateResult.isValid()) {
 				return badRequest(updateResult.getErrorCollection());
 			}
-			sessionService.update(updateResult);
+			sessionService.update(updateResult, false);
 			Session session = updateResult.getSession();
 			//Save status changed information as activity.
 			CompletableFuture.runAsync(() -> {
