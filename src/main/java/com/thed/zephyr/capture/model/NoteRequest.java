@@ -21,6 +21,7 @@ final public class NoteRequest {
     private boolean canEdit = false;
     private String userIconUrl;
     private String sessionActivityId;
+    private String author;
 
     /**
      * Raw data of the note itself
@@ -53,6 +54,7 @@ final public class NoteRequest {
 		this.sessionId = note.getSessionId();
 		this.createdTime = note.getCreatedTime();
 		this.user = note.getAuthor();
+		this.author = note.getAuthor();
 		this.rawNoteData = note.getNoteData();
 		this.resolutionState = note.getResolutionState().name();
 		this.projectId = note.getProjectId();
@@ -66,6 +68,7 @@ final public class NoteRequest {
     		this.sessionId = note.getSessionId();
     		this.createdTime = note.getCreatedTime();
     		this.user = note.getAuthor();
+    		this.author = note.getAuthor();
     		this.rawNoteData = note.getNoteData();
     		this.resolutionState = note.getResolutionState().name();
     		this.noteData = CaptureUtil.createNoteData(note.getNoteData());
@@ -82,6 +85,7 @@ final public class NoteRequest {
     		this.sessionId = note.getSessionId();
     		this.createdTime = note.getTimestamp();
     		this.user = note.getUser();
+    		this.author = note.getUser();
     		this.rawNoteData = note.getNoteData();
     		this.resolutionState = note.getResolutionState().name();
     		this.noteData = CaptureUtil.createNoteData(note.getNoteData());
@@ -98,6 +102,7 @@ final public class NoteRequest {
 		this.sessionId = sessionId;
 		this.createdTime = createdTime;
 		this.user = author;
+		this.author = author;
 		this.rawNoteData = rawNoteData;
 		this.resolutionState = resolutionState;
 		this.projectId = projectId;
@@ -227,5 +232,13 @@ final public class NoteRequest {
 
 	public void setSessionName(String sessionName) {
 		this.sessionName = sessionName;
+	}
+
+	public String getAuthor() {
+		return author;
+	}
+
+	public void setAuthor(String author) {
+		this.author = author;
 	}
 }
