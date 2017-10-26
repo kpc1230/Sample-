@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.IgnoreJwt;
+import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -94,6 +95,9 @@ public class SessionController extends CaptureAbstractController{
 
 	@Autowired
 	private EmojiUtil emojiUtil;
+
+	@Autowired
+	private AddonDescriptorLoader ad;
 
 	@InitBinder("sessionRequest")
 	public void setupBinder(WebDataBinder binder) {
@@ -952,7 +956,9 @@ public class SessionController extends CaptureAbstractController{
 			}
 			Session session = sessionResult.getSession();
 			if(session==null){return ResponseEntity.ok().build();}
-			String activeSessionLink = i18n.getMessage("capture.active.session.link", new Object[]{baseUrl,session.getId(), session.getName()});
+			String activeSessionLink = i18n.getMessage("capture.active.session.link",
+					new Object[]{baseUrl,ad.getDescriptor().getKey(),
+							session.getId(), session.getName()});
 			log.info("End of getActiveSessionLink()");
 			return ResponseEntity.ok(activeSessionLink);
 		} catch(Exception ex) {
