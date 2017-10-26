@@ -29,13 +29,8 @@ public class JiraAuthServiceImpl implements JiraAuthService {
 
     @Autowired
     private Logger log;
-
     @Autowired
     private PlainRestTemplate restTemplate;
-
-    @Autowired
-    DynamoDBAcHostRepository dynamoDBAcHostRepository;
-
     @Autowired
     private TokenHolder tokenHolder;
 
@@ -68,11 +63,6 @@ public class JiraAuthServiceImpl implements JiraAuthService {
             log.error("Error during authentication user credentials with JIRA ", exception);
         }
         return false;
-    }
-
-    @Override
-    public AcHostModel getAcHostModelbyBaseUrl(String baseUrl) {
-        return (AcHostModel) dynamoDBAcHostRepository.findFirstByBaseUrl(baseUrl).get();
     }
 
     @Override

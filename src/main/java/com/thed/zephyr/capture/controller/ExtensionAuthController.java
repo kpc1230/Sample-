@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.controller;
 
+import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.IgnoreJwt;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.ExtensionUser;
@@ -30,19 +31,19 @@ import java.util.Map;
 @RestController
 @Validated
 public class ExtensionAuthController {
+
     @Autowired
     private Logger log;
     @Autowired
     private JiraAuthService jiraAuthService;
-
     @Autowired
     ExtensionUserValidator extensionUserValidator;
-
     @Autowired
     DynamicProperty dynamicProperty;
-
     @Autowired
     private TokenHolder tokenHolder;
+    @Autowired
+    private AtlassianHostRepository atlassianHostRepository;
 
     @InitBinder("extensionUser")
     protected void initBinder(WebDataBinder binder) {
@@ -56,7 +57,7 @@ public class ExtensionAuthController {
         Map<String,String> respMap = new HashedMap();
         boolean success = jiraAuthService.authenticateWithJira(extensionUser.getUsername(), extensionUser.getPassword(), extensionUser.getBaseUrl());
         if (success) {
-            AcHostModel host = jiraAuthService.getAcHostModelbyBaseUrl(extensionUser.getBaseUrl());
+            AcHostModel host = (AcHostModel)atlassianHostRepository.findFirstByBaseUrl(extensionUser.getBaseUrl()).get();
             CaptureUser captureUser = jiraAuthService.getUserDetails(extensionUser.getUsername(), extensionUser.getPassword(), extensionUser.getBaseUrl());
             if (host.getStatus() == AcHostModel.TenantStatus.ACTIVE && captureUser != null) {
                 StringBuffer buffer = new StringBuffer(host.getCtId()).append("__")

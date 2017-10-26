@@ -9,8 +9,6 @@ import com.thed.zephyr.capture.model.jira.CaptureUser;
 public interface JiraAuthService {
     Boolean authenticateWithJira(String username, String password, String baseURL);
 
-    AcHostModel getAcHostModelbyBaseUrl(String baseUrl);
-
     CaptureUser getUserDetails(String username, String password, String baseURL);
 
 }
