@@ -151,7 +151,7 @@ public class NoteController extends CaptureAbstractController {
             throw new CaptureRuntimeException(exception.getMessage());
         }
 
-        return ok();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @PostMapping(value = "/note/{noteSessionActivityId}/toggleResolution", consumes = APPLICATION_JSON_VALUE)

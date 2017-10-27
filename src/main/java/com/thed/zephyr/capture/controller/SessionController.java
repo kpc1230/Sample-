@@ -45,6 +45,7 @@ import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -333,7 +334,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 
 			log.info("End of deleteSession()");
-			return ResponseEntity.ok().build();
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		} catch(Exception ex) {
 			log.error("Error in deleteSession() -> ", ex);
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
