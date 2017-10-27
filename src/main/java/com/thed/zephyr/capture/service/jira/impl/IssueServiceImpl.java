@@ -25,6 +25,7 @@ import com.thed.zephyr.capture.service.jira.IssueLinkTypeService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.service.jira.issue.IssueFields;
+import com.thed.zephyr.capture.service.jira.issue.IssueLinks;
 import com.thed.zephyr.capture.service.jira.issue.ResourceId;
 import com.thed.zephyr.capture.util.*;
 import org.apache.commons.lang3.StringUtils;
@@ -260,6 +261,38 @@ public class IssueServiceImpl implements IssueService {
         IssueInput issueInput = createIssueInput(issueFields, request);
         BasicIssue basicIssue = postJiraRestClient.getIssueClient().createIssue(issueInput).claim();
         Issue issue = getIssueObject(basicIssue.getKey());
+        //link the issues
+        if (issueFields.getIssuelinks() != null) {
+            IssueLinks issueLinks = issueFields.getIssuelinks();
+            List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(host);
+            IssuelinksType linkType = null;
+
+            try {
+                linkType = linkTypes.stream().filter(o -> o.getInward().equals(issueLinks.getLinktype()) || o.getOutward().equals(issueLinks.getLinktype())).findFirst().get();
+            } catch (NoSuchElementException exp) {
+                log.error("The Issue Types not exist", exp.getMessage());
+            }
+            if (linkType != null) {
+                String linkTypeToSend = linkType.getName();
+                if (linkType.getInward().equalsIgnoreCase(issueLinks.getLinktype())) {
+                    Arrays.asList(issueLinks.getIssues()).forEach(s -> {
+                        LinkIssuesInput linkIssuesInput = new LinkIssuesInput(s, issue.getKey(), linkTypeToSend);
+                        postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
+                    });
+
+                } else {
+                    if (linkType.getOutward().equalsIgnoreCase(issueLinks.getLinktype())) {
+                        Arrays.asList(issueLinks.getIssues()).forEach(s -> {
+                            LinkIssuesInput linkIssuesInput = new LinkIssuesInput(issue.getKey(), s, linkTypeToSend);
+                            postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
+                        });
+                    }
+                }
+
+            }
+
+
+        }
         //Set Context Params
         captureContextIssueFieldsService.populateContextFields(request, issue, createRequest.getContext());
         CaptureResolution resolution = issue.getResolution() != null ? new CaptureResolution(issue.getResolution().getId(), 
