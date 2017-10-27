@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.controller;
 
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
+import com.atlassian.jira.rest.client.api.domain.util.ErrorCollection;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -32,6 +33,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -115,6 +117,16 @@ public class IssueController {
         } catch (IOException exception) {
             log.error("Error during create issue.", exception);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (RestClientException exception){
+            ErrorCollection errorCollection;
+            Collection<ErrorCollection> errorCollections = exception.getErrorCollections();
+            if(errorCollections.isEmpty()){
+                errorCollection = new ErrorCollection("Unknown error from Jira server");
+            } else {
+                errorCollection = (ErrorCollection)errorCollections.toArray()[0];
+            }
+            Integer statusCode = exception.getStatusCode().get();
+            return new ResponseEntity<>(errorCollection, HttpStatus.valueOf(statusCode));
         }
     }
 

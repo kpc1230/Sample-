@@ -3,8 +3,10 @@ package com.thed.zephyr.capture.service.jira.impl;
 import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
+import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.*;
 import com.atlassian.jira.rest.client.api.domain.input.*;
+import com.atlassian.util.concurrent.Promise;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.hazelcast.util.StringUtil;
@@ -254,12 +256,18 @@ public class IssueServiceImpl implements IssueService {
     }
 
     @Override
-    public CaptureIssue createIssue(HttpServletRequest request, String testSessionId, IssueCreateRequest createRequest) throws CaptureValidationException {
+    public CaptureIssue createIssue(HttpServletRequest request, String testSessionId, IssueCreateRequest createRequest) throws CaptureValidationException, RestClientException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         IssueFields issueFields = createRequest.fields();
         IssueInput issueInput = createIssueInput(issueFields, request);
-        BasicIssue basicIssue = postJiraRestClient.getIssueClient().createIssue(issueInput).claim();
+        BasicIssue basicIssue = null;
+        try {
+            basicIssue = postJiraRestClient.getIssueClient().createIssue(issueInput).claim();
+        } catch (RestClientException exception) {
+            log.error("Error during creating issue in Jira.", exception);
+            throw exception;
+        }
         Issue issue = getIssueObject(basicIssue.getKey());
         //link the issues
         if (issueFields.getIssuelinks() != null) {
