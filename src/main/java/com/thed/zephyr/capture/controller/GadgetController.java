@@ -33,9 +33,11 @@ public class GadgetController {
     public String renderGagdets(@RequestParam String dashboardView, @RequestParam String dashboardId, @RequestParam String dashboardItem, @RequestParam String gadgetType, @RequestParam String xdm_e, @RequestParam String cp, Model model) {
         log.debug("Render Gagdets method is called with Params dashboardView : " + dashboardView + " dashboardId: " + dashboardId + " dashboardItem: " + dashboardItem + " gadgetType: " + gadgetType + " xdm_e: " + xdm_e + " cp:" + cp);
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
+        String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         model.addAttribute("dashboardView", dashboardView);
         model.addAttribute("dashboardId", dashboardId);
         model.addAttribute("dashboardItem", dashboardItem);
+        model.addAttribute("pluginKey", pluginKey);
         model.addAttribute("gadgetType", gadgetType);
         model.addAttribute("captureUIBaseUrl", captureUIBaseUrl);
         model.addAttribute("xdm_e", xdm_e);
