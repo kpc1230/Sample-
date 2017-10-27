@@ -264,33 +264,34 @@ public class IssueServiceImpl implements IssueService {
         //link the issues
         if (issueFields.getIssuelinks() != null) {
             IssueLinks issueLinks = issueFields.getIssuelinks();
-            List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(host);
-            IssuelinksType linkType = null;
+            if(issueLinks.getIssues()!=null&&issueLinks.getIssues().length>0) {
+                List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(host);
+                IssuelinksType linkType = null;
 
-            try {
-                linkType = linkTypes.stream().filter(o -> o.getInward().equals(issueLinks.getLinktype()) || o.getOutward().equals(issueLinks.getLinktype())).findFirst().get();
-            } catch (NoSuchElementException exp) {
-                log.error("The Issue Types not exist", exp.getMessage());
-            }
-            if (linkType != null) {
-                String linkTypeToSend = linkType.getName();
-                if (linkType.getInward().equalsIgnoreCase(issueLinks.getLinktype())) {
-                    Arrays.asList(issueLinks.getIssues()).forEach(s -> {
-                        LinkIssuesInput linkIssuesInput = new LinkIssuesInput(s, issue.getKey(), linkTypeToSend);
-                        postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
-                    });
-
-                } else {
-                    if (linkType.getOutward().equalsIgnoreCase(issueLinks.getLinktype())) {
+                try {
+                    linkType = linkTypes.stream().filter(o -> o.getInward().equals(issueLinks.getLinktype()) || o.getOutward().equals(issueLinks.getLinktype())).findFirst().get();
+                } catch (NoSuchElementException exp) {
+                    log.error("The Issue Types not exist", exp.getMessage());
+                }
+                if (linkType != null) {
+                    String linkTypeToSend = linkType.getName();
+                    if (linkType.getInward().equalsIgnoreCase(issueLinks.getLinktype())) {
                         Arrays.asList(issueLinks.getIssues()).forEach(s -> {
-                            LinkIssuesInput linkIssuesInput = new LinkIssuesInput(issue.getKey(), s, linkTypeToSend);
+                            LinkIssuesInput linkIssuesInput = new LinkIssuesInput(s, issue.getKey(), linkTypeToSend);
                             postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
                         });
+
+                    } else {
+                        if (linkType.getOutward().equalsIgnoreCase(issueLinks.getLinktype())) {
+                            Arrays.asList(issueLinks.getIssues()).forEach(s -> {
+                                LinkIssuesInput linkIssuesInput = new LinkIssuesInput(issue.getKey(), s, linkTypeToSend);
+                                postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
+                            });
+                        }
                     }
+
                 }
-
             }
-
 
         }
         //Set Context Params
