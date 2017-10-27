@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.data.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
 import com.thed.zephyr.capture.model.InviteSessionRequest;
 import com.thed.zephyr.capture.model.Mail;
 import com.thed.zephyr.capture.model.Session;
@@ -51,6 +52,9 @@ public class InviteServiceImpl implements InviteService{
     @Autowired
     private CaptureI18NMessageSource i18n;
 
+    @Autowired
+    private AddonDescriptorLoader ad;
+
     @Override
     public void sendInviteToSession(Session session, InviteSessionRequest inviteSessionRequest) throws Exception {
 
@@ -72,7 +76,7 @@ public class InviteServiceImpl implements InviteService{
         }
 
         //session link
-        String SESSION_LINK = host.getHost().getBaseUrl()+ CaptureUtil.createSessionLink(session.getId());
+        String SESSION_LINK = host.getHost().getBaseUrl()+ CaptureUtil.createSessionLink(session.getId(),ad.getDescriptor().getKey());
 
         //subject
         String subject = "[JIRA] "+i18n.getMessage("capture.session.invite.subject",new Object[]{loggedUser.getDisplayName(),session.getName()});

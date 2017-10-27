@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.service.data.impl;
 
 
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
 import com.atlassian.core.util.DateUtils;
 import com.atlassian.core.util.InvalidDurationException;
 import com.atlassian.jira.rest.client.api.domain.Issue;
@@ -106,6 +107,9 @@ public class SessionServiceImpl implements SessionService {
 	private WikiParser wikiParser;
 	@Autowired
 	private NoteRepository noteRepository;
+	@Autowired
+	private AddonDescriptorLoader ad;
+
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
@@ -1412,12 +1416,12 @@ public class SessionServiceImpl implements SessionService {
 
             return new FullSessionDto(lightSession, isActive, relatedIssues, raisedIssues, activeParticipants, activeParticipantCount, permissions, estimatedTimeSpent,
             		captureI18NMessageSource.getMessage("session.status.pretty." + session.getStatus()), userAvatarSrc, userLargeAvatarSrc,
-                    user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeFinished(), session.getTimeLogged(), CaptureUtil.createSessionLink(session.getId()));
+                    user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeFinished(), session.getTimeLogged(), CaptureUtil.createSessionLink(session.getId(),ad.getDescriptor().getKey()));
         } else {
             Integer issusRaisedCount = Objects.nonNull(session.getIssuesRaised()) ? session.getIssuesRaised().size() : 0;
 			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, estimatedTimeSpent,
 					captureI18NMessageSource.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc,
-					userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeLogged(), CaptureUtil.createSessionLink(session.getId()));
+					userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeLogged(), CaptureUtil.createSessionLink(session.getId(),ad.getDescriptor().getKey()));
 		}
 	}
 

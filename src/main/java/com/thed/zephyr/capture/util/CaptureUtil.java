@@ -309,8 +309,8 @@ public class CaptureUtil {
 		return noteData.substring(beginIndex + tag.length(), endIndex);
 	}
 
-	public static String createSessionLink(String sessionId){
-		return String.format(ApplicationConstants.SESSION_URL_TEMPLATE, sessionId);
+	public static String createSessionLink(String sessionId,String addonKey){
+		return String.format(ApplicationConstants.SESSION_URL_TEMPLATE, addonKey, sessionId);
 	}
     public  static String createADGFlagCacheKey(String userKey){
         return String.valueOf(ApplicationConstants.ADG3_FLAG_CACHE_PREFIX + "_" + userKey);
