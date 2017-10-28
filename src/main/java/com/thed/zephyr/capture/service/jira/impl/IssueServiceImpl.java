@@ -607,12 +607,14 @@ public class IssueServiceImpl implements IssueService {
                 String[] fieldValue = entry.getValue();
                 String fieldType = fields.get(fieldId).get("schema").get("type").asText();
                 String items = fields.get(fieldId).get("schema").get("items") != null?fields.get(fieldId).get("schema").get("items").asText():"";
-                if (StringUtils.equals(fieldType, "string") || StringUtils.equals(fieldType, "any")){
+                if (StringUtils.equals(fieldType, "string")){
                     issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
                 } else if(StringUtils.equals(fieldType, "option")){
                     Map<String, Object> optionValue = new HashMap<>();
                     optionValue.put("id", fieldValue[0]);
                     issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(optionValue));
+                } else if(StringUtils.equals(fieldType, "any") && StringUtils.isNotBlank(fieldValue[0])){
+                    issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
                 } else if(StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "option")){
                     List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
                     List<String> values = Arrays.asList(fieldValue);
