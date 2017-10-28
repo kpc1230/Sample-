@@ -607,7 +607,7 @@ public class IssueServiceImpl implements IssueService {
                 String[] fieldValue = entry.getValue();
                 String fieldType = fields.get(fieldId).get("schema").get("type").asText();
                 String items = fields.get(fieldId).get("schema").get("items") != null?fields.get(fieldId).get("schema").get("items").asText():"";
-                if (StringUtils.equals(fieldType, "string")){
+                if (StringUtils.equals(fieldType, "string") || StringUtils.equals(fieldType, "any")){
                     issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
                 } else if(StringUtils.equals(fieldType, "option")){
                     Map<String, Object> optionValue = new HashMap<>();

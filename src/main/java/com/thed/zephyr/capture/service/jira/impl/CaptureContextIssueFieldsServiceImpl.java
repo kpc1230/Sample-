@@ -20,6 +20,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -189,7 +191,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
             StringBuilder sb = new StringBuilder(testStatus);
             setEntityProperties(sb, baseUrl, testStatusPath);
         } catch (Exception e) {
-            log.error("Error populateIssueTestStatusAndTestSessions",e);
+            log.error("Error during setting TestStatus Jira issue entity properties",e);
         }
         String testSessionsPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueKey + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_TEST_SESSIONS.toLowerCase().replace(" ", "_");
         try {
@@ -234,18 +236,22 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.PUT,requestUpdate,Void.class);
     }
     private void removeEntityProperties(String baseUrl, String path) throws JSONException {
-        URI targetUrl= UriComponentsBuilder.fromUriString(baseUrl)
-                .path(path)
-                .build()
-                .encode()
-                .toUri();
-        log.debug("removeEntityProperties --> {}",targetUrl);
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-        JSONObject request = new JSONObject();
-      //  request.put("content",sb.toString());
-        String resourceUrl = targetUrl.toString();
-        HttpEntity<String> requestUpdate = new HttpEntity<>(request.toString(),httpHeaders);
-        atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.DELETE,requestUpdate,Void.class);
+        try {
+            URI targetUrl= UriComponentsBuilder.fromUriString(baseUrl).path(path).build().encode().toUri();
+            log.debug("removeEntityProperties --> {}",targetUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            JSONObject request = new JSONObject();
+            //request.put("content",sb.toString());
+            String resourceUrl = targetUrl.toString();
+            HttpEntity<String> requestUpdate = new HttpEntity<>(request.toString(),httpHeaders);
+            atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.DELETE,requestUpdate,Void.class);
+        } catch (HttpClientErrorException restException) {
+            if (StringUtils.equals(restException.getMessage(), "404 Not Found")){
+                log.warn("Error during remove property. The Jira issue entity property wasn't found, hence can't be removed. Which is probably fine :) baseUrl:{} path:{}", baseUrl, path);
+            } else{
+                throw restException;
+            }
+        }
     }
 }
