@@ -10,4 +10,5 @@ import java.util.List;
 public interface IssueLinkTypeService {
     public List<IssuelinksType> getIssuelinksType(AtlassianHostUser hostUser);
     IssuelinksType createIssuelinkType(IssuelinksType issuelinksType, AtlassianHostUser hostUser);
+    void createIssuelinkTypeCaptureTestingIfNotExist(AtlassianHostUser hostUser);
 }

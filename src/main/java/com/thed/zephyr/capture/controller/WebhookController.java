@@ -4,6 +4,7 @@ import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.service.jira.IssueLinkTypeService;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,8 @@ public class WebhookController {
     private Environment env;
     @Autowired
     private DynamicProperty dynamicProperty;
+    @Autowired
+    IssueLinkTypeService issueLinkTypeService;
 
     @RequestMapping(value = "/rest/event/plugin/enabled", method = RequestMethod.POST)
     public ResponseEntity pluginEnableEvent(@AuthenticationPrincipal AtlassianHostUser hostUser){
@@ -41,6 +44,9 @@ public class WebhookController {
         } catch (Exception exception) {
             log.error("Error during plugin enable event.", exception);
         }
+
+        //creating capture custom link type while add on enable
+        issueLinkTypeService.createIssuelinkTypeCaptureTestingIfNotExist(hostUser);
 
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
