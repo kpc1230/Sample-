@@ -166,7 +166,7 @@ public class IssueController {
     }
     
     @GetMapping(value = "/issueSearch/autocomplete")
-    public ResponseEntity<?> getIssuesForQuery(@RequestParam("term")  String term, @RequestParam("projectKey") String projectKey) {
+    public ResponseEntity<?> getIssuesForQuery(@RequestParam("term")  String term, @RequestParam(value = "projectKey",required = false) String projectKey) {
     	log.info("Start of getIssuesForQuery() --> params - query " + term + " projectKey " + projectKey);
     	IssueSearchList searchIssues = issueSearchService.getIssuesForQuery(projectKey, term);
         log.info("End of getIssuesForQuery()");

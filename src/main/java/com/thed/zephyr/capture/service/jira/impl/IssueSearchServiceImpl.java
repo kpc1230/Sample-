@@ -57,8 +57,12 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     		Matcher match = patttern.matcher(issueTerm);
         	if(match.matches()) {
         		ArrayList<IssueSearchDto> searchedIssues = new ArrayList<>(11);
-        		searchResult = getJQLResult("project=" + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 1);
-        		String issueQuery = generateIssueInClause(issueTerm, searchResult.getTotal()); 
+        		if(StringUtils.isNotEmpty(projectKey)) {
+					searchResult = getJQLResult("project=" + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 1);
+				} else {
+					searchResult = getJQLResult("project is not EMPTY" + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 1);
+				}
+        		String issueQuery = generateIssueInClause(issueTerm, searchResult.getTotal());
         		if(issueQuery.length() > 0) {
         			searchResult = getJQLResult("project = " + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : "") + " AND issue IN (" + issueQuery.toString() + ")", 0, 11);
             		searchResult.getIssues().spliterator().forEachRemaining(issue -> {
@@ -75,7 +79,12 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
         			searchedIssues = iTenantAwareCache.getOrElse((AcHostModel)host.getHost(), cacheKey, new Callable<ArrayList<IssueSearchDto>>() {
         				public ArrayList<IssueSearchDto> call() throws Exception {
         					ArrayList<IssueSearchDto> issues = new ArrayList<>(50);
-        					SearchResult searchResult = getJQLResult("project=" + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 20); //fetching 20 is better in terms of performance.
+							SearchResult searchResult = null;
+        					if(StringUtils.isNotEmpty(projectKey)) {
+								searchResult = getJQLResult("project=" + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 50); //fetching 20 is better in terms of performance.
+							} else {
+								searchResult = getJQLResult("project is not EMPTY" + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 50);
+							}
         		    		searchResult.getIssues().spliterator().forEachRemaining(issue -> {
         		    			issues.add(new IssueSearchDto(issue.getId(), issue.getKey(), issue.getIssueType().getIconUri().toString(), issue.getSummary()));
         		    		});
