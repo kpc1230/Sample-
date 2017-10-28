@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CustomField;
 import com.thed.zephyr.capture.model.jira.FieldOption;
+import com.thed.zephyr.capture.model.jira.FixVersionsFieldOption;
 import com.thed.zephyr.capture.service.jira.IssueTypeService;
 import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.service.jira.UserService;
@@ -130,9 +131,13 @@ public class MetadataServiceImpl implements MetadataService {
                                     children.add(new FieldOption(childText, childValue));
                                 }
                             }
-                            if(StringUtils.isNotEmpty(name)
-                                    && StringUtils.isNotEmpty(value)) {
-                                finalFieldOptions.add(new FieldOption(name,value, children));
+                            if(StringUtils.isNotEmpty(name) && StringUtils.isNotEmpty(value)) {
+                                if(key.equals("fixVersions")){
+                                    Boolean released = jsonNode1.get("released").asBoolean();
+                                    finalFieldOptions.add(new FixVersionsFieldOption(name, value, children, released));
+                                } else {
+                                    finalFieldOptions.add(new FieldOption(name,value, children));
+                                }
                             }
                         });
 
