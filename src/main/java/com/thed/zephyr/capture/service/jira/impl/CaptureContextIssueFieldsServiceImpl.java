@@ -143,18 +143,18 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
     }
 
     @Override
-    public void addRaisedInIssueField(String loggedUser, List<Long> listOfIssueIds, String sessionId) {
-        log.debug("addRaisedInIssueField request from User:{} , SessionId: {}", loggedUser, sessionId);
+    public void addRaisedInIssueField(String loggedUser, List<Long> listOfIssueIds, Session session) {
+        log.debug("addRaisedInIssueField request from user:{} , sessionId: {} jiraPropIndex:{}", loggedUser, session.getId(), session.getJiraPropIndex());
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String baseUri = host.getHost().getBaseUrl();
         listOfIssueIds.stream().forEach(issueId -> {
             String raisedInPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueId + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_RAISEDIN_NAME.toLowerCase().replace(" ", "_");
             try {
-                StringBuilder sb = new StringBuilder(sessionId);
+                StringBuilder sb = new StringBuilder(session.getJiraPropIndex());
                 setEntityProperties(sb, baseUri, raisedInPath);
             } catch (Exception e) {
-                log.error("Error adding RaisedIn Issue to Session:{}", sessionId);
+                log.error("Error adding RaisedIn Issue user:{} , sessionId: {} jiraPropIndex:{}", loggedUser, session.getId(), session.getJiraPropIndex());
             }
         });
     }
@@ -184,8 +184,8 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
 
 
     @Override
-    public void populateIssueTestStatusAndTestSessions(String issueKey, String testStatus, String testSessions, String baseUrl) {
-        log.debug("populateIssueTestStatusAndTestSessions started: issueKey:{}, testSessions:{}, testStatus:{}, baseUrl:{}", issueKey,testSessions,testStatus,baseUrl);
+    public void populateIssueTestStatusAndTestSessions(String issueKey, String testStatus, String jiraPropIndexs, String baseUrl) {
+        log.debug("populateIssueTestStatusAndTestSessions started: issueKey:{}, testSessions:{}, testStatus:{}, baseUrl:{}", issueKey, jiraPropIndexs, testStatus, baseUrl);
         String testStatusPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueKey + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_TEST_STATUS.toLowerCase().replace(" ", "_");
         try {
             StringBuilder sb = new StringBuilder(testStatus);
@@ -195,8 +195,8 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         }
         String testSessionsPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueKey + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_TEST_SESSIONS.toLowerCase().replace(" ", "_");
         try {
-            if(StringUtils.isNotBlank(testSessions)){
-                StringBuilder sb = new StringBuilder(testSessions);
+            if(StringUtils.isNotBlank(jiraPropIndexs)){
+                StringBuilder sb = new StringBuilder(jiraPropIndexs);
                 setEntityProperties(sb, baseUrl, testSessionsPath);
             }else {
                 removeEntityProperties(baseUrl, testSessionsPath);

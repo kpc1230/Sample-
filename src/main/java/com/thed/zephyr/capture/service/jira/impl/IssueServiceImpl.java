@@ -312,7 +312,7 @@ public class IssueServiceImpl implements IssueService {
             if (session != null) {
                 List<Long> issueIds = new ArrayList<>();
                 issueIds.add(issue.getId());
-                captureContextIssueFieldsService.addRaisedInIssueField(host.getUserKey().get(), issueIds, session.getId());
+                captureContextIssueFieldsService.addRaisedInIssueField(host.getUserKey().get(), issueIds, session);
             }
         }
         return captureIssue;

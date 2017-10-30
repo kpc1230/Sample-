@@ -270,7 +270,7 @@ public interface SessionService {
 	 * @param issueRaisedId
 	 * @param sessionId
 	 */
-	void addRaisedInSession(String userKey, Long issueRaisedId, String sessionId);
+	void addRaisedInSession(String userKey, Long issueRaisedId, Session session);
 
 	void addUnRaisedInSession(String userKey, String issueKey, Session session);
 	
@@ -284,5 +284,7 @@ public interface SessionService {
 	void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctid) throws HazelcastInstanceNotDefinedException;
 	
 	void updateUserDisplayNamesForSessions(String ctid, String userKey, String userDisplayName);
+
+	String generateJiraPropIndex(String ctId);
 }
 

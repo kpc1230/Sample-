@@ -22,7 +22,7 @@ public class FullSessionDto extends SessionDto {
     		Integer activeParticipantCount, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus,	String userAvatarSrc, 
     		String userLargeAvatarSrc, String userDisplayName, Date timeCompleted, Duration timeLogged, String url) {
     	super(session, isActive, activeParticipants, activeParticipantCount, issuesRaised.size(), permissions, estimatedTimeSpent, prettyStatus, timeCompleted,
-    			userAvatarSrc, userLargeAvatarSrc, userDisplayName, timeLogged, url);
+    			userAvatarSrc, userLargeAvatarSrc, userDisplayName, timeLogged, url, session.getJiraPropIndex());
     	this.relatedIssues = relatedIssues;
         this.issuesRaised = issuesRaised;
     }

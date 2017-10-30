@@ -121,7 +121,7 @@ public class SessionController extends CaptureAbstractController{
 					additionalInfo = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser,additionalInfo));
 				}
 				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-						project, session.getDefaultTemplateId(),session.getAdditionalInfo(), additionalInfo, session.getTimeCreated(), null); //Send only what UI is required instead of whole session object.
+						project, session.getDefaultTemplateId(),session.getAdditionalInfo(), additionalInfo, session.getTimeCreated(), null, session.getJiraPropIndex()); //Send only what UI is required instead of whole session object.
 				sessionDtoList.add(lightSession);
 			});
 			LightSessionSearchList response = new LightSessionSearchList(sessionDtoList, sessionsSearch.getOffset(), sessionsSearch.getLimit(), sessionsSearch.getTotal());

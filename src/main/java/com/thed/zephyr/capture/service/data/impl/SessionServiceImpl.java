@@ -135,6 +135,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setAssignee(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
 		CaptureUser user = userService.findUserByKey(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
 		session.setUserDisplayName(user != null ? user.getDisplayName() : null);
+		session.setJiraPropIndex(generateJiraPropIndex(session.getCtId()));
         Session createdSession = sessionRepository.save(session);
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
         String baseUrl = getBaseUrl();
@@ -145,6 +146,17 @@ public class SessionServiceImpl implements SessionService {
 		//Update test staus and test sessions for related issues
 
 		return createdSession;
+	}
+
+	@Override
+	public String generateJiraPropIndex(String ctId){
+		String index = UUID.randomUUID().toString().substring(0, 5);
+		Session sessionWithSameIndex = sessionESRepository.findByCtIdAndJiraPropIndex(ctId, index);
+		if (sessionWithSameIndex != null){
+			generateJiraPropIndex(ctId);
+		}
+
+		return index;
 	}
 
 	@Override
@@ -550,7 +562,7 @@ public class SessionServiceImpl implements SessionService {
 					}
                 }
             }
-    		captureContextIssueFieldsService.addRaisedInIssueField(loggedUser, issueRaisedIds, sessionId);
+    		captureContextIssueFieldsService.addRaisedInIssueField(loggedUser, issueRaisedIds, session);
         }
         return raisedIssues;
     }
@@ -571,7 +583,7 @@ public class SessionServiceImpl implements SessionService {
 						boolean emptyList = sessions.getContent() != null && sessions.getContent().isEmpty() ? true : false;
 						if (Objects.nonNull(sessions.getContent())) {
 							for (Session session : sessions.getContent()) {
-								sessionIdBuilder.append(session.getId()).append(",");
+								sessionIdBuilder.append(session.getJiraPropIndex()).append(",");
 								if (Status.CREATED.equals(session.getStatus())) {
 									createdCount++;
 								} else if (Status.COMPLETED.equals(session.getStatus())) {
@@ -667,10 +679,10 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public void addRaisedInSession(String userKey, Long issueRaisedId, String sessionId) {
+	public void addRaisedInSession(String userKey, Long issueRaisedId, Session session) {
 		List<Long> issueRaisedIdList = new ArrayList<>();
 		issueRaisedIdList.add(issueRaisedId);
-		captureContextIssueFieldsService.addRaisedInIssueField(userKey,issueRaisedIdList,sessionId);
+		captureContextIssueFieldsService.addRaisedInIssueField(userKey, issueRaisedIdList, session);
 	}
 
 	@Override
@@ -1387,7 +1399,7 @@ public class SessionServiceImpl implements SessionService {
 		}
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), EmojiUtil.emojify(
-						CaptureUtil.createWikiData(wikiParser,session.getAdditionalInfo())), session.getTimeCreated(), null);
+						CaptureUtil.createWikiData(wikiParser,session.getAdditionalInfo())), session.getTimeCreated(), null, session.getJiraPropIndex());
 		if(!usersMap.containsKey(session.getAssignee())) {
 			user = userService.findUserByKey(session.getAssignee());
 		} else {
@@ -1421,7 +1433,7 @@ public class SessionServiceImpl implements SessionService {
             Integer issusRaisedCount = Objects.nonNull(session.getIssuesRaised()) ? session.getIssuesRaised().size() : 0;
 			return new SessionDto(lightSession, isActive, activeParticipants, activeParticipantCount, issusRaisedCount, permissions, estimatedTimeSpent,
 					captureI18NMessageSource.getMessage("session.status.pretty." + session.getStatus()), session.getTimeFinished(), userAvatarSrc,
-					userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeLogged(), CaptureUtil.createSessionLink(session.getId(),ad.getDescriptor().getKey()));
+					userLargeAvatarSrc, user != null ? user.getDisplayName() : session.getAssignee(), session.getTimeLogged(), CaptureUtil.createSessionLink(session.getId(),ad.getDescriptor().getKey()), session.getJiraPropIndex());
 		}
 	}
 

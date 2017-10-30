@@ -22,6 +22,7 @@ public class LightSession {
     private final String rawAdditionalInfo;
     private Date timeCreated;
     private final Map<String, Object> rawData;
+    private final String jiraPropIndex;
 
     public LightSession(String id,
                         String name,
@@ -34,7 +35,8 @@ public class LightSession {
                         String rawAdditionalInfo,
                         String additionalInfo,
                         Date timeCreated,
-                        Map<String, Object> rawData) {
+                        Map<String, Object> rawData,
+                        String jiraPropIndex) {
         this.id = id;
         this.name = name;
         this.creator = creator;
@@ -47,6 +49,7 @@ public class LightSession {
         this.rawAdditionalInfo = rawAdditionalInfo;
         this.timeCreated = timeCreated;
         this.rawData = rawData;
+        this.jiraPropIndex = jiraPropIndex;
     }
 
     public String getId() {
@@ -101,4 +104,7 @@ public class LightSession {
 		return rawAdditionalInfo;
 	}
 
+    public String getJiraPropIndex() {
+        return jiraPropIndex;
+    }
 }

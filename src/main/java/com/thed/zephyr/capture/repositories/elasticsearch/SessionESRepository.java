@@ -46,4 +46,6 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
     AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user);
 	
     AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user);
+
+    Session findByCtIdAndJiraPropIndex(String ctId, String jiraPropIndex);
 }

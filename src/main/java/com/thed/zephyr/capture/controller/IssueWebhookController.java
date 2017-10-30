@@ -80,7 +80,7 @@ public class IssueWebhookController {
                 if (issueId != null) {
                     sessionService.updateSessionWithIssue(ctid, projectId, issueCreatedBy, issueId);
                     if(session != null) {
-                        sessionService.addRaisedInSession(hostUser.getUserKey().get(), issueId, session.getId());
+                        sessionService.addRaisedInSession(hostUser.getUserKey().get(), issueId, session);
                         Set<Long> issues = new HashSet<>();
                         issues.add(issueId);
                         //Updating issue testing status in order to sync JQL with Testing section

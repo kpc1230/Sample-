@@ -65,12 +65,14 @@ public class SessionDto {
     private String userDisplayName;
     
     private Duration timeLogged;
-    
+
     private String url;
+
+    private String jiraPropIndex;
 
     public SessionDto(LightSession session, boolean isActive, List<ParticipantDto> activeParticipants, Integer activeParticipantCount,
     		Integer issuesRaisedCount, SessionDisplayDto permissions, String estimatedTimeSpent, String prettyStatus, Date timeCompleted, String userAvatarSrc, 
-    		String userLargeAvatarSrc, String userDisplayName, Duration timeLogged, String url) {
+    		String userLargeAvatarSrc, String userDisplayName, Duration timeLogged, String url, String jiraPropIndex) {
     	this.id = session.getId();
     	this.name = session.getName();
     	this.status = session.getStatus();
@@ -97,6 +99,7 @@ public class SessionDto {
         this.userDisplayName = userDisplayName;
         this.timeLogged = timeLogged;
         this.url = url;
+        this.jiraPropIndex = jiraPropIndex;
     }
 
 	public boolean isActive() {
@@ -215,4 +218,7 @@ public class SessionDto {
 		this.url = url;
 	}
 
+	public String getJiraPropIndex() {
+		return jiraPropIndex;
+	}
 }

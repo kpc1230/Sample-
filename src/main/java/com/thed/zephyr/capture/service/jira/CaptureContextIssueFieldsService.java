@@ -13,13 +13,14 @@ import java.util.Map;
  * Created by niravshah on 8/28/17.
  */
 public interface CaptureContextIssueFieldsService {
+
     void populateContextFields(HttpServletRequest req, Issue issueInputBuilder, Map<String, String> context);
 
-    String getContextFields(String baseUrl, String path,String key) throws JSONException;
+    String getContextFields(String baseUrl, String path, String key) throws JSONException;
 
-    void addRaisedInIssueField(String loggedUser, List<Long> listOfIssueIds, String sessionId);
+    void addRaisedInIssueField(String loggedUser, List<Long> listOfIssueIds, Session session);
 
     void removeRaisedIssue(Session loadedSession, String issueKey);
 
-    void populateIssueTestStatusAndTestSessions(String issueKey,String testStatus,String testSessions, String baseUrl);
+    void populateIssueTestStatusAndTestSessions(String issueKey, String testStatus, String jiraPropIndexs, String baseUrl);
 }

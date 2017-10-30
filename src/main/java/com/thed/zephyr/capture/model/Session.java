@@ -65,6 +65,7 @@ public class Session  implements Comparable<Session>, Serializable{
     private String userDisplayName;
     @DynamoDBIgnore
     private int statusOrder;
+    private String jiraPropIndex;
 
     public Session() {
     }
@@ -249,7 +250,15 @@ public class Session  implements Comparable<Session>, Serializable{
 		this.statusOrder = statusOrder;
 	}
 
-	/**
+    public String getJiraPropIndex() {
+        return jiraPropIndex;
+    }
+
+    public void setJiraPropIndex(String jiraPropIndex) {
+        this.jiraPropIndex = jiraPropIndex;
+    }
+
+    /**
      * Get the Session Status History (timestamp to status mapping)
      *
      * @return Map time instant to new status
