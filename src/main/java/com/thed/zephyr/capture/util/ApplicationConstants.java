@@ -51,7 +51,8 @@ public class ApplicationConstants {
 
     public static final String BROWSER_FIREFOX_EXTENSION_DOWNLOAD = "browser.firefox.extension.download.url";
     public static final String BROWSER_SAFARI_EXTENSION_DOWNLOAD = "browser.safari.extension.download.url";
-    public static final String BROWSER_IE_EXTENSION_DOWNLOAD = "browser.ie.extension.download.url";
+    public static final String BROWSER_IE_64_EXTENSION_DOWNLOAD = "browser.ie.extension.download.url";
+    public static final String BROWSER_IE_32_EXTENSION_DOWNLOAD = "browser.ie32.extension.download.url";
     public static final String BROWSER_CHROME_EXTENSION_DOWNLOAD = "browser.chrome.extension.download.url";
     public static final String DOWNLOAD_URL = "downloadUrl" ;
     public static final String BROWSER = "browser" ;

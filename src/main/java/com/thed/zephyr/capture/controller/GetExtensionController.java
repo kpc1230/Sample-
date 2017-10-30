@@ -47,10 +47,23 @@ public class GetExtensionController {
                         ApplicationConstants.BROWSER_SAFARI_EXTENSION_DOWNLOAD, "").getValue();
                 break;
             case ApplicationConstants.BROWSER_MSIE:
-                downloadUrl = dynamicProperty.getStringProp(
-                        ApplicationConstants.BROWSER_IE_EXTENSION_DOWNLOAD, "").getValue();
+                if (userAgent.contains("Win64") || userAgent.contains("IA64") || userAgent.contains("x64") || userAgent.contains("WOW64")) {
+                    downloadUrl = dynamicProperty.getStringProp(
+                            ApplicationConstants.BROWSER_IE_64_EXTENSION_DOWNLOAD, "").getValue();
+                } else {
+                    downloadUrl = dynamicProperty.getStringProp(
+                            ApplicationConstants.BROWSER_IE_32_EXTENSION_DOWNLOAD, "").getValue();
+                }
                 break;
-
+            case ApplicationConstants.BROWSER_MSIE_ALT:
+                if (userAgent.contains("Win64") || userAgent.contains("IA64") || userAgent.contains("x64") || userAgent.contains("WOW64")) {
+                    downloadUrl = dynamicProperty.getStringProp(
+                            ApplicationConstants.BROWSER_IE_64_EXTENSION_DOWNLOAD, "").getValue();
+                } else {
+                    downloadUrl = dynamicProperty.getStringProp(
+                            ApplicationConstants.BROWSER_IE_32_EXTENSION_DOWNLOAD, "").getValue();
+                }
+                break;
             default :
                 downloadUrl = dynamicProperty.getStringProp(
                         ApplicationConstants.BROWSER_CHROME_EXTENSION_DOWNLOAD, "").getValue();
