@@ -627,13 +627,13 @@ public class IssueServiceImpl implements IssueService {
                 } else if(StringUtils.equals(fieldType, "date") && StringUtils.isNotBlank(fieldValue[0])){
                     SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy");
                     Date date = sdf.parse(fieldValue[0]);
-                    sdf = new SimpleDateFormat("YYYY-MM-DD");
+                    sdf = new SimpleDateFormat("yyyy-MM-dd");
                     String dateStr = sdf.format(date);
                     issueInputBuilder.setFieldValue(fieldId, dateStr);
                 } else if(StringUtils.equals(fieldType, "datetime")){
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy hh:mm a");
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy HH:mm a");
                     Date date = sdf.parse(fieldValue[0]);
-                    sdf = new SimpleDateFormat("YYYY-MM-DD'T'hh:mm:ss.sssZ");
+                    sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
                     String dateStr = sdf.format(date);
                     issueInputBuilder.setFieldValue(fieldId, dateStr);
                 } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "string")){
