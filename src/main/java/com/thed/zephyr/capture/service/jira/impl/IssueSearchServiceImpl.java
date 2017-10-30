@@ -48,23 +48,26 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     	fields.add("status");
     }
     
-    private IssueSearchList getIssuesForIssueTerm(String projectKey, String issueTerm, boolean appendEpicIssueType) {
+    private IssueSearchList getIssuesForIssueTerm(String projectKeys, String issueTerm, boolean appendEpicIssueType) {
     	try {
     		SearchResult searchResult = null;
-    		if(StringUtils.isBlank(issueTerm)) {
+    		if(StringUtils.isEmpty(issueTerm) || StringUtils.isEmpty(projectKeys)) {
     			return new IssueSearchList(new ArrayList<>(1), 0, 11, 0);
     		}
     		Matcher match = patttern.matcher(issueTerm);
         	if(match.matches()) {
         		ArrayList<IssueSearchDto> searchedIssues = new ArrayList<>(11);
-        		if(StringUtils.isNotEmpty(projectKey)) {
-					searchResult = getJQLResult("project=" + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 1);
-				} else {
-					searchResult = getJQLResult("project is not EMPTY" + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 1);
-				}
+        		String projectKey = projectKeys;
+        		for(String projectkey : projectKeys.split(",")) {
+        			if(issueTerm.toUpperCase().startsWith(projectkey)) { //pick matched issue and project key from the list of project keys.
+        				projectKey = projectkey;
+        				break;
+        			}
+        		}
+        		searchResult = getJQLResult("project IN (" + projectKey + ")" + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 1);
         		String issueQuery = generateIssueInClause(issueTerm, searchResult.getTotal());
         		if(issueQuery.length() > 0) {
-        			searchResult = getJQLResult("project = " + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : "") + " AND issue IN (" + issueQuery.toString() + ")", 0, 11);
+        			searchResult = getJQLResult("project IN (" + projectKey + ")" + (appendEpicIssueType ? " AND issuetype = Epic" : "") + " AND issue IN (" + issueQuery.toString() + ")", 0, 11);
             		searchResult.getIssues().spliterator().forEachRemaining(issue -> {
         				searchedIssues.add(new IssueSearchDto(issue.getId(), issue.getKey(), issue.getIssueType().getIconUri().toString(), issue.getSummary()));
             		});
@@ -73,18 +76,14 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
         	} else {
         		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        		String cacheKey = "issue " + (appendEpicIssueType ? "epic" : "") + "_search_project_" + projectKey;
+        		String cacheKey = "issue " + (appendEpicIssueType ? "epic" : "") + "_search_project_" + projectKeys;
         		ArrayList<IssueSearchDto> searchedIssues = new ArrayList<>(20);
         		try {
         			searchedIssues = iTenantAwareCache.getOrElse((AcHostModel)host.getHost(), cacheKey, new Callable<ArrayList<IssueSearchDto>>() {
         				public ArrayList<IssueSearchDto> call() throws Exception {
-        					ArrayList<IssueSearchDto> issues = new ArrayList<>(50);
+        					ArrayList<IssueSearchDto> issues = new ArrayList<>(0);
 							SearchResult searchResult = null;
-        					if(StringUtils.isNotEmpty(projectKey)) {
-								searchResult = getJQLResult("project=" + projectKey + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 50); //fetching 20 is better in terms of performance.
-							} else {
-								searchResult = getJQLResult("project is not EMPTY" + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 50);
-							}
+							searchResult = getJQLResult("project in (" + projectKeys + ")" + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 30); //fetching 20 is better in terms of performance.
         		    		searchResult.getIssues().spliterator().forEachRemaining(issue -> {
         		    			issues.add(new IssueSearchDto(issue.getId(), issue.getKey(), issue.getIssueType().getIconUri().toString(), issue.getSummary()));
         		    		});
@@ -123,12 +122,12 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     }
     
     @Override
-    public IssueSearchList getEpicIssuesForQuery(String projectKey, String issueTerm) {
-    	return getIssuesForIssueTerm(projectKey, issueTerm, true);
+    public IssueSearchList getEpicIssuesForQuery(String projectKeys, String issueTerm) {
+    	return getIssuesForIssueTerm(projectKeys, issueTerm, true);
     }
 
 	@Override
-	public IssueSearchList getIssuesForQuery(String projectKey, String issueTerm) {
-		return getIssuesForIssueTerm(projectKey, issueTerm, false);
+	public IssueSearchList getIssuesForQuery(String projectKeys, String issueTerm) {
+		return getIssuesForIssueTerm(projectKeys, issueTerm, false);
 	}
 }
