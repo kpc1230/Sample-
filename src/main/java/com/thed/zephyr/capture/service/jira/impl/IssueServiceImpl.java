@@ -547,15 +547,15 @@ public class IssueServiceImpl implements IssueService {
 
         if (issueFields.getDuedate() != null) {
             try {
-            DateTimeFormatter inFormatter = DateTimeFormat.forPattern("d/MMM/yy");
+            DateTimeFormatter inFormatter = DateTimeFormat.forPattern("dd/MMM/yy HH:mm a");
             DateTime dateTime = inFormatter.parseDateTime(issueFields.getDuedate());
-            issueInputBuilder.setDueDate(dateTime.toDateTime(DateTimeZone.UTC));
+            issueInputBuilder.setDueDate(dateTime.toDateTime());
             } catch (Exception ex) {
                 log.error("Error while formatting the date ",ex);
                 Date date = new Date();
-                SimpleDateFormat formatter = new SimpleDateFormat("d/MMM/yy");
+                SimpleDateFormat formatter = new SimpleDateFormat("dd/MMM/yy HH:mm a");
                 String strDate= formatter.format(date);
-                throw new CaptureValidationException(null,"duedate",i18n.getMessage("issue.create.duedate.validation.error", new Object[]{"d/MMM/yy",strDate}));
+                throw new CaptureValidationException(null,"duedate",i18n.getMessage("issue.create.duedate.validation.error", new Object[]{"dd/MMM/yy HH:mm a",strDate}));
             }
         }
         ResourceId parentId = issueFields.parent();
