@@ -6,10 +6,8 @@ import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.*;
 import com.atlassian.jira.rest.client.api.domain.input.*;
-import com.atlassian.util.concurrent.Promise;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.hazelcast.util.StringUtil;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.IssueRaisedBean;
@@ -19,7 +17,6 @@ import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
-import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
@@ -549,11 +546,13 @@ public class IssueServiceImpl implements IssueService {
             try {
                 DateTimeFormatter inFormatter = DateTimeFormat.forPattern("dd/MMM/yy");
                 DateTime dateTime = inFormatter.parseDateTime(issueFields.getDuedate());
+                dateTime.withZone(DateTimeZone.UTC);
                 issueInputBuilder.setDueDate(dateTime.toDateTime());
             } catch (Exception ex) {
                 try {
                     DateTimeFormatter inFormatter = DateTimeFormat.forPattern("dd/MMM/yy HH:mm a");
                     DateTime dateTime = inFormatter.parseDateTime(issueFields.getDuedate());
+                    dateTime.withZone(DateTimeZone.UTC);
                     issueInputBuilder.setDueDate(dateTime.toDateTime());
                 } catch (Exception ex2) {
                     log.error("Error while formatting the date ", ex2);
