@@ -616,19 +616,43 @@ public class IssueServiceImpl implements IssueService {
                 String items = fields.get(fieldId).get("schema").get("items") != null?fields.get(fieldId).get("schema").get("items").asText():"";
                 if (StringUtils.equals(fieldType, "string")){
                     issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
-                } else if(StringUtils.equals(fieldType, "option")){
-                    Map<String, Object> optionValue = new HashMap<>();
-                    optionValue.put("id", fieldValue[0]);
-                    issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(optionValue));
+                } else if(StringUtils.equals(fieldType, "option") || StringUtils.equals(fieldType, "version")){
+                   if(fieldValue[0] != null && fieldValue[0].length() > 0) {
+                	   Map<String, Object> optionValue = new HashMap<>();
+                       optionValue.put("id", fieldValue[0]);
+                       issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(optionValue));
+                   }
                 } else if(StringUtils.equals(fieldType, "any") && StringUtils.isNotBlank(fieldValue[0])){
                     issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
-                } else if(StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "option")){
+                } else if(StringUtils.equals(fieldType, "array") && (StringUtils.equals(items, "option") || StringUtils.equals(items, "version"))){
                     List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
                     List<String> values = Arrays.asList(fieldValue);
                     values.stream().forEach((value) -> {
                         Map<String, Object> complexValue = new TreeMap<>();
                         complexValue.put("id", value);
                         checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
+                    });
+                    issueInputBuilder.setFieldValue(fieldId, checkboxValues);
+                } else if(StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "group")){
+                    List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
+                    List<String> values = Arrays.asList(fieldValue);
+                    values.stream().forEach((value) -> {
+                        Map<String, Object> complexValue = new TreeMap<>();
+                        complexValue.put("name", value);
+                        checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
+                    });
+                    issueInputBuilder.setFieldValue(fieldId, checkboxValues);
+                } else if(StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "user")){
+                    List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
+                    List<String> values = Arrays.asList(fieldValue);
+                    values.stream().forEach((value) -> {
+                    	for(String name :  value.trim().split(",")) {
+                    		if(!StringUtils.isEmpty(name)) {
+                    			Map<String, Object> complexValue = new TreeMap<>();
+                                complexValue.put("name", name);
+                                checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
+                    		}
+                    	}                        
                     });
                     issueInputBuilder.setFieldValue(fieldId, checkboxValues);
                 } else if(StringUtils.equals(fieldType, "date") && StringUtils.isNotBlank(fieldValue[0])){
@@ -652,7 +676,7 @@ public class IssueServiceImpl implements IssueService {
                         Double number = Double.valueOf(numberStr);
                         issueInputBuilder.setFieldValue(fieldId, number);
                     }
-                } else if(StringUtils.equals(fieldType, "user")){
+                } else if(StringUtils.equals(fieldType, "user") || StringUtils.equals(fieldType, "group")){
                     Map<String, Object> complexValue = new TreeMap<>();
                     complexValue.put("name", fieldValue[0]);
                     issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));

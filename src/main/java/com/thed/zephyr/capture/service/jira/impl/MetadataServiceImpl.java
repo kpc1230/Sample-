@@ -12,6 +12,7 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CustomField;
 import com.thed.zephyr.capture.model.jira.FieldOption;
 import com.thed.zephyr.capture.model.jira.FixVersionsFieldOption;
+import com.thed.zephyr.capture.service.jira.GroupService;
 import com.thed.zephyr.capture.service.jira.IssueTypeService;
 import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.service.jira.UserService;
@@ -50,7 +51,9 @@ public class MetadataServiceImpl implements MetadataService {
     private UserService userService;
     @Autowired
     private CaptureI18NMessageSource i18n;
-
+    @Autowired
+    private GroupService groupService;
+    
     @Override
     public Map<String, Object> createFieldScreenRenderer(CaptureProject captureProject) {
         Map<String, Object> resultMap = new HashMap<>();
@@ -162,6 +165,10 @@ public class MetadataServiceImpl implements MetadataService {
                            && customField.getSchema().getSystem() != null
                            && customField.getSchema().getSystem().equals(customField.getKey())){
                             systemField = true;
+                        }
+                        if(customField != null && customField.getSchema().getCustom() != null &&
+                        		customField.getSchema().getCustom().endsWith("grouppicker")) {
+                        	objectNode.set(OPTIONS, new ObjectMapper().valueToTree(groupService.findGroups(null)));
                         }
                         objectNode.put("systemField",systemField);
                         objectNode.remove(ALLOWED_VALUES);
