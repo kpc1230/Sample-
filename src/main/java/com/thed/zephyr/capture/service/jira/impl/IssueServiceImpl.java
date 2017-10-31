@@ -662,7 +662,7 @@ public class IssueServiceImpl implements IssueService {
                     String dateStr = sdf.format(date);
                     issueInputBuilder.setFieldValue(fieldId, dateStr);
                 } else if(StringUtils.equals(fieldType, "datetime")){
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy HH:mm a");
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy hh:mm a");
                     Date date = sdf.parse(fieldValue[0]);
                     sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
                     String dateStr = sdf.format(date);
