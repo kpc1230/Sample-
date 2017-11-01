@@ -213,4 +213,6 @@ public class ApplicationConstants {
     public static final String ADG3_FLAG_USER_PROP = "adg-flag";
     public static final String ADG3_FLAG_CACHE_PREFIX = "adg-flag-cache";
 
+    public static final String EXT_LINK = "{JIRA_URL}/plugins/servlet/ac/{KEY}/get-browser-extension-page";
+
 }
