@@ -283,14 +283,14 @@ public class IssueServiceImpl implements IssueService {
                     if (linkType.getInward().equalsIgnoreCase(issueLinks.getLinktype())) {
                         Arrays.asList(issueLinks.getIssues()).forEach(s -> {
                             LinkIssuesInput linkIssuesInput = new LinkIssuesInput(s, issue.getKey(), linkTypeToSend);
-                            postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
+                            updateIssueLink(linkIssuesInput);
                         });
 
                     } else {
                         if (linkType.getOutward().equalsIgnoreCase(issueLinks.getLinktype())) {
                             Arrays.asList(issueLinks.getIssues()).forEach(s -> {
                                 LinkIssuesInput linkIssuesInput = new LinkIssuesInput(issue.getKey(), s, linkTypeToSend);
-                                postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
+                                updateIssueLink(linkIssuesInput);
                             });
                         }
                     }
@@ -315,7 +315,20 @@ public class IssueServiceImpl implements IssueService {
         return captureIssue;
     }
 
-   @Override
+    /**
+     * Update Issue Link by using PostJiraRestClient
+     * @param linkIssuesInput
+     */
+    private void updateIssueLink(LinkIssuesInput linkIssuesInput) {
+        try {
+            Thread.sleep(10);
+            postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public void addComment(String issueKey, String comment) throws JSONException {
         Issue issue = getIssueObject(issueKey);
         JSONObject jsonObject = new JSONObject(comment);
