@@ -34,7 +34,7 @@
       {
         "url": "/get-browser-extension",
         "name": {
-          "value": "Get browser extension"
+          "value": "Get Browser Extension"
         },
         "key": "get-browser-extension-page",
         "weight": 3,
