@@ -22,6 +22,7 @@ import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.service.jira.IssueLinkTypeService;
 import com.thed.zephyr.capture.service.jira.IssueService;
+import com.thed.zephyr.capture.service.jira.http.CJiraRestClientFactory;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.service.jira.issue.IssueFields;
 import com.thed.zephyr.capture.service.jira.issue.IssueLinks;
@@ -49,9 +50,11 @@ import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import com.thed.zephyr.capture.util.Global.TokenHolder;
 
 /**
  * Created by Masud on 8/13/17.
@@ -84,6 +87,10 @@ public class IssueServiceImpl implements IssueService {
     private AtlassianHostRestClients atlassianHostRestClients;
     @Autowired
     private IssueLinkTypeService issueLinkTypeService;
+    @Autowired
+    private Global.TokenHolder tokenHolder;
+    @Autowired
+    private CJiraRestClientFactory cJiraRestClientFactory;
 
 
     @Override
@@ -268,36 +275,7 @@ public class IssueServiceImpl implements IssueService {
         Issue issue = getIssueObject(basicIssue.getKey());
         //link the issues
         if (issueFields.getIssuelinks() != null) {
-            IssueLinks issueLinks = issueFields.getIssuelinks();
-            if(issueLinks.getIssues()!=null&&issueLinks.getIssues().length>0) {
-                List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(host);
-                IssuelinksType linkType = null;
-
-                try {
-                    linkType = linkTypes.stream().filter(o -> o.getInward().equals(issueLinks.getLinktype()) || o.getOutward().equals(issueLinks.getLinktype())).findFirst().get();
-                } catch (NoSuchElementException exp) {
-                    log.error("The Issue Types not exist", exp.getMessage());
-                }
-                if (linkType != null) {
-                    String linkTypeToSend = linkType.getName();
-                    if (linkType.getInward().equalsIgnoreCase(issueLinks.getLinktype())) {
-                        Arrays.asList(issueLinks.getIssues()).forEach(s -> {
-                            LinkIssuesInput linkIssuesInput = new LinkIssuesInput(s, issue.getKey(), linkTypeToSend);
-                            updateIssueLink(linkIssuesInput);
-                        });
-
-                    } else {
-                        if (linkType.getOutward().equalsIgnoreCase(issueLinks.getLinktype())) {
-                            Arrays.asList(issueLinks.getIssues()).forEach(s -> {
-                                LinkIssuesInput linkIssuesInput = new LinkIssuesInput(issue.getKey(), s, linkTypeToSend);
-                                updateIssueLink(linkIssuesInput);
-                            });
-                        }
-                    }
-
-                }
-            }
-
+             updateIssueLinks(issue.getKey(),issueFields.getIssuelinks(),host);
         }
         //Set Context Params
         captureContextIssueFieldsService.populateContextFields(request, issue, createRequest.getContext());
@@ -317,15 +295,60 @@ public class IssueServiceImpl implements IssueService {
 
     /**
      * Update Issue Link by using PostJiraRestClient
-     * @param linkIssuesInput
+     *
+     * @param issueKey
+     * @param issueLinks
+     * @param host
      */
-    private void updateIssueLink(LinkIssuesInput linkIssuesInput) {
-        try {
-            Thread.sleep(10);
-            postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    private void updateIssueLinks(String issueKey,IssueLinks issueLinks,AtlassianHostUser host) {
+        Global global = new Global();
+        Global.TokenHolder tokenHolderTmp = global.new  TokenHolder();
+        tokenHolderTmp.setTokenKey(tokenHolder.getTokenKey());
+        tokenHolderTmp.setTokenValue(tokenHolder.getTokenValue());
+       CompletableFuture.runAsync(() -> {
+            log.debug("New Thread Started in order to update issues links ");
+            JiraRestClient postJiraRestClient2  =  createPostJiraRestClient(host,tokenHolderTmp);
+           if(issueLinks.getIssues()!=null&&issueLinks.getIssues().length>0) {
+                List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(host);
+                IssuelinksType linkType = null;
+                try {
+                    linkType = linkTypes.stream().filter(o -> o.getInward().equals(issueLinks.getLinktype()) || o.getOutward().equals(issueLinks.getLinktype())).findFirst().get();
+                } catch (NoSuchElementException exp) {
+                    log.error("The Issue Types not exist", exp.getMessage());
+                }
+                if (linkType != null) {
+                    String linkTypeToSend = linkType.getName();
+                    if (linkType.getInward().equalsIgnoreCase(issueLinks.getLinktype())) {
+                        Arrays.asList(issueLinks.getIssues()).forEach(s -> {
+                            LinkIssuesInput linkIssuesInput = new LinkIssuesInput(s, issueKey, linkTypeToSend);
+                            try {
+                                log.debug("Linking issues Issue Type: {} , From Issue: {} , To Issue: {} ",linkIssuesInput.getLinkType(),linkIssuesInput.getFromIssueKey(),linkIssuesInput.getToIssueKey());
+                                postJiraRestClient2.getIssueClient().linkIssue(linkIssuesInput);
+                                Thread.sleep(500);
+                            } catch (Exception exp) {
+                                exp.printStackTrace();
+                            }
+                        });
+
+                    } else {
+                        if (linkType.getOutward().equalsIgnoreCase(issueLinks.getLinktype())) {
+                            Arrays.asList(issueLinks.getIssues()).forEach(s -> {
+                                try {
+                                    LinkIssuesInput linkIssuesInput = new LinkIssuesInput(issueKey, s, linkTypeToSend);
+                                    log.debug("Linking issues Issue Type: {} , From Issue: {} , To Issue: {} ",linkIssuesInput.getLinkType(),linkIssuesInput.getFromIssueKey(),linkIssuesInput.getToIssueKey());
+                                    postJiraRestClient2.getIssueClient().linkIssue(linkIssuesInput);
+                                    Thread.sleep(500);
+                                } catch (Exception exp) {
+                                    exp.printStackTrace();
+                                }
+                            });
+                        }
+                    }
+
+                }
+            }
+           log.debug("Thread Completed Issue links update");
+        });
     }
 
     @Override
@@ -675,8 +698,9 @@ public class IssueServiceImpl implements IssueService {
                     issueInputBuilder.setFieldValue(fieldId, dateStr);
                 } else if(StringUtils.equals(fieldType, "datetime")){
                     SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy hh:mm a");
+                    sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
                     Date date = sdf.parse(fieldValue[0]);
-                    sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+                    sdf = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSSZ");
                     String dateStr = sdf.format(date);
                     issueInputBuilder.setFieldValue(fieldId, dateStr);
                 } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "string")){
@@ -708,5 +732,9 @@ public class IssueServiceImpl implements IssueService {
 
     private String buildIssueCacheKey(String issueIdOrKey) {
         return ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + issueIdOrKey;
+    }
+
+    public JiraRestClient createPostJiraRestClient(AtlassianHostUser hostUser, TokenHolder th) {
+        return cJiraRestClientFactory.createJiraPostRestClient(hostUser,th);
     }
 }

@@ -44,6 +44,13 @@ public class CJiraRestClientFactoryImpl implements CJiraRestClientFactory {
                 new JwtPostAuthenticationHandler(host, ad, tokenHolder));
         return client;
     }
+    @Override
+    public JiraRestClient createJiraPostRestClient(AtlassianHostUser host,TokenHolder holder) {
+        AsynchronousJiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
+        JiraRestClient client = factory.create(URI.create(host.getHost().getBaseUrl()),
+                new JwtPostAuthenticationHandler(host, ad, holder));
+        return client;
+    }
 
 
 }
