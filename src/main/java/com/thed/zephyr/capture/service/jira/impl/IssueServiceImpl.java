@@ -698,9 +698,9 @@ public class IssueServiceImpl implements IssueService {
                     issueInputBuilder.setFieldValue(fieldId, dateStr);
                 } else if(StringUtils.equals(fieldType, "datetime")){
                     SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy hh:mm a");
-                    sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    //sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
                     Date date = sdf.parse(fieldValue[0]);
-                    sdf = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSSZ");
+                    sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
                     String dateStr = sdf.format(date);
                     issueInputBuilder.setFieldValue(fieldId, dateStr);
                 } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "string")){
