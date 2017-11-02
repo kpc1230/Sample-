@@ -169,7 +169,7 @@ public class SessionController extends CaptureAbstractController{
 	        	sessionService.update(updateResult, false); //Updating the session object into database.
 	        	//Save status changed information as activity.
 	        	CompletableFuture.runAsync(() -> {
-	        		sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
+	        		sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, true);
 	        	});
 	        }
 			log.info("End of createSession()");
@@ -1011,6 +1011,7 @@ public class SessionController extends CaptureAbstractController{
 			isLocked = true;
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
+			boolean firsTimeFlag = loadedSession.getStatus() == Status.CREATED ? true : false;
 			// If the session status is changed, we better have been allowed to do that!
 			if (!Status.STARTED.equals(loadedSession.getStatus())
 					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
@@ -1024,7 +1025,7 @@ public class SessionController extends CaptureAbstractController{
 			Session session = updateResult.getSession();
 			//Save status changed information as activity.
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.setStatus(session, new Date(), loggedUserKey,firstTimeStart);
+				sessionActivityService.setStatus(session, new Date(), loggedUserKey,firsTimeFlag);
 			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 			log.info("End of startOrResumeSession()");
