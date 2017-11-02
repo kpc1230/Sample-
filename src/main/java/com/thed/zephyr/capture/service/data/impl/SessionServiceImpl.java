@@ -371,8 +371,8 @@ public class SessionServiceImpl implements SessionService {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		List<Session> privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user).getContent();
 		List<Session> sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user).getContent();
-		List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, privateSessionsList.size());
-		List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, sharedSessionsList.size());
+		List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, privateSessionsList.size(), true);
+		List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, sharedSessionsList.size(), true);
 		return new SessionExtensionResponse(privateSessionsDto, sharedSessionsDto);
 	}
 
@@ -403,7 +403,7 @@ public class SessionServiceImpl implements SessionService {
 		sessionsList.forEach(session -> {
 			convertedSessList.add(convertAdditionalInfoWiki(session));
 		});
-		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, convertedSessList, size);
+		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, convertedSessList, size, false);
 		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, pageResponse.getTotalElements());
 		return sessionDtoSearchList;
 	}
@@ -1331,14 +1331,14 @@ public class SessionServiceImpl implements SessionService {
 	 * @param size -- Number of elements to fetch.
 	 * @return -- Returns the list of light session object based on startAt and size parameters.
 	 */
-	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, List<Session> sessionsList, int size) {
+	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, List<Session> sessionsList, int size, boolean isSessionFullLoad) {
 		List<SessionDto> sessionDtoList = new ArrayList<>(size);
 		SessionDto sessionDto = null;
 		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, null);
 		for(Session session : sessionsList) {
 			CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
 			boolean isActive = session.getId().equals(activeSessionId);
-			sessionDto = createSessionDto(loggedInUser, session, isActive, project, false);
+			sessionDto = createSessionDto(loggedInUser, session, isActive, project, isSessionFullLoad);
 			sessionDtoList.add(sessionDto);
 
 		}
