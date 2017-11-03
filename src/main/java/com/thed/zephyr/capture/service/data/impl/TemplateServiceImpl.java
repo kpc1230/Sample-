@@ -93,11 +93,34 @@ public class TemplateServiceImpl implements TemplateService {
 
 	@Override
 	public TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit) {
-		Page<Template> templatePage = null;
-		TemplateSearchList templateResult = null;
 		//Since this Crud repository doesn't support OR query we had to make 2 calls
 		Page<Template> tmp1 = repository.findByCtIdAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),userName, getPageRequest(offset, limit));
-		Page<Template> tmp2 = repository.findByCtIdAndShared(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, getPageRequest(offset, limit));
+		Page<Template> tmp2 = repository.findByCtIdAndSharedAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, userName, getPageRequest(offset, limit));
+		return mergeTemplates(tmp1, tmp2, offset, limit);
+	}
+
+	@Override
+	public TemplateSearchList getTemplatesByProject(Long projectId, Integer offset, Integer limit) {
+		Page<Template> templatePage = repository.findByCtIdAndProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),projectId, getPageRequest(offset, limit));
+		return convert(templatePage, offset, limit);
+	}
+
+	@Override
+	public TemplateSearchList getSharedTemplates(String userName, Integer offset, Integer limit) {
+		Page<Template> templatePage = repository.findByCtIdAndShared(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, getPageRequest(offset, limit));
+		return convert(templatePage, offset, limit);
+	}
+
+	@Override
+	public TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit) {
+		Page<Template> tmp1 = repository.findByCtIdAndFavouriteAndShared(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, true, getPageRequest(offset, limit));
+		Page<Template> tmp2 = repository.findByCtIdAndFavouriteAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, owner, getPageRequest(offset, limit));
+		return mergeTemplates(tmp1, tmp2, offset, limit);
+	}
+	
+	private TemplateSearchList mergeTemplates(Page<Template> tmp1, Page<Template> tmp2, Integer offset, Integer limit) {
+		Page<Template> templatePage = null;
+		TemplateSearchList templateResult = null;
 		if(tmp1 != null && tmp1.getSize()>0) {
 			templatePage = tmp1;
 		}
@@ -116,24 +139,6 @@ public class TemplateServiceImpl implements TemplateService {
 			}
 		}
 		return templateResult;
-	}
-
-	@Override
-	public TemplateSearchList getTemplatesByProject(Long projectId, Integer offset, Integer limit) {
-		Page<Template> templatePage = repository.findByCtIdAndProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),projectId, getPageRequest(offset, limit));
-		return convert(templatePage, offset, limit);
-	}
-
-	@Override
-	public TemplateSearchList getSharedTemplates(String userName, Integer offset, Integer limit) {
-		Page<Template> templatePage = repository.findByCtIdAndSharedAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, userName, getPageRequest(offset, limit));
-		return convert(templatePage, offset, limit);
-	}
-
-	@Override
-	public TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit) {
-		Page<Template> templatePage = repository.findByCtIdAndFavouriteAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, owner, getPageRequest(offset, limit));
-		return convert(templatePage, offset, limit);
 	}
 
 	protected Page<Template> getUserTemplateObjects(String userName, Integer offset, Integer limit) {

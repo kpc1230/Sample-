@@ -44,7 +44,7 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	 */
 	@EnableScan
 	@EnableScanCount
-	public Page<Template> findByCtIdAndFavouriteAndCreatedBy(String ctId,Boolean favourite, String createdBy, Pageable pageable);
+	public Page<Template> findByCtIdAndFavouriteAndShared(String ctId,Boolean favourite, Boolean shared, Pageable pageable);
 
 	/**
 	 * Find all the Template objects usign Shared as true and owner.
@@ -85,4 +85,8 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	@EnableScan
 	@EnableScanCount
 	public Page<Template> findByCtId(String ctId,Pageable pageRequest);
+	
+	@EnableScan
+	@EnableScanCount
+	public Page<Template> findByCtIdAndFavouriteAndCreatedBy(String ctId,Boolean favourite, String createdBy, Pageable pageable);
 }
