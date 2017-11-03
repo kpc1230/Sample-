@@ -24,9 +24,11 @@ public class CaptureIssue implements Serializable {
     private final String reporter;
     private final CaptureResolution resolution;
     private final Map<String,String> properties;
+    private final Long parentId;
+    private final String parentKey;
 
     public CaptureIssue(URI self, String key, Long id, String iconPath, String summary, Long projectId, String projectKey,String reporter,CaptureResolution resolution,
-                        Map<String,String> properties) {
+                        Map<String,String> properties, Long parentId, String parentKey) {
         this.iconPath = iconPath;
         this.self = self;
         this.key = key;
@@ -37,6 +39,8 @@ public class CaptureIssue implements Serializable {
         this.reporter = reporter;
         this.resolution = resolution;
         this.properties=properties;
+        this.parentId = parentId;
+        this.parentKey = parentKey;
     }
 
     public URI getSelf() {
@@ -83,4 +87,13 @@ public class CaptureIssue implements Serializable {
     public Map<String, String> getProperties() {
         return properties;
     }
+
+	public Long getParentId() {
+		return parentId;
+	}
+
+	public String getParentKey() {
+		return parentKey;
+	}
+	
 }

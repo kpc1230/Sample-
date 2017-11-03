@@ -112,14 +112,29 @@ public class IssueServiceImpl implements IssueService {
         CaptureIssue captureIssue = null;
         try {
             captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKey(issueIdOrKey), new Callable<CaptureIssue>() {
-                @Override
+				@Override
                 public CaptureIssue call() throws Exception {
                     Issue issue = getIssueObject(issueIdOrKey);
                     CaptureResolution resolution = issue.getResolution() != null ? new CaptureResolution(issue.getResolution().getId(), 
                     		issue.getResolution().getName(), issue.getResolution().getSelf()) : null;
+                    Long parentId = null; String parentKey = null;
+                    if(issue.getIssueType().isSubtask()) {
+                    	IssueField parentIssueField = issue.getField("parent");
+                    	if(Objects.nonNull(parentIssueField)) {
+                    		JSONObject fieldValueMap = (JSONObject)parentIssueField.getValue();
+                        	if(Objects.nonNull(fieldValueMap)) {
+                        		try {
+                        			parentId = fieldValueMap.getLong("id");
+                            		parentKey = fieldValueMap.getString("key");
+                        		} catch(JSONException ex) {
+                        			log.error("Error while getting the parent values for the issue ", ex);
+                        		}
+                        	}
+                    	}
+                    }
                     return new CaptureIssue(issue.getSelf(),
                             issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution,null);
+                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution, null, parentId, parentKey);
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
         } catch (Exception exp) {
@@ -160,7 +175,7 @@ public class IssueServiceImpl implements IssueService {
         return captureIssues;
     }
     
-    private List<CaptureIssue> getCaptureIssuesForJQL(String jql) {
+	private List<CaptureIssue> getCaptureIssuesForJQL(String jql) {
     	List<CaptureIssue> captureIssues = new ArrayList<>();
     	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
@@ -170,9 +185,24 @@ public class IssueServiceImpl implements IssueService {
                 .forEach(issue -> {
                 	CaptureResolution resolution = issue.getResolution() != null ? new CaptureResolution(issue.getResolution().getId(), 
                     		issue.getResolution().getName(), issue.getResolution().getSelf()) : null;
+                	Long parentId = null; String parentKey = null;
+                    if(issue.getIssueType().isSubtask()) {
+                    	IssueField parentIssueField = issue.getField("parent");
+                    	if(Objects.nonNull(parentIssueField)) {
+                    		JSONObject fieldValueMap = (JSONObject)parentIssueField.getValue();
+                        	if(Objects.nonNull(fieldValueMap)) {
+                        		try {
+                        			parentId = fieldValueMap.getLong("id");
+                            		parentKey = fieldValueMap.getString("key");
+                        		} catch(JSONException ex) {
+                        			log.error("Error while getting the parent values for the issue ", ex);
+                        		}
+                        	}
+                    	}
+                    }
                     captureIssues.add(new CaptureIssue(issue.getSelf(),
                             issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution,null));
+                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution,null, parentId, parentKey));
                 });
         return captureIssues;
     }
@@ -259,7 +289,7 @@ public class IssueServiceImpl implements IssueService {
         return testSectionResponse;
     }
 
-    @Override
+	@Override
     public CaptureIssue createIssue(HttpServletRequest request, String testSessionId, IssueCreateRequest createRequest) throws CaptureValidationException, RestClientException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
@@ -281,7 +311,22 @@ public class IssueServiceImpl implements IssueService {
         captureContextIssueFieldsService.populateContextFields(request, issue, createRequest.getContext());
         CaptureResolution resolution = issue.getResolution() != null ? new CaptureResolution(issue.getResolution().getId(), 
         		issue.getResolution().getName(), issue.getResolution().getSelf()) : null;
-        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution,null);
+        Long parentId = null; String parentKey = null;
+        if(issue.getIssueType().isSubtask()) {
+        	IssueField parentIssueField = issue.getField("parent");
+        	if(Objects.nonNull(parentIssueField)) {
+        		JSONObject fieldValueMap = (JSONObject)parentIssueField.getValue();
+            	if(Objects.nonNull(fieldValueMap)) {
+            		try {
+            			parentId = fieldValueMap.getLong("id");
+                		parentKey = fieldValueMap.getString("key");
+            		} catch(JSONException ex) {
+            			log.error("Error while getting the parent values for the issue ", ex);
+            		}
+            	}
+        	}
+        }
+        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution ,null, parentId, parentKey);
         if (StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {
@@ -422,7 +467,7 @@ public class IssueServiceImpl implements IssueService {
         CaptureIssue captureIssue = null;
         try {
             captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKey(issueKey), new Callable<CaptureIssue>() {
-                @Override
+				@Override
                 public CaptureIssue call() throws Exception {
                     CaptureIssue finalCaptureIssue = null;
                     URI targetUrl= UriComponentsBuilder.fromUriString(acHostModel.getBaseUrl())
@@ -474,10 +519,20 @@ public class IssueServiceImpl implements IssueService {
                             if(resolution != null) {
                                 captureResolution = new CaptureResolution(resolution.getLong("id"),resolution.getString("name"),new URI(resolution.getString("self")));
                             }
+                            Long parentId = null; String parentKey = null;
+                            if(Objects.nonNull(issuetype) && issuetype.getBoolean("subtask")) {
+                            	if(Objects.nonNull(fields)) {
+                            		JSONObject fieldValueMap = (JSONObject)fields.get("parent");
+                                	if(Objects.nonNull(fieldValueMap)) {
+                                		parentId = fieldValueMap.getLong("id");
+                                		parentKey = fieldValueMap.getString("key");
+                                	}
+                            	}                            	
+                            }
                             finalCaptureIssue = new CaptureIssue(new URI(issue.getString("self")), issue.getString("key"), issue.getLong("id"),
                                     issuetype != null ? issuetype.getString("iconUrl") : "", fields.getString("summary"), fields.getJSONObject("project").getLong("id"),
                                     fields.getJSONObject("project").getString("key"), fields.getJSONObject("reporter") != null ? fields.getJSONObject("reporter").getString("name") : "",
-                                    captureResolution, propertiesMap);
+                                    captureResolution, propertiesMap, parentId, parentKey);
                         }
                     }
                     return finalCaptureIssue;
