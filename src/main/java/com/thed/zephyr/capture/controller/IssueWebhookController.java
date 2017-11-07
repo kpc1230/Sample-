@@ -18,6 +18,7 @@ import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.jira.IssueService;
+import com.thed.zephyr.capture.service.jira.IssueWebHookHandler;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
@@ -42,24 +43,20 @@ public class IssueWebhookController {
 
     @Autowired
     private Logger log;
-
     @Autowired
     private SessionService sessionService;
-
     @Autowired
     private SessionActivityService sessionActivityService;
-
     @Autowired
     private CaptureI18NMessageSource i18n;
-
     @Autowired
     private PermissionService permissionService;
-
     @Autowired
     private IssueService issueService;
-
     @Autowired
     private ITenantAwareCache tenantAwareCache;
+    @Autowired
+    private IssueWebHookHandler issueWebHookHandler;
 
 
     @RequestMapping(value = "/created", method = RequestMethod.POST)
@@ -192,19 +189,15 @@ public class IssueWebhookController {
     @RequestMapping(value = "/deleted", method = RequestMethod.POST)
     public ResponseEntity issueDeleted(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode deletedIssueJson) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-        String ctid = acHostModel.getCtId();
         log.debug("Invoked IssueDelete event");
-        log.debug("JSON from webhook invoker : " + deletedIssueJson);
+        log.debug("JSON from web hook invoker : " + deletedIssueJson);
         try {
             if (null != deletedIssueJson && deletedIssueJson.has("issue")) {
                 JsonNode issueNode = deletedIssueJson.get("issue");
                 Long issueId = issueNode.get("id").asLong();
-                String issueKey = issueNode.get("id").asText();
                 if (null != issueId) {
+                    issueWebHookHandler.issueDeleteEventHandler(acHostModel, issueId);
                     tenantAwareCache.delete(acHostModel, ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + String.valueOf(issueId));
-                }
-                if (null != issueKey) {
-                    tenantAwareCache.delete(acHostModel, ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + issueKey);
                 }
 
             } else {
@@ -213,7 +206,7 @@ public class IssueWebhookController {
             }
 
         } catch (Exception e) {
-            log.warn("Unable to handle the issue delet webhook: ", e);
+            log.warn("Unable to handle the issue delete web hook: ", e);
             throw new CaptureRuntimeException("Unable to handle the issue delete webhook");
         }
         return new ResponseEntity(HttpStatus.NO_CONTENT);

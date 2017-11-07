@@ -48,4 +48,8 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
     AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user);
 
     Session findByCtIdAndJiraPropIndex(String ctId, String jiraPropIndex);
+
+    List<Session> findByCtIdAndRelatedIssueIds(String ctId, String relatedIssueId);
+
+    List<Session> findByCtIdAndIssuesRaised(String ctId, String issueRaisedId);
 }

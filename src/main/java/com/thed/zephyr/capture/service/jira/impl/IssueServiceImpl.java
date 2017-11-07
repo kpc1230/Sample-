@@ -137,8 +137,14 @@ public class IssueServiceImpl implements IssueService {
                             CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution, null, parentId, parentKey);
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
-        } catch (Exception exp) {
-            log.error("Exception while getting the issue from JIRA." + exp.getMessage(), exp);
+        } catch(RestClientException restClientException){
+            if (restClientException.getStatusCode().get().equals(404)){
+                log.warn("Issue wasn't found in Jira issueId:{} ctId:{}", issueIdOrKey, acHostModel.getCtId());
+                return null;
+            }
+            log.error("Exception while getting the issue from JIRA, the null value will be returned", restClientException);
+        } catch (Exception exception) {
+            log.error("Exception while getting the issue from JIRA, the null value will be returned", exception);
         }
         log.debug("ISSUE: --> {}", captureIssue.getSummary());
         return captureIssue;
@@ -445,18 +451,18 @@ public class IssueServiceImpl implements IssueService {
     }
 
     @Override
-    public void addTimeTrakingToIssue(Issue issue,DateTime sessionCreationOn, Long durationInMilliSeconds,String comment, AtlassianHostUser hostUser) {
+    public void addTimeTrakingToIssue(Issue issue, DateTime sessionCreationOn, Long durationInMilliSeconds, String comment, AtlassianHostUser hostUser) {
         try {
-            Long durationinMinitus = TimeUnit.MILLISECONDS.toMinutes(durationInMilliSeconds);
-            int min = java.lang.Math.toIntExact(durationinMinitus);
+            Long durationInMinutes = TimeUnit.MILLISECONDS.toMinutes(durationInMilliSeconds);
+            int min = java.lang.Math.toIntExact(durationInMinutes);
             if (min > 0) {
                 WorklogInput worklogInput = WorklogInput.create(issue.getSelf(), comment, sessionCreationOn, min);
                 postJiraRestClient.getIssueClient().addWorklog(issue.getWorklogUri(), worklogInput).claim();
             } else {
                 log.warn("Cannot log the time if it is zero min : {}", min);
             }
-        } catch (Exception exp) {
-            log.error("Exception while getting the issue from JIRA." + exp.getMessage(), exp);
+        } catch (Exception exception) {
+            log.error("Error during add tracking time into issueId:{}", issue.getId(), exception);
         }
     }
 
@@ -538,8 +544,8 @@ public class IssueServiceImpl implements IssueService {
                     return finalCaptureIssue;
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
-        } catch (Exception exp) {
-            log.error("Exception while getting the issue from JIRA." + exp.getMessage(), exp);
+        } catch (Exception exception) {
+            log.error("Exception while getting the issue from JIRA.", exception);
         }
         log.debug("ISSUE: --> {}", captureIssue != null ? captureIssue.getSummary() : "-");
         return captureIssue;

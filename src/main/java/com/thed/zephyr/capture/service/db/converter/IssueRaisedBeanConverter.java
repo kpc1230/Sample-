@@ -32,7 +32,7 @@ public class IssueRaisedBeanConverter implements DynamoDBTypeConverter<Set<Strin
         for (IssueRaisedBean issueRaisedBean:issues){
             result.add(issueRaisedBean.toJSON());
         }
-        return result;
+        return result.size() > 0?result:null;
 	}
 
 	@Override

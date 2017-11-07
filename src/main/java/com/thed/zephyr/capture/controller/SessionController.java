@@ -711,7 +711,7 @@ public class SessionController extends CaptureAbstractController{
 			} else {
 				NotesFilterStateUI notesFilterStateUI = new NotesFilterStateUI(request);
 				ActivityStreamFilterUI activityStreamFilterUI = new ActivityStreamFilterUI(notesFilterStateUI);
-				sessionActivities =  getSessionActivityItems(sessionActivities,activityStreamFilterUI,getUser());
+				sessionActivities =  getSessionActivityItems(sessionActivities, activityStreamFilterUI, getUser());
 			}
 			List<?> finalSessionActivities = sessionActivities.stream().map(new SessionActivityFunction(issueService, wikiParser, emojiUtil)).collect(Collectors.toList());
 			log.info("End of sessionActivities()");

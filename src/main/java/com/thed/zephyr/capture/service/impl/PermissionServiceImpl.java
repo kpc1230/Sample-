@@ -335,6 +335,9 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canSeeIssue(String user, CaptureIssue issue) {
+        if(issue == null){
+            return false;
+        }
         boolean canSeeIssue = checkPermissionForType(issue.getProjectId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
         return canSeeIssue;
     }
@@ -353,6 +356,10 @@ public class PermissionServiceImpl implements PermissionService {
             return canSeeIssue(user, issue);
         } else if (sessionActivity instanceof IssueRaisedSessionActivity) {
             Long issueId = ((IssueRaisedSessionActivity) sessionActivity).getIssueId();
+            CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
+            return canSeeIssue(user, issue);
+        } else if (sessionActivity instanceof IssueUnraisedSessionActivity){
+            Long issueId = ((IssueUnraisedSessionActivity) sessionActivity).getIssueId();
             CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
             return canSeeIssue(user, issue);
         }

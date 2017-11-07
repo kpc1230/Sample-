@@ -1414,15 +1414,25 @@ public class SessionServiceImpl implements SessionService {
 			List<CaptureIssue> relatedIssues = Lists.newArrayList();
 			if(Objects.nonNull(session.getRelatedIssueIds())) {
 				for(Long issueId : session.getRelatedIssueIds()) {
-					CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
-					relatedIssues.add(issue);
+					try {
+						CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
+						relatedIssues.add(issue);
+					} catch (Exception exception) {
+						log.warn("Error during getting related issue from cache or Jira issueId:{} sessionId:{} ctId:{}", issueId, session.getId(), session.getCtId(), exception);
+						// Here should be code add error message into UI response
+					}
 				}
 			}
 			List<CaptureIssue> raisedIssues = Lists.newArrayList();
 			if(Objects.nonNull(session.getIssuesRaised())) {
 				for(IssueRaisedBean issueRaisedBean : session.getIssuesRaised()) {
-					CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueRaisedBean.getIssueId()));
-					raisedIssues.add(issue);
+					try {
+						CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueRaisedBean.getIssueId()));
+						raisedIssues.add(issue);
+					} catch (Exception exception) {
+						log.warn("Error during getting raised issue from cache or Jira issueId:{} sessionId:{} ctId:{}", issueRaisedBean.getIssueId(), session.getId(), session.getCtId(), exception);
+						// Here should be code add error message into UI response
+					}
 				}
 			}
 
