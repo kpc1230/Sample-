@@ -10,6 +10,8 @@ import com.thed.zephyr.capture.addon.impl.AddonInfoServiceImpl;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepositoryImpl;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import com.thed.zephyr.capture.util.RequestLocaleResolver;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.exception.VelocityException;
@@ -26,7 +28,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.core.env.Environment;
 import org.springframework.ui.velocity.VelocityEngineFactory;
 import org.springframework.web.servlet.LocaleResolver;
-import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 
 import java.io.IOException;
@@ -102,7 +103,7 @@ public class AddonApplication extends SpringBootServletInitializer {
 
     @Bean(name = "localeResolver")
     public LocaleResolver localeResolver() {
-        AcceptHeaderLocaleResolver ahlr = new AcceptHeaderLocaleResolver();
+    	RequestLocaleResolver ahlr = new RequestLocaleResolver();
         ahlr.setDefaultLocale(Locale.US);
         return ahlr;
     }
