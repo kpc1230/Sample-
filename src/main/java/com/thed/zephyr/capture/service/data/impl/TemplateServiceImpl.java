@@ -206,5 +206,21 @@ public class TemplateServiceImpl implements TemplateService {
 	protected List<Variable> getUserVariables(String userName){
 		return variableService.getVariables(userName).getContent();
 	}
+	
+	public void deleteTemplatesByCtIdAndProject(String ctId, Long projectId) {
+		int index = 0, maxLimit = 10;
+		Page<Template> templatePage = repository.findByCtIdAndProjectId(ctId, projectId, getPageRequest(index, maxLimit));
+		for(Template template : templatePage.getContent()) {
+          	deleteTemplate(template.getId());
+        }
+		long totalCount = templatePage.getTotalElements();
+		int loopCount = ((int) totalCount / maxLimit);
+        while(loopCount-- > 0) {
+        	templatePage = repository.findByCtIdAndProjectId(ctId,projectId, getPageRequest(index, maxLimit));
+        	for(Template template : templatePage.getContent()) {
+              	deleteTemplate(template.getId());
+            }
+        }
+	}
 
 }

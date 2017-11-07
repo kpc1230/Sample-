@@ -214,21 +214,21 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canCreateSession(String user, CaptureProject project) {
-        if (checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
+        if (project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
             return true;
         return false;
     }
 
     @Override
     public boolean canBeAssignedSession(String user, CaptureProject project) {
-        if (checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
+        if (project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
             return true;
         return false;
     }
 
     @Override
     public boolean canAssignSession(String user, CaptureProject project) {
-        if (checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
+        if (project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
             return true;
         return false;
     }
@@ -344,7 +344,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canCreateInProject(String user, CaptureProject project) {
-        boolean canCreate = checkPermissionForType(project.getId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
+        boolean canCreate = project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
         return canCreate;
     }
 

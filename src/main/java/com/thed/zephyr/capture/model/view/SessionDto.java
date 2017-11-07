@@ -79,9 +79,9 @@ public class SessionDto {
     	this.user = session.getAssignee();
     	this.creator = session.getCreator();
     	this.shared = session.isShared();
-    	this.projectId = String.valueOf(session.getProject().getId());
-    	this.projectKey = session.getProject().getKey();
-    	this.projectName = session.getProject().getName();
+    	this.projectId = String.valueOf(session.getProject() != null ? session.getProject().getId() : "");
+    	this.projectKey = session.getProject() != null ? session.getProject().getKey() : "";
+    	this.projectName = session.getProject() != null ? session.getProject().getName() : "";
     	this.additionalInfo = session.getAdditionalInfo();
     	this.rawAdditionalInfo = session.getRawAdditionalInfo();
     	this.isActive = isActive;

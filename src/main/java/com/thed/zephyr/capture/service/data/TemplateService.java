@@ -60,4 +60,6 @@ public interface TemplateService {
 
 	TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit);
 	TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit);
+	
+	void deleteTemplatesByCtIdAndProject(String ctId, Long projectId);
 }
