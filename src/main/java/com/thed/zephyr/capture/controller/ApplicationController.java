@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -207,5 +208,19 @@ public class ApplicationController {
     		log.error("Erro in reindex() -> ", ex);
     		throw new CaptureRuntimeException(ex);
     	}
+    }
+    
+    @GetMapping(value = "/checkBESupportedVersion")
+    public ResponseEntity<?> checkBESupportedVersion(@RequestParam String currentBEVersion) {
+    	log.info("Start of checkBESupportedVersion() --> params - " + currentBEVersion);
+    	String supportedBEversion = dynamicProperty.getStringProp("current.supported.be.version", "3.0.0.0").get();
+    	boolean flag = false;
+    	if(supportedBEversion.trim().equals(currentBEVersion)) {
+    		flag = true;
+    	}
+    	Map<String, Object> response = new HashMap<>();
+    	response.put("result", flag);
+    	log.info("End of checkBESupportedVersion()");
+    	return ResponseEntity.ok(response);
     }
 }
