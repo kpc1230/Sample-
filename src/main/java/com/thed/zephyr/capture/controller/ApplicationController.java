@@ -211,6 +211,7 @@ public class ApplicationController {
     }
     
     @GetMapping(value = "/checkBESupportedVersion")
+    @IgnoreJwt
     public ResponseEntity<?> checkBESupportedVersion(@RequestParam String currentBEVersion) {
     	log.info("Start of checkBESupportedVersion() --> params - " + currentBEVersion);
     	String supportedBEversion = dynamicProperty.getStringProp("current.supported.be.version", "3.0.0.0").get();
