@@ -1,8 +1,8 @@
 {
   "key": "${addonKey}",
   "baseUrl": "${baseUrl}${server.contextPath}",
-  "name":"Capture For Cloud",
-  "description": "Welcome to Capture for Cloud, Visual Feedback and Exploratory Testing Tool for Jira On Demand!",
+  "name":"Capture For Jira",
+  "description": "Welcome to Capture for Jira, Visual Feedback and Exploratory Testing Tool for Jira On Demand!",
   "authentication": {
     "type": "jwt"
   },
