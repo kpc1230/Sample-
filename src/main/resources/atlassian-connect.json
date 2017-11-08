@@ -25,7 +25,8 @@
       {
         "url": "/getting-started",
         "name": {
-          "value": "Getting Started"
+          "value": "Getting Started",
+          "i18n": "zephyr.capture.top.menu.getting.started.label"
         },
         "key": "getting-started-page",
         "weight": 2,
@@ -34,7 +35,8 @@
       {
         "url": "/get-browser-extension",
         "name": {
-          "value": "Get Browser Extension"
+          "value": "Get Browser Extension",
+          "i18n": "zephyr.capture.top.menu.get.extension.label"
         },
         "key": "get-browser-extension-page",
         "weight": 3,
@@ -48,7 +50,8 @@
       {
         "url": "/browseTestSessions?projectId={project.id}&projectKey={project.key}",
         "name": {
-          "value": "Browse Test Sessions"
+          "value": "Browse Test Sessions",
+          "i18n": "zephyr.capture.top.menu.testsessions.title"
         },
         "key": "browse-test-session-url",
         "weight": 1,
@@ -645,5 +648,16 @@
       }
     ]
   },
-  "scopes": ["READ", "WRITE","ADMIN","ACT_AS_USER"]
+  "scopes": ["READ", "WRITE","ADMIN","ACT_AS_USER"],
+  "translations": {
+    "paths": {
+      "fr-FR": "/capture/i18n/descriptor/fr_FR.json",
+      "ru-RU": "/capture/i18n/descriptor/ru_RU.json",
+      "de-DE": "/capture/i18n/descriptor/de_DE.json",
+      "pt-PT": "/capture/i18n/descriptor/pt_PT.json",
+      "es-ES": "/capture/i18n/descriptor/es_ES.json",
+      "ja-JP": "/capture/i18n/descriptor/ja_JP.json",
+      "ko-KR": "/capture/i18n/descriptor/ko_KR.json"
+    }
+  }
 }
