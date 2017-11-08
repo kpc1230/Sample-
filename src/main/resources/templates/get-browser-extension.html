@@ -30,7 +30,7 @@
 
             <p id="capture-extension-download-message">
                 Download the extension for your browser to create issues directly from any page, capture and annotate screenshots, manage test sessions and much more&hellip;
-                <a class="bf-track" href="https://confluence.atlassian.com/display/BONFIRE/Bonfire+User+Guide">Learn more</a>
+                <a class="bf-track" href="https://zephyrdocs.atlassian.net/wiki/spaces/CAPTURE/overview" th:target="_parent">Learn more</a>
             </p>
 
             <div class="bf-gs-download">
@@ -38,7 +38,7 @@
 
                 <div class="bf-gs-download" th:switch="${browser}">
                     <p th:case="${'Unknown'}">Unfortunately we do not currently support your browser.</p>
-                    <a th:target="_parent" th:case="${'Chrome'}" href="https://chrome.google.com/webstore/detail/jira-capture/mmmjimhmoodbiejkjgcecaoibmochpnj" id="capture-download-button"
+                    <a th:target="_parent" th:case="${'Chrome'}" th:href="${downloadUrl}" id="capture-download-button"
                        th:class="${'bf-gs-download-btn bf-gs-browser-'+#strings.toLowerCase(browser)}"
                        th:onclick="'getBonfire(\'' + ${browser} + '\');'" >
                         <span class="bf-gs-button-right"><strong>Install Capture for JIRA</strong> at the Chrome Store</span>
