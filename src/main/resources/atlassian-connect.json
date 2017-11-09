@@ -50,7 +50,7 @@
       {
         "url": "/browseTestSessions?projectId={project.id}&projectKey={project.key}",
         "name": {
-          "value": "Browse Test Sessions",
+          "value": "Browse Test sessions",
           "i18n": "zephyr.capture.top.menu.testsessions.title"
         },
         "key": "browse-test-session-url",
@@ -107,7 +107,8 @@
           "height": "805px"
         },
         "name": {
-          "value": "Test Sessions"
+          "value": "Test sessions",
+          "i18n": "zephyr.capture.project.tab.title"
         },
         "conditions": [{
           "condition": "user_is_logged_in",
@@ -188,7 +189,8 @@
       {
         "key": "capture-test-sessions-sidebar-webpanel",
         "name": {
-          "value": "Test Sessions"
+          "value": "Test sessions",
+          "i18n": "zephyr.capture.project.tab.title"
         },
         "url": "/public/rest/testing?projectId={project.id}&projectKey={project.key}&issueId={issue.id}&issueKey={issue.key}&boardsPage=false",
         "location": "com.atlassian.bonfire.plugin:capture-test-sessions",
@@ -367,10 +369,12 @@
         "weight": 20,
         "url": "/projects/{project.key}?selectedItem=${addonKey}__project-centric-view-test-sessions-page",
         "name": {
-          "value": "Test Sessions"
+          "value": "Test sessions",
+          "i18n": "zephyr.capture.project.tab.title"
         },
         "tooltip": {
-          "value": "Test Sessions"
+          "value": "Test sessions",
+          "i18n": "zephyr.capture.project.tab.title"
         },
         "key": "project-centric-view-test-sessions-page",
         "params": {

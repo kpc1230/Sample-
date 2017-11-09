@@ -1,5 +1,6 @@
 {
   "zephyr.capture.top.menu.testsessions.title": "Afficher les sessions d''essai",
   "zephyr.capture.top.menu.getting.started.label": "Premiers pas",
-  "zephyr.capture.top.menu.get.extension.label": "Obtenir l''extension du navigateur"
+  "zephyr.capture.top.menu.get.extension.label": "Obtenir l''extension du navigateur",
+  "zephyr.capture.project.tab.title": "Sessions d''essai"
 }
