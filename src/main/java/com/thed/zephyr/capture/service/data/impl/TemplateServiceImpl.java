@@ -95,7 +95,7 @@ public class TemplateServiceImpl implements TemplateService {
 	public TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit) {
 		//Since this Crud repository doesn't support OR query we had to make 2 calls
 		Page<Template> tmp1 = repository.findByCtIdAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),userName, getPageRequest(offset, limit));
-		Page<Template> tmp2 = repository.findByCtIdAndSharedAndCreatedBy(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, userName, getPageRequest(offset, limit));
+		Page<Template> tmp2 = repository.findByCtIdAndShared(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository),true, getPageRequest(offset, limit));
 		return mergeTemplates(tmp1, tmp2, offset, limit);
 	}
 
