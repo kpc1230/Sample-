@@ -82,19 +82,6 @@
         },
         "key": "wiki-help",
         "location": "none"
-      },
-      {
-        "url": "/projectTestSessions?projectId={project.id}&projectKey={project.key}",
-        "name": {
-          "value": "Test Sessions"
-        },
-        "key": "capture-test-sessions-url",
-        "location": "none",
-        "conditions": [
-          {
-            "condition": "user_is_logged_in"
-          }
-        ]
       }
     ],
     "adminPages":[
@@ -111,6 +98,29 @@
       }
     ],
     "webPanels": [
+      {
+        "key": "project-centric-test-sessions-web-panel",
+        "url": "/projectTestSessions?projectId={project.id}&projectKey={project.key}",
+        "location": "${addonKey}__project-centric-view-test-sessions-page",
+        "layout": {
+          "width": "100%",
+          "height": "805px"
+        },
+        "name": {
+          "value": "Test Sessions"
+        },
+        "conditions": [{
+          "condition": "user_is_logged_in",
+          "invert": false
+        },
+          {
+            "condition": "feature_flag",
+            "params": {
+              "featureKey": "com.atlassian.jira.projects.ProjectCentricNavigation.Disabled"
+            },
+            "invert": true
+          }]
+      },
       {
         "key" : "bonfiremodule",
         "name": {
@@ -352,17 +362,17 @@
         }
       },
       {
-        "context": "page",
-        "location": "jira.project.sidebar.navigation",
+        "context": "product",
+        "location": "jira.project.sidebar.plugins.navigation",
         "weight": 20,
-        "url": "capture-test-sessions-url",
+        "url": "/projects/{project.key}?selectedItem=${addonKey}__project-centric-view-test-sessions-page",
         "name": {
           "value": "Test Sessions"
         },
         "tooltip": {
           "value": "Test Sessions"
         },
-        "key": "capture-test-sessions",
+        "key": "project-centric-view-test-sessions-page",
         "params": {
           "iconClass": "aui-icon-large icon-sidebar-test-sessions"
         },
