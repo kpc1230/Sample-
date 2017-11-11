@@ -50,6 +50,10 @@ public class AcHostModel extends AtlassianHost implements Serializable{
         this.setDescription(atlassianHost.getDescription());
         this.setServiceEntitlementNumber(atlassianHost.getServiceEntitlementNumber());
         this.setAddonInstalled(atlassianHost.isAddonInstalled());
+        this.setCreatedBy(atlassianHost.getCreatedBy());
+        this.setLastModifiedBy(atlassianHost.getLastModifiedBy());
+        this.setLastModifiedDate(atlassianHost.getLastModifiedDate() != null?atlassianHost.getLastModifiedDate():Calendar.getInstance());
+        this.setCreatedDate(atlassianHost.getCreatedDate() != null?atlassianHost.getCreatedDate():Calendar.getInstance());
     }
 
     public String getCtId() {
