@@ -9,9 +9,7 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Created by aliakseimatsarski on 8/11/17.
@@ -151,12 +149,15 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
     private AtlassianHost updateExistingHost(AtlassianHost atlassianHost){
         if (atlassianHost instanceof AcHostModel){
             removeTenantFromCache(atlassianHost);
+            ((AcHostModel)atlassianHost).setLastModifiedDate(Calendar.getInstance());
             return  acHostModelRepository.save((AcHostModel)atlassianHost);
         }
         AcHostModel oldAcHostModel = (AcHostModel)findOne(atlassianHost.getClientKey());
         AcHostModel acHostModel = new AcHostModel(atlassianHost);
         acHostModel.setCtId(oldAcHostModel.getCtId());
+        acHostModel.setCreatedDate(oldAcHostModel.getCreatedDate() != null?oldAcHostModel.getCreatedDate():acHostModel.getCreatedDate());
         acHostModel.setStatus(atlassianHost.isAddonInstalled()? AcHostModel.TenantStatus.ACTIVE: AcHostModel.TenantStatus.UNINSTALLED);
+        log.info("AcHostModel updated installed:{}", atlassianHost.isAddonInstalled());
         removeTenantFromCache(atlassianHost);
 
         return  acHostModelRepository.save(acHostModel);
