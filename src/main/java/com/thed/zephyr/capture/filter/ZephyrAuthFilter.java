@@ -1,7 +1,5 @@
 package com.thed.zephyr.capture.filter;
 
-import com.atlassian.connect.spring.AtlassianHostRepository;
-import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.AtlassianConnectProperties;
 import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
@@ -12,11 +10,12 @@ import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
-import com.thed.zephyr.capture.util.Global.*;
+import com.thed.zephyr.capture.util.Global.TokenHolder;
 import com.thed.zephyr.capture.util.security.AESEncryptionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,7 +27,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -98,6 +96,7 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
                         JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(userKey)), new JWTClaimsSet());
                         //Put JwtAuthentication into SecurityContext to mock JwtAuthenticationFilter behavior and allow RequireAuthenticationHandlerInterceptor pass request
                        SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
+                        MDC.put(ApplicationConstants.MDC_TENANTKEY, acHostModel.getClientKey());
                         return true;
                     }else {
                         return false;

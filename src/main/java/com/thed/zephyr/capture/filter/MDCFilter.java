@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.filter;
 
 
 import com.atlassian.connect.spring.AtlassianHostRepository;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
@@ -14,12 +15,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-
-import javax.servlet.*;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URL;
 import java.util.Optional;
 
 
@@ -41,12 +41,14 @@ public class MDCFilter extends OncePerRequestFilter {
         if (optionalJwt.isPresent()) {
             String tenantTokenObject  = optionalJwt.get().split("\\.")[1];
             String tenantJsonObj = CaptureUtil.decodeBase64(tenantTokenObject);
-            String tenantKey = new ObjectMapper().readTree(tenantJsonObj).get("iss").textValue();
+            JsonNode obj = new ObjectMapper().readTree(tenantJsonObj);
+            String tenantKey = obj.has("clientKey") ? obj.get("clientKey").textValue() : obj.get("iss").textValue();
             if(tenantKey == null){
                 log.warn("The tenantKey is null from jwt:{}", optionalJwt.get());
                 MDC.put(ApplicationConstants.MDC_TENANTKEY, ApplicationConstants.SYSTEM_KEY);
             } else {
                 log.debug("Stored tenantKey into logger {}",tenantKey);
+                MDC.put(ApplicationConstants.MDC_TENANTKEY, tenantKey);
             }
         }
         else{
