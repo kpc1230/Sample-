@@ -1,5 +1,6 @@
 {
   "key": "${addonKey}",
+  "apiVersion": 3,
   "baseUrl": "${baseUrl}${server.contextPath}",
   "name":"Capture For Jira",
   "description": "Welcome to Capture for Jira, Visual Feedback and Exploratory Testing Tool for Jira On Demand!",
