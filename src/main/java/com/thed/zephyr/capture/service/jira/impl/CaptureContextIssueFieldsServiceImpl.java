@@ -6,6 +6,7 @@ import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.JiraConstants;
 import com.thed.zephyr.capture.util.UserAgentSniffer;
 import org.apache.commons.lang3.StringUtils;
@@ -21,7 +22,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,7 +57,8 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String baseUri = host.getHost().getBaseUrl();
 
-        String userAgent = req.getHeader("user-agent");
+        String userAgent = CaptureUtil.getUserAgent(req);
+
         StringBuilder sbUserAgent = new StringBuilder().append(userAgent);
         if (StringUtils.isNotBlank(userAgent)) {
             UserAgentSniffer.SniffedBrowser browser = UserAgentSniffer.sniffBrowser(userAgent);

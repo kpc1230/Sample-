@@ -9,6 +9,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.Global.TokenHolder;
 import com.thed.zephyr.capture.util.security.AESEncryptionUtils;
@@ -80,7 +81,7 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
             if (StringUtils.isNotBlank(decodedKey)) {
                 String[] keyParts = decodedKey.split("__");
                 log.debug("Decoded access key : " + decodedKey);
-                String useragent = request.getHeader(ApplicationConstants.USER_AGENT);
+                String useragent = CaptureUtil.getUserAgent(request);
                 log.debug("User-Agent from request received : " + useragent);
                 if (StringUtils.endsWith(decodedKey, "__" + useragent)) {
                     String clientKey = keyParts[0];

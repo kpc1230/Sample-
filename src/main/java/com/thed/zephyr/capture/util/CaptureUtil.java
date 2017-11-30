@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -314,5 +315,19 @@ public class CaptureUtil {
 	}
     public  static String createADGFlagCacheKey(String userKey){
         return String.valueOf(ApplicationConstants.ADG3_FLAG_CACHE_PREFIX + "_" + userKey);
+    }
+
+    /**
+     * Get UserAgent from request : for firefox param is Browser-Agent with user-agent:chrome-extension
+     * @param req
+     * @return
+     */
+    public static String getUserAgent(HttpServletRequest req) {
+        String browserAgent = req.getHeader("Browser-Agent");
+        String userAgent = req.getHeader("user-agent");
+        if(userAgent.contains("chrome-extension")){
+            userAgent = browserAgent;
+        }
+        return userAgent;
     }
 }

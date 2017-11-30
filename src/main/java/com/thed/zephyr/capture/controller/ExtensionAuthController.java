@@ -7,6 +7,7 @@ import com.thed.zephyr.capture.model.ExtensionUser;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.service.extension.JiraAuthService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.Global.TokenHolder;
 import com.thed.zephyr.capture.util.security.AESEncryptionUtils;
@@ -22,6 +23,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.Map;
 
@@ -52,7 +54,8 @@ public class ExtensionAuthController {
 
     @IgnoreJwt
     @RequestMapping(value = "/rest/authenticate/be", method = RequestMethod.POST)
-    ResponseEntity<?> validateCredentials(@Valid @RequestBody ExtensionUser extensionUser, @RequestHeader(value = "User-Agent") String userAgent, Errors errors) {
+    ResponseEntity<?> validateCredentials(@Valid @RequestBody ExtensionUser extensionUser, HttpServletRequest request, Errors errors) {
+        String userAgent = CaptureUtil.getUserAgent(request);
         log.debug("Validating JIRA user credentials : userAgent : " + userAgent);
         Map<String,String> respMap = new HashedMap();
         boolean success = jiraAuthService.authenticateWithJira(extensionUser.getUsername(), extensionUser.getPassword(), extensionUser.getBaseUrl());
