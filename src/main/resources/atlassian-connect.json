@@ -96,6 +96,13 @@
           "condition": "user_is_logged_in",
           "invert": false
         }]
+      },
+      {
+        "url": "/zephyr-products-info",
+        "key": "zephyr-products-info",
+        "name": {
+          "value": "Zephyr Products"
+        }
       }
     ],
     "webPanels": [
@@ -326,6 +333,19 @@
             "invert": false
           }
         ]
+      },
+      {
+        "url": "zephyr-products-info",
+        "key": "zephyr-products",
+        "context": "page",
+        "location": "capture-admin/capture-admin-config",
+        "weight": 10,
+        "tooltip": {
+          "value":    "Zephyr Products"
+        },
+        "name": {
+          "value":    "Zephyr Products"
+        }
       },
       {
         "context": "page",

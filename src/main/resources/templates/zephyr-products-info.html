@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8"/>
+    <title>Zephyr Products Info</title>
+    <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui.min.css" media="all" />
+    <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui-experimental.min.css" media="all" />
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-experimental.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-datepicker.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-soy.min.js"></script>
+    <script th:src="@{js/analytics/capture-analytics.js}"></script>
+    <link rel="stylesheet" th:href="@{css/zephyr-products.css}" />
+</head>
+<body class="nl">
+<div id="main-content" class="content-container get-bonfire-container">
+    <div class="bf-gs-section">
+        <div class="bf-gs-content">
+            <div class="bf-gs-logo-container">
+                <h2 class="zephyr-product-name">Zephyr For Jira</h2>
+            </div>
+
+
+            <a class="crosssale-banner"
+               th:href="${xdm_e} + '/plugins/servlet/upm/marketplace/search?q=zephyr%20for%20jira'"
+               id="zfj-banner"
+               th:target="_parent">
+                <!-- some text zfj-->
+            </a>
+
+
+            <br />
+            <br />
+
+             <div class="bf-gs-logo-container">
+                <h2 class="zephyr-product-name">Zephyr Enterprise Platform</h2>
+            </div>
+
+
+            <a class="crosssale-banner"
+               href="https://marketplace.atlassian.com/plugins/com.thed.jira.ext.rpc/cloud/overview"
+               id="zee-banner"
+               th:target="_parent">
+                <!-- some text zee-->
+            </a>
+
+
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript" th:inline="javascript" id="connect-loader" data-options="sizeToParent:true;">
+    //<![CDATA[
+
+    (function() {
+        var getUrlParam = function (param) {
+            var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
+            return decodeURIComponent(codedParam);
+        };
+
+        var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
+        var options = document.getElementById('connect-loader').getAttribute('data-options');
+
+        var script = document.createElement("script");
+        script.src = baseUrl + '/atlassian-connect/all.js';
+
+        var style = document.createElement("link");
+        style.rel = "stylesheet";
+        style.href = baseUrl + '/atlassian-connect/all.css';
+        if(options) {
+            script.setAttribute('data-options', options);
+        }
+
+        document.getElementsByTagName("head")[0].appendChild(script);
+        document.getElementsByTagName("head")[0].appendChild(style);
+
+
+    })();
+
+    // ]]>
+</script>
+
+
+</body>
+</html>
