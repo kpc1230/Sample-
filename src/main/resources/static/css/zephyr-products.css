@@ -133,16 +133,8 @@ a.bf-gs-download-btn:active {
 
 .crosssale-banner{
     display: block;
-    width: 1220px;
-    height: 176px;
+    width: 100%;
+    height: 100%;
     border: none;
     text-decoration: none;
-}
-
-#zfj-banner{
-    background: transparent url(../images/zfj-banner.png) no-repeat 0 0;
-}
-
-#zee-banner{
-    background: transparent url(../images/zee-banner.png) no-repeat 0 0;
 }

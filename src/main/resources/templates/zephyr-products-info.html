@@ -23,13 +23,11 @@
             </div>
 
 
-            <a class="crosssale-banner"
-               th:href="${xdm_e} + '/plugins/servlet/upm/marketplace/search?q=zephyr%20for%20jira'"
+            <a th:href="${xdm_e} + '/plugins/servlet/upm/marketplace/search?q=zephyr%20for%20jira'"
                id="zfj-banner"
                th:target="_parent">
-                <!-- some text zfj-->
+                <img class="crosssale-banner" th:src="@{images/zfj-banner.png}" />
             </a>
-
 
             <br />
             <br />
@@ -39,11 +37,10 @@
             </div>
 
 
-            <a class="crosssale-banner"
-               href="https://marketplace.atlassian.com/plugins/com.thed.jira.ext.rpc/cloud/overview"
+            <a href="https://marketplace.atlassian.com/plugins/com.thed.jira.ext.rpc/cloud/overview"
                id="zee-banner"
                th:target="_parent">
-                <!-- some text zee-->
+                <img class="crosssale-banner" th:src="@{images/zee-banner.png}" />
             </a>
 
 
