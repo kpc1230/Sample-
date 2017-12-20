@@ -41,8 +41,8 @@ public class AttachmentController {
     public ResponseEntity<String> uploadAttachments(
             @RequestParam("issueKey") String issueKey,
             @RequestParam("files") MultipartFile[] multipartFiles) {
-        String fullIconUrl = attachmentService.addAttachments(multipartFiles,issueKey);
-        log.info("UploadAttachments() --> for IssueKey {} " + issueKey);
+        log.info("UploadAttachments() --> for issueKey:{} number attachments:{}", issueKey, multipartFiles.length);
+        String fullIconUrl = attachmentService.addAttachments(multipartFiles, issueKey);
         return new ResponseEntity<>(fullIconUrl,HttpStatus.OK);
     }
 
@@ -51,20 +51,20 @@ public class AttachmentController {
             @RequestParam("issueKey") String issueKey,
             @RequestParam(value = "testSessionId",required = false) String testSessionId,
             @RequestBody String requestBody) {
-        log.info("UploadAttachments() --> for IssueKey {} " + requestBody);
+        log.info("UploadAttachments() --> for issueKey:{} testSessionId:{}", issueKey, testSessionId);
         final JSONArray json;
         try {
             json = new JSONArray(requestBody);
-            String fullIconUrl = attachmentService.addAttachmentsByThreads(issueKey,testSessionId,json);
-            return new ResponseEntity<>(new AttachmentResponse(fullIconUrl),HttpStatus.OK);
+            String fullIconUrl = attachmentService.addAttachmentsByThreads(issueKey, testSessionId, json);
+            return new ResponseEntity<>(new AttachmentResponse(fullIconUrl), HttpStatus.OK);
         } catch(CaptureRuntimeException e) {
-            log.error("Error adding attachment",e);
+            log.error("Error adding attachment" ,e);
             throw e;
         } catch (JSONException e) {
-            log.error("JSON Error adding attachment",e);
-            throw new CaptureRuntimeException(i18n.getMessage("rest.resource.malformed.json"),e);
+            log.error("JSON Error adding attachment", e);
+            throw new CaptureRuntimeException(i18n.getMessage("rest.resource.malformed.json"), e);
         } catch(RestClientException e) {
-            log.error("Error adding attachment",e);
+            log.error("Error adding attachment", e);
             JSONArray errorArray = new JSONArray();
             try {
                 e.getErrorCollections().stream().forEach(errorCollection -> {
@@ -72,7 +72,7 @@ public class AttachmentController {
                         try {
                             JSONObject jsonObject = new JSONObject();
                             if(StringUtils.startsWith(errorMessage,"Issue does not exist")) {
-                                jsonObject.put("errorMessage", i18n.getMessage("file.error.issue.key.invalid",new Object[]{issueKey}));
+                                jsonObject.put("errorMessage", i18n.getMessage("file.error.issue.key.invalid", new Object[]{issueKey}));
                             } else {
                                 jsonObject.put("errorMessage", errorMessage);
                             }
@@ -83,13 +83,13 @@ public class AttachmentController {
                     });
                 });
                 JSONObject responseJson = new JSONObject();
-                responseJson.put("errors",errorArray);
-                return new ResponseEntity<>(responseJson.toString(),HttpStatus.BAD_REQUEST);
+                responseJson.put("errors", errorArray);
+                return new ResponseEntity<>(responseJson.toString(), HttpStatus.BAD_REQUEST);
             } catch (JSONException jsonEx) {
-                log.error("Error Adding Value to JSON",jsonEx);
+                log.error("Error Adding Value to JSON", jsonEx);
             }
         } catch(Exception e) {
-            log.error("Error adding attachment",e);
+            log.error("Error adding attachment", e);
             throw new CaptureRuntimeException(e);
         }
         return new ResponseEntity<>(HttpStatus.OK);
