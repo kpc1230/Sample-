@@ -53,7 +53,7 @@ public class Global {
     @Autowired
     private CJiraRestClientFactory cJiraRestClientFactory;
 
-    @Bean
+    @Bean(destroyMethod="close")
     @Primary
     @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
     public JiraRestClient createGetJiraRestClient(){
@@ -75,7 +75,7 @@ public class Global {
      *
      * @return
      */
-    @Bean(name = "jiraRestClientPOST")
+    @Bean(name = "jiraRestClientPOST", destroyMethod="close")
     @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
     public JiraRestClient createPostJiraRestClient(){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

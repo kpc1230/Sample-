@@ -83,7 +83,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         // Validate the JSON objecta
         try {
             for (MultipartFile multipartFile : multipartFiles) {
-                AttachmentInput attachmentInput = new AttachmentInput(multipartFile.getOriginalFilename(),multipartFile.getInputStream());
+                AttachmentInput attachmentInput = new AttachmentInput(multipartFile.getOriginalFilename(), multipartFile.getInputStream());
                 postJiraRestClient.getIssueClient().addAttachments(issue.getAttachmentsUri(), attachmentInput).claim();
             }
         } catch(IOException e) {

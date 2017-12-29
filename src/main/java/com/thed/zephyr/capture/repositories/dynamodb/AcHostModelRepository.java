@@ -12,8 +12,8 @@ import java.util.List;
  */
 @Repository
 public interface AcHostModelRepository extends CrudRepository<AcHostModel, String> {
-    public List<AcHostModel> findByClientKey(String clientKey);
-    public List<AcHostModel> findByBaseUrl(String baseUrl);
+    List<AcHostModel> findByClientKey(String clientKey);
+    List<AcHostModel> findByBaseUrl(String baseUrl);
     @EnableScan
     List<AcHostModel> findAll();
 }

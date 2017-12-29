@@ -1,5 +1,7 @@
 package com.thed.zephyr.capture.filter;
 
+import com.atlassian.connect.spring.AtlassianHost;
+import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.AtlassianConnectProperties;
 import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
@@ -8,6 +10,7 @@ import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepositoryImpl;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
@@ -41,7 +44,7 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
     @Autowired
     DynamicProperty dynamicProperty;
     @Autowired
-    private AcHostModelRepository acHostModelRepository;
+    private AtlassianHostRepository atlassianHostRepository;
     @Autowired
     private TokenHolder tokenHolder;
 
@@ -92,12 +95,12 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
                     if (!validateKeyExpiry(timeInMilliSec)) {
                         return false;
                     }
-                    AcHostModel acHostModel = acHostModelRepository.findOne(clientKey);
-                    if(null != acHostModel) {
-                        JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(userKey)), new JWTClaimsSet());
+                    AtlassianHost atlassianHost = ((DynamoDBAcHostRepositoryImpl)atlassianHostRepository).findByCtId(clientKey);
+                    if(null != atlassianHost) {
+                        JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(atlassianHost, Optional.ofNullable(userKey)), new JWTClaimsSet());
                         //Put JwtAuthentication into SecurityContext to mock JwtAuthenticationFilter behavior and allow RequireAuthenticationHandlerInterceptor pass request
                        SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
-                        MDC.put(ApplicationConstants.MDC_TENANTKEY, acHostModel.getClientKey());
+                        MDC.put(ApplicationConstants.MDC_TENANTKEY, atlassianHost.getClientKey());
                         return true;
                     }else {
                         return false;

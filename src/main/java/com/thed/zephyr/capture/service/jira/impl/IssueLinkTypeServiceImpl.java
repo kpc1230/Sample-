@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -40,7 +41,19 @@ public class IssueLinkTypeServiceImpl implements IssueLinkTypeService {
 
     @Override
     public List<IssuelinksType> getIssuelinksType(AtlassianHostUser hostUser) {
-        return Lists.newArrayList(createGetJiraRestClient(hostUser).getMetadataClient().getIssueLinkTypes().claim());
+        JiraRestClient jiraRestClient = null;
+        try{
+            jiraRestClient = createGetJiraRestClient(hostUser);
+            return Lists.newArrayList(jiraRestClient.getMetadataClient().getIssueLinkTypes().claim());
+        } finally {
+            if(jiraRestClient != null){
+                try {
+                    jiraRestClient.close();
+                } catch (IOException exception) {
+                    log.error("Error during getIssuelinksType, can't close jiraRestClient", exception);
+                }
+            }
+        }
     }
 
     @Override
@@ -68,7 +81,7 @@ public class IssueLinkTypeServiceImpl implements IssueLinkTypeService {
         return issueLinkType;
     }
 
-    public JiraRestClient createGetJiraRestClient(AtlassianHostUser hostUser) {
+    private JiraRestClient createGetJiraRestClient(AtlassianHostUser hostUser) {
         return cJiraRestClientFactory.createJiraGetRestClient(hostUser);
     }
 

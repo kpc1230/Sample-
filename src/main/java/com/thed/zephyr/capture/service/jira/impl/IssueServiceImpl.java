@@ -46,6 +46,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -358,44 +359,54 @@ public class IssueServiceImpl implements IssueService {
         tokenHolderTmp.setTokenValue(tokenHolder.getTokenValue());
        CompletableFuture.runAsync(() -> {
             log.debug("New Thread Started in order to update issues links ");
-            JiraRestClient postJiraRestClient2  =  createPostJiraRestClient(host,tokenHolderTmp);
-           if(issueLinks.getIssues()!=null&&issueLinks.getIssues().length>0) {
-                List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(host);
-                IssuelinksType linkType = null;
-                try {
-                    linkType = linkTypes.stream().filter(o -> o.getInward().equals(issueLinks.getLinktype()) || o.getOutward().equals(issueLinks.getLinktype())).findFirst().get();
-                } catch (NoSuchElementException exp) {
-                    log.error("The Issue Types not exist", exp.getMessage());
-                }
-                if (linkType != null) {
-                    String linkTypeToSend = linkType.getName();
-                    if (linkType.getInward().equalsIgnoreCase(issueLinks.getLinktype())) {
-                        Arrays.asList(issueLinks.getIssues()).forEach(s -> {
-                            LinkIssuesInput linkIssuesInput = new LinkIssuesInput(s, issueKey, linkTypeToSend);
-                            try {
-                                log.debug("Linking issues Issue Type: {} , From Issue: {} , To Issue: {} ",linkIssuesInput.getLinkType(),linkIssuesInput.getFromIssueKey(),linkIssuesInput.getToIssueKey());
-                                postJiraRestClient2.getIssueClient().linkIssue(linkIssuesInput);
-                                Thread.sleep(500);
-                            } catch (Exception exp) {
-                                exp.printStackTrace();
-                            }
-                        });
-
-                    } else {
-                        if (linkType.getOutward().equalsIgnoreCase(issueLinks.getLinktype())) {
+            final JiraRestClient postJiraRestClient  =  createPostJiraRestClient(host,tokenHolderTmp);
+            try{
+                if(issueLinks.getIssues()!=null&&issueLinks.getIssues().length>0) {
+                    List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(host);
+                    IssuelinksType linkType = null;
+                    try {
+                        linkType = linkTypes.stream().filter(o -> o.getInward().equals(issueLinks.getLinktype()) || o.getOutward().equals(issueLinks.getLinktype())).findFirst().get();
+                    } catch (NoSuchElementException exp) {
+                        log.error("The Issue Types not exist", exp.getMessage());
+                    }
+                    if (linkType != null) {
+                        String linkTypeToSend = linkType.getName();
+                        if (linkType.getInward().equalsIgnoreCase(issueLinks.getLinktype())) {
                             Arrays.asList(issueLinks.getIssues()).forEach(s -> {
+                                LinkIssuesInput linkIssuesInput = new LinkIssuesInput(s, issueKey, linkTypeToSend);
                                 try {
-                                    LinkIssuesInput linkIssuesInput = new LinkIssuesInput(issueKey, s, linkTypeToSend);
                                     log.debug("Linking issues Issue Type: {} , From Issue: {} , To Issue: {} ",linkIssuesInput.getLinkType(),linkIssuesInput.getFromIssueKey(),linkIssuesInput.getToIssueKey());
-                                    postJiraRestClient2.getIssueClient().linkIssue(linkIssuesInput);
+                                    postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
                                     Thread.sleep(500);
                                 } catch (Exception exp) {
                                     exp.printStackTrace();
                                 }
                             });
-                        }
-                    }
 
+                        } else {
+                            if (linkType.getOutward().equalsIgnoreCase(issueLinks.getLinktype())) {
+                                Arrays.asList(issueLinks.getIssues()).forEach(s -> {
+                                    try {
+                                        LinkIssuesInput linkIssuesInput = new LinkIssuesInput(issueKey, s, linkTypeToSend);
+                                        log.debug("Linking issues Issue Type: {} , From Issue: {} , To Issue: {} ",linkIssuesInput.getLinkType(),linkIssuesInput.getFromIssueKey(),linkIssuesInput.getToIssueKey());
+                                        postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
+                                        Thread.sleep(500);
+                                    } catch (Exception exp) {
+                                        exp.printStackTrace();
+                                    }
+                                });
+                            }
+                        }
+
+                    }
+                }
+            } finally {
+                if(postJiraRestClient != null){
+                    try {
+                        postJiraRestClient.close();
+                    } catch (IOException exception) {
+                        log.error("Error during updateIssueLinks, can't close postJiraRestClient.", exception);
+                    }
                 }
             }
            log.debug("Thread Completed Issue links update");

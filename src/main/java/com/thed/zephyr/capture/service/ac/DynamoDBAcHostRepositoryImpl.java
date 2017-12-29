@@ -166,11 +166,29 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
     private void putTenantIntoCache(IMap<String, AcHostModel> tenants, AcHostModel acHostModel){
         tenants.put(acHostModel.getClientKey(), acHostModel);
         tenants.put(acHostModel.getBaseUrl(), acHostModel);
+        tenants.put(acHostModel.getCtId(), acHostModel);
     }
 
     private void removeTenantFromCache(AtlassianHost atlassianHost){
         IMap<String, AcHostModel> tenants = hazelcastInstance.getMap(ApplicationConstants.LOCATION_ACHOST);
+        AcHostModel acHostModel = tenants.get(atlassianHost.getClientKey());
         tenants.remove(atlassianHost.getClientKey());
         tenants.remove(atlassianHost.getBaseUrl());
+        tenants.remove(acHostModel.getCtId());
+    }
+
+    @Override
+    public AcHostModel findByCtId(String ctId) {
+        IMap<String, AcHostModel> tenants = hazelcastInstance.getMap(ApplicationConstants.LOCATION_ACHOST);
+        AcHostModel acHostModel = tenants.get(ctId);
+        if(acHostModel == null){
+            log.debug("Getting acHostModel from dynamoDB ctId:{}", ctId);
+            acHostModel = acHostModelRepository.findOne(ctId);
+            if(acHostModel != null){
+                putTenantIntoCache(tenants, acHostModel);
+            }
+        }
+
+        return acHostModel;
     }
 }
