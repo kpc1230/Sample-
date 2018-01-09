@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
+import com.thed.zephyr.capture.annotation.BackupEntity;
 import com.thed.zephyr.capture.service.db.converter.DateTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.joda.time.DateTime;
@@ -12,6 +13,7 @@ import java.util.Date;
  * Created by aliakseimatsarski on 8/15/17.
  */
 @DynamoDBTable(tableName = ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME)
+@BackupEntity(bucketType= ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME)
 abstract public class SessionActivity {
 
     @Id

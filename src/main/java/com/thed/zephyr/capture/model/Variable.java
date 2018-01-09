@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
+import com.thed.zephyr.capture.annotation.BackupEntity;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.springframework.data.annotation.Id;
 
@@ -10,6 +11,7 @@ import org.springframework.data.annotation.Id;
  *
  */
 @DynamoDBTable(tableName = ApplicationConstants.VARIABLE_TABLE_NAME)
+@BackupEntity(bucketType= ApplicationConstants.VARIABLE_TABLE_NAME)
 public class Variable {
 
     @Id

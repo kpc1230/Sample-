@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.model;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.annotation.BackupEntity;
 import com.thed.zephyr.capture.service.db.converter.DateTypeConverter;
 import com.thed.zephyr.capture.service.db.converter.JsonNodeTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
@@ -17,6 +18,7 @@ import java.util.Set;
  * Created by aliakseimatsarski on 8/20/17.
  */
 @DynamoDBTable(tableName = ApplicationConstants.TEMPLATE_TABLE_NAME)
+@BackupEntity(bucketType= ApplicationConstants.TEMPLATE_TABLE_NAME)
 public class Template {
 
     @Id

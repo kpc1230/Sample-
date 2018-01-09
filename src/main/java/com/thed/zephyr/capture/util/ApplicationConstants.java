@@ -104,21 +104,21 @@ public class ApplicationConstants {
     public static String FIELD_LIST_BEANS = "fieldListBeans";
     public static String FIELD_DETAILS = "fieldDetails";
     public static String USER_BEANS = "userBeans";
-    
+
     public static int MAX_NOTE_LENGTH = 2000;
     public static final int RELATED_ISSUES_LIMIT = 100;
     public static final Integer DEFAULT_RESULT_SIZE = 20 ;
-    
+
     public static final String RELATED_ISSUES_LIMIT_DYNAMIC_KEY = "session.issue.max.limit";
     public static final String PARTICIPANT_LIMIT_DYNAMIC_KEY = "session.participant.limit";
-    
+
     public static final String SORTFIELD_CREATED = "created";
     public static final String SORTFIELD_SESSION_NAME = "sessionname";
     public static final String SORTFIELD_PROJECT = "project";
     public static final String SORTFIELD_ASSIGNEE = "assignee";
     public static final String SORTFIELD_STATUS = "status";
     public static final String SORTFIELD_SHARED = "shared";
-    
+
     public static final String SORT_ASCENDING = "ASC";
     public static final String TENANT_ID_FIELD = "ctId";
     public static final String PROJECT_ID = "projectId";
@@ -138,7 +138,7 @@ public class ApplicationConstants {
     public static final String DEFAULT_SMTP_PASSWORD = "ApnTtFsyojiOKBMfDGj8+cPlw7eISDrYIEwQQ6ulXmI1";
     public static final int DEFAULT_SMTP_PORT = 465;
     public static final String DEFAULT_SES_REGION = "us-west-2";
-    
+
     public static final String SESSION_ID_FIELD = "sessionId";
 
     public static final String DIAL_HOME_JOB = "app.dial.home.job";
@@ -179,7 +179,7 @@ public class ApplicationConstants {
     /** ES constants **/
     public static final String ES_INDEX_NAME = "capture";
     public static final String ES_SESSION_TYPE_NAME = "session";
-    
+
     /** Job progress status constants **/
     public static final int JOB_STATUS_INPROGRESS = 0;
     public static final int JOB_STATUS_COMPLETED = 1;
@@ -196,7 +196,7 @@ public class ApplicationConstants {
     public static final int INDEX_JOB_STATUS_INPROGRESS = 0;
     public static final int INDEX_JOB_STATUS_COMPLETED = 1;
     public static final int INDEX_JOB_STATUS_FAILED = 2;
-    
+
     public static final String SORTFIELD_ES_CREATED = "timeCreated";
     public static final String SORTFIELD_ES_SESSION_NAME = "name.lower_case_sort";
     public static final String SORTFIELD_ES_PROJECT = "projectName.lower_case_sort";
@@ -204,7 +204,7 @@ public class ApplicationConstants {
     public static final String SORTFIELD_ES_STATUS = "statusOrder";
 
     public static final String FEEDBACK_SEND_EMAIL = "feedback.send.email";
-    
+
     public static final String INCOMEPLETE_STATUS = "Incomplete";
 
     public static final String CAPTURE_TESTING_ISSUE_LINKTYPE = "Zephyr Capture testing";
@@ -214,5 +214,34 @@ public class ApplicationConstants {
     public static final String ADG3_FLAG_CACHE_PREFIX = "adg-flag-cache";
 
     public static final String EXT_LINK = "{JIRA_URL}/plugins/servlet/ac/{KEY}/get-browser-extension-page";
+
+    public static final String BACKUP_JOB = "backup_job";
+    public static final String RESTORE_JOB = "restore_job";
+    public static final String BACKUP_LOCK_KEY = "backup_lock_key";
+    public static final String RESTORE_LOCK_KEY = "restore_lock_key";
+    /**
+     * AWS plugin constants
+     */
+    public static final String S3_BACKUP_FOLDER = "backup";
+    public static final String TEMPORARY_FOLDER_PATH = "capture/temp/";
+    public static final String S3_DELIMITER = "/";
+    public static final int NUMBER_STORED_BACKUPS = 2;
+
+    public static final String SESSION_ENTITY = "session";
+    public static final String SESSIONACTIVITY_ENTITY = "sessionActivity";
+    public static final String TEMPLATE_ENTITY = "template";
+    public static final String VARIABLE_ENTITY = "variable";
+
+    public static final Integer MAX_BULK_RECORDS_DEFAULT_LIMIT = 500;
+    public static final String BUCKET_KEY_SEPARATOR = ":";
+
+    /**** Backup archive file names ****/
+    public static final String BACKUP_ARCHIVE_NAME = "BackupData";
+    public static final String SYSTEM_INFO_BACKUP_ARCHIVE_NAME = "SystemInfo";
+    public static final int CreateTarArchiveException_ERROR_KEY = 136;
+
+    public static final String CAPTURE_VERSION_KEY = "captureVersion";
+    public static final String JIRA_VERSION_KEY = "jiraVersion";
+    public static final String TOTAL_STORED_OBJECTS = "total_objects";
 
 }

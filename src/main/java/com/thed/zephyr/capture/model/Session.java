@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.thed.zephyr.capture.annotation.BackupEntity;
 import com.thed.zephyr.capture.service.db.converter.*;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.json.DurationJsonDeserializer;
@@ -23,6 +24,7 @@ import java.util.*;
  */
 @Document(indexName = ApplicationConstants.ES_INDEX_NAME, type = "session")
 @DynamoDBTable(tableName = ApplicationConstants.SESSION_TABLE_NAME)
+@BackupEntity(bucketType= ApplicationConstants.SESSION_TABLE_NAME)
 public class Session  implements Comparable<Session>, Serializable{
 
     @Id

@@ -11,4 +11,5 @@ import org.springframework.data.repository.CrudRepository;
 public interface VariableRepository extends CrudRepository<Variable, String> {
 
     Page<Variable> findByCtIdAndOwnerName(String ctId, String ownerName, Pageable pageable);
+    Page<Variable> findByCtId(String ctid, Pageable pageable);
 }
