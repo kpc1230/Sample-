@@ -12,5 +12,5 @@ import java.lang.annotation.Target;
 @Target(value= ElementType.TYPE)
 @Retention(value= RetentionPolicy.RUNTIME)
 public @interface BackupEntity {
-    String bucketType() default "default";
+    String entityType() default "default";
 }

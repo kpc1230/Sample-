@@ -11,7 +11,7 @@ import org.springframework.data.annotation.Id;
  *
  */
 @DynamoDBTable(tableName = ApplicationConstants.VARIABLE_TABLE_NAME)
-@BackupEntity(bucketType= ApplicationConstants.VARIABLE_TABLE_NAME)
+@BackupEntity(entityType= ApplicationConstants.VARIABLE_TABLE_NAME)
 public class Variable {
 
     @Id

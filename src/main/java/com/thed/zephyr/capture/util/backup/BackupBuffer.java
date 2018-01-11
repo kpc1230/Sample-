@@ -145,16 +145,16 @@ public final class BackupBuffer {
       /**
        * <code>required string bucket = 1;</code>
        */
-      boolean hasBucket();
+      boolean hasEntity();
       /**
        * <code>required string bucket = 1;</code>
        */
-      String getBucket();
+      String getEntity();
       /**
        * <code>required string bucket = 1;</code>
        */
       com.google.protobuf.ByteString
-          getBucketBytes();
+          getEntityBytes();
 
       /**
        * <code>required string key = 2;</code>
@@ -187,16 +187,16 @@ public final class BackupBuffer {
       /**
        * <code>optional string bucketType = 4;</code>
        */
-      boolean hasBucketType();
+      boolean hasEntityType();
       /**
        * <code>optional string bucketType = 4;</code>
        */
-      String getBucketType();
+      String getEntityType();
       /**
        * <code>optional string bucketType = 4;</code>
        */
       com.google.protobuf.ByteString
-          getBucketTypeBytes();
+          getEntityTypeBytes();
     }
     /**
      * Protobuf type {@code com.thed.zephyr.capture.util.backup.Backup.Object}
@@ -253,7 +253,7 @@ public final class BackupBuffer {
               case 10: {
                 com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000001;
-                bucket_ = bs;
+                entity_ = bs;
                 break;
               }
               case 18: {
@@ -271,7 +271,7 @@ public final class BackupBuffer {
               case 34: {
                 com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000008;
-                bucketType_ = bs;
+                entityType_ = bs;
                 break;
               }
             }
@@ -314,19 +314,19 @@ public final class BackupBuffer {
       }
 
       private int bitField0_;
-      public static final int BUCKET_FIELD_NUMBER = 1;
-      private java.lang.Object bucket_;
+      public static final int entity_FIELD_NUMBER = 1;
+      private java.lang.Object entity_;
       /**
        * <code>required string bucket = 1;</code>
        */
-      public boolean hasBucket() {
+      public boolean hasEntity() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
        * <code>required string bucket = 1;</code>
        */
-      public String getBucket() {
-        java.lang.Object ref = bucket_;
+      public String getEntity() {
+        java.lang.Object ref = entity_;
         if (ref instanceof String) {
           return (String) ref;
         } else {
@@ -334,7 +334,7 @@ public final class BackupBuffer {
               (com.google.protobuf.ByteString) ref;
           String s = bs.toStringUtf8();
           if (bs.isValidUtf8()) {
-            bucket_ = s;
+            entity_ = s;
           }
           return s;
         }
@@ -343,13 +343,13 @@ public final class BackupBuffer {
        * <code>required string bucket = 1;</code>
        */
       public com.google.protobuf.ByteString
-          getBucketBytes() {
-        java.lang.Object ref = bucket_;
+          getEntityBytes() {
+        java.lang.Object ref = entity_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b =
               com.google.protobuf.ByteString.copyFromUtf8(
                   (String) ref);
-          bucket_ = b;
+          entity_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
@@ -440,19 +440,19 @@ public final class BackupBuffer {
         }
       }
 
-      public static final int BUCKETTYPE_FIELD_NUMBER = 4;
-      private java.lang.Object bucketType_;
+      public static final int entityType_FIELD_NUMBER = 4;
+      private java.lang.Object entityType_;
       /**
        * <code>optional string bucketType = 4;</code>
        */
-      public boolean hasBucketType() {
+      public boolean hasEntityType() {
         return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
        * <code>optional string bucketType = 4;</code>
        */
-      public String getBucketType() {
-        java.lang.Object ref = bucketType_;
+      public String getEntityType() {
+        java.lang.Object ref = entityType_;
         if (ref instanceof String) {
           return (String) ref;
         } else {
@@ -460,7 +460,7 @@ public final class BackupBuffer {
               (com.google.protobuf.ByteString) ref;
           String s = bs.toStringUtf8();
           if (bs.isValidUtf8()) {
-            bucketType_ = s;
+            entityType_ = s;
           }
           return s;
         }
@@ -469,13 +469,13 @@ public final class BackupBuffer {
        * <code>optional string bucketType = 4;</code>
        */
       public com.google.protobuf.ByteString
-          getBucketTypeBytes() {
-        java.lang.Object ref = bucketType_;
+          getEntityTypeBytes() {
+        java.lang.Object ref = entityType_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b =
               com.google.protobuf.ByteString.copyFromUtf8(
                   (String) ref);
-          bucketType_ = b;
+          entityType_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
@@ -483,10 +483,10 @@ public final class BackupBuffer {
       }
 
       private void initFields() {
-        bucket_ = "";
+        entity_ = "";
         key_ = "";
         jsonString_ = "";
-        bucketType_ = "";
+        entityType_ = "";
       }
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
@@ -494,7 +494,7 @@ public final class BackupBuffer {
         if (isInitialized == 1) return true;
         if (isInitialized == 0) return false;
 
-        if (!hasBucket()) {
+        if (!hasEntity()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -514,7 +514,7 @@ public final class BackupBuffer {
                           throws java.io.IOException {
         getSerializedSize();
         if (((bitField0_ & 0x00000001) == 0x00000001)) {
-          output.writeBytes(1, getBucketBytes());
+          output.writeBytes(1, getEntityBytes());
         }
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
           output.writeBytes(2, getKeyBytes());
@@ -523,7 +523,7 @@ public final class BackupBuffer {
           output.writeBytes(3, getJsonStringBytes());
         }
         if (((bitField0_ & 0x00000008) == 0x00000008)) {
-          output.writeBytes(4, getBucketTypeBytes());
+          output.writeBytes(4, getEntityTypeBytes());
         }
         getUnknownFields().writeTo(output);
       }
@@ -536,7 +536,7 @@ public final class BackupBuffer {
         size = 0;
         if (((bitField0_ & 0x00000001) == 0x00000001)) {
           size += com.google.protobuf.CodedOutputStream
-            .computeBytesSize(1, getBucketBytes());
+            .computeBytesSize(1, getEntityBytes());
         }
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
           size += com.google.protobuf.CodedOutputStream
@@ -548,7 +548,7 @@ public final class BackupBuffer {
         }
         if (((bitField0_ & 0x00000008) == 0x00000008)) {
           size += com.google.protobuf.CodedOutputStream
-            .computeBytesSize(4, getBucketTypeBytes());
+            .computeBytesSize(4, getEntityTypeBytes());
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSerializedSize = size;
@@ -667,13 +667,13 @@ public final class BackupBuffer {
 
         public Builder clear() {
           super.clear();
-          bucket_ = "";
+          entity_ = "";
           bitField0_ = (bitField0_ & ~0x00000001);
           key_ = "";
           bitField0_ = (bitField0_ & ~0x00000002);
           jsonString_ = "";
           bitField0_ = (bitField0_ & ~0x00000004);
-          bucketType_ = "";
+          entityType_ = "";
           bitField0_ = (bitField0_ & ~0x00000008);
           return this;
         }
@@ -706,7 +706,7 @@ public final class BackupBuffer {
           if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
             to_bitField0_ |= 0x00000001;
           }
-          result.bucket_ = bucket_;
+          result.entity_ = entity_;
           if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
             to_bitField0_ |= 0x00000002;
           }
@@ -718,7 +718,7 @@ public final class BackupBuffer {
           if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
             to_bitField0_ |= 0x00000008;
           }
-          result.bucketType_ = bucketType_;
+          result.entityType_ = entityType_;
           result.bitField0_ = to_bitField0_;
           onBuilt();
           return result;
@@ -735,9 +735,9 @@ public final class BackupBuffer {
 
         public Builder mergeFrom(com.thed.zephyr.capture.util.backup.BackupBuffer.Backup.Object other) {
           if (other == com.thed.zephyr.capture.util.backup.BackupBuffer.Backup.Object.getDefaultInstance()) return this;
-          if (other.hasBucket()) {
+          if (other.hasEntity()) {
             bitField0_ |= 0x00000001;
-            bucket_ = other.bucket_;
+            entity_ = other.entity_;
             onChanged();
           }
           if (other.hasKey()) {
@@ -750,9 +750,9 @@ public final class BackupBuffer {
             jsonString_ = other.jsonString_;
             onChanged();
           }
-          if (other.hasBucketType()) {
+          if (other.hasEntityType()) {
             bitField0_ |= 0x00000008;
-            bucketType_ = other.bucketType_;
+            entityType_ = other.entityType_;
             onChanged();
           }
           this.mergeUnknownFields(other.getUnknownFields());
@@ -760,7 +760,7 @@ public final class BackupBuffer {
         }
 
         public final boolean isInitialized() {
-          if (!hasBucket()) {
+          if (!hasEntity()) {
 
             return false;
           }
@@ -794,24 +794,24 @@ public final class BackupBuffer {
         }
         private int bitField0_;
 
-        private java.lang.Object bucket_ = "";
+        private java.lang.Object entity_ = "";
         /**
          * <code>required string bucket = 1;</code>
          */
-        public boolean hasBucket() {
+        public boolean hasEntity() {
           return ((bitField0_ & 0x00000001) == 0x00000001);
         }
         /**
          * <code>required string bucket = 1;</code>
          */
-        public String getBucket() {
-          java.lang.Object ref = bucket_;
+        public String getEntity() {
+          java.lang.Object ref = entity_;
           if (!(ref instanceof String)) {
             com.google.protobuf.ByteString bs =
                 (com.google.protobuf.ByteString) ref;
             String s = bs.toStringUtf8();
             if (bs.isValidUtf8()) {
-              bucket_ = s;
+              entity_ = s;
             }
             return s;
           } else {
@@ -822,13 +822,13 @@ public final class BackupBuffer {
          * <code>required string bucket = 1;</code>
          */
         public com.google.protobuf.ByteString
-            getBucketBytes() {
-          java.lang.Object ref = bucket_;
+            getEntityBytes() {
+          java.lang.Object ref = entity_;
           if (ref instanceof String) {
             com.google.protobuf.ByteString b =
                 com.google.protobuf.ByteString.copyFromUtf8(
                     (String) ref);
-            bucket_ = b;
+            entity_ = b;
             return b;
           } else {
             return (com.google.protobuf.ByteString) ref;
@@ -837,35 +837,35 @@ public final class BackupBuffer {
         /**
          * <code>required string bucket = 1;</code>
          */
-        public Builder setBucket(
+        public Builder setEntity(
             String value) {
           if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000001;
-          bucket_ = value;
+          entity_ = value;
           onChanged();
           return this;
         }
         /**
          * <code>required string bucket = 1;</code>
          */
-        public Builder clearBucket() {
+        public Builder clearEntity() {
           bitField0_ = (bitField0_ & ~0x00000001);
-          bucket_ = getDefaultInstance().getBucket();
+          entity_ = getDefaultInstance().getEntity();
           onChanged();
           return this;
         }
         /**
          * <code>required string bucket = 1;</code>
          */
-        public Builder setBucketBytes(
+        public Builder setEntityBytes(
             com.google.protobuf.ByteString value) {
           if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000001;
-          bucket_ = value;
+          entity_ = value;
           onChanged();
           return this;
         }
@@ -1022,24 +1022,24 @@ public final class BackupBuffer {
           return this;
         }
 
-        private java.lang.Object bucketType_ = "";
+        private java.lang.Object entityType_ = "";
         /**
          * <code>optional string bucketType = 4;</code>
          */
-        public boolean hasBucketType() {
+        public boolean hasEntityType() {
           return ((bitField0_ & 0x00000008) == 0x00000008);
         }
         /**
          * <code>optional string bucketType = 4;</code>
          */
-        public String getBucketType() {
-          java.lang.Object ref = bucketType_;
+        public String getEntityType() {
+          java.lang.Object ref = entityType_;
           if (!(ref instanceof String)) {
             com.google.protobuf.ByteString bs =
                 (com.google.protobuf.ByteString) ref;
             String s = bs.toStringUtf8();
             if (bs.isValidUtf8()) {
-              bucketType_ = s;
+              entityType_ = s;
             }
             return s;
           } else {
@@ -1050,13 +1050,13 @@ public final class BackupBuffer {
          * <code>optional string bucketType = 4;</code>
          */
         public com.google.protobuf.ByteString
-            getBucketTypeBytes() {
-          java.lang.Object ref = bucketType_;
+            getEntityTypeBytes() {
+          java.lang.Object ref = entityType_;
           if (ref instanceof String) {
             com.google.protobuf.ByteString b =
                 com.google.protobuf.ByteString.copyFromUtf8(
                     (String) ref);
-            bucketType_ = b;
+            entityType_ = b;
             return b;
           } else {
             return (com.google.protobuf.ByteString) ref;
@@ -1065,35 +1065,35 @@ public final class BackupBuffer {
         /**
          * <code>optional string bucketType = 4;</code>
          */
-        public Builder setBucketType(
+        public Builder setEntityType(
             String value) {
           if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000008;
-          bucketType_ = value;
+          entityType_ = value;
           onChanged();
           return this;
         }
         /**
          * <code>optional string bucketType = 4;</code>
          */
-        public Builder clearBucketType() {
+        public Builder clearEntityType() {
           bitField0_ = (bitField0_ & ~0x00000008);
-          bucketType_ = getDefaultInstance().getBucketType();
+          entityType_ = getDefaultInstance().getEntityType();
           onChanged();
           return this;
         }
         /**
          * <code>optional string bucketType = 4;</code>
          */
-        public Builder setBucketTypeBytes(
+        public Builder setEntityTypeBytes(
             com.google.protobuf.ByteString value) {
           if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000008;
-          bucketType_ = value;
+          entityType_ = value;
           onChanged();
           return this;
         }
@@ -1690,7 +1690,7 @@ public final class BackupBuffer {
       "nnect.util\"\225\001\n\006Backup\022<\n\007objects\030\001 \003(\0132+" +
       ".com.thed.zephyr.capture.util.backup.Backup.Obj" +
       "ect\032M\n\006Object\022\016\n\006bucket\030\001 \002(\t\022\013\n\003key\030\002 \002" +
-      "(\t\022\022\n\njsonString\030\003 \002(\t\022\022\n\nbucketType\030\004 \001" +
+      "(\t\022\022\n\njsonString\030\003 \002(\t\022\022\n\nentityType\030\004 \001" +
       "(\tB,\n\034com.thed.zephyr.capture.util.backupB\014Back" +
       "upBuffer"
     };
@@ -1717,7 +1717,7 @@ public final class BackupBuffer {
     internal_static_com_thed_zephyr_connect_util_Backup_Object_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_com_thed_zephyr_connect_util_Backup_Object_descriptor,
-        new String[] { "Bucket", "Key", "JsonString", "BucketType", });
+        new String[] { "Bucket", "Key", "JsonString", "EntityType", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

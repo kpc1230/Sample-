@@ -18,7 +18,7 @@ import java.util.Set;
  * Created by aliakseimatsarski on 8/20/17.
  */
 @DynamoDBTable(tableName = ApplicationConstants.TEMPLATE_TABLE_NAME)
-@BackupEntity(bucketType= ApplicationConstants.TEMPLATE_TABLE_NAME)
+@BackupEntity(entityType= ApplicationConstants.TEMPLATE_TABLE_NAME)
 public class Template {
 
     @Id

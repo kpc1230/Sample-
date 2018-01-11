@@ -13,7 +13,7 @@ import java.util.Date;
  * Created by aliakseimatsarski on 8/15/17.
  */
 @DynamoDBTable(tableName = ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME)
-@BackupEntity(bucketType= ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME)
+@BackupEntity(entityType= ApplicationConstants.SESSION_ACTIVITY_TABLE_NAME)
 abstract public class SessionActivity {
 
     @Id

@@ -24,7 +24,7 @@ import java.util.*;
  */
 @Document(indexName = ApplicationConstants.ES_INDEX_NAME, type = "session")
 @DynamoDBTable(tableName = ApplicationConstants.SESSION_TABLE_NAME)
-@BackupEntity(bucketType= ApplicationConstants.SESSION_TABLE_NAME)
+@BackupEntity(entityType= ApplicationConstants.SESSION_TABLE_NAME)
 public class Session  implements Comparable<Session>, Serializable{
 
     @Id

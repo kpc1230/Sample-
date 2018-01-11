@@ -324,8 +324,8 @@ public class BackUpServiceImpl implements BackUpService {
                         if (session == null) {
                             log.warn("Error during mapped string to json object. Was received null,  item:" + session
                                     + " objectBuffer.getJsonString(): " + objectBuffer.getJsonString()
-                                    + " objectBuffer.getBucket(): " + objectBuffer.getBucket()
-                                    + " objectBuffer.getBucketType(): " + objectBuffer.getBucketType());
+                                    + " objectBuffer.getEntity(): " + objectBuffer.getEntity()
+                                    + " objectBuffer.getEntityType(): " + objectBuffer.getEntityType());
                             continue;
                         } else {
                             sessionRepository.save(session);
@@ -345,8 +345,8 @@ public class BackUpServiceImpl implements BackUpService {
                                 if (sessionActivity == null) {
                                     log.warn("Error during mapped string to json object. Was received null,  item:" + sessionActivity
                                             + " objectBuffer.getJsonString(): " + objectBuffer.getJsonString()
-                                            + " objectBuffer.getBucket(): " + objectBuffer.getBucket()
-                                            + " objectBuffer.getBucketType(): " + objectBuffer.getBucketType());
+                                            + " objectBuffer.getEntity(): " + objectBuffer.getEntity()
+                                            + " objectBuffer.getEntityType(): " + objectBuffer.getEntityType());
                                     continue;
                                 } else {
                                     sessionActivityRepository.save(sessionActivity);
@@ -361,8 +361,8 @@ public class BackUpServiceImpl implements BackUpService {
                         if (variable == null) {
                             log.warn("Error during mapped string to json object. Was received null,  item:" + variable
                                     + " objectBuffer.getJsonString(): " + objectBuffer.getJsonString()
-                                    + " objectBuffer.getBucket(): " + objectBuffer.getBucket()
-                                    + " objectBuffer.getBucketType(): " + objectBuffer.getBucketType());
+                                    + " objectBuffer.getEntity(): " + objectBuffer.getEntity()
+                                    + " objectBuffer.getEntityType(): " + objectBuffer.getEntityType());
                             continue;
                         } else {
                             variableRepository.save(variable);
@@ -372,8 +372,8 @@ public class BackUpServiceImpl implements BackUpService {
                         if (template == null) {
                             log.warn("Error during mapped string to json object. Was received null,  item:" + template
                                     + " objectBuffer.getJsonString(): " + objectBuffer.getJsonString()
-                                    + " objectBuffer.getBucket(): " + objectBuffer.getBucket()
-                                    + " objectBuffer.getBucketType(): " + objectBuffer.getBucketType());
+                                    + " objectBuffer.getEntity(): " + objectBuffer.getEntity()
+                                    + " objectBuffer.getEntityType(): " + objectBuffer.getEntityType());
                             continue;
                         } else {
                             templateRepository.save(template);
@@ -408,8 +408,8 @@ public class BackUpServiceImpl implements BackUpService {
 
     private String getNameTableName(Backup.Object objectBuffer) throws CaptureRuntimeException {
         String tableName = null;
-        String bucketType = StringUtils.isNotBlank(objectBuffer.getBucketType()) ? objectBuffer.getBucketType() : null;
-        String bucketName = objectBuffer.getBucket();
+        String bucketType = StringUtils.isNotBlank(objectBuffer.getEntityType()) ? objectBuffer.getEntityType() : null;
+        String bucketName = objectBuffer.getEntity();
         tableName = bucketType != null ? bucketType : null;
         return tableName;
     }
@@ -442,7 +442,7 @@ public class BackUpServiceImpl implements BackUpService {
             String entityName = getEntityName(clazz);
             @SuppressWarnings("unchecked")
             BackupEntity annotation = (BackupEntity) clazz.getAnnotation(BackupEntity.class);
-            String bucketType = annotation.bucketType();
+            String bucketType = annotation.entityType();
             if (!exceptionList.contains(bucketType)) {
                 cleanDynamoDBDateForCtid(acHostModel, annotation, entityName);
             }
@@ -611,7 +611,7 @@ public class BackUpServiceImpl implements BackUpService {
             long total;
             do {
                 Page<Session> sessionsPage = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(offset, ApplicationConstants.MAX_BULK_RECORDS_DEFAULT_LIMIT));
-                totalObjects += storeSessionList(sessionsPage, acHostModel, entityName, totalObjects, backupFile, jobProgressTicket, annotation.bucketType());
+                totalObjects += storeSessionList(sessionsPage, acHostModel, entityName, totalObjects, backupFile, jobProgressTicket, annotation.entityType());
                 total = sessionsPage.getTotalElements();
                 offset += ApplicationConstants.MAX_BULK_RECORDS_DEFAULT_LIMIT;
             } while (offset < total);
@@ -625,7 +625,7 @@ public class BackUpServiceImpl implements BackUpService {
                 Map<String, Object> result = sessionActivityRepository.findByCtId(acHostModel.getCtId(), lastKeyEvaluated);
                 lastKeyEvaluated = (Map<String, AttributeValue>) result.get("lastKeyEvaluated");
                 List<SessionActivity> sessionActivities = (List<SessionActivity>) result.get("items");
-                totalObjects += storeSessionActivityList(sessionActivities, acHostModel, entityName, totalObjects, backupFile, jobProgressTicket, annotation.bucketType());
+                totalObjects += storeSessionActivityList(sessionActivities, acHostModel, entityName, totalObjects, backupFile, jobProgressTicket, annotation.entityType());
                 offset += ApplicationConstants.MAX_BULK_RECORDS_DEFAULT_LIMIT;
             } while (lastKeyEvaluated != null);
         } else if (StringUtils.equals(entityName, ApplicationConstants.VARIABLE_ENTITY)) {
@@ -633,7 +633,7 @@ public class BackUpServiceImpl implements BackUpService {
             long total;
             do {
                 Page<Variable> variablePage = variableRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(offset, ApplicationConstants.MAX_BULK_RECORDS_DEFAULT_LIMIT));
-                totalObjects += storeVariableList(variablePage, acHostModel, entityName, totalObjects, backupFile, jobProgressTicket, annotation.bucketType());
+                totalObjects += storeVariableList(variablePage, acHostModel, entityName, totalObjects, backupFile, jobProgressTicket, annotation.entityType());
                 total = variablePage.getTotalElements();
                 offset += ApplicationConstants.MAX_BULK_RECORDS_DEFAULT_LIMIT;
             } while (offset < total);
@@ -642,7 +642,7 @@ public class BackUpServiceImpl implements BackUpService {
             long total;
             do {
                 Page<Template> templatesPage = templateRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(offset, ApplicationConstants.MAX_BULK_RECORDS_DEFAULT_LIMIT));
-                totalObjects += storeTemplateList(templatesPage, acHostModel, entityName, totalObjects, backupFile, jobProgressTicket, annotation.bucketType());
+                totalObjects += storeTemplateList(templatesPage, acHostModel, entityName, totalObjects, backupFile, jobProgressTicket, annotation.entityType());
                 total = templatesPage.getTotalElements();
                 offset += ApplicationConstants.MAX_BULK_RECORDS_DEFAULT_LIMIT;
             } while (offset < total);
@@ -676,8 +676,8 @@ public class BackUpServiceImpl implements BackUpService {
                 sessions.forEach(session -> {
                     Backup.Object.Builder objectBuffer = Backup.Object.newBuilder();
                     String bucketName = acHostModel.getCtId() + ApplicationConstants.BUCKET_KEY_SEPARATOR + entityName;
-                    objectBuffer.setBucket(bucketName);
-                    objectBuffer.setBucketType(bucketType);
+                    objectBuffer.setEntity(bucketName);
+                    objectBuffer.setEntityType(bucketType);
                     objectBuffer.setKey(session.getId());
                     String riakObjectJsonStr = sessionObjectToJsonString(session);
                     if (StringUtils.isNotBlank(riakObjectJsonStr)) {
@@ -707,8 +707,8 @@ public class BackUpServiceImpl implements BackUpService {
                 sessionActivities.forEach(sessionActivity -> {
                     Backup.Object.Builder objectBuffer = Backup.Object.newBuilder();
                     String bucketName = acHostModel.getCtId() + ApplicationConstants.BUCKET_KEY_SEPARATOR + entityName;
-                    objectBuffer.setBucket(bucketName);
-                    objectBuffer.setBucketType(bucketType);
+                    objectBuffer.setEntity(bucketName);
+                    objectBuffer.setEntityType(bucketType);
                     objectBuffer.setKey(sessionActivity.getId());
                     String objectJsonStr = sessionActivityObjectToJsonString(sessionActivity);
                     if (StringUtils.isNotBlank(objectJsonStr)) {
@@ -736,8 +736,8 @@ public class BackUpServiceImpl implements BackUpService {
             sessionActivities.forEach(sessionActivity -> {
                 Backup.Object.Builder objectBuffer = Backup.Object.newBuilder();
                 String bucketName = acHostModel.getCtId() + ApplicationConstants.BUCKET_KEY_SEPARATOR + entityName;
-                objectBuffer.setBucket(bucketName);
-                objectBuffer.setBucketType(bucketType);
+                objectBuffer.setEntity(bucketName);
+                objectBuffer.setEntityType(bucketType);
                 objectBuffer.setKey(sessionActivity.getId());
                 String objectJsonStr = sessionActivityObjectToJsonString(sessionActivity);
                 if (StringUtils.isNotBlank(objectJsonStr)) {
@@ -765,8 +765,8 @@ public class BackUpServiceImpl implements BackUpService {
                 variables.forEach(variable -> {
                     Backup.Object.Builder objectBuffer = Backup.Object.newBuilder();
                     String bucketName = acHostModel.getCtId() + ApplicationConstants.BUCKET_KEY_SEPARATOR + entityName;
-                    objectBuffer.setBucket(bucketName);
-                    objectBuffer.setBucketType(bucketType);
+                    objectBuffer.setEntity(bucketName);
+                    objectBuffer.setEntityType(bucketType);
                     objectBuffer.setKey(variable.getId());
                     String objectJsonStr = variableObjectToJsonString(variable);
                     if (StringUtils.isNotBlank(objectJsonStr)) {
@@ -796,8 +796,8 @@ public class BackUpServiceImpl implements BackUpService {
                 templates.forEach(template -> {
                     Backup.Object.Builder objectBuffer = Backup.Object.newBuilder();
                     String bucketName = acHostModel.getCtId() + ApplicationConstants.BUCKET_KEY_SEPARATOR + entityName;
-                    objectBuffer.setBucket(bucketName);
-                    objectBuffer.setBucketType(bucketType);
+                    objectBuffer.setEntity(bucketName);
+                    objectBuffer.setEntityType(bucketType);
                     objectBuffer.setKey(template.getId());
                     String objectJsonStr = templateObjectToJsonString(template);
                     if (StringUtils.isNotBlank(objectJsonStr)) {
