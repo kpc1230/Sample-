@@ -30,6 +30,7 @@ public class S3ServiceImpl implements S3Service {
     public static final String AWS_BUCKET_POSTFIX = "aws.bucket.postfix";
     public static final String AC_KEY = "ac.key";
 
+    @Override
     public List<S3ObjectSummary> getListOfFiles(String prefix, Boolean withPrefix, Boolean withSorting) throws S3PluginException {
         List<S3ObjectSummary> result = new ArrayList<>();
         Bucket s3Bucket = createBucket();
@@ -57,6 +58,25 @@ public class S3ServiceImpl implements S3Service {
         return result;
     }
 
+    @Override
+    public File getFileContent(String fileName, File destinationFile) throws S3PluginException {
+        Bucket s3Bucket = createBucket();
+        try {
+            fileName = prependBucketPostfixToFileName(fileName);
+            GetObjectRequest getObjectRequest = new GetObjectRequest(s3Bucket.getName(), fileName);
+            amazonS3Client.getObject(getObjectRequest, destinationFile);
+        } catch (Exception exception) {
+            if (exception instanceof AmazonS3Exception && ((AmazonS3Exception)exception).getStatusCode() == 404) {
+                log.warn("Can't find file in S3 service, bucketName:{} fileName:{}", s3Bucket.getName(), fileName, exception);
+                throw new S3PluginException(exception);
+            }
+            log.error("Error during getting File content in S3Plugin, bucketName:{} fileName:{} destination file:", s3Bucket.getName(), fileName, destinationFile, exception);
+            throw new S3PluginException(exception);
+        }
+        return destinationFile;
+    }
+
+    @Override
     public Boolean saveFile(String fileName, File file, Map<String, String> metaData) throws S3PluginException {
         Bucket s3Bucket = createBucket();
         try {

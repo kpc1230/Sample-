@@ -109,7 +109,6 @@ public class SessionActivityRepositoryImpl {
         if (scanResult != null) {
             result.put("lastKeyEvaluated", scanResult.getLastEvaluatedKey());
             for (Map<String, AttributeValue> item : scanResult.getItems()) {
-                System.out.println(item);
                 sessionActivities.add(convertItemToSessionActivity(item));
             }
             result.put("items", sessionActivities);

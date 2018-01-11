@@ -32,7 +32,7 @@ public class BackUpController {
             log.info("createBackUp request invoked with file name : {} ", fileName);
             AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
             String jobProgressId = new UniqueIdGenerator().getStringId();
-            backUpService.createBackUp(acHostModel, fileName, jobProgressId,getUser());
+            backUpService.createBackUp(acHostModel, fileName, jobProgressId, getUser());
             log.info("createBackUp request processes started with file nane : {} ", fileName);
             Map<String, String> response = new HashMap<>();
             response.put("jobProgressId", jobProgressId);
@@ -42,7 +42,25 @@ public class BackUpController {
             throw new CaptureRuntimeException(ex);
         }
     }
-    protected String getUser(){
+
+    @GetMapping(value = "/restoreFromBackUp", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<?> restoreFromBackUp(@RequestParam("fileName") String fileName, @AuthenticationPrincipal AtlassianHostUser hostUser) {
+        try {
+            log.info("restoreFromBackUp request invoked with file name : {} ", fileName);
+            AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+            String jobProgressId = new UniqueIdGenerator().getStringId();
+            backUpService.restoreData(acHostModel, fileName, null, null, jobProgressId, getUser());
+            log.info("restoreFromBackUp request processes started with file nane : {} ", fileName);
+            Map<String, String> response = new HashMap<>();
+            response.put("jobProgressId", jobProgressId);
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            log.error("Erro in restoreFromBackUp ", ex);
+            throw new CaptureRuntimeException(ex);
+        }
+    }
+
+    protected String getUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String userKey = host.getUserKey().get();

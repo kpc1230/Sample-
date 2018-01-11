@@ -6,7 +6,7 @@ package com.thed.zephyr.capture.exception;
 public class CreateTarArchiveException extends CaptureRuntimeException {
 
 
-    public CreateTarArchiveException(String errorCode, String message, Throwable cause) {
+    public CreateTarArchiveException(String message,String errorCode, Throwable cause) {
         super(errorCode, message, cause);
     }
 

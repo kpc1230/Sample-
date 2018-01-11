@@ -225,23 +225,27 @@ public class ApplicationConstants {
     public static final String S3_BACKUP_FOLDER = "backup";
     public static final String TEMPORARY_FOLDER_PATH = "capture/temp/";
     public static final String S3_DELIMITER = "/";
-    public static final int NUMBER_STORED_BACKUPS = 2;
+    public static final int NUMBER_STORED_BACKUPS = 20;
 
     public static final String SESSION_ENTITY = "session";
     public static final String SESSIONACTIVITY_ENTITY = "sessionActivity";
     public static final String TEMPLATE_ENTITY = "template";
     public static final String VARIABLE_ENTITY = "variable";
 
-    public static final Integer MAX_BULK_RECORDS_DEFAULT_LIMIT = 500;
+    public static final Integer MAX_BULK_RECORDS_DEFAULT_LIMIT = 20;
     public static final String BUCKET_KEY_SEPARATOR = ":";
 
     /**** Backup archive file names ****/
     public static final String BACKUP_ARCHIVE_NAME = "BackupData";
     public static final String SYSTEM_INFO_BACKUP_ARCHIVE_NAME = "SystemInfo";
     public static final int CreateTarArchiveException_ERROR_KEY = 136;
+    public static final int ExtractTarArchiveException_ERROR_KEY = 107;
+    public static final int IncompatibleBackupException_ERROR_KEY = 108;
 
     public static final String CAPTURE_VERSION_KEY = "captureVersion";
     public static final String JIRA_VERSION_KEY = "jiraVersion";
     public static final String TOTAL_STORED_OBJECTS = "total_objects";
+    public static final String S3_ATTACHMENT_PREFIX = "ctId_";
+    public static final String ALLOW_FOREIGN_CTID_DYNAMIC_KEY = "backup.restore.allow.foreign.ctid";
 
 }
