@@ -86,7 +86,7 @@ public class BackUpServiceImpl implements BackUpService {
                 try {
                     if (!lockService.tryLock(acHostModel.getClientKey(), lockKey, 5)) {
                         log.warn("Not able to get lock during backup for ClientKey : " + acHostModel.getClientKey() + " probably backup in progress.");
-                        jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, captureI18NMessageSource.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.manual.backup.inprogress"));
+                        jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, captureI18NMessageSource.getMessage("capture.job.manual.backup.inprogress"));
                         jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.JOB_STATUS_COMPLETED, jobProgressTicket);
                         return;
                     }
@@ -122,7 +122,7 @@ public class BackUpServiceImpl implements BackUpService {
 
 
                     jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
-                    String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
+                    String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message.backup");
                     jobProgressService.setMessage(acHostModel, jobProgressId, message);
                     lockService.deleteLock(acHostModel.getClientKey(), lockKey);
                     log.info("createBackUp --> Completed : for ctid : {} with job id process : {} ", acHostModel.getCtId(), jobProgressId);
@@ -152,7 +152,7 @@ public class BackUpServiceImpl implements BackUpService {
             {
                 try {
                     if (!lockService.tryLock(acHostModel.getClientKey(), lockKey, 5)) {
-                        jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.backup.inprogress.error"));
+                        jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, captureI18NMessageSource.getMessage("capture.job.backup.inprogress.error"));
                         jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.JOB_STATUS_COMPLETED, jobProgressTicket);
                         return;
                     }
@@ -164,7 +164,7 @@ public class BackUpServiceImpl implements BackUpService {
                     } else {
                         backupFile = new File(tempBackupFileName);
                         backupFile.createNewFile();
-                        jobProgressService.setStepMessage(acHostModel, jobProgressTicket, JobProgress.toJsonString("zephyr.admin.plugin.test.section.item.zephyr.configuration.backup.process.download.backup", null));
+                        jobProgressService.setStepMessage(acHostModel, jobProgressTicket, JobProgress.toJsonString("capture.job.backup.process.download.backup", null));
                         s3Service.getFileContent(BackUpUtils.getBackupsS3Prefix(acHostModel) + fileName, backupFile);
                     }
                     tenantAwareCache.clearTenantCache(acHostModel);
@@ -183,7 +183,7 @@ public class BackUpServiceImpl implements BackUpService {
                         systemInfoBackupFile = extractedFilesMap.get(ApplicationConstants.SYSTEM_INFO_BACKUP_ARCHIVE_NAME);
                         if (systemInfoBackupFile == null) {
                             log.warn("The backup tar file was corrupted..");
-                            jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.error.extract.tar.archive"));
+                            jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, captureI18NMessageSource.getMessage("capture.job.restore.error.extract.tar.archive"));
                             lockService.deleteLock(acHostModel.getClientKey(), lockKey);
                             jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.JOB_STATUS_FAILED, jobProgressTicket);
                             return;
@@ -191,7 +191,7 @@ public class BackUpServiceImpl implements BackUpService {
                         backupSystemInfo = extractSystemFileInfo(systemInfoBackupFile);
                         if (!checkBackupCheckSum(backupSystemInfo, backupDataFile)) {
                             log.warn("The backup file from tar archive don't fit to SystemInfoFile, checksum is different");
-                            jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.error.perform.tar.archive"));
+                            jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, captureI18NMessageSource.getMessage("capture.job.restore.error.perform.tar.archive"));
                             lockService.deleteLock(acHostModel.getClientKey(), lockKey);
                             jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.JOB_STATUS_FAILED, jobProgressTicket);
                             return;
@@ -199,7 +199,7 @@ public class BackUpServiceImpl implements BackUpService {
                         restoreDataFromFile(backupDataFile, foreignTenantId, acHostModel, new ArrayList<String>(), jobProgressTicket, backupSystemInfo, cct);
                         createRestoreReport(acHostModel, backupSystemInfo, jobProgressTicket);
 
-                        jobProgressService.setStepMessage(acHostModel, jobProgressTicket, JobProgress.toJsonString(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.backup.process.index.new.data"), null));
+                        jobProgressService.setStepMessage(acHostModel, jobProgressTicket, JobProgress.toJsonString(captureI18NMessageSource.getMessage("capture.job.backup.process.index.new.data"), null));
                         String reIndexJobProgressTicket = new UniqueIdGenerator().getStringId();
                         sessionService.reindexSessionDataIntoES(acHostModel,reIndexJobProgressTicket,acHostModel.getCtId());
                         lockService.deleteLock(acHostModel.getClientKey(), lockKey);
@@ -207,7 +207,7 @@ public class BackUpServiceImpl implements BackUpService {
                         return;
                     } catch (ExtractTarArchiveException exception) {
                         log.warn("Error during extract tar archive fileName:" + fileName + ". Possibly it is old style backup file. We don't support old backups any more.", exception);
-                        jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, "zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.uncompatiblebackup");
+                        jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, "capture.job.restore.uncompatiblebackup");
                         lockService.deleteLock(acHostModel.getClientKey(), lockKey);
                         jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.JOB_STATUS_FAILED, jobProgressTicket);
                         return;
@@ -278,7 +278,7 @@ public class BackUpServiceImpl implements BackUpService {
             inputStream = new FileInputStream(uncompressTempBackupFile);
         } catch (FileNotFoundException exception) {
             log.error("File not found exception", exception);
-            throw new ServiceUnavailableException("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror");
+            throw new ServiceUnavailableException("capture.job.restore.internalservererror");
         }
         try {
             Backup.Builder backupBuilder = Backup.newBuilder();
@@ -293,12 +293,12 @@ public class BackUpServiceImpl implements BackUpService {
             }
         } catch (IOException exception) {
             log.warn("Error during parse backup file.", exception);
-            throw new ServiceUnavailableException("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.backup.incompatible");
+            throw new ServiceUnavailableException("capture.job.restore.backup.incompatible");
         } catch (IncompatibleBackupException exception) {
             throw exception;
         } catch (Exception exception) {
             log.warn("Error during parse backup file.", exception);
-            throw new ServiceUnavailableException("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror");
+            throw new ServiceUnavailableException("capture.job.restore.internalservererror");
         } finally {
             try {
                 inputStream.close();
@@ -386,10 +386,10 @@ public class BackUpServiceImpl implements BackUpService {
                 index++;
                 Integer totalObjects = Integer.parseInt(jobProgressService.getStepLabel(acHostModel, jobProgressTicket)) + 1;
                 jobProgressService.setStepLabel(acHostModel, jobProgressTicket, totalObjects.toString());
-                jobProgressService.setStepMessage(acHostModel, jobProgressTicket, JobProgress.toJsonString(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.backup.restore.object"), totalObjects));
+                jobProgressService.setStepMessage(acHostModel, jobProgressTicket, JobProgress.toJsonString(captureI18NMessageSource.getMessage("capture.job.backup.restore.object"), totalObjects));
             } catch (IOException exception) {
                 log.error("Error during mapped string to json object.", exception);
-                throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.s3service.serviceunavailable"));
+                throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.s3service.serviceunavailable"));
             }
         }
 
@@ -408,9 +408,8 @@ public class BackUpServiceImpl implements BackUpService {
 
     private String getNameTableName(Backup.Object objectBuffer) throws CaptureRuntimeException {
         String tableName = null;
-        String bucketType = StringUtils.isNotBlank(objectBuffer.getEntityType()) ? objectBuffer.getEntityType() : null;
-        String bucketName = objectBuffer.getEntity();
-        tableName = bucketType != null ? bucketType : null;
+        String entityType = StringUtils.isNotBlank(objectBuffer.getEntityType()) ? objectBuffer.getEntityType() : null;
+        tableName = entityType != null ? entityType : null;
         return tableName;
     }
 
@@ -420,7 +419,7 @@ public class BackUpServiceImpl implements BackUpService {
             cleanCurrentData(acHostModel, cleanException, jobProgressTicket);
         } else if (!dynamicProperty.getBoolProp(ApplicationConstants.ALLOW_FOREIGN_CTID_DYNAMIC_KEY, false).get()) {
             log.warn("CtId id doesn't fit, this backup belongs to other tenant current ctId:{} ctId id from backup:{}", ctId, backupSystemInfo.getCtId());
-            throw new IncompatibleBackupException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.uncompatiblebackup"));
+            throw new IncompatibleBackupException(captureI18NMessageSource.getMessage("capture.job.restore.uncompatiblebackup"));
         } else if (StringUtils.equals(currentTenantId, backupSystemInfo.getJiraId())) {
           //  cleanCurrentData(acHostModel, cleanException, jobProgressTicket);
             //  copyZtIdFolderInS3(ztId, backupSystemInfo.getCtId());
@@ -429,21 +428,21 @@ public class BackUpServiceImpl implements BackUpService {
             //   copyZtIdFolderInS3(acHostModel, backupSystemInfo.getCtId());
         } else {
             log.warn("CtId doesn't fit as long as jira tenantId, current ctId:{} ctId from backup:{}, current jira tenantId:{} jira tenantId from backup:{}", ctId, backupSystemInfo.getCtId(), currentTenantId, backupSystemInfo.getJiraId());
-            throw new IncompatibleBackupException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.uncompatiblebackup"));
+            throw new IncompatibleBackupException(captureI18NMessageSource.getMessage("capture.job.restore.uncompatiblebackup"));
         }
     }
 
     private void cleanCurrentData(AcHostModel acHostModel, List<String> exceptionList, String jobProgressTicket) throws CaptureRuntimeException, HazelcastInstanceNotDefinedException, ServiceUnavailableException {
         log.debug("Started clean DynamoDB ...");
-        jobProgressService.setStepMessage(acHostModel, jobProgressTicket, JobProgress.toJsonString(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.backup.process.clean.old.data"), null));
+        jobProgressService.setStepMessage(acHostModel, jobProgressTicket, JobProgress.toJsonString(captureI18NMessageSource.getMessage("capture.job.backup.process.clean.old.data"), null));
         final Set<Class<?>> classesList = getBackUpClassesList();
         String ctId = acHostModel.getCtId();
         for (Class clazz : classesList) {
             String entityName = getEntityName(clazz);
             @SuppressWarnings("unchecked")
             BackupEntity annotation = (BackupEntity) clazz.getAnnotation(BackupEntity.class);
-            String bucketType = annotation.entityType();
-            if (!exceptionList.contains(bucketType)) {
+            String entityType = annotation.entityType();
+            if (!exceptionList.contains(entityType)) {
                 cleanDynamoDBDateForCtid(acHostModel, annotation, entityName);
             }
         }
@@ -473,19 +472,19 @@ public class BackUpServiceImpl implements BackUpService {
             snappyInputStream = new org.xerial.snappy.SnappyInputStream(fileInputStream);
         } catch (FileNotFoundException exception) {
             log.error("Can't found backup temporary file", exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         } catch (IOException exception) {
             log.error("Error during uncompress backup file.", exception);
-            throw new IncompatibleBackupException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.error.uncompress.file"));
+            throw new IncompatibleBackupException(captureI18NMessageSource.getMessage("capture.job.restore.error.uncompress.file"));
         } catch (Exception exception) {
             log.error("Error during uncompress backup file.", exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         }
         try {
             Files.copy(snappyInputStream, destUncompressFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException exception) {
             log.warn("Error uncompress backup file with Snappy.", exception);
-            throw new ServiceUnavailableException("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror");
+            throw new ServiceUnavailableException("capture.job.restore.internalservererror");
         } finally {
             try {
                 snappyInputStream.close();
@@ -502,14 +501,14 @@ public class BackUpServiceImpl implements BackUpService {
             inputStream = new FileInputStream(systemInfoFile);
         } catch (FileNotFoundException exception) {
             log.error("File not found exception", exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         }
         BackupSystemInfoBuffer.BackupSystemInfo backupSystemInfo;
         try {
             backupSystemInfo = BackupSystemInfoBuffer.BackupSystemInfo.parseFrom(inputStream);
         } catch (Exception exception) {
             log.error("File not found exception", exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         } finally {
             try {
                 inputStream.close();
@@ -593,10 +592,10 @@ public class BackUpServiceImpl implements BackUpService {
             entityConstant = (String) ApplicationConstants.class.getDeclaredField(property).get(null);
         } catch (NoSuchFieldException exception) {
             log.error("You have marked class " + clazz + " as backup class, but forget include constant to ApplicationConstant.java", exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         } catch (IllegalAccessException exception) {
-            log.error("Error during 'getBucketName(Long, Class)' method, class=" + clazz, exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            log.error("Error during 'getEntity(Long, Class)' method, class=" + clazz, exception);
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         }
         return entityConstant;
     }
@@ -655,19 +654,19 @@ public class BackUpServiceImpl implements BackUpService {
 
     private String getMessageForEntity(String entity) {
         if (StringUtils.equals(entity, ApplicationConstants.SESSION_ENTITY)) {
-            return captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.backup.process.session");
+            return captureI18NMessageSource.getMessage("capture.job.backup.process.session");
         } else if (StringUtils.equals(entity, ApplicationConstants.SESSIONACTIVITY_ENTITY)) {
-            return captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.backup.process.sessionactivity");
+            return captureI18NMessageSource.getMessage("capture.job.backup.process.sessionactivity");
         } else if (StringUtils.equals(entity, ApplicationConstants.VARIABLE_ENTITY)) {
-            return captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.backup.process.variable");
+            return captureI18NMessageSource.getMessage("capture.job.backup.process.variable");
         } else if (StringUtils.equals(entity, ApplicationConstants.TEMPLATE_ENTITY)) {
-            return captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.backup.process.template");
+            return captureI18NMessageSource.getMessage("capture.job.backup.process.template");
         }
         return null;
     }
 
     private int storeSessionList(Page<Session> sessionsPage, AcHostModel acHostModel, String entityName, Integer
-            totalObjects, File backupFile, String jobProgressTicket, String bucketType) throws
+            totalObjects, File backupFile, String jobProgressTicket, String entityType) throws
             CaptureRuntimeException, ServiceUnavailableException, HazelcastInstanceNotDefinedException {
         Backup.Builder backUp = Backup.newBuilder();
         if (sessionsPage != null) {
@@ -677,7 +676,7 @@ public class BackUpServiceImpl implements BackUpService {
                     Backup.Object.Builder objectBuffer = Backup.Object.newBuilder();
                     String bucketName = acHostModel.getCtId() + ApplicationConstants.BUCKET_KEY_SEPARATOR + entityName;
                     objectBuffer.setEntity(bucketName);
-                    objectBuffer.setEntityType(bucketType);
+                    objectBuffer.setEntityType(entityType);
                     objectBuffer.setKey(session.getId());
                     String riakObjectJsonStr = sessionObjectToJsonString(session);
                     if (StringUtils.isNotBlank(riakObjectJsonStr)) {
@@ -699,7 +698,7 @@ public class BackUpServiceImpl implements BackUpService {
 
     private int storeSessionActivityList(Page<SessionActivity> sessionActivitiesPage, AcHostModel
             acHostModel, String entityName, Integer totalObjects, File backupFile, String jobProgressTicket, String
-                                                 bucketType) throws CaptureRuntimeException, ServiceUnavailableException, HazelcastInstanceNotDefinedException {
+                                                 entityType) throws CaptureRuntimeException, ServiceUnavailableException, HazelcastInstanceNotDefinedException {
         Backup.Builder backUp = Backup.newBuilder();
         if (sessionActivitiesPage != null) {
             List<SessionActivity> sessionActivities = sessionActivitiesPage.getContent();
@@ -708,7 +707,7 @@ public class BackUpServiceImpl implements BackUpService {
                     Backup.Object.Builder objectBuffer = Backup.Object.newBuilder();
                     String bucketName = acHostModel.getCtId() + ApplicationConstants.BUCKET_KEY_SEPARATOR + entityName;
                     objectBuffer.setEntity(bucketName);
-                    objectBuffer.setEntityType(bucketType);
+                    objectBuffer.setEntityType(entityType);
                     objectBuffer.setKey(sessionActivity.getId());
                     String objectJsonStr = sessionActivityObjectToJsonString(sessionActivity);
                     if (StringUtils.isNotBlank(objectJsonStr)) {
@@ -730,14 +729,14 @@ public class BackUpServiceImpl implements BackUpService {
 
     private int storeSessionActivityList(List<SessionActivity> sessionActivities, AcHostModel
             acHostModel, String entityName, Integer totalObjects, File backupFile, String jobProgressTicket, String
-                                                 bucketType) throws CaptureRuntimeException, ServiceUnavailableException, HazelcastInstanceNotDefinedException {
+                                                 entityType) throws CaptureRuntimeException, ServiceUnavailableException, HazelcastInstanceNotDefinedException {
         Backup.Builder backUp = Backup.newBuilder();
         if (sessionActivities != null && sessionActivities.size() > 0) {
             sessionActivities.forEach(sessionActivity -> {
                 Backup.Object.Builder objectBuffer = Backup.Object.newBuilder();
                 String bucketName = acHostModel.getCtId() + ApplicationConstants.BUCKET_KEY_SEPARATOR + entityName;
                 objectBuffer.setEntity(bucketName);
-                objectBuffer.setEntityType(bucketType);
+                objectBuffer.setEntityType(entityType);
                 objectBuffer.setKey(sessionActivity.getId());
                 String objectJsonStr = sessionActivityObjectToJsonString(sessionActivity);
                 if (StringUtils.isNotBlank(objectJsonStr)) {
@@ -756,7 +755,7 @@ public class BackUpServiceImpl implements BackUpService {
     }
 
     private int storeVariableList(Page<Variable> variablesPage, AcHostModel acHostModel, String
-            entityName, Integer totalObjects, File backupFile, String jobProgressTicket, String bucketType) throws
+            entityName, Integer totalObjects, File backupFile, String jobProgressTicket, String entityType) throws
             CaptureRuntimeException, ServiceUnavailableException, HazelcastInstanceNotDefinedException {
         Backup.Builder backUp = Backup.newBuilder();
         if (variablesPage != null) {
@@ -766,7 +765,7 @@ public class BackUpServiceImpl implements BackUpService {
                     Backup.Object.Builder objectBuffer = Backup.Object.newBuilder();
                     String bucketName = acHostModel.getCtId() + ApplicationConstants.BUCKET_KEY_SEPARATOR + entityName;
                     objectBuffer.setEntity(bucketName);
-                    objectBuffer.setEntityType(bucketType);
+                    objectBuffer.setEntityType(entityType);
                     objectBuffer.setKey(variable.getId());
                     String objectJsonStr = variableObjectToJsonString(variable);
                     if (StringUtils.isNotBlank(objectJsonStr)) {
@@ -787,7 +786,7 @@ public class BackUpServiceImpl implements BackUpService {
     }
 
     private int storeTemplateList(Page<Template> templatesPage, AcHostModel acHostModel, String
-            entityName, Integer totalObjects, File backupFile, String jobProgressTicket, String bucketType) throws
+            entityName, Integer totalObjects, File backupFile, String jobProgressTicket, String entityType) throws
             CaptureRuntimeException, ServiceUnavailableException, HazelcastInstanceNotDefinedException {
         Backup.Builder backUp = Backup.newBuilder();
         if (templatesPage != null) {
@@ -797,7 +796,7 @@ public class BackUpServiceImpl implements BackUpService {
                     Backup.Object.Builder objectBuffer = Backup.Object.newBuilder();
                     String bucketName = acHostModel.getCtId() + ApplicationConstants.BUCKET_KEY_SEPARATOR + entityName;
                     objectBuffer.setEntity(bucketName);
-                    objectBuffer.setEntityType(bucketType);
+                    objectBuffer.setEntityType(entityType);
                     objectBuffer.setKey(template.getId());
                     String objectJsonStr = templateObjectToJsonString(template);
                     if (StringUtils.isNotBlank(objectJsonStr)) {
@@ -869,7 +868,7 @@ public class BackUpServiceImpl implements BackUpService {
             fileOutputStream = new FileOutputStream(backupFile, true);
         } catch (FileNotFoundException exception) {
             log.error("Can't find file during create FileOutputStream, fileName=" + backupFile.getName(), exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         }
         try {
             backUp.writeDelimitedTo(fileOutputStream);
@@ -881,7 +880,7 @@ public class BackUpServiceImpl implements BackUpService {
                 log.warn("Error during close outputStream in method 'createTemporaryFileWithByteData'.", e);
             }
             log.error("Error during write backUpBuffer into OutputStream.", exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         }
     }
 
@@ -905,10 +904,10 @@ public class BackUpServiceImpl implements BackUpService {
             fileOutputStream.close();
         } catch (FileNotFoundException exception) {
             log.error("Can't find file during create FileOutputStream, fileName=" + uncompressFile.getName(), exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         } catch (IOException exception) {
             log.error("Error during compress file", exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         }
     }
 
@@ -938,7 +937,7 @@ public class BackUpServiceImpl implements BackUpService {
             systemInfoBuilder.setCtId(acHostModel.getCtId());
         } catch (Exception exception) {
             log.warn("Can't get ctId during create Backup SystemInfo.", exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         }
         systemInfoBuilder.setNumberOfObjects(extractTotalStoredObjectsFromJobProgress(resultReport));
         BackupSystemInfoBuffer.BackupSystemInfo systemInfo = systemInfoBuilder.build();
@@ -948,14 +947,14 @@ public class BackUpServiceImpl implements BackUpService {
             fileOutputStream = new FileOutputStream(destFile);
         } catch (FileNotFoundException exception) {
             log.error("Can't find file during create FileOutputStream, fileName=" + destFile.getName(), exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         }
         try {
             systemInfo.writeTo(fileOutputStream);
             fileOutputStream.close();
         } catch (FileNotFoundException exception) {
             log.error("Can't find file during create FileOutputStream, fileName=" + destFile.getName(), exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         } catch (IOException exception) {
             try {
                 fileOutputStream.close();
@@ -963,7 +962,7 @@ public class BackUpServiceImpl implements BackUpService {
                 log.warn("Error during close outputStream in method 'createTemporaryFileWithByteData'.", e);
             }
             log.error("Error during write backUpBuffer into OutputStream.", exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         }
     }
 
@@ -981,7 +980,7 @@ public class BackUpServiceImpl implements BackUpService {
             fi = new BufferedInputStream(new FileInputStream(file));
         } catch (FileNotFoundException exception) {
             log.error("Error during calculate backup checksum.", exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         }
         CRC32 gCRC = new CRC32();
         try {
@@ -992,7 +991,7 @@ public class BackUpServiceImpl implements BackUpService {
             }
         } catch (Exception exception) {
             log.error("Error during calculate backup checksum.", exception);
-            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("zephyr.admin.plugin.test.section.item.zephyr.configuration.restore.internalservererror"));
+            throw new ServiceUnavailableException(captureI18NMessageSource.getMessage("capture.job.restore.internalservererror"));
         } finally {
             try {
                 fi.close();

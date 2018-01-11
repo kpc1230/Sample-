@@ -143,15 +143,15 @@ public final class BackupBuffer {
         com.google.protobuf.MessageOrBuilder {
 
       /**
-       * <code>required string bucket = 1;</code>
+       * <code>required string entity = 1;</code>
        */
       boolean hasEntity();
       /**
-       * <code>required string bucket = 1;</code>
+       * <code>required string entity = 1;</code>
        */
       String getEntity();
       /**
-       * <code>required string bucket = 1;</code>
+       * <code>required string entity = 1;</code>
        */
       com.google.protobuf.ByteString
           getEntityBytes();
@@ -185,15 +185,15 @@ public final class BackupBuffer {
           getJsonStringBytes();
 
       /**
-       * <code>optional string bucketType = 4;</code>
+       * <code>optional string entityType = 4;</code>
        */
       boolean hasEntityType();
       /**
-       * <code>optional string bucketType = 4;</code>
+       * <code>optional string entityType = 4;</code>
        */
       String getEntityType();
       /**
-       * <code>optional string bucketType = 4;</code>
+       * <code>optional string entityType = 4;</code>
        */
       com.google.protobuf.ByteString
           getEntityTypeBytes();
@@ -314,16 +314,16 @@ public final class BackupBuffer {
       }
 
       private int bitField0_;
-      public static final int entity_FIELD_NUMBER = 1;
+      public static final int ENTITY_FIELD_NUMBER = 1;
       private java.lang.Object entity_;
       /**
-       * <code>required string bucket = 1;</code>
+       * <code>required string entity = 1;</code>
        */
       public boolean hasEntity() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>required string bucket = 1;</code>
+       * <code>required string entity = 1;</code>
        */
       public String getEntity() {
         java.lang.Object ref = entity_;
@@ -340,7 +340,7 @@ public final class BackupBuffer {
         }
       }
       /**
-       * <code>required string bucket = 1;</code>
+       * <code>required string entity = 1;</code>
        */
       public com.google.protobuf.ByteString
           getEntityBytes() {
@@ -443,13 +443,13 @@ public final class BackupBuffer {
       public static final int entityType_FIELD_NUMBER = 4;
       private java.lang.Object entityType_;
       /**
-       * <code>optional string bucketType = 4;</code>
+       * <code>optional string entityType = 4;</code>
        */
       public boolean hasEntityType() {
         return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>optional string bucketType = 4;</code>
+       * <code>optional string entityType = 4;</code>
        */
       public String getEntityType() {
         java.lang.Object ref = entityType_;
@@ -466,7 +466,7 @@ public final class BackupBuffer {
         }
       }
       /**
-       * <code>optional string bucketType = 4;</code>
+       * <code>optional string entityType = 4;</code>
        */
       public com.google.protobuf.ByteString
           getEntityTypeBytes() {
@@ -796,13 +796,13 @@ public final class BackupBuffer {
 
         private java.lang.Object entity_ = "";
         /**
-         * <code>required string bucket = 1;</code>
+         * <code>required string entity = 1;</code>
          */
         public boolean hasEntity() {
           return ((bitField0_ & 0x00000001) == 0x00000001);
         }
         /**
-         * <code>required string bucket = 1;</code>
+         * <code>required string entity = 1;</code>
          */
         public String getEntity() {
           java.lang.Object ref = entity_;
@@ -819,7 +819,7 @@ public final class BackupBuffer {
           }
         }
         /**
-         * <code>required string bucket = 1;</code>
+         * <code>required string entity = 1;</code>
          */
         public com.google.protobuf.ByteString
             getEntityBytes() {
@@ -835,7 +835,7 @@ public final class BackupBuffer {
           }
         }
         /**
-         * <code>required string bucket = 1;</code>
+         * <code>required string entity = 1;</code>
          */
         public Builder setEntity(
             String value) {
@@ -848,7 +848,7 @@ public final class BackupBuffer {
           return this;
         }
         /**
-         * <code>required string bucket = 1;</code>
+         * <code>required string entity = 1;</code>
          */
         public Builder clearEntity() {
           bitField0_ = (bitField0_ & ~0x00000001);
@@ -857,7 +857,7 @@ public final class BackupBuffer {
           return this;
         }
         /**
-         * <code>required string bucket = 1;</code>
+         * <code>required string entity = 1;</code>
          */
         public Builder setEntityBytes(
             com.google.protobuf.ByteString value) {
@@ -1024,13 +1024,13 @@ public final class BackupBuffer {
 
         private java.lang.Object entityType_ = "";
         /**
-         * <code>optional string bucketType = 4;</code>
+         * <code>optional string entityType = 4;</code>
          */
         public boolean hasEntityType() {
           return ((bitField0_ & 0x00000008) == 0x00000008);
         }
         /**
-         * <code>optional string bucketType = 4;</code>
+         * <code>optional string entityType = 4;</code>
          */
         public String getEntityType() {
           java.lang.Object ref = entityType_;
@@ -1047,7 +1047,7 @@ public final class BackupBuffer {
           }
         }
         /**
-         * <code>optional string bucketType = 4;</code>
+         * <code>optional string entityType = 4;</code>
          */
         public com.google.protobuf.ByteString
             getEntityTypeBytes() {
@@ -1063,7 +1063,7 @@ public final class BackupBuffer {
           }
         }
         /**
-         * <code>optional string bucketType = 4;</code>
+         * <code>optional string entityType = 4;</code>
          */
         public Builder setEntityType(
             String value) {
@@ -1076,7 +1076,7 @@ public final class BackupBuffer {
           return this;
         }
         /**
-         * <code>optional string bucketType = 4;</code>
+         * <code>optional string entityType = 4;</code>
          */
         public Builder clearEntityType() {
           bitField0_ = (bitField0_ & ~0x00000008);
@@ -1085,7 +1085,7 @@ public final class BackupBuffer {
           return this;
         }
         /**
-         * <code>optional string bucketType = 4;</code>
+         * <code>optional string entityType = 4;</code>
          */
         public Builder setEntityTypeBytes(
             com.google.protobuf.ByteString value) {
@@ -1689,7 +1689,7 @@ public final class BackupBuffer {
       "\n\022BackupBuffer.proto\022\034com.thed.zephyr.co" +
       "nnect.util\"\225\001\n\006Backup\022<\n\007objects\030\001 \003(\0132+" +
       ".com.thed.zephyr.capture.util.backup.Backup.Obj" +
-      "ect\032M\n\006Object\022\016\n\006bucket\030\001 \002(\t\022\013\n\003key\030\002 \002" +
+      "ect\032M\n\006Object\022\016\n\006entity\030\001 \002(\t\022\013\n\003key\030\002 \002" +
       "(\t\022\022\n\njsonString\030\003 \002(\t\022\022\n\nentityType\030\004 \001" +
       "(\tB,\n\034com.thed.zephyr.capture.util.backupB\014Back" +
       "upBuffer"
@@ -1717,7 +1717,7 @@ public final class BackupBuffer {
     internal_static_com_thed_zephyr_connect_util_Backup_Object_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_com_thed_zephyr_connect_util_Backup_Object_descriptor,
-        new String[] { "Bucket", "Key", "JsonString", "EntityType", });
+        new String[] { "Entity", "Key", "JsonString", "EntityType", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
