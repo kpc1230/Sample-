@@ -10,4 +10,5 @@ public interface BackUpService {
      void createBackUp(AcHostModel acHostModel, String fileName, String jobProgressId,String userKey) throws HazelcastInstanceNotDefinedException;
      void restoreData(AcHostModel acHostModel, String fileName, File file, Boolean foreignTenantId, String jobProgressId, String userKey) throws HazelcastInstanceNotDefinedException;
      void deleteBackup(AcHostModel acHostModel, String s3FileKey) throws CaptureRuntimeException;
+     void runDailyBackupJob();
 }

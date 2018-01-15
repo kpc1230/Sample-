@@ -60,6 +60,15 @@ public class BackUpController {
         }
     }
 
+    @GetMapping(value = "/runDailyBackupJob", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<?> runDailyBackupJob() {
+        log.info("Start daily backup job ...");
+        backUpService.runDailyBackupJob();
+        Map<String, String> response = new HashMap<>();
+        response.put("success", "success");
+        return ResponseEntity.ok(response);
+    }
+
     protected String getUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();

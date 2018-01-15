@@ -248,4 +248,8 @@ public class ApplicationConstants {
     public static final String S3_ATTACHMENT_PREFIX = "ctId_";
     public static final String ALLOW_FOREIGN_CTID_DYNAMIC_KEY = "backup.restore.allow.foreign.ctid";
 
+    public static final String DAILY_BACKUP_JOB_ENABLE= "app.daily.backup.job";
+    public static final String DAILY_BACKUP_JOB_CRON_EXP = "app.daily.backup.job.cron.expression" ;
+    public static final String DAILY_BACKUP_JOB_DEFAULT_CRON_EXPR = "0 0 0 * * *";
+
 }

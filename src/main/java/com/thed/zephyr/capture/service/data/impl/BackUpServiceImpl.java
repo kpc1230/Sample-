@@ -3,15 +3,15 @@ package com.thed.zephyr.capture.service.data.impl;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.thed.zephyr.capture.annotation.BackupEntity;
-import com.thed.zephyr.capture.exception.CaptureRuntimeException;
-import com.thed.zephyr.capture.exception.ExtractTarArchiveException;
-import com.thed.zephyr.capture.exception.HazelcastInstanceNotDefinedException;
-import com.thed.zephyr.capture.exception.IncompatibleBackupException;
+import com.thed.zephyr.capture.exception.*;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.view.JobProgress;
 import com.thed.zephyr.capture.repositories.dynamodb.*;
@@ -21,6 +21,7 @@ import com.thed.zephyr.capture.service.awss3.S3Service;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.cache.LockService;
 import com.thed.zephyr.capture.service.data.BackUpService;
+import com.thed.zephyr.capture.service.data.LicenseService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.util.*;
 import com.thed.zephyr.capture.util.backup.BackUpUtils;
@@ -29,9 +30,12 @@ import com.thed.zephyr.capture.util.backup.BackupSystemInfoBuffer;
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.naming.ServiceUnavailableException;
@@ -74,6 +78,10 @@ public class BackUpServiceImpl implements BackUpService {
     private DynamoDBOperations dynamoDBOperations;
     @Autowired
     private SessionService sessionService;
+    @Autowired
+    private AcHostModelRepository acHostModelRepository;
+    @Autowired
+    private LicenseService licenseService;
 
     @Override
     public void createBackUp(AcHostModel acHostModel, String fileName, String jobProgressId, String userKey) throws HazelcastInstanceNotDefinedException {
@@ -81,6 +89,7 @@ public class BackUpServiceImpl implements BackUpService {
         final String jobProgressTicket = jobProgressId != null ? jobProgressId : jobProgress.getId();
         CompletableFuture.runAsync(() -> {
             {
+                long startTime = System.currentTimeMillis();
                 log.info("createBackUp --> Started : for ctid : {} with job id process : {} ", acHostModel.getCtId(), jobProgressId);
                 final String lockKey = ApplicationConstants.BACKUP_LOCK_KEY;
                 try {
@@ -119,13 +128,11 @@ public class BackUpServiceImpl implements BackUpService {
                         systemInfoFile.delete();
                         tempFolder.delete();
                     }
-
-
                     jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
                     String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message.backup");
                     jobProgressService.setMessage(acHostModel, jobProgressId, message);
                     lockService.deleteLock(acHostModel.getClientKey(), lockKey);
-                    log.info("createBackUp --> Completed : for ctid : {} with job id process : {} ", acHostModel.getCtId(), jobProgressId);
+                    log.info("createBackUp --> Completed : for ctid : {} with job id process : {} ,took {} milli seconds ", acHostModel.getCtId(), jobProgressId, (System.currentTimeMillis() - startTime));
                 } catch (Exception ex) {
                     log.error("Error in createBackUp() - ", ex);
                     try {
@@ -133,6 +140,7 @@ public class BackUpServiceImpl implements BackUpService {
                         String errorMessage = captureI18NMessageSource.getMessage("capture.common.internal.server.error");
                         jobProgressService.setErrorMessage(acHostModel, jobProgressId, errorMessage);
                         lockService.deleteLock(acHostModel.getClientKey(), lockKey);
+                        log.info("createBackUp --> Completed with : for ctid : {} with job id process : {} ,took {} milli seconds ", acHostModel.getCtId(), jobProgressId, (System.currentTimeMillis() - startTime));
                     } catch (HazelcastInstanceNotDefinedException e) {
                         log.warn("Error in releassing the lock in catch block - ", ex);
                     }
@@ -150,6 +158,7 @@ public class BackUpServiceImpl implements BackUpService {
         String cct = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
         CompletableFuture.runAsync(() -> {
             {
+                long startTime = System.currentTimeMillis();
                 try {
                     if (!lockService.tryLock(acHostModel.getClientKey(), lockKey, 5)) {
                         jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, captureI18NMessageSource.getMessage("capture.job.backup.inprogress.error"));
@@ -201,9 +210,10 @@ public class BackUpServiceImpl implements BackUpService {
 
                         jobProgressService.setStepMessage(acHostModel, jobProgressTicket, JobProgress.toJsonString(captureI18NMessageSource.getMessage("capture.job.backup.process.index.new.data"), null));
                         String reIndexJobProgressTicket = new UniqueIdGenerator().getStringId();
-                        sessionService.reindexSessionDataIntoES(acHostModel,reIndexJobProgressTicket,acHostModel.getCtId());
+                        sessionService.reindexSessionDataIntoES(acHostModel, reIndexJobProgressTicket, acHostModel.getCtId());
                         lockService.deleteLock(acHostModel.getClientKey(), lockKey);
                         jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.JOB_STATUS_COMPLETED, jobProgressTicket);
+                        log.info("Restore job has been completed for the tenant {} , took {} milli seconds ", acHostModel.getCtId(), (System.currentTimeMillis() - startTime));
                         return;
                     } catch (ExtractTarArchiveException exception) {
                         log.warn("Error during extract tar archive fileName:" + fileName + ". Possibly it is old style backup file. We don't support old backups any more.", exception);
@@ -247,6 +257,44 @@ public class BackUpServiceImpl implements BackUpService {
     public void deleteBackup(AcHostModel acHostModel, String s3FileKey) throws CaptureRuntimeException {
         String backupFileNameWithPath = s3FileKey.substring(s3FileKey.indexOf(ApplicationConstants.S3_DELIMITER) + 1);
         s3Service.deleteFile(backupFileNameWithPath);
+    }
+
+    @Override
+    public void runDailyBackupJob() {
+        acHostModelRepository.findAll()
+                .forEach(acHostModel -> {
+                    try {
+                        JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(null)), new JWTClaimsSet());
+                        SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
+
+                        Optional<AddonInfo> licenseInfoOption = null;
+                        licenseInfoOption = licenseService.getAddonInfo(acHostModel);
+                        if (licenseInfoOption.isPresent()) {
+                            AddonInfo.License licenseInfo = licenseInfoOption.get().getLicense();
+                            if (licenseInfo != null && licenseInfo.isActive()) {
+                                log.info("BackupService: starting backup of " + acHostModel.getCtId());
+                                String fileName = acHostModel.getCtId() + "-" + ISODateTimeFormat.dateTime().print(DateTime.now().getMillis());
+                                fileName = StringUtils.replace(fileName, "+", "-");
+                                log.info("FileName" + fileName);
+                                String jobProgressId = new UniqueIdGenerator().getStringId();
+                                log.info("Calling service ... with jobProgressId : {},userKey: {} ", jobProgressId, "system");
+                                createBackUp(acHostModel, fileName, jobProgressId, "system");
+                            } else {
+                                log.warn("BackupService: Skipping backup as Capture licence is not active, license expired, tenantId: " + acHostModel.getCtId());
+                            }
+                        } else {
+                            log.warn("BackupService: Skipping backup aslicenseInfoOption is null for the tenantId: " + acHostModel.getCtId());
+                        }
+                    } catch (UnauthorizedException exp) {
+                        log.error("UnauthorizedException exception happend for this tenant {} while backup  ", acHostModel.getCtId(), exp);
+
+                    } catch (HazelcastInstanceNotDefinedException exp) {
+                        log.error("HazelcastInstanceNotDefinedException exception happend for this tenant {} while backup  ", acHostModel.getCtId(), exp);
+                    }
+
+                });
+
+
     }
 
     private void createRestoreReport(AcHostModel acHostModel, BackupSystemInfoBuffer.BackupSystemInfo backupSystemInfo, String jobProgressTicket) {
@@ -421,10 +469,10 @@ public class BackUpServiceImpl implements BackUpService {
             log.warn("CtId id doesn't fit, this backup belongs to other tenant current ctId:{} ctId id from backup:{}", ctId, backupSystemInfo.getCtId());
             throw new IncompatibleBackupException(captureI18NMessageSource.getMessage("capture.job.restore.uncompatiblebackup"));
         } else if (StringUtils.equals(currentTenantId, backupSystemInfo.getJiraId())) {
-          //  cleanCurrentData(acHostModel, cleanException, jobProgressTicket);
+            //  cleanCurrentData(acHostModel, cleanException, jobProgressTicket);
             //  copyZtIdFolderInS3(ztId, backupSystemInfo.getCtId());
         } else if (foreignTenantId) {
-          //  cleanCurrentData(acHostModel, cleanException, jobProgressTicket);
+            //  cleanCurrentData(acHostModel, cleanException, jobProgressTicket);
             //   copyZtIdFolderInS3(acHostModel, backupSystemInfo.getCtId());
         } else {
             log.warn("CtId doesn't fit as long as jira tenantId, current ctId:{} ctId from backup:{}, current jira tenantId:{} jira tenantId from backup:{}", ctId, backupSystemInfo.getCtId(), currentTenantId, backupSystemInfo.getJiraId());
@@ -546,7 +594,7 @@ public class BackUpServiceImpl implements BackUpService {
 
     private void checkNumberStoredBackups(AcHostModel acHostModel) throws CaptureRuntimeException {
         List<S3ObjectSummary> backupsList = s3Service.getListOfFiles(BackUpUtils.getBackupsS3Prefix(acHostModel), true, true);
-        if (ApplicationConstants.NUMBER_STORED_BACKUPS == (backupsList.size())) {
+        if (ApplicationConstants.NUMBER_STORED_BACKUPS <= (backupsList.size())) {
             deleteBackup(acHostModel, backupsList.get(0).getKey());
         }
     }
