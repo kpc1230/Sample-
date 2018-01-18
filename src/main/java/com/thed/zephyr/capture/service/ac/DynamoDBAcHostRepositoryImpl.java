@@ -174,7 +174,9 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
         AcHostModel acHostModel = tenants.get(atlassianHost.getClientKey());
         tenants.remove(atlassianHost.getClientKey());
         tenants.remove(atlassianHost.getBaseUrl());
-        tenants.remove(acHostModel.getCtId());
+        if(acHostModel != null){
+            tenants.remove(acHostModel.getCtId());
+        }
     }
 
     @Override
