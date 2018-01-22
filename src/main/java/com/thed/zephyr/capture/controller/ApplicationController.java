@@ -4,6 +4,7 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.IgnoreJwt;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.addon.AddonInfoService;
+import com.thed.zephyr.capture.annotation.LicenseCheck;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
@@ -62,6 +63,7 @@ public class ApplicationController {
     @Autowired
     private SessionService sessionService;
 
+    @LicenseCheck
     @RequestMapping(value = "/adminGenConf")
     public String getGeneralConfigurationPage(@AuthenticationPrincipal AtlassianHostUser hostUser,
                                               @RequestParam String user_id, Model model) {
@@ -84,6 +86,7 @@ public class ApplicationController {
         return "generalConfigPage";
     }
 
+    @LicenseCheck
     @RequestMapping(value = "/browseTestSessions")
     public String getSessionNavigatorPage(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -99,6 +102,7 @@ public class ApplicationController {
         return "sessionNavigator";
     }
 
+    @LicenseCheck
     @RequestMapping(value = "/viewSession")
     public String getViewSessionPage(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -114,6 +118,7 @@ public class ApplicationController {
         return "viewSession";
     }
 
+    @LicenseCheck
     @RequestMapping(value = "/public/rest/testing")
     public String getTestingIssueView(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId, @RequestParam String issueKey, @RequestParam String boardsPage, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -132,6 +137,7 @@ public class ApplicationController {
         return "testingIssueView";
     }
 
+    @LicenseCheck
     @RequestMapping(value = "/projectTestSessions")
     public String projectTestSessions(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -147,6 +153,7 @@ public class ApplicationController {
         return "projectTestSessions";
     }
 
+    @LicenseCheck
     @RequestMapping(value = "/createTestSessionDialog")
     public String createTestSessionDialog(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId, @RequestParam String issueKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -164,6 +171,7 @@ public class ApplicationController {
         return "createTestSessionDialog";
     }
 
+    @LicenseCheck
    @RequestMapping(value = "/wikiHelp")
     public String wikiHelp() {
         log.debug("Requesting the wiki help page");

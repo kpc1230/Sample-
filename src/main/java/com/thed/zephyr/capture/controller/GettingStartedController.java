@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.controller;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
 import com.thed.zephyr.capture.addon.AddonInfoService;
+import com.thed.zephyr.capture.annotation.LicenseCheck;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ public class GettingStartedController {
     @Autowired
     private AddonDescriptorLoader ad;
 
+    @LicenseCheck
     @RequestMapping(value = "/getting-started", method = RequestMethod.GET)
     public String gettingStartedPage(@AuthenticationPrincipal AtlassianHostUser hostUser, Model model){
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();

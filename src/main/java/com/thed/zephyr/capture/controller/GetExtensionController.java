@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.addon.AddonInfoService;
+import com.thed.zephyr.capture.annotation.LicenseCheck;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
@@ -29,6 +30,7 @@ public class GetExtensionController {
     @Autowired
     private AddonInfoService addonInfoService;
 
+    @LicenseCheck
     @RequestMapping(value = "/get-browser-extension", method = RequestMethod.GET)
     public String getExtensionPage(@AuthenticationPrincipal AtlassianHostUser hostUser, HttpServletRequest request, Model model){
         String userAgent = request.getHeader("user-agent");
