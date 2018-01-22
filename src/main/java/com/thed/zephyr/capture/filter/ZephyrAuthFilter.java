@@ -8,9 +8,13 @@ import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
 import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthenticationFilter;
 import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.thed.zephyr.capture.exception.UnauthorizedException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepositoryImpl;
+import com.thed.zephyr.capture.service.cache.impl.TenantAwareCacheWrapper;
+import com.thed.zephyr.capture.service.data.LicenseService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
@@ -22,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -47,6 +52,12 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
     private AtlassianHostRepository atlassianHostRepository;
     @Autowired
     private TokenHolder tokenHolder;
+    @Autowired
+    private LicenseService licenseService;
+    @Autowired
+    private TenantAwareCacheWrapper cacheWrapper;
+    @Autowired
+    private DynamoDBAcHostRepository dynamoDBAcHostRepository;
 
     public ZephyrAuthFilter(AuthenticationManager authenticationManager,
                                    AddonDescriptorLoader addonDescriptorLoader,
@@ -61,7 +72,12 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
         if (optionalAccessKey.isPresent()) {
             boolean status = validateAccessKey(optionalAccessKey.get(), request);
             log.debug("validation on access key : " + status);
-            filterChain.doFilter(request, response);
+            if(licenseCheck()){
+                filterChain.doFilter(request, response);
+            } else {
+                response.sendError(HttpStatus.UNAUTHORIZED.value(), "license is not active");
+            }
+
 
         } else {
             super.doFilterInternal(request, response, filterChain);
@@ -121,5 +137,27 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
         return false;
     }
 
+    private boolean licenseCheck(){
+        try {
+            AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
+            LicenseService.Status status = (LicenseService.Status)cacheWrapper.get(acHostModel, getLicenseCacheKey());
+            if(status == null){
+                status = licenseService.getLicenseStatus();
+                cacheWrapper.set(acHostModel, getLicenseCacheKey(), status);
+            }
+            if(status == LicenseService.Status.ACTIVE){
+                return true;
+            }
 
+            return false;
+        } catch (UnauthorizedException e) {
+            log.error("UnauthorizedException during getting license status", e);
+        }
+
+        return false;
+    }
+
+    private String getLicenseCacheKey(){
+        return "license.cache.key";
+    }
 }
