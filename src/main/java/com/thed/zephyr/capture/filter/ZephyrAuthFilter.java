@@ -72,13 +72,7 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
         if (optionalAccessKey.isPresent()) {
             boolean status = validateAccessKey(optionalAccessKey.get(), request);
             log.debug("validation on access key : " + status);
-            if(licenseCheck()){
-                filterChain.doFilter(request, response);
-            } else {
-                response.sendError(HttpStatus.UNAUTHORIZED.value(), "license is not active");
-            }
-
-
+            filterChain.doFilter(request, response);
         } else {
             super.doFilterInternal(request, response, filterChain);
         }
@@ -135,29 +129,5 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
             return true;
         }
         return false;
-    }
-
-    private boolean licenseCheck(){
-        try {
-            AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
-            LicenseService.Status status = (LicenseService.Status)cacheWrapper.get(acHostModel, getLicenseCacheKey());
-            if(status == null){
-                status = licenseService.getLicenseStatus();
-                cacheWrapper.set(acHostModel, getLicenseCacheKey(), status);
-            }
-            if(status == LicenseService.Status.ACTIVE){
-                return true;
-            }
-
-            return false;
-        } catch (UnauthorizedException e) {
-            log.error("UnauthorizedException during getting license status", e);
-        }
-
-        return false;
-    }
-
-    private String getLicenseCacheKey(){
-        return "license.cache.key";
     }
 }
