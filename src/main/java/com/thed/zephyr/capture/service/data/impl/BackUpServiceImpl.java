@@ -9,6 +9,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.thed.zephyr.capture.annotation.BackupEntity;
 import com.thed.zephyr.capture.exception.*;
@@ -37,12 +39,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.naming.ServiceUnavailableException;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.zip.CRC32;
 
@@ -82,76 +87,35 @@ public class BackUpServiceImpl implements BackUpService {
     private AcHostModelRepository acHostModelRepository;
     @Autowired
     private LicenseService licenseService;
+    @Autowired
+    private HazelcastInstance hazelcastInstance;
+
 
     @Override
-    public void createBackUp(AcHostModel acHostModel, String fileName, String jobProgressId, String userKey) throws HazelcastInstanceNotDefinedException {
-        JobProgress jobProgress = jobProgressService.createJobProgress(acHostModel, ApplicationConstants.BACKUP_JOB, ApplicationConstants.JOB_STATUS_INPROGRESS, jobProgressId);
-        final String jobProgressTicket = jobProgressId != null ? jobProgressId : jobProgress.getId();
+    public JobProgress createBackUp(AcHostModel acHostModel, String fileName, String jobProgressId, String userKey) throws HazelcastInstanceNotDefinedException {
         CompletableFuture.runAsync(() -> {
-            {
-                long startTime = System.currentTimeMillis();
-                log.info("createBackUp --> Started : for ctid : {} with job id process : {} ", acHostModel.getCtId(), jobProgressId);
-                final String lockKey = ApplicationConstants.BACKUP_LOCK_KEY;
-                try {
-                    if (!lockService.tryLock(acHostModel.getClientKey(), lockKey, 5)) {
-                        log.warn("Not able to get lock during backup for ClientKey : " + acHostModel.getClientKey() + " probably backup in progress.");
-                        jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, captureI18NMessageSource.getMessage("capture.job.manual.backup.inprogress"));
-                        jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.JOB_STATUS_COMPLETED, jobProgressTicket);
-                        return;
-                    }
-                    log.debug("Started create backup ...");
-                    String tempFilesPath = BackUpUtils.getTemporaryFolderName(acHostModel, ApplicationConstants.S3_BACKUP_FOLDER);
-                    File tempFolder = new File(tempFilesPath);
-                    File systemInfoFile = createTempFile(acHostModel, tempFilesPath, null);
-                    File backupFile = createTempFile(acHostModel, tempFilesPath, null);
-                    File compressBackupFile = createTempFile(acHostModel, tempFilesPath, null);
-                    File archiveTempFile = createTempFile(acHostModel, tempFilesPath, "tar");
-
-                    try {
-                        checkNumberStoredBackups(acHostModel);
-                        Map<String, Integer> resultReport = createProtocolBufferObject(acHostModel, backupFile, jobProgressTicket);
-                        compressBackupFile(backupFile, compressBackupFile);
-                        createSystemInfoProtoBuffFile(acHostModel, systemInfoFile, resultReport, compressBackupFile, userKey);
-                        Map<String, File> archiveFilesMap = ImmutableMap.of(
-                                ApplicationConstants.BACKUP_ARCHIVE_NAME, compressBackupFile,
-                                ApplicationConstants.SYSTEM_INFO_BACKUP_ARCHIVE_NAME, systemInfoFile);
-                        BackUpUtils.createTarArchive(archiveTempFile, archiveFilesMap);
-                        String supportedBEversion = dynamicProperty.getStringProp("current.supported.be.version", "unavailable").get();
-                        Map<String, String> metaData = new TreeMap<String, String>();
-                        metaData.put(ApplicationConstants.CAPTURE_VERSION_KEY, supportedBEversion);
-                        s3Service.saveFile(BackUpUtils.getBackupsS3Prefix(acHostModel) + fileName + ".tar", archiveTempFile, metaData);
-                        log.debug("Done with creating backup, fileName=" + fileName);
-                    } finally {
-                        backupFile.delete();
-                        compressBackupFile.delete();
-                        archiveTempFile.delete();
-                        systemInfoFile.delete();
-                        tempFolder.delete();
-                    }
-                    jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
-                    String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message.backup");
-                    jobProgressService.setMessage(acHostModel, jobProgressId, message);
-                    lockService.deleteLock(acHostModel.getClientKey(), lockKey);
-                    log.info("createBackUp --> Completed : for ctid : {} with job id process : {} ,took {} milli seconds ", acHostModel.getCtId(), jobProgressId, (System.currentTimeMillis() - startTime));
-                } catch (Exception ex) {
-                    log.error("Error in createBackUp() - ", ex);
-                    try {
-                        jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_FAILED, jobProgressId);
-                        String errorMessage = captureI18NMessageSource.getMessage("capture.common.internal.server.error");
-                        jobProgressService.setErrorMessage(acHostModel, jobProgressId, errorMessage);
-                        lockService.deleteLock(acHostModel.getClientKey(), lockKey);
-                        log.info("createBackUp --> Completed with : for ctid : {} with job id process : {} ,took {} milli seconds ", acHostModel.getCtId(), jobProgressId, (System.currentTimeMillis() - startTime));
-                    } catch (HazelcastInstanceNotDefinedException e) {
-                        log.warn("Error in releassing the lock in catch block - ", ex);
-                    }
-                }
+            try {
+                createBackUpFunction(acHostModel, fileName, jobProgressId, userKey);
+            } catch (HazelcastInstanceNotDefinedException ex) {
+                log.warn("Error in releasing the lock in catch block - ", ex);
             }
         });
-
+        return null;
     }
 
     @Override
-    public void restoreData(AcHostModel acHostModel, String fileName, File file, Boolean foreignTenantId, String jobProgressId, String userKey) throws HazelcastInstanceNotDefinedException {
+    public JobProgress restoreMultiPartDataFile(AcHostModel acHostModel, String fileName, MultipartFile mfile, Boolean foreignTenantId, String jobProgressId, String userKey) throws HazelcastInstanceNotDefinedException, IOException {
+        String tempFilesPath = BackUpUtils.getTemporaryFolderName(acHostModel, ApplicationConstants.S3_BACKUP_FOLDER);
+        File tempFolder = new File(tempFilesPath);
+        tempFolder.mkdir();
+        String tempFileName = BackUpUtils.getTemporaryFolderName(acHostModel, ApplicationConstants.S3_BACKUP_FOLDER) + "/" + BackUpUtils.createRandomFileName(acHostModel);
+        File tempFile = new File(tempFileName);
+        FileCopyUtils.copy(mfile.getBytes(), tempFile);
+        return restoreData(acHostModel, mfile.getName(), tempFile, false, jobProgressId, userKey);
+    }
+
+    @Override
+    public JobProgress restoreData(AcHostModel acHostModel, String fileName, File file, Boolean foreignTenantId, String jobProgressId, String userKey) throws HazelcastInstanceNotDefinedException {
         final String lockKey = ApplicationConstants.RESTORE_LOCK_KEY;
         JobProgress jobProgress = jobProgressService.createJobProgress(acHostModel, ApplicationConstants.RESTORE_JOB, ApplicationConstants.JOB_STATUS_INPROGRESS, jobProgressId);
         final String jobProgressTicket = jobProgressId != null ? jobProgressId : jobProgress.getId();
@@ -245,12 +209,12 @@ public class BackUpServiceImpl implements BackUpService {
                         jobProgressService.setErrorMessage(acHostModel, jobProgressId, errorMessage);
                         lockService.deleteLock(acHostModel.getClientKey(), lockKey);
                     } catch (HazelcastInstanceNotDefinedException e) {
-                        log.warn("Error in releassing the lock in catch block - ", ex);
+                        log.warn("Error in releasing the lock in catch block - ", ex);
                     }
                 }
             }
         });
-
+        return jobProgress;
     }
 
     @Override
@@ -261,40 +225,143 @@ public class BackUpServiceImpl implements BackUpService {
 
     @Override
     public void runDailyBackupJob() {
-        acHostModelRepository.findAll()
-                .forEach(acHostModel -> {
-                    try {
-                        JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(null)), new JWTClaimsSet());
-                        SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
+        BlockingQueue<AcHostModel> queue = hazelcastInstance.getQueue("backup-jobs");
 
-                        Optional<AddonInfo> licenseInfoOption = null;
-                        licenseInfoOption = licenseService.getAddonInfo(acHostModel);
-                        if (licenseInfoOption.isPresent()) {
-                            AddonInfo.License licenseInfo = licenseInfoOption.get().getLicense();
-                            if (licenseInfo != null && licenseInfo.isActive()) {
-                                log.info("BackupService: starting backup of " + acHostModel.getCtId());
-                                String fileName = acHostModel.getCtId() + "-" + ISODateTimeFormat.dateTime().print(DateTime.now().getMillis());
-                                fileName = StringUtils.replace(fileName, "+", "-");
-                                log.info("FileName" + fileName);
-                                String jobProgressId = new UniqueIdGenerator().getStringId();
-                                log.info("Calling service ... with jobProgressId : {},userKey: {} ", jobProgressId, "system");
-                                createBackUp(acHostModel, fileName, jobProgressId, "system");
-                            } else {
-                                log.warn("BackupService: Skipping backup as Capture licence is not active, license expired, tenantId: " + acHostModel.getCtId());
-                            }
+        log.info("Backup job publisher, should run - One per entire cluster");
+        try {
+            acHostModelRepository.findAll()
+                    .forEach(acHostModel -> {
+                        log.info("Creating backup job for Tenant: " + acHostModel.getCtId());
+                        queue.offer(acHostModel);
+                    });
+        } catch (Exception exp) {
+            log.error("BackupJobPublisher", exp);
+        }
+        CompletableFuture.runAsync(() -> {
+            int hazelCastNotActive = 0;
+            while (true && hazelCastNotActive < 3) {
+                AcHostModel acHostModel = null;
+                try {
+                    acHostModel = queue.take();
+                    JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(null)), new JWTClaimsSet());
+                    SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
+                    Optional<AddonInfo> licenseInfoOption = null;
+                    licenseInfoOption = licenseService.getAddonInfo(acHostModel);
+                    if (licenseInfoOption.isPresent()) {
+                        AddonInfo.License licenseInfo = licenseInfoOption.get().getLicense();
+                        if (licenseInfo != null && licenseInfo.isActive()) {
+                            log.info("********************** Daily BackupService: starting backup of " + acHostModel.getCtId());
+                            String fileName = acHostModel.getCtId() + "-" + ISODateTimeFormat.dateTime().print(DateTime.now().getMillis());
+                            fileName = StringUtils.replace(fileName, "+", "-");
+                            log.info("FileName " + fileName);
+                            String jobProgressId = new UniqueIdGenerator().getStringId();
+                            log.info("Calling service ... with jobProgressId : {},userKey: {} ", jobProgressId, "system");
+                            JobProgress jobProgress = createBackUpFunction(acHostModel, fileName, jobProgressId, "system");
+                            log.info("********************** Daily BackupService: completed backup of " + acHostModel.getCtId());
                         } else {
-                            log.warn("BackupService: Skipping backup aslicenseInfoOption is null for the tenantId: " + acHostModel.getCtId());
+                            log.warn("BackupService: Skipping backup as Capture licence is not active, license expired, tenantId: " + acHostModel.getCtId());
                         }
-                    } catch (UnauthorizedException exp) {
-                        log.error("UnauthorizedException exception happend for this tenant {} while backup  ", acHostModel.getCtId(), exp);
-
-                    } catch (HazelcastInstanceNotDefinedException exp) {
-                        log.error("HazelcastInstanceNotDefinedException exception happend for this tenant {} while backup  ", acHostModel.getCtId(), exp);
+                    } else {
+                        log.warn("BackupService: Skipping backup as license Info Option is null for the tenantId: " + acHostModel.getCtId());
                     }
 
-                });
+                } catch (HazelcastInstanceNotActiveException hcexp) {
+                    hazelCastNotActive += 1;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (HazelcastInstanceNotDefinedException exp) {
+                    log.error("HazelcastInstanceNotDefinedException exception happend for this tenant {} while backup  ", acHostModel.getCtId(), exp);
+                } catch (UnauthorizedException exp) {
+                    log.error("UnauthorizedException exception happend for this tenant {} while backup  ", acHostModel.getCtId(), exp);
+                }
+
+            }
+        });
+    }
+
+    @Override
+    public List<S3ObjectSummary> getBackUpsList(AcHostModel acHostModel) throws CaptureRuntimeException {
+        return (acHostModel != null) ? s3Service.getListOfFiles(BackUpUtils.getBackupsS3Prefix(acHostModel), true, true) : new ArrayList<>();
+    }
+
+    @Override
+    public File getFullBackupFile(AcHostModel acHostModel, String s3FileName) throws CaptureRuntimeException {
+        String tempFilesPath = BackUpUtils.getTemporaryFolderName(acHostModel, ApplicationConstants.S3_BACKUP_FOLDER);
+        File tempFolder = new File(tempFilesPath);
+        tempFolder.mkdir();
+        String tempFileName = BackUpUtils.getTemporaryFolderName(acHostModel, ApplicationConstants.S3_BACKUP_FOLDER) + "/" + BackUpUtils.createRandomFileName(acHostModel);
+        File tempFile = new File(tempFileName);
+        try {
+            s3Service.getFileContent(BackUpUtils.getBackupsS3Prefix(acHostModel) + s3FileName, tempFile);
+            return tempFile;
+        } catch (Exception exception) {
+            tempFile.delete();
+            tempFolder.delete();
+        }
+        return null;
+    }
 
 
+    private JobProgress createBackUpFunction(AcHostModel acHostModel, String fileName, String jobProgressId, String userKey) throws HazelcastInstanceNotDefinedException {
+        JobProgress jobProgress = jobProgressService.createJobProgress(acHostModel, ApplicationConstants.BACKUP_JOB, ApplicationConstants.JOB_STATUS_INPROGRESS, jobProgressId);
+        final String jobProgressTicket = jobProgressId != null ? jobProgressId : jobProgress.getId();
+        long startTime = System.currentTimeMillis();
+        log.info("createBackUp --> Started : for ctid : {} with job id process : {} ", acHostModel.getCtId(), jobProgressId);
+        final String lockKey = ApplicationConstants.BACKUP_LOCK_KEY;
+        try {
+            if (!lockService.tryLock(acHostModel.getClientKey(), lockKey, 5)) {
+                log.warn("Not able to get lock during backup for ClientKey : " + acHostModel.getClientKey() + " probably backup in progress.");
+                jobProgressService.setErrorMessage(acHostModel, jobProgressTicket, captureI18NMessageSource.getMessage("capture.job.manual.backup.inprogress"));
+                jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.JOB_STATUS_COMPLETED, jobProgressTicket);
+                return jobProgress;
+            }
+            log.debug("Started create backup ...");
+            String tempFilesPath = BackUpUtils.getTemporaryFolderName(acHostModel, ApplicationConstants.S3_BACKUP_FOLDER);
+            File tempFolder = new File(tempFilesPath);
+            File systemInfoFile = createTempFile(acHostModel, tempFilesPath, null);
+            File backupFile = createTempFile(acHostModel, tempFilesPath, null);
+            File compressBackupFile = createTempFile(acHostModel, tempFilesPath, null);
+            File archiveTempFile = createTempFile(acHostModel, tempFilesPath, "tar");
+
+            try {
+                checkNumberStoredBackups(acHostModel);
+                Map<String, Integer> resultReport = createProtocolBufferObject(acHostModel, backupFile, jobProgressTicket);
+                compressBackupFile(backupFile, compressBackupFile);
+                createSystemInfoProtoBuffFile(acHostModel, systemInfoFile, resultReport, compressBackupFile, userKey);
+                Map<String, File> archiveFilesMap = ImmutableMap.of(
+                        ApplicationConstants.BACKUP_ARCHIVE_NAME, compressBackupFile,
+                        ApplicationConstants.SYSTEM_INFO_BACKUP_ARCHIVE_NAME, systemInfoFile);
+                BackUpUtils.createTarArchive(archiveTempFile, archiveFilesMap);
+                String supportedBEversion = dynamicProperty.getStringProp("current.supported.be.version", "unavailable").get();
+                Map<String, String> metaData = new TreeMap<String, String>();
+                metaData.put(ApplicationConstants.CAPTURE_VERSION_KEY, supportedBEversion);
+                s3Service.saveFile(BackUpUtils.getBackupsS3Prefix(acHostModel) + fileName + ".tar", archiveTempFile, metaData);
+                log.debug("Done with creating backup, fileName=" + fileName);
+            } finally {
+                backupFile.delete();
+                compressBackupFile.delete();
+                archiveTempFile.delete();
+                systemInfoFile.delete();
+                tempFolder.delete();
+            }
+            jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
+            String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message.backup");
+            jobProgressService.setMessage(acHostModel, jobProgressId, message);
+            lockService.deleteLock(acHostModel.getClientKey(), lockKey);
+            log.info("createBackUp --> Completed : for ctid : {} with job id process : {} ,took {} milli seconds ", acHostModel.getCtId(), jobProgressId, (System.currentTimeMillis() - startTime));
+        } catch (Exception ex) {
+            log.error("Error in createBackUp() - ", ex);
+            try {
+                jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_FAILED, jobProgressId);
+                String errorMessage = captureI18NMessageSource.getMessage("capture.common.internal.server.error");
+                jobProgressService.setErrorMessage(acHostModel, jobProgressId, errorMessage);
+                lockService.deleteLock(acHostModel.getClientKey(), lockKey);
+                log.info("createBackUp --> Completed with : for ctid : {} with job id process : {} ,took {} milli seconds ", acHostModel.getCtId(), jobProgressId, (System.currentTimeMillis() - startTime));
+            } catch (HazelcastInstanceNotDefinedException e) {
+                log.warn("Error in releassing the lock in catch block - ", ex);
+            }
+        }
+        return jobProgress;
     }
 
     private void createRestoreReport(AcHostModel acHostModel, BackupSystemInfoBuffer.BackupSystemInfo backupSystemInfo, String jobProgressTicket) {
