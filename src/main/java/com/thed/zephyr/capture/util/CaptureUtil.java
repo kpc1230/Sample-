@@ -100,6 +100,13 @@ public class CaptureUtil {
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         return host.getHost().getBaseUrl();
     }
+
+    public static AtlassianHostUser getAtlassianHostUser(){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
+        return hostUser;
+    }
+
     public static String getCurrentCtId(DynamoDBAcHostRepository dynamoDBAcHostRepository){
         AtlassianHostUser atlassianHostUser = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         AcHostModel acHostModel = (AcHostModel) dynamoDBAcHostRepository.findOne(atlassianHostUser.getHost().getClientKey());

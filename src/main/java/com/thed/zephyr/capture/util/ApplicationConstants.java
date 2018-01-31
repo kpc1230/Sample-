@@ -216,4 +216,8 @@ public class ApplicationConstants {
     public static final String EXT_LINK = "{JIRA_URL}/plugins/servlet/ac/{KEY}/get-browser-extension-page";
 
     public static final String FORCE_LICENSE_CHECK = "force.license.check";
+
+    /* permissions */
+    public static final String PERMISSIONS = "permissions";
+    public static final String HAVE_PERMISSIONS = "havePermission";
 }

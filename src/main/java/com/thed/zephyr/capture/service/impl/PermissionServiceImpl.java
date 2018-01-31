@@ -18,6 +18,7 @@ import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.apache.commons.lang3.StringUtils;
@@ -27,8 +28,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.thed.zephyr.capture.util.ApplicationConstants.CREATE_ISSUE_PERMISSION;
+import static com.thed.zephyr.capture.util.JiraConstants.REST_API_MYPERMISSIONS;
+
 
 /**
  * Created by niravshah on 8/15/17.
@@ -142,6 +150,21 @@ public class PermissionServiceImpl implements PermissionService {
        return parsePermissions(permissionsStr);
     }
 
+    /**
+     * Get permission on behalf of user
+     * @param user
+     * @return map of permissions
+     */
+    private Map<String, Boolean> getMyPrmissions(String user) {
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        if(null != user && StringUtils.isNotEmpty(user)){
+            hostUser = new AtlassianHostUser(hostUser.getHost(),Optional.of(user));
+        }
+        String permissionsStr = restClients.authenticatedAs(hostUser)
+                .getForObject(REST_API_MYPERMISSIONS, String.class);
+       return parsePermissions(permissionsStr);
+    }
+
 
     private boolean checkPermissionForType(Long projectId, Long issueId, String issueKey, String permissionType, String user) {
 
@@ -154,6 +177,10 @@ public class PermissionServiceImpl implements PermissionService {
         } else {
             perMap = getAllUserPermissionsMap();
         }
+        if(permissionType==CREATE_ISSUE_PERMISSION) {
+            perMap = getMyPrmissions(user);
+        }
+
         if (perMap.containsKey(permissionType) && perMap.get(permissionType)) {
             return true;
         }
@@ -175,7 +202,8 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean hasCreateIssuePermission() {
-        if (checkPermissionForType(null, null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, null)) return true;
+        String user = CaptureUtil.getAtlassianHostUser().getUserKey().get();
+        if (checkPermissionForType(null, null, null, CREATE_ISSUE_PERMISSION, user)) return true;
         return false;
     }
 
@@ -389,7 +417,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canCreate = (checkPermissionForType(project.getId(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, user));
+        boolean canCreate = (checkPermissionForType(project.getId(), null, null, CREATE_ISSUE_PERMISSION, user));
         return canCreate;
     }
 
@@ -398,7 +426,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canEdit = (checkPermissionForType(project.getId(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, user));
+        boolean canEdit = (checkPermissionForType(project.getId(), null, null, CREATE_ISSUE_PERMISSION, user));
         return canEdit;
     }
 
@@ -412,7 +440,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (project == null) {
             return false;
         }
-        boolean canUse = (checkPermissionForType(project.getId(), null, null, ApplicationConstants.CREATE_ISSUE_PERMISSION, user));
+        boolean canUse = (checkPermissionForType(project.getId(), null, null, CREATE_ISSUE_PERMISSION, user));
         return canUse;
     }
 
