@@ -5,23 +5,26 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.BasicProject;
 import com.atlassian.jira.rest.client.api.domain.Project;
-import com.google.common.collect.Lists;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
-
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
+
+import static com.thed.zephyr.capture.util.JiraConstants.REST_API_PROJECT;
 
 /**
  * Created by Masud on 8/13/17.
@@ -53,8 +56,10 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ArrayList<BasicProject> getProjects() throws Exception {
         try{
-            ArrayList<BasicProject> basicProjects = Lists.newArrayList(jiraRestClient.getProjectClient().getAllProjects().claim());
-            return basicProjects;
+            AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+            JsonNode projectString = atlassianHostRestClients.authenticatedAs(hostUser)
+                    .getForObject(REST_API_PROJECT, JsonNode.class);
+            return parseBasicProjects(projectString);
         } catch (Exception exception){
             log.error("Error during getting projects from Jira.", exception);
             throw new Exception("Error during getting projects.");
@@ -119,4 +124,23 @@ public class ProjectServiceImpl implements ProjectService {
         return captureProject;
     }
 
+    /**
+    * Parse and make list of basic projects
+    * @param projectString
+    * @return
+    */
+    private ArrayList<BasicProject> parseBasicProjects(JsonNode projectString) {
+        ArrayList<BasicProject> basicProjects = new ArrayList<>();
+        projectString.forEach(jsonNode -> {
+            BasicProject basicProject =
+                    new BasicProject(
+                            URI.create(jsonNode.get("self").asText()),
+                            jsonNode.get("key").asText(),
+                            jsonNode.get("id").asLong(),
+                            jsonNode.get("name").asText()
+                    );
+            basicProjects.add(basicProject);
+        });
+        return basicProjects;
+    }
 }
