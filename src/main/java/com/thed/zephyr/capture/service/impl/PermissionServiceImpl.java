@@ -209,7 +209,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean hasCreateIssuePermission(Long projectId, String user) {
-        Map<String, Boolean> perMap = getPermissionMapForProject(projectId, user);
+        Map<String, Boolean> perMap = getPermissionForProject(projectId, user);
         if (perMap.containsKey(CREATE_ISSUE_PERMISSION) && perMap.get(CREATE_ISSUE_PERMISSION)) {
             return true;
         }
