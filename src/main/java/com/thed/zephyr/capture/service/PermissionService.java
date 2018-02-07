@@ -15,6 +15,8 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
 
      boolean hasCreateIssuePermission();
 
+     boolean hasCreateIssuePermission(Long projectId, String user);
+
      boolean hasEditIssuePermission(String issueKey);
 
      boolean hasEditIssuePermission(Long issueId);

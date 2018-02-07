@@ -8,6 +8,7 @@ import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
+import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import static com.thed.zephyr.capture.util.JiraConstants.REST_API_PROJECT;
@@ -42,7 +44,8 @@ public class ProjectServiceImpl implements ProjectService {
     private DynamicProperty dynamicProperty;
     @Autowired
     private AtlassianHostRestClients atlassianHostRestClients;
-
+    @Autowired
+    private PermissionService permissionService;
     @Override
     public Project getProjectObj(Long projectId) {
         return getProjectObjByKey(String.valueOf(projectId));
@@ -54,12 +57,12 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ArrayList<BasicProject> getProjects() throws Exception {
+    public ArrayList<BasicProject> getProjects(Optional<Boolean> isExtension) throws Exception {
         try{
             AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
             JsonNode projectString = atlassianHostRestClients.authenticatedAs(hostUser)
                     .getForObject(REST_API_PROJECT, JsonNode.class);
-            return parseBasicProjects(projectString);
+            return parseBasicProjects(projectString, isExtension);
         } catch (Exception exception){
             log.error("Error during getting projects from Jira.", exception);
             throw new Exception("Error during getting projects.");
@@ -129,17 +132,27 @@ public class ProjectServiceImpl implements ProjectService {
     * @param projectString
     * @return
     */
-    private ArrayList<BasicProject> parseBasicProjects(JsonNode projectString) {
+    private ArrayList<BasicProject> parseBasicProjects(JsonNode projectString, Optional<Boolean> isExtension) {
+        String user = CaptureUtil.getAtlassianHostUser().getUserKey().get();
         ArrayList<BasicProject> basicProjects = new ArrayList<>();
+        Boolean checkPermission = isExtension.isPresent() ? isExtension.get(): false;
         projectString.forEach(jsonNode -> {
+            Long projectId = jsonNode.get("id").asLong();
             BasicProject basicProject =
                     new BasicProject(
                             URI.create(jsonNode.get("self").asText()),
                             jsonNode.get("key").asText(),
-                            jsonNode.get("id").asLong(),
+                            projectId,
                             jsonNode.get("name").asText()
                     );
-            basicProjects.add(basicProject);
+            //Check if user has create issue permission for this project and pass through.
+            if(checkPermission && permissionService.hasCreateIssuePermission(projectId,user)) {
+                basicProjects.add(basicProject);
+            }else if (checkPermission && !permissionService.hasCreateIssuePermission(projectId,user)){
+               //do nothing
+            }else {
+                basicProjects.add(basicProject);
+            }
         });
         return basicProjects;
     }
