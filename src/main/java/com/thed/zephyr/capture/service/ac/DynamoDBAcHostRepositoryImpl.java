@@ -25,6 +25,7 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
 
     @Override
     public Optional<AtlassianHost> findFirstByBaseUrl(String baseUrl) {
+        log.debug("Call findFirstByBaseUrl baseUrl:{}", baseUrl);
         Optional<AtlassianHost> option = Optional.empty();
         IMap<String, AcHostModel> tenants = hazelcastInstance.getMap(ApplicationConstants.LOCATION_ACHOST);
         AcHostModel acHostModel = tenants.get(baseUrl);
@@ -47,8 +48,11 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
 
     @Override
     public AtlassianHost  save(AtlassianHost atlassianHost) {
+        log.debug("Call save atlassianHost:{}", atlassianHost.getClientKey());
         if(exists(atlassianHost.getClientKey())){
-            return updateExistingHost(atlassianHost);
+            return updateExistingHost(atlassianHost, false);
+        } else if(isTenantTemporary(atlassianHost.getClientKey())){
+            return updateExistingHost(atlassianHost, true);
         }
         AcHostModel acHostModel = new AcHostModel(atlassianHost);
         acHostModel.setStatus(AcHostModel.TenantStatus.ACTIVE);
@@ -64,6 +68,7 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
 
     @Override
     public AtlassianHost findOne(String tenantKey) {
+        log.debug("Call findOne tenantKey:{}", tenantKey);
         IMap<String, AcHostModel> tenants = hazelcastInstance.getMap(ApplicationConstants.LOCATION_ACHOST);
         AcHostModel acHostModel = tenants.get(tenantKey);
         if(acHostModel == null){
@@ -71,6 +76,9 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
             List<AcHostModel> acHostModels = acHostModelRepository.findByClientKey(tenantKey);
             if(acHostModels.size() > 0){
                 acHostModel = acHostModels.get(0);
+                if(acHostModel.getStatus() == AcHostModel.TenantStatus.TEMPORARY){
+                    return null;
+                }
                 putTenantIntoCache(tenants, acHostModel);
             }
             if (acHostModels.size() > 1) {
@@ -85,6 +93,7 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
 
     @Override
     public boolean exists(String clientKey) {
+        log.debug("Call exists clientKey:{}", clientKey);
         return findOne(clientKey) != null?true:false;
     }
 
@@ -146,39 +155,6 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
         log.debug("Triggered delete all tenants method.");
     }
 
-    private AtlassianHost updateExistingHost(AtlassianHost atlassianHost){
-        if (atlassianHost instanceof AcHostModel){
-            removeTenantFromCache(atlassianHost);
-            ((AcHostModel)atlassianHost).setLastModifiedDate(Calendar.getInstance());
-            return  acHostModelRepository.save((AcHostModel)atlassianHost);
-        }
-        AcHostModel oldAcHostModel = (AcHostModel)findOne(atlassianHost.getClientKey());
-        AcHostModel acHostModel = new AcHostModel(atlassianHost);
-        acHostModel.setCtId(oldAcHostModel.getCtId());
-        acHostModel.setCreatedDate(oldAcHostModel.getCreatedDate() != null?oldAcHostModel.getCreatedDate():acHostModel.getCreatedDate());
-        acHostModel.setStatus(atlassianHost.isAddonInstalled()? AcHostModel.TenantStatus.ACTIVE: AcHostModel.TenantStatus.UNINSTALLED);
-        log.info("AcHostModel updated installed:{}", atlassianHost.isAddonInstalled());
-        removeTenantFromCache(atlassianHost);
-
-        return  acHostModelRepository.save(acHostModel);
-    }
-
-    private void putTenantIntoCache(IMap<String, AcHostModel> tenants, AcHostModel acHostModel){
-        tenants.put(acHostModel.getClientKey(), acHostModel);
-        tenants.put(acHostModel.getBaseUrl(), acHostModel);
-        tenants.put(acHostModel.getCtId(), acHostModel);
-    }
-
-    private void removeTenantFromCache(AtlassianHost atlassianHost){
-        IMap<String, AcHostModel> tenants = hazelcastInstance.getMap(ApplicationConstants.LOCATION_ACHOST);
-        AcHostModel acHostModel = tenants.get(atlassianHost.getClientKey());
-        tenants.remove(atlassianHost.getClientKey());
-        tenants.remove(atlassianHost.getBaseUrl());
-        if(acHostModel != null){
-            tenants.remove(acHostModel.getCtId());
-        }
-    }
-
     @Override
     public AcHostModel findByCtId(String ctId) {
         IMap<String, AcHostModel> tenants = hazelcastInstance.getMap(ApplicationConstants.LOCATION_ACHOST);
@@ -192,5 +168,59 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
         }
 
         return acHostModel;
+    }
+
+    private void putTenantIntoCache(IMap<String, AcHostModel> tenants, AcHostModel acHostModel){
+        tenants.put(acHostModel.getClientKey(), acHostModel);
+        tenants.put(acHostModel.getCtId(), acHostModel);
+        if(acHostModel.getBaseUrl() != null){
+            tenants.put(acHostModel.getBaseUrl(), acHostModel);
+        }
+    }
+
+    private void removeTenantFromCache(AtlassianHost atlassianHost){
+        IMap<String, AcHostModel> tenants = hazelcastInstance.getMap(ApplicationConstants.LOCATION_ACHOST);
+        AcHostModel acHostModel = tenants.get(atlassianHost.getClientKey());
+        tenants.remove(atlassianHost.getClientKey());
+        tenants.remove(atlassianHost.getBaseUrl());
+        if(acHostModel != null){
+            tenants.remove(acHostModel.getCtId());
+        }
+    }
+
+    private boolean isTenantTemporary(String clientKey){
+        List<AcHostModel> acHostModels = acHostModelRepository.findByClientKey(clientKey);
+
+        return acHostModels.size() > 0 && acHostModels.get(0).getStatus() == AcHostModel.TenantStatus.TEMPORARY;
+    }
+
+    private AtlassianHost updateExistingHost(AtlassianHost atlassianHost, boolean temporaryTenant){
+        if (atlassianHost instanceof AcHostModel){
+            removeTenantFromCache(atlassianHost);
+            ((AcHostModel)atlassianHost).setLastModifiedDate(Calendar.getInstance());
+            return  acHostModelRepository.save((AcHostModel)atlassianHost);
+        }
+        AcHostModel oldAcHostModel;
+        if(temporaryTenant){
+            oldAcHostModel = getTemporaryTenant(atlassianHost.getClientKey());
+        } else{
+            oldAcHostModel = (AcHostModel)findOne(atlassianHost.getClientKey());
+        }
+        AcHostModel acHostModel = new AcHostModel(atlassianHost);
+        acHostModel.setCtId(oldAcHostModel.getCtId());
+        acHostModel.setCreatedDate(oldAcHostModel.getCreatedDate() != null?oldAcHostModel.getCreatedDate():acHostModel.getCreatedDate());
+        acHostModel.setStatus(atlassianHost.isAddonInstalled()? AcHostModel.TenantStatus.ACTIVE: AcHostModel.TenantStatus.UNINSTALLED);
+        log.info("AcHostModel updated installed:{}", atlassianHost.isAddonInstalled());
+        removeTenantFromCache(atlassianHost);
+
+        return  acHostModelRepository.save(acHostModel);
+    }
+
+    private AcHostModel getTemporaryTenant(String clientKey){
+        List<AcHostModel> acHostModels = acHostModelRepository.findByClientKey(clientKey);
+        if(acHostModels.size() > 0 && acHostModels.get(0).getStatus() == AcHostModel.TenantStatus.TEMPORARY){
+            return acHostModels.get(0);
+        }
+        return null;
     }
 }
