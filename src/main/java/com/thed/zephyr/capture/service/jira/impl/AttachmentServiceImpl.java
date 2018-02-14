@@ -167,7 +167,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         if (issue == null) {
             throw new CaptureRuntimeException("file.error.issue.key.invalid", issueKey);
         }
-        if (!permissionService.hasCreateAttachmentPermission(issue.getKey())) {
+        if (!permissionService.hasCreateAttachmentPermission(issue.getProject().getId(), issue.getKey())) {
             throw new CaptureRuntimeException("file.error.attachment.permission", issueKey);
         }
         JSONObject json = null;

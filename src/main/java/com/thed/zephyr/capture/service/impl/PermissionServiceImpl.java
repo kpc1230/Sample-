@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.thed.zephyr.capture.util.ApplicationConstants.CREATE_ATTACHMENT_PERMISSION;
 import static com.thed.zephyr.capture.util.ApplicationConstants.CREATE_ISSUE_PERMISSION;
 import static com.thed.zephyr.capture.util.JiraConstants.REST_API_MYPERMISSIONS;
 
@@ -191,6 +192,16 @@ public class PermissionServiceImpl implements PermissionService {
         MyPermissionsInput myPermissionsInput = new MyPermissionsInput(null, null, null, null);
         Permissions permissions = jiraRestClient.getMyPermissionsRestClient().getMyPermissions(myPermissionsInput).claim();
         return permissions;
+    }
+
+    @Override
+    public boolean hasCreateAttachmentPermission(Long projectId, String issueIdOrKey) {
+        String user = CaptureUtil.getAtlassianHostUser().getUserKey().get();
+        Map<String, Boolean> perMap = getPermissionForProject(projectId, user);
+        if (perMap.containsKey(CREATE_ATTACHMENT_PERMISSION) && perMap.get(CREATE_ATTACHMENT_PERMISSION)) {
+            return true;
+        }
+        return false;
     }
 
     @Override

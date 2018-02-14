@@ -11,6 +11,8 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
  */
  public interface PermissionService {
 
+     boolean hasCreateAttachmentPermission(Long projectId, String issueIdOrKey);
+
      boolean hasCreateAttachmentPermission(String issueIdOrKey);
 
      boolean hasCreateIssuePermission();
