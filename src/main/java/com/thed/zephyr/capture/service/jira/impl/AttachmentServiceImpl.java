@@ -9,12 +9,14 @@ import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.input.AttachmentInput;
 import com.atlassian.jira.rest.client.internal.json.AttachmentJsonParser;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.AttachmentService;
 import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.FileNameCharacterCheckerUtil;
 import org.apache.commons.codec.binary.Base64;
@@ -66,10 +68,12 @@ public class AttachmentServiceImpl implements AttachmentService {
     private SessionService sessionService;
     @Autowired
     private AtlassianHostRestClients atlassianHostRestClients;
+    @Autowired
+    protected CaptureI18NMessageSource i18n;
 
 
     @Override
-    public String addAttachments(MultipartFile[] multipartFiles, String issueKey) {
+    public String addAttachments(MultipartFile[] multipartFiles, String issueKey) throws CaptureValidationException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         log.info("Attachment Upload request for Issue : {}", issueKey);
@@ -78,7 +82,7 @@ public class AttachmentServiceImpl implements AttachmentService {
             throw new CaptureRuntimeException("file.error.issue.key.invalid", issueKey);
         }
         if (!permissionService.hasCreateAttachmentPermission(issue.getKey())) {
-            throw new CaptureRuntimeException("file.error.attachment.permission", issueKey);
+            throw new CaptureValidationException(i18n.getMessage("file.error.attachment.permission",new Object[]{issueKey}));
         }
         // Validate the JSON objecta
         try {
@@ -96,7 +100,7 @@ public class AttachmentServiceImpl implements AttachmentService {
     }
 
     @Override
-    public String addAttachments(String issueKey, String testSessionId, JSONArray jsonArray) throws CaptureRuntimeException, JSONException,RestClientException {
+    public String addAttachments(String issueKey, String testSessionId, JSONArray jsonArray) throws CaptureRuntimeException, JSONException, RestClientException, CaptureValidationException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         log.info("Attachment Upload request for Issue : {}", issueKey);
@@ -105,7 +109,7 @@ public class AttachmentServiceImpl implements AttachmentService {
             throw new CaptureRuntimeException("file.error.issue.key.invalid", issueKey);
         }
         if (!permissionService.hasCreateAttachmentPermission(issue.getKey())) {
-            throw new CaptureRuntimeException("file.error.attachment.permission", issueKey);
+            throw new CaptureValidationException(i18n.getMessage("file.error.attachment.permission",new Object[]{issueKey}));
         }
         JSONObject json = null;
 
@@ -153,7 +157,7 @@ public class AttachmentServiceImpl implements AttachmentService {
     }
 
     @Override
-    public String addAttachmentsByThreads(String issueKey, String testSessionId, JSONArray jsonArray) throws CaptureRuntimeException, JSONException,RestClientException,IOException {
+    public String addAttachmentsByThreads(String issueKey, String testSessionId, JSONArray jsonArray) throws CaptureRuntimeException, JSONException, RestClientException, IOException, CaptureValidationException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
@@ -168,7 +172,7 @@ public class AttachmentServiceImpl implements AttachmentService {
             throw new CaptureRuntimeException("file.error.issue.key.invalid", issueKey);
         }
         if (!permissionService.hasCreateAttachmentPermission(issue.getProject().getId(), issue.getKey())) {
-            throw new CaptureRuntimeException("file.error.attachment.permission", issueKey);
+            throw new CaptureValidationException(i18n.getMessage("file.error.attachment.permission",new Object[]{issueKey}));
         }
         JSONObject json = null;
 
