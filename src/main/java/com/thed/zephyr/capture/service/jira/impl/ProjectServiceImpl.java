@@ -133,9 +133,7 @@ public class ProjectServiceImpl implements ProjectService {
     * @return
     */
     private ArrayList<BasicProject> parseBasicProjects(JsonNode projectString, Optional<Boolean> isExtension) {
-        String user = CaptureUtil.getAtlassianHostUser().getUserKey().get();
         ArrayList<BasicProject> basicProjects = new ArrayList<>();
-        Boolean checkPermission = isExtension.isPresent() ? isExtension.get(): false;
         projectString.forEach(jsonNode -> {
             Long projectId = jsonNode.get("id").asLong();
             BasicProject basicProject =
@@ -145,14 +143,7 @@ public class ProjectServiceImpl implements ProjectService {
                             projectId,
                             jsonNode.get("name").asText()
                     );
-            //Check if user has create issue permission for this project and pass through.
-            if(checkPermission && permissionService.hasCreateIssuePermission(projectId,user)) {
                 basicProjects.add(basicProject);
-            }else if (checkPermission && !permissionService.hasCreateIssuePermission(projectId,user)){
-               //do nothing
-            }else {
-                basicProjects.add(basicProject);
-            }
         });
         return basicProjects;
     }
