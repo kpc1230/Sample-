@@ -44,8 +44,7 @@ public class ProjectServiceImpl implements ProjectService {
     private DynamicProperty dynamicProperty;
     @Autowired
     private AtlassianHostRestClients atlassianHostRestClients;
-    @Autowired
-    private PermissionService permissionService;
+
     @Override
     public Project getProjectObj(Long projectId) {
         return getProjectObjByKey(String.valueOf(projectId));
@@ -58,13 +57,13 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ArrayList<BasicProject> getProjects(Optional<Boolean> isExtension) throws Exception {
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
         try{
-            AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
-            JsonNode projectString = atlassianHostRestClients.authenticatedAs(hostUser)
-                    .getForObject(REST_API_PROJECT, JsonNode.class);
-            return parseBasicProjects(projectString, isExtension);
+            JsonNode projectString = atlassianHostRestClients.authenticatedAs(hostUser).getForObject(REST_API_PROJECT, JsonNode.class);
+
+            return parseBasicProjects(projectString);
         } catch (Exception exception){
-            log.error("Error during getting projects from Jira.", exception);
+            log.error("Error during getting projects from Jira isExtension:{} user:{}", isExtension, hostUser.getUserKey(), exception);
             throw new Exception("Error during getting projects.");
         }
     }
@@ -132,7 +131,7 @@ public class ProjectServiceImpl implements ProjectService {
     * @param projectString
     * @return
     */
-    private ArrayList<BasicProject> parseBasicProjects(JsonNode projectString, Optional<Boolean> isExtension) {
+    private ArrayList<BasicProject> parseBasicProjects(JsonNode projectString) {
         ArrayList<BasicProject> basicProjects = new ArrayList<>();
         projectString.forEach(jsonNode -> {
             Long projectId = jsonNode.get("id").asLong();
@@ -145,6 +144,8 @@ public class ProjectServiceImpl implements ProjectService {
                     );
                 basicProjects.add(basicProject);
         });
+        log.debug("Parsed BasicProjects count:{} jsonProjectString:{}", basicProjects.size(), projectString.toString());
+
         return basicProjects;
     }
 }
