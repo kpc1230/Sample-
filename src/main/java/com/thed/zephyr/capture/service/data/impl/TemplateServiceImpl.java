@@ -113,7 +113,7 @@ public class TemplateServiceImpl implements TemplateService {
         Map<Long, BasicProject> projectsMap = new TreeMap<>();
         projects.forEach(basicProject -> {projectsMap.put(basicProject.getId(), basicProject);});
         List<Template> templateList = filterSharedTemplateByAccessedProjects(templatePage, projectsMap);
-
+        templateList = templateList != null?templateList:new ArrayList<>();
 
         return createSearchList(templateList, projectsMap, offset, limit);
 	}
