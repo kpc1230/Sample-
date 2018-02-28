@@ -158,7 +158,12 @@ public class TemplateServiceImpl implements TemplateService {
 				if(template != null && template.getCreatedBy() != null && template.getProjectId() != null) {
 					CaptureUser user = userService.findUserByKey(template.getCreatedBy());
 					BasicProject basicProject = projectsMap.get(template.getProjectId());
-					String key = basicProject.getKey();
+                    String key;
+					if(basicProject == null){
+					    key = projectService.getCaptureProject(template.getProjectId()).getKey();
+                    } else {
+                        key = basicProject.getKey();
+                    }
 					TemplateRequest templateRequest = TemplateBuilder.createTemplateRequest(template, key, user);
 					templateRequestList.add(templateRequest);
 				}

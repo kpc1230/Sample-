@@ -85,8 +85,9 @@ public class ProjectServiceImpl implements ProjectService {
                 }
             }, expiration);
             ObjectMapper om = new ObjectMapper();
+            ArrayList<BasicProject> result = parseBasicProjects(om.readTree(projectString));
 
-            return parseBasicProjects(om.readTree(projectString));
+            return result;
         } catch (Exception exception){
             log.error("Error during getting projects from Jira user:{}", hostUser.getUserKey().get(), exception);
             throw new Exception("Error during getting projects.");
