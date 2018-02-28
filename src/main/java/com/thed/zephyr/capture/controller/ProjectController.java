@@ -25,7 +25,7 @@ public class ProjectController {
 
     @GetMapping
     ResponseEntity<?> getAllProjects(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestParam Optional<Boolean> isExtension) throws Exception {
-        List<BasicProject> projects = projectService.getProjects(isExtension);
+        List<BasicProject> projects = projectService.getProjects();
         Map<String, List<BasicProject>> resultMap = new HashMap();
         resultMap.put("projects", projects);
         log.debug("Got all projects isExtension:{} user:{} projects count:{}", isExtension, hostUser.getUserKey(), projects.size());

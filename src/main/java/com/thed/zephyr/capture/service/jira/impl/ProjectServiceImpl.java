@@ -6,10 +6,14 @@ import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.BasicProject;
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netflix.config.DynamicIntProperty;
+import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
+import com.thed.zephyr.capture.service.cache.LockService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
@@ -44,6 +48,9 @@ public class ProjectServiceImpl implements ProjectService {
     private DynamicProperty dynamicProperty;
     @Autowired
     private AtlassianHostRestClients atlassianHostRestClients;
+    @Autowired
+    private LockService lockService;
+
 
     @Override
     public Project getProjectObj(Long projectId) {
@@ -56,15 +63,35 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ArrayList<BasicProject> getProjects(Optional<Boolean> isExtension) throws Exception {
+    public ArrayList<BasicProject> getProjects() throws Exception {
         AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        String userKey = hostUser.getUserKey().isPresent()?hostUser.getUserKey().get():"undefined";
+        Integer expiration = dynamicProperty.getIntProp("user.projects.cache.expiration.sec", 30).get();
+        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+        log.debug("Getting projects by user:{} from cache", userKey);
+        String lockKey = ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + userKey + "-" + acHostModel.getCtId();
+        if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
+            log.error("Not able to get the lock during getting Projects by user:{}", userKey);
+            throw new CaptureRuntimeException("Not able to get the lock during getting Projects by user:{}" + userKey);
+        }
         try{
-            JsonNode projectString = atlassianHostRestClients.authenticatedAs(hostUser).getForObject(REST_API_PROJECT, JsonNode.class);
+            String projectString =  tenantAwareCache.getOrElse(acHostModel, createUserProjectsKey(userKey), new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    JsonNode jsonProjectsStr = atlassianHostRestClients.authenticatedAs(hostUser).getForObject(REST_API_PROJECT, JsonNode.class);
+                    log.debug("Getting projects from Jira by user:{} jsonProjectsStr:{}", userKey, jsonProjectsStr.toString());
 
-            return parseBasicProjects(projectString);
+                    return jsonProjectsStr.toString();
+                }
+            }, expiration);
+            ObjectMapper om = new ObjectMapper();
+
+            return parseBasicProjects(om.readTree(projectString));
         } catch (Exception exception){
-            log.error("Error during getting projects from Jira isExtension:{} user:{}", isExtension, hostUser.getUserKey(), exception);
+            log.error("Error during getting projects from Jira user:{}", hostUser.getUserKey().get(), exception);
             throw new Exception("Error during getting projects.");
+        } finally {
+            lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
         }
     }
 
@@ -103,7 +130,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private String buildProjectCacheKey(String projectIdOrKey){
-        return ApplicationConstants.PROJECT_CACHE_KEY_PREFIX+projectIdOrKey;
+        return String.valueOf(ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + projectIdOrKey);
     }
     
     @Override
@@ -147,5 +174,9 @@ public class ProjectServiceImpl implements ProjectService {
         log.debug("Parsed BasicProjects count:{} jsonProjectString:{}", basicProjects.size(), projectString.toString());
 
         return basicProjects;
+    }
+
+    private String createUserProjectsKey(String userKey){
+        return String.valueOf(ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + userKey);
     }
 }

@@ -31,13 +31,10 @@ public class TemplateController extends CaptureAbstractController{
 
 	@Autowired
 	private Logger log;
-
 	@Autowired
 	private TemplateService templateService;
-
 	@Autowired
 	PermissionService permissionService;
-
 	@Autowired
 	ProjectService projectService;
 

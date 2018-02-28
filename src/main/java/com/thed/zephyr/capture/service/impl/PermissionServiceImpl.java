@@ -178,7 +178,7 @@ public class PermissionServiceImpl implements PermissionService {
         } else {
             perMap = getAllUserPermissionsMap();
         }
-        if(permissionType==CREATE_ISSUE_PERMISSION) {
+        if(permissionType == CREATE_ISSUE_PERMISSION) {
             perMap = getMyPrmissions(user);
         }
 

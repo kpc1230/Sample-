@@ -56,10 +56,10 @@ public interface TemplateService {
      * @param limit
      * @return
      */
-	TemplateSearchList getSharedTemplates(String owner, Integer offset, Integer limit);
+	TemplateSearchList getSharedTemplates(String owner, Integer offset, Integer limit) throws Exception;
 
-	TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit);
-	TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit);
+	TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit) throws Exception;
+	TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit) throws Exception;
 	
 	void deleteTemplatesByCtIdAndProject(String ctId, Long projectId);
 }
