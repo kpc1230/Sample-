@@ -18,7 +18,6 @@ import com.thed.zephyr.capture.service.data.VariableService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.CaptureUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -26,7 +25,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -155,14 +153,17 @@ public class TemplateServiceImpl implements TemplateService {
 
     private TemplateSearchList createSearchList(Collection<Template> templates, Map<Long, BasicProject> projectsMap, Integer offset, Integer limit){
         List<TemplateRequest> templateRequestList = new ArrayList<>();
-        templates.forEach(template -> {
-            CaptureUser user = userService.findUserByKey(template.getCreatedBy());
-            BasicProject basicProject = projectsMap.get(template.getProjectId());
-            String key = basicProject.getKey();
-            TemplateRequest templateRequest = TemplateBuilder.createTemplateRequest(template, key, user);
-            templateRequestList.add(templateRequest);
-        });
-
+        if(templates != null && templates.size() > 0) {
+			templates.forEach(template -> {
+				if(template != null && template.getCreatedBy() != null && template.getProjectId() != null) {
+					CaptureUser user = userService.findUserByKey(template.getCreatedBy());
+					BasicProject basicProject = projectsMap.get(template.getProjectId());
+					String key = basicProject.getKey();
+					TemplateRequest templateRequest = TemplateBuilder.createTemplateRequest(template, key, user);
+					templateRequestList.add(templateRequest);
+				}
+			});
+		}
         return new TemplateSearchList(templateRequestList, offset, limit, templates.size());
     }
 
