@@ -181,19 +181,15 @@ public class MetadataServiceImpl implements MetadataService {
 
             JsonNode userNode = userService.getAssignableUserByProjectKey(captureProject.getKey());
             List<FieldOption> userBeans = new ArrayList<>();
-            userNode.forEach(jsonNode1 -> {
-//                ObjectNode objectNode = new ObjectMapper().createObjectNode();
-//                objectNode.put("text",jsonNode1.get("displayName").asText());
-//                objectNode.put("value",jsonNode1.get("key").asText());
-//                objectNode.set("children",new ObjectMapper().createArrayNode());
-//                objectNode.put("hasChildren",false);
+            if(userNode != null && userNode.size() > 0) {
+                userNode.forEach(jsonNode1 -> {
+                    userBeans.add(new FieldOption(
+                            jsonNode1.get("displayName").asText(),
+                            jsonNode1.get("key").asText()
+                    ));
 
-                userBeans.add(new FieldOption(
-                        jsonNode1.get("displayName").asText(),
-                        jsonNode1.get("key").asText()
-                ));
-
-            });
+                });
+            }
             resultMap.put(FIELD_LIST_BEANS,fieldMap);
             resultMap.put(FIELD_DETAILS,fieldValueMap);
             resultMap.put(USER_BEANS, userBeans);
