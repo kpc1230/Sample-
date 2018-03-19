@@ -8,6 +8,7 @@ import com.thed.zephyr.capture.model.Template;
 import com.thed.zephyr.capture.model.TemplateBuilder;
 import com.thed.zephyr.capture.model.TemplateRequest;
 import com.thed.zephyr.capture.model.Variable;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.TemplateRepository;
@@ -18,6 +19,7 @@ import com.thed.zephyr.capture.service.data.VariableService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -160,12 +162,15 @@ public class TemplateServiceImpl implements TemplateService {
 					BasicProject basicProject = projectsMap.get(template.getProjectId());
                     String key;
 					if(basicProject == null){
-					    key = projectService.getCaptureProject(template.getProjectId()).getKey();
+						CaptureProject captureProject = projectService.getCaptureProject(template.getProjectId());
+						key = captureProject != null?captureProject.getKey():null;
                     } else {
                         key = basicProject.getKey();
                     }
-					TemplateRequest templateRequest = TemplateBuilder.createTemplateRequest(template, key, user);
-					templateRequestList.add(templateRequest);
+                    if (StringUtils.isNotBlank(key)){
+						TemplateRequest templateRequest = TemplateBuilder.createTemplateRequest(template, key, user);
+						templateRequestList.add(templateRequest);
+					}
 				}
 			});
 		}
