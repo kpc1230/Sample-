@@ -161,9 +161,8 @@ public class UserServiceImpl implements UserService{
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         return findUserByKey(acHostModel, key);
     }
-    
+
     public CaptureUser findUserByKey(AcHostModel acHostModel, String key) {
-        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
         String uri = acHostModel.getBaseUrl();
         CaptureUser captureUser = null;
         try {
@@ -189,7 +188,6 @@ public class UserServiceImpl implements UserService{
     }
 
     public CaptureUser findActiveUserByUserName(String username, String baseUrl) {
-        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
         try {
             URI targetUrl = UriComponentsBuilder.fromUriString(baseUrl)
                     .path(JiraConstants.REST_API_USER)

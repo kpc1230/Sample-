@@ -103,7 +103,10 @@ public class CaptureUtil {
 
     public static AtlassianHostUser getAtlassianHostUser(){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
+        AtlassianHostUser hostUser=null;
+        if(auth != null && auth.getPrincipal() != null) {
+            hostUser = (AtlassianHostUser) auth.getPrincipal();
+        }
         return hostUser;
     }
 
