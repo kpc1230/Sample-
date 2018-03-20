@@ -7,11 +7,9 @@ import com.atlassian.jira.rest.client.api.domain.BasicProject;
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.config.DynamicIntProperty;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
-import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.cache.LockService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
@@ -27,7 +25,6 @@ import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import static com.thed.zephyr.capture.util.JiraConstants.REST_API_PROJECT;
@@ -142,7 +139,7 @@ public class ProjectServiceImpl implements ProjectService {
                 @Override
                 public CaptureProject call() throws Exception {
                 	String uri = acHostModel.getBaseUrl() + JiraConstants.REST_API_PROJECT_2 + projectIdOrKey;
-
+                     log.info("Getting project from jira using url: {}",uri);
                 	 CaptureProject response = atlassianHostRestClients.authenticatedAsAddon().getForObject(uri, CaptureProject.class);
                     return response;
                 }
