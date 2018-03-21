@@ -692,30 +692,35 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctid) throws HazelcastInstanceNotDefinedException {
+	public void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctId) throws HazelcastInstanceNotDefinedException {
 		jobProgressService.createJobProgress(acHostModel, ApplicationConstants.REINDEX_CAPTURE_ES_DATA, ApplicationConstants.JOB_STATUS_INPROGRESS, jobProgressId);
 		CompletableFuture.runAsync(() -> {
 			try {
 				if (!lockService.tryLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA, 5)){
-					log.warn("Re-index executions process already in progress.");
+					log.warn("Re-index sessions process already in progress for tenant ctId:{}", ctId);
 					jobProgressService.setErrorMessage(acHostModel, jobProgressId, captureI18NMessageSource.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.reindex.executions.inprogress"));
+					return;
 				}
-				if(log.isDebugEnabled()) log.debug("Re-Indexing Session type data begin:");
-				deleteSessionDataForCtid(ctid);
+				log.debug("Re-Indexing Session type data begin:");
+				deleteSessionDataForCtid(ctId);
 				loadSessionDataFromDBToES(acHostModel, jobProgressId);
 				jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
 				String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
 				jobProgressService.setMessage(acHostModel, jobProgressId, message);
-				lockService.deleteLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);
 			} catch(Exception ex) {
-				log.error("Error in reindexSessionDataIntoES() - ", ex);
+				log.error("Error during reindex for tenant ctId:{}", ctId, ex);
 				try {
 					jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_FAILED, jobProgressId);
 					String errorMessage = captureI18NMessageSource.getMessage("capture.common.internal.server.error");
 					jobProgressService.setErrorMessage(acHostModel, jobProgressId, errorMessage);
-					lockService.deleteLock(acHostModel.getCtId(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);
-				} catch (HazelcastInstanceNotDefinedException e) {
-					log.warn("Error in releassing the lock in catch block - ", ex);
+				} catch (HazelcastInstanceNotDefinedException exception) {
+					log.error("Error during deleting reindex job progress for tenant ctId:{}", ctId, exception);
+				}
+			} finally {
+				try {
+					lockService.deleteLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);
+				} catch (HazelcastInstanceNotDefinedException exception) {
+					log.error("Error during clearing reindex lock for tenant ctId:{}", ctId, exception);
 				}
 			}
 		});
@@ -1526,12 +1531,14 @@ public class SessionServiceImpl implements SessionService {
 		Long total = 0L;
 		int index = 0;
 		Page<Session> pageResponse = loadSessionDataIntoES(acHostModel, jobProgressId, index, maxResults);
+		log.debug("Session reindex: getting sessions page size:{} ctId:{}", pageResponse.getTotalElements(), acHostModel.getCtId());
 		total = pageResponse.getTotalElements();
 		index = index + maxResults;
 		jobProgressService.setTotalSteps(acHostModel, jobProgressId, total.intValue());
 		jobProgressService.addCompletedSteps(acHostModel, jobProgressId, pageResponse.getNumberOfElements());
 		while(index < total.intValue()) {
 			pageResponse = loadSessionDataIntoES(acHostModel, jobProgressId, index, maxResults);
+			log.debug("Session reindex: getting sessions page size:{} ctId:{}", pageResponse.getTotalElements(), acHostModel.getCtId());
 			index = index + maxResults;
 			jobProgressService.addCompletedSteps(acHostModel, jobProgressId,  pageResponse.getNumberOfElements());
 		}
@@ -1543,11 +1550,13 @@ public class SessionServiceImpl implements SessionService {
 		Page<Session> pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(index / maxResults, maxResults));
 		for(Session session : pageResponse.getContent()) {
 			project = projectService.getCaptureProjectViaAddon(acHostModel, String.valueOf(session.getProjectId()));
-			user = userService.findUserByKey(acHostModel, session.getAssignee());
-			session.setProjectName(project != null ? project.getName() : null);
-			session.setUserDisplayName(user != null ? user.getDisplayName() : null);
-			session.setStatusOrder(getStatusOrder(session.getStatus()));
-			sessionESRepository.save(session);
+			if(project != null){
+				user = userService.findUserByKey(acHostModel, session.getAssignee());
+				session.setProjectName(project.getName());
+				session.setUserDisplayName(user != null ? user.getDisplayName() : session.getAssignee());
+				session.setStatusOrder(getStatusOrder(session.getStatus()));
+				sessionESRepository.save(session);
+			}
 		}
 		return pageResponse;
 	}
