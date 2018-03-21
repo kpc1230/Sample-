@@ -4,6 +4,7 @@ import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.Attachment;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.jira.UserService;
@@ -169,10 +170,16 @@ public class SessionActivityServiceImpl implements SessionActivityService {
 
     private void populateDisplayNames(List<SessionActivity> sessionActivities){
         sessionActivities.stream().forEach(sessionActivity -> {
-            sessionActivity.setDisplayName(userService.findUserByKey(sessionActivity.getUser()).getDisplayName());
+            CaptureUser user = userService.findUserByKey(sessionActivity.getUser());
+            if(user != null) {
+                sessionActivity.setDisplayName(user.getDisplayName());
+            }
             if (sessionActivity instanceof UserAssignedSessionActivity){
                 UserAssignedSessionActivity userAssignedSessionActivity = (UserAssignedSessionActivity)sessionActivity;
-                userAssignedSessionActivity.setAssigneeDisplayName(userService.findUserByKey(userAssignedSessionActivity.getAssignee()).getDisplayName());
+                CaptureUser user1 = userService.findUserByKey(userAssignedSessionActivity.getAssignee());
+                if(user1 != null) {
+                    userAssignedSessionActivity.setAssigneeDisplayName(user1.getDisplayName());
+                }
             }
         });
     }

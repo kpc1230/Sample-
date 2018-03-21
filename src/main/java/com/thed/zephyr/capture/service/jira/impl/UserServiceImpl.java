@@ -158,8 +158,12 @@ public class UserServiceImpl implements UserService{
     @Override
     public CaptureUser findUserByKey(String key) {
         AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
-        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-        return findUserByKey(acHostModel, key);
+        if(hostUser != null) {
+            AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+            return findUserByKey(acHostModel, key);
+        }else{
+            return null;
+        }
     }
 
     public CaptureUser findUserByKey(AcHostModel acHostModel, String key) {

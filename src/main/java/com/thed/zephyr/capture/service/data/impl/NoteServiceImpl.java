@@ -236,8 +236,10 @@ public class NoteServiceImpl implements NoteService {
 	private void populateRequiredData(final NoteRequest noteReq, final String rawNote){
 
 		CaptureUser user = userService.findUserByKey(noteReq.getUser());
-		noteReq.setAuthorDisplayName(user.getDisplayName());
-		noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
+		if(user != null) {
+			noteReq.setAuthorDisplayName(user.getDisplayName());
+			noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
+		}
 		Session session = sessionESRepository.findById(noteReq.getSessionId());
 		String noteData = rawNote;
 		String wikify = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser,noteData));

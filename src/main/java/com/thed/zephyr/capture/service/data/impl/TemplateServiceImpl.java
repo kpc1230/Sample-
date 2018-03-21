@@ -215,8 +215,13 @@ public class TemplateServiceImpl implements TemplateService {
 	
 	private Map<String, CaptureUser> getUserMap(List<Template> templateList) {
 		Map<String, CaptureUser> userMap = new HashMap<>();
-		templateList.forEach(t -> 
-				userMap.put(t.getCreatedBy(), userService.findUserByKey(t.getCreatedBy())));
+		templateList.forEach(t -> {
+				CaptureUser user = userService.findUserByKey(t.getCreatedBy());
+						if(user != null) {
+							userMap.put(t.getCreatedBy(), user);
+						}
+				}
+			);
 		return userMap;
 	}
 
