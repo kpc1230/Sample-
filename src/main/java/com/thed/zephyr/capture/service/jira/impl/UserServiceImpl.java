@@ -163,6 +163,9 @@ public class UserServiceImpl implements UserService{
     }
 
     public CaptureUser findUserByKey(AcHostModel acHostModel, String key) {
+        if(StringUtils.isEmpty(key)){
+            return null;
+        }
         String uri = acHostModel.getBaseUrl();
         CaptureUser captureUser = null;
         try {
