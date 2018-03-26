@@ -724,7 +724,7 @@ public class BackUpServiceImpl implements BackUpService {
             Integer offset = 0;
             long total;
             do {
-                Page<Session> sessionsPage = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(offset, ApplicationConstants.MAX_BULK_RECORDS_DEFAULT_LIMIT));
+                Page<Session> sessionsPage = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(offset/ApplicationConstants.MAX_BULK_RECORDS_DEFAULT_LIMIT, ApplicationConstants.MAX_BULK_RECORDS_DEFAULT_LIMIT));
                 totalObjects += storeSessionList(sessionsPage, acHostModel, entityName, totalObjects, backupFile, jobProgressTicket, annotation.entityType());
                 total = sessionsPage.getTotalElements();
                 offset += ApplicationConstants.MAX_BULK_RECORDS_DEFAULT_LIMIT;
