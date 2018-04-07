@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.service.jira.IssueService;
-import com.thed.zephyr.capture.util.CaptureUtil;
-import com.thed.zephyr.capture.util.EmojiUtil;
-import com.thed.zephyr.capture.util.WikiParser;
+import com.thed.zephyr.capture.util.WikiMarkupRenderer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,14 +22,11 @@ import java.util.function.Function;
 public class SessionActivityFunction implements Function<SessionActivity, Object> {
 	
 	private IssueService issueService;
-	private WikiParser wikiParser;
-	private EmojiUtil emojiUtil;
+	private WikiMarkupRenderer wikiMarkupRenderer;
 
-	public SessionActivityFunction(IssueService issueService, WikiParser wikiParser,
-	EmojiUtil emojiUtil) {
+	public SessionActivityFunction(IssueService issueService, WikiMarkupRenderer wikiMarkupRenderer) {
 		this.issueService = issueService;
-		this.wikiParser = wikiParser;
-		this.emojiUtil = emojiUtil;
+		this.wikiMarkupRenderer = wikiMarkupRenderer;
 	}
 
 	@Override
@@ -62,7 +57,7 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 			String noteData = noteSessionActivity.getNoteData();
 			String wikify = noteData;
 			if(noteData != null){
-				 wikify = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser,noteData));
+				 wikify = wikiMarkupRenderer.getWikiRender(noteData);
 				 noteSessionActivity.setNoteData(wikify);
 			}
 			addNoteActivityInToMap(finalSescionActivityMap, noteSessionActivity, noteData, wikify);

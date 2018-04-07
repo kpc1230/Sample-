@@ -104,11 +104,11 @@ public class SessionServiceImpl implements SessionService {
 	@Autowired
 	private CaptureContextIssueFieldsService captureContextIssueFieldsService;
 	@Autowired
-	private WikiParser wikiParser;
-	@Autowired
 	private NoteRepository noteRepository;
 	@Autowired
 	private AddonDescriptorLoader ad;
+	@Autowired
+	private WikiMarkupRenderer wikiMarkupRenderer;
 
 
 	@Override
@@ -399,11 +399,7 @@ public class SessionServiceImpl implements SessionService {
 		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
 		AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
 		List<Session> sessionsList = pageResponse.getContent();
-		List<Session> convertedSessList = new ArrayList<>();
-		sessionsList.forEach(session -> {
-			convertedSessList.add(convertAdditionalInfoWiki(session));
-		});
-		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, convertedSessList, size, false);
+		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, sessionsList, size, false);
 		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, pageResponse.getTotalElements());
 		return sessionDtoSearchList;
 	}
@@ -748,7 +744,7 @@ public class SessionServiceImpl implements SessionService {
 	private Session convertAdditionalInfoWiki(Session session) {
 		String additionalInfo = session.getAdditionalInfo();
 		if(additionalInfo != null){
-			session.setAdditionalInfo(wikiParser.parseWiki(additionalInfo,ApplicationConstants.HTML));
+			session.setAdditionalInfo(wikiMarkupRenderer.getWikiRender(additionalInfo));
 		}
 		return session;
 	}
@@ -1404,8 +1400,7 @@ public class SessionServiceImpl implements SessionService {
 			}
 		}
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), EmojiUtil.emojify(
-						CaptureUtil.createWikiData(wikiParser,session.getAdditionalInfo())), session.getTimeCreated(), null, session.getJiraPropIndex());
+				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), wikiMarkupRenderer.getWikiRender(session.getAdditionalInfo()), session.getTimeCreated(), null, session.getJiraPropIndex());
 		if(!usersMap.containsKey(session.getAssignee())) {
 			user = userService.findUserByKey(session.getAssignee());
 		} else {

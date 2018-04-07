@@ -36,10 +36,7 @@ import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
-import com.thed.zephyr.capture.util.ApplicationConstants;
-import com.thed.zephyr.capture.util.CaptureUtil;
-import com.thed.zephyr.capture.util.EmojiUtil;
-import com.thed.zephyr.capture.util.WikiParser;
+import com.thed.zephyr.capture.util.*;
 import com.thed.zephyr.capture.validator.SessionValidator;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
@@ -92,10 +89,8 @@ public class SessionController extends CaptureAbstractController{
 	private LockService lockService;
 
 	@Autowired
-	private WikiParser wikiParser;
+	private WikiMarkupRenderer wikiMarkupRenderer;
 
-	@Autowired
-	private EmojiUtil emojiUtil;
 
 	@Autowired
 	private AddonDescriptorLoader ad;
@@ -118,7 +113,7 @@ public class SessionController extends CaptureAbstractController{
 			sessionsSearch.getContent().stream().forEach(session -> {
 				String additionalInfo = session.getAdditionalInfo();
 				if(StringUtils.isNotEmpty(additionalInfo)){
-					additionalInfo = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser,additionalInfo));
+					additionalInfo = wikiMarkupRenderer.getWikiRender(additionalInfo);
 				}
 				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 						project, session.getDefaultTemplateId(),session.getAdditionalInfo(), additionalInfo, session.getTimeCreated(), null, session.getJiraPropIndex()); //Send only what UI is required instead of whole session object.
@@ -713,7 +708,7 @@ public class SessionController extends CaptureAbstractController{
 				ActivityStreamFilterUI activityStreamFilterUI = new ActivityStreamFilterUI(notesFilterStateUI);
 				sessionActivities =  getSessionActivityItems(sessionActivities, activityStreamFilterUI, getUser());
 			}
-			List<?> finalSessionActivities = sessionActivities.stream().map(new SessionActivityFunction(issueService, wikiParser, emojiUtil)).collect(Collectors.toList());
+			List<?> finalSessionActivities = sessionActivities.stream().map(new SessionActivityFunction(issueService, wikiMarkupRenderer)).collect(Collectors.toList());
 			log.info("End of sessionActivities()");
 			return ResponseEntity.ok(finalSessionActivities);
 		} catch(Exception ex) {
@@ -858,7 +853,7 @@ public class SessionController extends CaptureAbstractController{
             }
 			sessionService.update(updateResult, true);
 			Map<String, String> jsonResponse = new HashMap<>();
-			jsonResponse.put("additionalInfo", emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser, updateResult.getSession().getAdditionalInfo())));
+			jsonResponse.put("additionalInfo",   wikiMarkupRenderer.getWikiRender(updateResult.getSession().getAdditionalInfo()));
 			jsonResponse.put("rawAdditionalInfo", updateResult.getSession().getAdditionalInfo());
 			log.info("End of updateAdditionalInfo()");
 			return ResponseEntity.ok(jsonResponse);

@@ -1,13 +1,12 @@
 package com.thed.zephyr.capture.model;
 
-import java.util.Date;
-import java.util.Set;
-
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import java.util.Date;
+import java.util.Set;
 
 final public class NoteRequest {
 
@@ -71,7 +70,7 @@ final public class NoteRequest {
     		this.author = note.getAuthor();
     		this.rawNoteData = note.getNoteData();
     		this.resolutionState = note.getResolutionState().name();
-    		this.noteData = CaptureUtil.createNoteData(note.getNoteData());
+    		this.noteData = note.getNoteData();
     		this.projectId = note.getProjectId();
     		this.tags = tags;//createLightTag(tags);
     		this.sessionActivityId = note.getNoteSessionActivityId();

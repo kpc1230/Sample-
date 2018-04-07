@@ -231,47 +231,16 @@ public class CaptureUtil {
 		return tagList;
 	}
 
-    public static String createWikiData(WikiParser wikiParser, String rawData){
-        String convStr = null;
-        if(StringUtils.isNotEmpty(rawData)){
-            convStr = wikiParser.parseWiki(rawData, ApplicationConstants.HTML);
-            convStr = createNoteData(convStr);
-        }
-    	return convStr;
-    }
+
 	public static String createNoteData(String noteData) {
-//		StringBuilder data = new StringBuilder();
-//		String[] lines = noteData.split("\\r?\\n");
-//		boolean isPrevNewLine = true;
-//		boolean isFirstLine = true;
-//		for(String line : lines) {
-//			switch(line.trim()) {
-//				case "": {
-//					if(isPrevNewLine) {
-//						isPrevNewLine = false;
-//						data.append("");
-//					}
-//					break;
-//				} default: {
-//					if(!isFirstLine && isPrevNewLine) {
-//						data.append("<br/>");
-//					} else {
-//						data.append("");
-//					}
-//					data.append(getAtlassiaonWikiformatted(line));
-//					isFirstLine = false;
-//					isPrevNewLine = true;
-//				}
-//			}
-//		}
-//		data.append("");
 		return StringUtils.isNotEmpty(noteData)?getAtlassiaonWikiformatted(noteData):noteData;
 	}
 	
 	private static String getAtlassiaonWikiformatted(String line) {
 		StringBuilder finalData = new StringBuilder();
-        String lineStr = line.replace("\n","<br /> ");
-		String[] words = lineStr.split("[\\s]+");
+		String[] words = line
+                .replaceAll("[<](/)?p[^>]*[>]", "")
+                .split("[\\s]+");
 		for(String word : words) {
 			String tagName = null;
 			String cssClass = null;
@@ -295,18 +264,14 @@ public class CaptureUtil {
 						tagName = Tag.IDEA_TAG_NAME;	
 				}
 			}
-			String target = String.format(" target=\"".concat("%s")+"\"","_parent");
+
 			if(Objects.nonNull(tagName) && Objects.nonNull(cssClass)) {
 				finalData.append(" <span class=\"note-tag ").append(cssClass).append("\"></span>").append(word.length() > 2 ? word.substring(2) : "");
 			} else {
-				if(word.matches("^(https|http|ftp|ftps)://(.)+$")) {
-					finalData.append(" <a ".concat(target)+" href=\"").append(word).append("\">").append(word).append("</a>");
-				} else {
-					finalData.append(" " + word);
-				}
+				finalData.append(" " + word);
 			}
 		}
-		return finalData.toString().replace("\n","<br />");
+        return finalData.toString().replaceAll("<a", "<a target=\"_parent\"");
 	}
 	
 	private static String getTagData(String noteData, String tag) {

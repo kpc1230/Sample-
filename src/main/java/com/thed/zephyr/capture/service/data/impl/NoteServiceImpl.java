@@ -11,10 +11,7 @@ import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.NoteService;
 import com.thed.zephyr.capture.service.jira.UserService;
-import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
-import com.thed.zephyr.capture.util.CaptureUtil;
-import com.thed.zephyr.capture.util.EmojiUtil;
-import com.thed.zephyr.capture.util.WikiParser;
+import com.thed.zephyr.capture.util.*;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -38,15 +35,13 @@ public class NoteServiceImpl implements NoteService {
 	@Autowired
 	private CaptureI18NMessageSource i18n;
 	@Autowired
-	PermissionService permissionService;
+	private PermissionService permissionService;
 	@Autowired
-	UserService userService;
+	private UserService userService;
 	@Autowired
-	SessionESRepository sessionESRepository;
+	private SessionESRepository sessionESRepository;
 	@Autowired
-	private WikiParser wikiParser;
-	@Autowired
-	private EmojiUtil emojiUtil;
+	private WikiMarkupRenderer wikiMarkupRenderer;
 
 	@Override
 	public NoteRequest create(NoteRequest noteRequest) throws CaptureValidationException {
@@ -242,7 +237,7 @@ public class NoteServiceImpl implements NoteService {
 		}
 		Session session = sessionESRepository.findById(noteReq.getSessionId());
 		String noteData = rawNote;
-		String wikify = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser,noteData));
+		String wikify = wikiMarkupRenderer.getWikiRender(noteData);
 		noteReq.setNoteData(wikify);
 		noteReq.setRawNoteData(rawNote);
 		noteReq.setSessionName(Objects.nonNull(session) ? session.getName() : "");

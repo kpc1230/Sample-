@@ -92,6 +92,9 @@ public class ApplicationConstants {
     public static final String SESSION_ACTIVITIES = "sessionActivities";
     public static final String HTML = "html";
     public static final String TEXT = "text";
+    public static final String ATLASSIAN_WIKI_RENDERER = "atlassian-wiki-renderer";
+    public static final String WIKI_TYPE = "rendererType";
+    public static final String WIKI_KEY = "unrenderedMarkup";
 
     /*** for MetadataField ***/
     public static String PROJECTS = "projects";
@@ -220,4 +223,10 @@ public class ApplicationConstants {
     /* permissions */
     public static final String PERMISSIONS = "permissions";
     public static final String HAVE_PERMISSIONS = "havePermission";
+
+    public static final String ATLASSIAN_ACCESS_TOKEN = "atlassian-token";
+    public static final String HEADER_PARAM_ACCESS_TOKEN = "accessToken";
+    public static final String HEADER_PARAM_JIRA_BASE_URL = "jiraBaseUrl";
+    public static final String HEADER_PARAM_USER_KEY = "userKey";
+
 }
