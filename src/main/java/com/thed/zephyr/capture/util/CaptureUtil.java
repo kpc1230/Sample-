@@ -237,41 +237,12 @@ public class CaptureUtil {
 	}
 	
 	private static String getAtlassiaonWikiformatted(String line) {
-		StringBuilder finalData = new StringBuilder();
-		String[] words = line
-                .replaceAll("[<](/)?p[^>]*[>]", "")
-                .split("[\\s]+");
-		for(String word : words) {
-			String tagName = null;
-			String cssClass = null;
-			if(word.length() >= 2) { //replacing if start tag is there.
-				String startTag = word.substring(0, 2);
-				switch(startTag) {
-					case Tag.QUESTION: 
-						tagName = Tag.QUESTION_TAG_NAME;
-						cssClass = "tag-question";
-						break;
-					case Tag.FOLLOWUP:
-						cssClass = "tag-followUp";
-						tagName = Tag.FOLLOWUP_TAG_NAME;
-						break;
-					case Tag.ASSUMPTION: 
-						tagName = Tag.ASSUMPTION_TAG_NAME;
-						cssClass = "tag-assumption";
-						break;
-					case Tag.IDEA:
-						cssClass = "tag-idea";
-						tagName = Tag.IDEA_TAG_NAME;	
-				}
-			}
-
-			if(Objects.nonNull(tagName) && Objects.nonNull(cssClass)) {
-				finalData.append(" <span class=\"note-tag ").append(cssClass).append("\"></span>").append(word.length() > 2 ? word.substring(2) : "");
-			} else {
-				finalData.append(" " + word);
-			}
-		}
-        return finalData.toString().replaceAll("<a", "<a target=\"_parent\"");
+        return line
+                .replace(Tag.QUESTION," <span class=\"note-tag tag-question  \"></span>")
+                .replace(Tag.IDEA," <span class=\"note-tag tag-idea  \"></span>")
+                .replace(Tag.ASSUMPTION," <span class=\"note-tag tag-assumption  \"></span>")
+                .replace(Tag.FOLLOWUP," <span class=\"note-tag tag-followUp  \"></span>")
+                .replace("<a", "<a target=\"_parent\"");
 	}
 	
 	private static String getTagData(String noteData, String tag) {
