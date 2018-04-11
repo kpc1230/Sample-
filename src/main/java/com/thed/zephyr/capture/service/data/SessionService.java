@@ -240,7 +240,7 @@ public interface SessionService {
 	 * @param additionalInfo -- Updated additional information.
 	 * @return -- Returns UpdateResult object which holds the updated session object.
 	 */
-	UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo);
+	UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo, String wikiParsedData);
 	
 	/**
 	 * Clones the session for the requested session.

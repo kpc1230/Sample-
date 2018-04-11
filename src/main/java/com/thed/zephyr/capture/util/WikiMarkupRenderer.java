@@ -27,6 +27,8 @@ public class WikiMarkupRenderer {
     private AtlassianHostRestClients atlasHostRestClient;
 
     public  String getWikiRender(String data){
+        if(data==null){ return data; }
+        log.info("Parsing wiki data {}",data);
         AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
          JSONObject reqJson = new JSONObject();
         ResponseEntity<String> resp = null;

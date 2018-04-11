@@ -1,12 +1,12 @@
 package com.thed.zephyr.capture.model.view;
 
-import java.time.Duration;
-import java.util.Date;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.thed.zephyr.capture.model.LightSession;
 import com.thed.zephyr.capture.model.Session.Status;
+
+import java.time.Duration;
+import java.util.Date;
+import java.util.List;
 
 /**
  * <p>Bean that is shaped specifically for the browser extensions current active session.</p>
@@ -48,7 +48,7 @@ public class SessionDto {
     
     private String prettyStatus;
     
-    private String rawAdditionalInfo;
+    private String wikiParsedData;
 
     private String estimatedTimeSpent;
     
@@ -83,7 +83,7 @@ public class SessionDto {
     	this.projectKey = session.getProject() != null ? session.getProject().getKey() : "";
     	this.projectName = session.getProject() != null ? session.getProject().getName() : "";
     	this.additionalInfo = session.getAdditionalInfo();
-    	this.rawAdditionalInfo = session.getRawAdditionalInfo();
+    	this.wikiParsedData = session.getWikiParsedData();
     	this.isActive = isActive;
         this.participants = activeParticipants;
         this.participantCount = activeParticipantCount;
@@ -174,8 +174,12 @@ public class SessionDto {
 		return prettyStatus;
 	}
 
-	public String getRawAdditionalInfo() {
-		return rawAdditionalInfo;
+	public String getWikiParsedData() {
+		return wikiParsedData;
+	}
+
+	public void setWikiParsedData(String wikiParsedData) {
+		this.wikiParsedData = wikiParsedData;
 	}
 
 	public Date getCreatedDate() {

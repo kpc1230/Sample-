@@ -13,6 +13,8 @@ import com.thed.zephyr.capture.service.data.NoteService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.*;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +30,8 @@ import java.util.stream.Collectors;
 @Service
 public class NoteServiceImpl implements NoteService {
 
+	@Autowired
+	private Logger log;
 	@Autowired
 	private SessionActivityRepository sessionActivityRepository;
 	@Autowired
@@ -52,6 +56,7 @@ public class NoteServiceImpl implements NoteService {
 		}else{
 			tags = new TreeSet<>();
 		}
+		String wikiParsedData = wikiMarkupRenderer.getWikiRender(noteRequest.getNoteData());
 		NoteSessionActivity.Resolution resolution = tags.size() > 0?NoteSessionActivity.Resolution.INITIAL:NoteSessionActivity.Resolution.NON_ACTIONABLE;
 		SessionActivity sessionActivity =
 				new NoteSessionActivity(
@@ -61,6 +66,7 @@ public class NoteServiceImpl implements NoteService {
 						noteRequest.getUser(),
 						noteRequest.getProjectId(),
 						noteRequest.getNoteData(),
+						wikiParsedData,
 						resolution,
 						tags
 				);
@@ -109,6 +115,16 @@ public class NoteServiceImpl implements NoteService {
 		NoteSessionActivity noteSessionActivity = (NoteSessionActivity)sessionActivityRepository.save(existing);
 
 		Note existingNote = noteRepository.findByCtIdAndNoteSessionActivityId(noteSessionActivity.getCtId(), noteSessionActivity.getId());
+		String wikiParsedData = existingNote.getWikiParsedData();
+		String noteData = noteSessionActivity.getNoteData();
+		log.warn("came here {}, {}",noteData,wikiParsedData);
+		if(StringUtils.isNotEmpty(noteData) && (StringUtils.isEmpty(wikiParsedData)
+				|| !existingNote.getNoteData().equals(noteData))){
+			wikiParsedData = wikiMarkupRenderer.getWikiRender(noteSessionActivity.getNoteData());
+			noteSessionActivity.setWikiParsedData(wikiParsedData);
+			noteSessionActivity = (NoteSessionActivity)sessionActivityRepository.save(noteSessionActivity);
+		}
+
 		Note note = new Note(noteSessionActivity);
 		note.setId(existingNote.getId());
 		note = noteRepository.save(note);
@@ -165,9 +181,21 @@ public class NoteServiceImpl implements NoteService {
 		} else if(noteFilter.getTags() == null && noteFilter.getResolution() != null){
 			notes = noteRepository.findByCtIdAndProjectIdAndResolutionState(ctId, projectId, noteFilter.getResolution(), pageable);
 		}
+		List<Note> noteList = new ArrayList<>();
 		List<Note> content = notes != null?notes.getContent():new ArrayList<>();
 		Long total = notes != null?notes.getTotalElements():0;
-		NoteSearchList result = new NoteSearchList(convertNoteTO(loggedUser, content), page, limit, total);
+		content.forEach(note->{
+			String wikiParsedData = note.getWikiParsedData();
+			if(StringUtils.isEmpty(wikiParsedData)){
+				wikiParsedData = wikiMarkupRenderer.getWikiRender(note.getNoteData());
+				note.setWikiParsedData(wikiParsedData);
+				noteRepository.save(note);
+				noteList.add(note);
+			}else{
+				noteList.add(note);
+			}
+		});
+		NoteSearchList result = new NoteSearchList(convertNoteTO(loggedUser, noteList), page, limit, total);
 
 		return result;
 	}
@@ -180,6 +208,13 @@ public class NoteServiceImpl implements NoteService {
 		Long total = notes != null?notes.getTotalElements():0;
 		if(total>0){
 			notes.getContent().forEach(note -> {
+				String wikiParsedData = note.getWikiParsedData();
+				if(StringUtils.isEmpty(wikiParsedData)){
+					wikiParsedData = wikiMarkupRenderer.getWikiRender(note.getNoteData());
+					note.setWikiParsedData(wikiParsedData);
+					noteRepository.save(note);
+				}
+
 				listNotes.add(note);
 			});
 		}
@@ -222,13 +257,13 @@ public class NoteServiceImpl implements NoteService {
 	}
 	
 	private NoteRequest convertNoteSessionActivityTO(NoteSessionActivity noteSA){
-		String rawNoteData = noteSA.getNoteData();
+		String noteData = noteSA.getNoteData();
 		NoteRequest noteReq = new NoteRequest(noteSA, noteSA.getTags());
 		noteReq.setCanEdit(true);
-		populateRequiredData(noteReq, rawNoteData);
+		populateRequiredData(noteReq, noteData);
 		return noteReq;
 	}
-	private void populateRequiredData(final NoteRequest noteReq, final String rawNote){
+	private void populateRequiredData(final NoteRequest noteReq, final String noteData){
 
 		CaptureUser user = userService.findUserByKey(noteReq.getUser());
 		if(user != null) {
@@ -236,10 +271,7 @@ public class NoteServiceImpl implements NoteService {
 			noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
 		}
 		Session session = sessionESRepository.findById(noteReq.getSessionId());
-		String noteData = rawNote;
-		String wikify = wikiMarkupRenderer.getWikiRender(noteData);
-		noteReq.setNoteData(wikify);
-		noteReq.setRawNoteData(rawNote);
+		noteReq.setNoteData(noteData);
 		noteReq.setSessionName(Objects.nonNull(session) ? session.getName() : "");
 	}
 

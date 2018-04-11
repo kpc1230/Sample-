@@ -3,8 +3,10 @@ package com.thed.zephyr.capture.functions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
+import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.util.WikiMarkupRenderer;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,10 +25,14 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 	
 	private IssueService issueService;
 	private WikiMarkupRenderer wikiMarkupRenderer;
+	private SessionActivityRepository sessionActivityRepository;
 
-	public SessionActivityFunction(IssueService issueService, WikiMarkupRenderer wikiMarkupRenderer) {
+	public SessionActivityFunction(IssueService issueService,
+								   WikiMarkupRenderer wikiMarkupRenderer,
+								   SessionActivityRepository sessionActivityRepository) {
 		this.issueService = issueService;
 		this.wikiMarkupRenderer = wikiMarkupRenderer;
+		this.sessionActivityRepository = sessionActivityRepository;
 	}
 
 	@Override
@@ -55,12 +61,13 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 		} else if(sessionActivity instanceof NoteSessionActivity){
 			NoteSessionActivity noteSessionActivity = (NoteSessionActivity) sessionActivity;
 			String noteData = noteSessionActivity.getNoteData();
-			String wikify = noteData;
-			if(noteData != null){
-				 wikify = wikiMarkupRenderer.getWikiRender(noteData);
-				 noteSessionActivity.setNoteData(wikify);
+			String wikiParsedData = noteSessionActivity.getWikiParsedData();
+			if(StringUtils.isEmpty(wikiParsedData) && StringUtils.isNotEmpty(noteData)){
+				wikiParsedData = wikiMarkupRenderer.getWikiRender(noteData);
+				noteSessionActivity.setWikiParsedData(wikiParsedData);
+				noteSessionActivity = (NoteSessionActivity)sessionActivityRepository.save(noteSessionActivity);
 			}
-			addNoteActivityInToMap(finalSescionActivityMap, noteSessionActivity, noteData, wikify);
+			addNoteActivityInToMap(finalSescionActivityMap, noteSessionActivity);
 			return finalSescionActivityMap;
 		}
 
@@ -69,12 +76,11 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 
 	@SuppressWarnings("unchecked")
 	private void addNoteActivityInToMap(Map<String, Object> finalSessionActivityMap,
-										NoteSessionActivity noteSessionActivity,
-										String rawNoteData, String wikify) {
+										NoteSessionActivity noteSessionActivity) {
 		ObjectMapper m = new ObjectMapper();
 		finalSessionActivityMap.putAll(m.convertValue(noteSessionActivity, Map.class));
-		finalSessionActivityMap.put("rawNoteData", rawNoteData);
-		finalSessionActivityMap.put("noteData", wikify);
+		finalSessionActivityMap.put("wikiParsedData", noteSessionActivity.getWikiParsedData());
+		finalSessionActivityMap.put("noteData", noteSessionActivity.getNoteData());
 	}
 
 	private void addSessionActivityInToMap(Map<String, Object> finalSescionActivityMap, SessionActivity sessionActivity) {

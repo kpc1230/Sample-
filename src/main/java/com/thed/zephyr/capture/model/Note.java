@@ -4,11 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.DateTime;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 
@@ -35,6 +33,8 @@ final public class Note {
 
     private String noteData;
 
+    private String wikiParsedData;
+
     private NoteSessionActivity.Resolution resolutionState;
 
     private Set<String> tags;
@@ -49,6 +49,7 @@ final public class Note {
         this.createdTime = noteSessionActivity.getTimestamp();
         this.author = noteSessionActivity.getUser();
         this.noteData = noteSessionActivity.getNoteData();
+        this.wikiParsedData = noteSessionActivity.getWikiParsedData();
         this.tags = noteSessionActivity.getTags();
         this.projectId = noteSessionActivity.getProjectId();
         this.resolutionState = noteSessionActivity.getResolutionState();
@@ -100,6 +101,14 @@ final public class Note {
 
     public void setNoteData(String noteData) {
         this.noteData = noteData;
+    }
+
+    public String getWikiParsedData() {
+        return wikiParsedData;
+    }
+
+    public void setWikiParsedData(String wikiParsedData) {
+        this.wikiParsedData = wikiParsedData;
     }
 
     public NoteSessionActivity.Resolution getResolutionState() {

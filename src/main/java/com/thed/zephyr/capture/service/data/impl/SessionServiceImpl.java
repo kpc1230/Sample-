@@ -127,6 +127,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setName(sessionRequest.getName());
 		session.setTimeCreated(new Date());
 		session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
+		session.setWikiParsedData(sessionRequest.getWikiParsedData());
 		session.setShared(sessionRequest.getShared());
 		session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
 		session.setProjectId(sessionRequest.getProjectId());
@@ -175,6 +176,9 @@ public class SessionServiceImpl implements SessionService {
         if(Objects.nonNull(sessionRequest.getAdditionalInfo())) {
         	session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
         }
+		if(Objects.nonNull(sessionRequest.getWikiParsedData())) {
+			session.setWikiParsedData(sessionRequest.getWikiParsedData());
+		}
         session.setShared(sessionRequest.getShared());
         session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
         session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
@@ -649,8 +653,9 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo) {
+	public UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo, String wikiParsedData) {
 		session.setAdditionalInfo(additionalInfo);
+		session.setWikiParsedData(wikiParsedData);
 		return validateUpdate(loggedUser, session);
 	}
 
@@ -663,6 +668,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setName(cloneName);
 		session.setTimeCreated(new Date());
 		session.setAdditionalInfo(cloneSession.getAdditionalInfo());
+		session.setWikiParsedData(cloneSession.getWikiParsedData());
 		session.setShared(cloneSession.isShared());
 		session.setRelatedIssueIds(cloneSession.getRelatedIssueIds());
 		session.setProjectId(cloneSession.getProjectId());
@@ -737,17 +743,6 @@ public class SessionServiceImpl implements SessionService {
 		});
 	}
 
-	/**
-	 * Convert additional info to wiki
-	 * @param session
-	 */
-	private Session convertAdditionalInfoWiki(Session session) {
-		String additionalInfo = session.getAdditionalInfo();
-		if(additionalInfo != null){
-			session.setAdditionalInfo(wikiMarkupRenderer.getWikiRender(additionalInfo));
-		}
-		return session;
-	}
 
 	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser) {
 		List<Session> listOfSessionsAsParticipant = sessions != null ? sessions.getContent() : new ArrayList<>();
@@ -1399,8 +1394,16 @@ public class SessionServiceImpl implements SessionService {
 				activeParticipantCount++;
 			}
 		}
+		String additionalInfo = session.getAdditionalInfo();
+		String wikiParsedData = session.getWikiParsedData();
+		if(StringUtils.isEmpty(wikiParsedData) && StringUtils.isNotEmpty(additionalInfo)){
+			wikiParsedData = wikiMarkupRenderer.getWikiRender(additionalInfo);
+			session.setWikiParsedData(wikiParsedData);
+			sessionESRepository.save(session);
+			log.warn("getting {} {}",additionalInfo,wikiParsedData);
+		}
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-				project, session.getDefaultTemplateId(), session.getAdditionalInfo(), wikiMarkupRenderer.getWikiRender(session.getAdditionalInfo()), session.getTimeCreated(), null, session.getJiraPropIndex());
+				project, session.getDefaultTemplateId(), additionalInfo , wikiParsedData, session.getTimeCreated(), null, session.getJiraPropIndex());
 		if(!usersMap.containsKey(session.getAssignee())) {
 			user = userService.findUserByKey(session.getAssignee());
 		} else {
