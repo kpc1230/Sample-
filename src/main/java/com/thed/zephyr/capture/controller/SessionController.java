@@ -290,6 +290,17 @@ public class SessionController extends CaptureAbstractController{
             Set<Long> updatedRelatedIssues = new TreeSet<>();
             updatedRelatedIssues.addAll(sessionRequest.getRelatedIssueIds());
             updatedRelatedIssues.addAll(currentRelatedIssues);
+            String additionalInfo = sessionRequest.getAdditionalInfo();
+            String wikiParsedData = loadedSession.getWikiParsedData();
+            if(StringUtils.isNotEmpty(additionalInfo) &&
+			  (StringUtils.isEmpty(wikiParsedData) ||
+			  !sessionRequest.getAdditionalInfo().equals(loadedSession.getAdditionalInfo()))){
+				wikiParsedData = wikiMarkupRenderer.getWikiRender(additionalInfo);
+				loadedSession.setWikiParsedData(wikiParsedData);
+				sessionRequest.setWikiParsedData(wikiParsedData);
+			}else{
+            	wikiParsedData = null;
+			}
 			UpdateResult updateResult = sessionService.updateSession(loggedUserKey, loadedSession, sessionRequest);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
