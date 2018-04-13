@@ -42,20 +42,18 @@ public class JwtPostAuthenticationHandler implements AuthenticationHandler {
     private AddonDescriptorLoader ad;
 
     //Jira Token
-    private TokenHolder tokenHolder;
+    private String jiraToken;
 
-    public JwtPostAuthenticationHandler(AtlassianHostUser host,
-                                        AddonDescriptorLoader ad,
-                                        TokenHolder tokenHolder) {
+    public JwtPostAuthenticationHandler(AtlassianHostUser host, AddonDescriptorLoader ad, String jiraToken) {
         this.host = host;
         this.ad = ad;
-        this.tokenHolder = tokenHolder;
+        this.jiraToken = jiraToken;
     }
 
     @Override
     public void configure(Request.Builder builder) {
-        if(tokenHolder != null && tokenHolder.getTokenKey() != null) {
-            builder.setHeader(TOKEN_HEADER, tokenHolder.getTokenKey());
+        if(jiraToken != null) {
+            builder.setHeader(TOKEN_HEADER, jiraToken);
         }else {
             builder.setHeader(AUTHORIZATION_HEADER, "JWT " + createJwtToken(builder.build()));
         }

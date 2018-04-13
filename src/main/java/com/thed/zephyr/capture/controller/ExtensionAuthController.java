@@ -4,12 +4,11 @@ import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.IgnoreJwt;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.ExtensionUser;
-import com.thed.zephyr.capture.model.jira.CaptureUser;
+import com.thed.zephyr.capture.model.be.BEAuthToken;
 import com.thed.zephyr.capture.service.extension.JiraAuthService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
-import com.thed.zephyr.capture.util.Global.TokenHolder;
 import com.thed.zephyr.capture.util.security.AESEncryptionUtils;
 import com.thed.zephyr.capture.validator.ExtensionUserValidator;
 import org.apache.commons.collections.map.HashedMap;
@@ -43,8 +42,6 @@ public class ExtensionAuthController {
     @Autowired
     DynamicProperty dynamicProperty;
     @Autowired
-    private TokenHolder tokenHolder;
-    @Autowired
     private AtlassianHostRepository atlassianHostRepository;
 
     @InitBinder("extensionUser")
@@ -55,30 +52,21 @@ public class ExtensionAuthController {
     @IgnoreJwt
     @RequestMapping(value = "/rest/authenticate/be", method = RequestMethod.POST)
     ResponseEntity<?> validateCredentials(@Valid @RequestBody ExtensionUser extensionUser, HttpServletRequest request, Errors errors) {
+        AcHostModel host = (AcHostModel)atlassianHostRepository.findFirstByBaseUrl(extensionUser.getBaseUrl()).get();
         String userAgent = CaptureUtil.getUserAgent(request);
-        log.debug("Validating JIRA user credentials : userAgent : " + userAgent);
+        String password = CaptureUtil.decodeBase64(extensionUser.getPassword());
         Map<String,String> respMap = new HashedMap();
-        boolean success = jiraAuthService.authenticateWithJira(extensionUser.getUsername(), extensionUser.getPassword(), extensionUser.getBaseUrl());
-        if (success) {
-            AcHostModel host = (AcHostModel)atlassianHostRepository.findFirstByBaseUrl(extensionUser.getBaseUrl()).get();
-            CaptureUser captureUser = jiraAuthService.getUserDetails(extensionUser.getUsername(), extensionUser.getPassword(), extensionUser.getBaseUrl());
-            if (host.getStatus() == AcHostModel.TenantStatus.ACTIVE && captureUser != null) {
-                StringBuffer buffer = new StringBuffer(host.getCtId()).append("__")
-                        .append(captureUser.getKey())
-                        .append("__").append(System.currentTimeMillis())
-                        .append("__").append(tokenHolder.getToken())
-                        .append("__").append(userAgent);
-                HttpHeaders headers = new HttpHeaders();
-                String encry = AESEncryptionUtils.encrypt(buffer.toString(), dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
-                log.debug("Encrypted string....... : " + encry);
-                headers.add(ApplicationConstants.HEADER_PARAM_PACCESS_KEY, encry);
-                respMap.put("userKey",captureUser.getKey());
-                log.debug("Validating JIRA user credentials END");
-                return new ResponseEntity(respMap, headers, HttpStatus.OK);
-            }
+        BEAuthToken beAuthToken = jiraAuthService.authenticateWithJira(extensionUser.getUsername(), password, extensionUser.getBaseUrl(), userAgent);
+        if (beAuthToken != null && host.getStatus() == AcHostModel.TenantStatus.ACTIVE) {
+            String beKey = jiraAuthService.createStringTokenFromBEAuthToken(beAuthToken);
+            HttpHeaders headers = new HttpHeaders();
+            String encryptedKey = AESEncryptionUtils.encrypt(beKey, dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
+            headers.add(ApplicationConstants.HEADER_PARAM_PACCESS_KEY, encryptedKey);
+            respMap.put("userKey",beAuthToken.getUserKey());
 
+            return new ResponseEntity(respMap, headers, HttpStatus.OK);
         }
-        log.debug("Validating JIRA user credentials END");
+
         return new ResponseEntity(HttpStatus.UNAUTHORIZED);
     }
 

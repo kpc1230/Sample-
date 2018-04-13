@@ -4,21 +4,16 @@ import com.atlassian.connect.spring.AtlassianHost;
 import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.AtlassianConnectProperties;
-import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
 import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthenticationFilter;
 import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
 import com.nimbusds.jwt.JWTClaimsSet;
-import com.thed.zephyr.capture.exception.UnauthorizedException;
-import com.thed.zephyr.capture.model.AcHostModel;
-import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
-import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import com.thed.zephyr.capture.model.be.BEAuthToken;
+import com.thed.zephyr.capture.model.be.BEContextAuthentication;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepositoryImpl;
-import com.thed.zephyr.capture.service.cache.impl.TenantAwareCacheWrapper;
-import com.thed.zephyr.capture.service.data.LicenseService;
+import com.thed.zephyr.capture.service.extension.JiraAuthService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
-import com.thed.zephyr.capture.util.Global.TokenHolder;
 import com.thed.zephyr.capture.util.security.AESEncryptionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -26,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -47,17 +41,11 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
     private static final Logger log = LoggerFactory.getLogger(ZephyrAuthFilter.class);
 
     @Autowired
-    DynamicProperty dynamicProperty;
+    private DynamicProperty dynamicProperty;
     @Autowired
     private AtlassianHostRepository atlassianHostRepository;
     @Autowired
-    private TokenHolder tokenHolder;
-    @Autowired
-    private LicenseService licenseService;
-    @Autowired
-    private TenantAwareCacheWrapper cacheWrapper;
-    @Autowired
-    private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+    private JiraAuthService jiraAuthService;
 
     public ZephyrAuthFilter(AuthenticationManager authenticationManager,
                                    AddonDescriptorLoader addonDescriptorLoader,
@@ -92,24 +80,19 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
         if (!StringUtils.isEmpty(accessKey)) {
             String decodedKey = AESEncryptionUtils.decrypt(accessKey, dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
             if (StringUtils.isNotBlank(decodedKey)) {
-                String[] keyParts = decodedKey.split("__");
-                log.debug("Decoded access key : " + decodedKey);
-                String useragent = CaptureUtil.getUserAgent(request);
-                log.debug("User-Agent from request received : " + useragent);
-                if (StringUtils.endsWith(decodedKey, "__" + useragent)) {
-                    String clientKey = keyParts[0];
-                    String userKey = keyParts[1];
-                    String timeInMilliSec = keyParts[2];
-                    String jiraToken = keyParts[3];
-                    tokenHolder.setTokenKey(jiraToken);
-                    if (!validateKeyExpiry(timeInMilliSec)) {
+                BEAuthToken beAuthToken = jiraAuthService.createBEAuthTokenFromString(decodedKey);
+                String userAgent = CaptureUtil.getUserAgent(request);
+                if (beAuthToken != null && StringUtils.equals(userAgent, beAuthToken.getUserAgent())) {
+                    if (!validateKeyExpiry(beAuthToken.getTimestamp())) {
                         return false;
                     }
-                    AtlassianHost atlassianHost = ((DynamoDBAcHostRepositoryImpl)atlassianHostRepository).findByCtId(clientKey);
+                    AtlassianHost atlassianHost = ((DynamoDBAcHostRepositoryImpl)atlassianHostRepository).findByCtId(beAuthToken.getCtId());
                     if(null != atlassianHost) {
-                        JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(atlassianHost, Optional.ofNullable(userKey)), new JWTClaimsSet());
+                        AtlassianHostUser atlassianHostUser = new AtlassianHostUser(atlassianHost, Optional.ofNullable(beAuthToken.getUserKey()));
+                        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet();
+                        BEContextAuthentication beContextAuthentication = new BEContextAuthentication(atlassianHostUser, jwtClaimsSet, beAuthToken);
                         //Put JwtAuthentication into SecurityContext to mock JwtAuthenticationFilter behavior and allow RequireAuthenticationHandlerInterceptor pass request
-                       SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
+                       SecurityContextHolder.getContext().setAuthentication(beContextAuthentication);
                         MDC.put(ApplicationConstants.MDC_TENANTKEY, atlassianHost.getClientKey());
                         return true;
                     }else {
@@ -117,17 +100,13 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
                     }
                 }
             }
-
         }
         return false;
     }
 
-    private boolean validateKeyExpiry(String timeInMilliSec) {
-        long keyGeneratedTime = Long.valueOf(timeInMilliSec);
+    private boolean validateKeyExpiry(long timeInMilliSec) {
         long expiredIn = dynamicProperty.getLongProp(ApplicationConstants.BE_ACCESS_KEY_EXPIRATION_TIME, (15 * 24 * 60 * 60 * 1000)).get();
-        if (keyGeneratedTime + expiredIn >= System.currentTimeMillis()) {
-            return true;
-        }
-        return false;
+
+        return timeInMilliSec + expiredIn >= System.currentTimeMillis();
     }
 }

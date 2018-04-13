@@ -4,12 +4,17 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
+import com.thed.zephyr.capture.model.be.BEAuthToken;
+import com.thed.zephyr.capture.model.be.BEContextAuthentication;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
+import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.service.jira.http.CJiraRestClientFactory;
 import com.thed.zephyr.capture.service.jira.http.JwtGetAuthenticationHandler;
 import com.thed.zephyr.capture.service.jira.http.JwtPostAuthenticationHandler;
-import com.thed.zephyr.capture.util.Global.TokenHolder;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -22,35 +27,34 @@ public class CJiraRestClientFactoryImpl implements CJiraRestClientFactory {
 
     @Autowired
     private Logger log;
-
     @Autowired
     private AddonDescriptorLoader ad;
-
     @Autowired
-    private TokenHolder tokenHolder;
+    private UserService userService;
 
     @Override
     public JiraRestClient createJiraGetRestClient(AtlassianHostUser host) {
         AsynchronousJiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
-        JiraRestClient client = factory.create(URI.create(host.getHost().getBaseUrl()),
-                new JwtGetAuthenticationHandler(host, ad));
-        return client;
+        return factory.create(URI.create(host.getHost().getBaseUrl()), new JwtGetAuthenticationHandler(host, ad));
     }
 
     @Override
     public JiraRestClient createJiraPostRestClient(AtlassianHostUser host) {
         AsynchronousJiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
-        JiraRestClient client = factory.create(URI.create(host.getHost().getBaseUrl()),
-                new JwtPostAuthenticationHandler(host, ad, tokenHolder));
+        JiraRestClient client;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof BEContextAuthentication){
+            BEAuthToken beAuthToken = ((BEContextAuthentication) auth).getBeAuthToken();
+            if(beAuthToken.getApiToken() != null){
+                CaptureUser userByKey = userService.findUserByKey(beAuthToken.getUserKey());
+                client = factory.createWithBasicHttpAuthentication(URI.create(host.getHost().getBaseUrl()), userByKey.getEmailAddress(), beAuthToken.getApiToken());
+            } else {
+                client = factory.create(URI.create(host.getHost().getBaseUrl()), new JwtPostAuthenticationHandler(host, ad, beAuthToken.getJiraToken()));
+            }
+        } else {
+            client = factory.create(URI.create(host.getHost().getBaseUrl()), new JwtPostAuthenticationHandler(host, ad, null));
+        }
+
         return client;
     }
-    @Override
-    public JiraRestClient createJiraPostRestClient(AtlassianHostUser host,TokenHolder holder) {
-        AsynchronousJiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
-        JiraRestClient client = factory.create(URI.create(host.getHost().getBaseUrl()),
-                new JwtPostAuthenticationHandler(host, ad, holder));
-        return client;
-    }
-
-
 }
