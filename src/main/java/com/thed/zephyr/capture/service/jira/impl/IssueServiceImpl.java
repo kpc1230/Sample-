@@ -55,7 +55,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import com.thed.zephyr.capture.util.Global.TokenHolder;
 
 /**
  * Created by Masud on 8/13/17.
@@ -88,8 +87,6 @@ public class IssueServiceImpl implements IssueService {
     private AtlassianHostRestClients atlassianHostRestClients;
     @Autowired
     private IssueLinkTypeService issueLinkTypeService;
-    @Autowired
-    private Global.TokenHolder tokenHolder;
     @Autowired
     private CJiraRestClientFactory cJiraRestClientFactory;
 
@@ -353,13 +350,9 @@ public class IssueServiceImpl implements IssueService {
      * @param host
      */
     private void updateIssueLinks(String issueKey,IssueLinks issueLinks,AtlassianHostUser host) {
-        Global global = new Global();
-        Global.TokenHolder tokenHolderTmp = global.new  TokenHolder();
-        tokenHolderTmp.setTokenKey(tokenHolder.getTokenKey());
-        tokenHolderTmp.setTokenValue(tokenHolder.getTokenValue());
        CompletableFuture.runAsync(() -> {
             log.debug("New Thread Started in order to update issues links ");
-            final JiraRestClient postJiraRestClient  =  createPostJiraRestClient(host,tokenHolderTmp);
+            final JiraRestClient postJiraRestClient  =  createPostJiraRestClient(host);
             try{
                 if(issueLinks.getIssues()!=null&&issueLinks.getIssues().length>0) {
                     List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(host);
@@ -806,7 +799,7 @@ public class IssueServiceImpl implements IssueService {
         return ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + issueIdOrKey;
     }
 
-    public JiraRestClient createPostJiraRestClient(AtlassianHostUser hostUser, TokenHolder th) {
-        return cJiraRestClientFactory.createJiraPostRestClient(hostUser,th);
+    public JiraRestClient createPostJiraRestClient(AtlassianHostUser hostUser) {
+        return cJiraRestClientFactory.createJiraPostRestClient(hostUser);
     }
 }

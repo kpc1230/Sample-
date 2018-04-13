@@ -7,8 +7,6 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AddonInfo {
-    //gfgg
-    //{"key":"com.thed.zephyr.je","version":"1.0.6-AC","state":"ENABLED","host":{"product":"JIRA","contacts":[{"product":"David Bakes","email":"dbakes@thinkprocurement.com"}]},"license":{"active":true,"type":"COMMERCIAL","evaluation":false,"supportEntitlementNumber":"SEN-2469139"},"links":{"marketplace":[{"href":"https:\/\/marketplace.atlassian.com\/plugins\/com.thed.zephyr.je"}],"self":[{"href":"https:\/\/thinkprocurement.jira.com\/rest\/atlassian-connect\/1\/addons\/com.thed.zephyr.je"}]}}
     private String key;
     private String version;
     private String state;

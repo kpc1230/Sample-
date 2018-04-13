@@ -87,44 +87,4 @@ public class Global {
         }
         return null;
     }
-
-    @Bean
-    @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
-    public TokenHolder getTokenHolder(){
-        return new TokenHolder();
-    }
-
-    public class TokenHolder {
-        private String tokenKey;
-        private String tokenValue;
-
-        public TokenHolder() {
-        }
-
-        public TokenHolder(String tokenKey, String tokenValue) {
-            this.tokenKey = tokenKey;
-            this.tokenValue = tokenValue;
-        }
-
-        public String getTokenKey() {
-            return tokenKey;
-        }
-
-        public void setTokenKey(String tokenKey) {
-            this.tokenKey = tokenKey;
-        }
-
-        public String getTokenValue() {
-            return tokenValue;
-        }
-
-        public void setTokenValue(String tokenValue) {
-            this.tokenValue = tokenValue;
-        }
-
-        public String getToken(){
-            return tokenKey.concat("=").concat(tokenValue);
-        }
-    }
-
 }
