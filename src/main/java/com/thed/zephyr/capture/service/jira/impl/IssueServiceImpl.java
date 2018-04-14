@@ -7,6 +7,7 @@ import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.*;
 import com.atlassian.jira.rest.client.api.domain.input.*;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.AcHostModel;
@@ -22,6 +23,7 @@ import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.service.jira.IssueLinkTypeService;
 import com.thed.zephyr.capture.service.jira.IssueService;
+import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.service.jira.http.CJiraRestClientFactory;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.service.jira.issue.IssueFields;
@@ -89,7 +91,8 @@ public class IssueServiceImpl implements IssueService {
     private IssueLinkTypeService issueLinkTypeService;
     @Autowired
     private CJiraRestClientFactory cJiraRestClientFactory;
-
+    @Autowired
+    private MetadataService metadataService;
 
     @Override
     public Issue getIssueObject(String issueIdOrKey) {
@@ -674,17 +677,28 @@ public class IssueServiceImpl implements IssueService {
             issueInputBuilder.setFieldInput(parentField);
         }
         if (issueFields.getFields() != null && !issueFields.getFields().isEmpty()){
-            configCustomFields(issueInputBuilder, issueFields);
+            configCustomFields(issueInputBuilder, issueFields, project);
         }
 
         return issueInputBuilder.build();
     }
 
-    private void configCustomFields(IssueInputBuilder issueInputBuilder, IssueFields issueFields){
-        String url = "/rest/api/2/issue/createmeta?expand=projects.issuetypes.fields";
-        ResponseEntity<JsonNode> forEntity = atlassianHostRestClients.authenticatedAsAddon().getForEntity(url, JsonNode.class);
-        JsonNode body = forEntity.getBody();
-        ArrayNode projects = (ArrayNode)body.get("projects");
+    private void configCustomFields(IssueInputBuilder issueInputBuilder, IssueFields issueFields, Project issueProject){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
+        String metadata =  metadataService.getMetaDataCacheOrFresh(hostUser,
+                issueProject.getKey(),issueProject.getId());
+        JsonNode metadataNode = null;
+        if(StringUtils.isEmpty(metadata)){ return; }
+        try {
+             metadataNode = new ObjectMapper()
+                    .readerFor(JsonNode.class)
+                    .readValue(metadata);
+        }catch (IOException ex){
+            log.error("Error during converting metadata {}",ex.getMessage());
+        }
+
+        ArrayNode projects = (ArrayNode)metadataNode.get("projects");
         JsonNode project = null;
         for(JsonNode projectJson:projects){
             if(StringUtils.equals(projectJson.get("id").asText(), issueFields.project.id())){

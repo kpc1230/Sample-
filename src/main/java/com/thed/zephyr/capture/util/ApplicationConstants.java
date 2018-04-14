@@ -95,6 +95,7 @@ public class ApplicationConstants {
     public static final String ATLASSIAN_WIKI_RENDERER = "atlassian-wiki-renderer";
     public static final String WIKI_TYPE = "rendererType";
     public static final String WIKI_KEY = "unrenderedMarkup";
+    public static final String METADATA_EXPAND_KEY = "projects.issuetypes.fields";
 
     /*** for MetadataField ***/
     public static String PROJECTS = "projects";
@@ -228,5 +229,9 @@ public class ApplicationConstants {
     public static final String HEADER_PARAM_ACCESS_TOKEN = "accessToken";
     public static final String HEADER_PARAM_JIRA_BASE_URL = "jiraBaseUrl";
     public static final String HEADER_PARAM_USER_KEY = "userKey";
+
+    /** Fields metadata cache const **/
+    public static final String METADATA_CACHE_KEY_PREFIX = "metadata-";
+    public static final String METADATA_CACHE_EXPIRATION_DYNAMIC_PROP = "metadata.cache.expiration";
 
 }

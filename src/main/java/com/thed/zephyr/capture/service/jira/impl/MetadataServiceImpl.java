@@ -8,15 +8,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CustomField;
 import com.thed.zephyr.capture.model.jira.FieldOption;
 import com.thed.zephyr.capture.model.jira.FixVersionsFieldOption;
+import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.GroupService;
 import com.thed.zephyr.capture.service.jira.IssueTypeService;
 import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
 import net.minidev.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import static com.thed.zephyr.capture.util.ApplicationConstants.*;
 
@@ -53,9 +58,16 @@ public class MetadataServiceImpl implements MetadataService {
     private CaptureI18NMessageSource i18n;
     @Autowired
     private GroupService groupService;
-    
+    @Autowired
+    private ITenantAwareCache tenantAwareCache;
+    @Autowired
+    private DynamicProperty dynamicProperty;
+
     @Override
     public Map<String, Object> createFieldScreenRenderer(CaptureProject captureProject) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
+
         Map<String, Object> resultMap = new HashMap<>();
 
         List<Map<String, Object>> fieldMap = new ArrayList<>();
@@ -79,103 +91,87 @@ public class MetadataServiceImpl implements MetadataService {
             });
         }
 
-        List<IssueType> issueTypes = issueTypeService.getIssueTypesByProject(captureProject.getId());
-        List<Long> issueTypeIds = new ArrayList<>();
-        issueTypes.forEach(issueType -> {
-            issueTypeIds.add(issueType.getId());
-        });
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        String uri = host.getHost().getBaseUrl();
-        URI targetUrl= UriComponentsBuilder.fromUriString(uri)
-                .path(JiraConstants.REST_API_CREATE_ISSUE_SCHEMA)
-                .queryParam("projectIds", captureProject.getId())
-                .queryParam("issuetypeIds", issueTypeIds.toArray())
-                .queryParam("expand","projects.issuetypes.fields")
-                .build()
-                .encode()
-                .toUri();
-
         try {
-            String response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, String.class);
-            JsonNode jsonNode = new ObjectMapper().readTree(response).get(PROJECTS);
-            for(final JsonNode pN: jsonNode){
-                JsonNode itNode = pN.get(ISSUE_TYPES);
-                for(final JsonNode iN: itNode){
-                    Map<String, Object> iFMap = new HashMap<>();
+            String response = getMetaDataCacheOrFresh(hostUser,captureProject.getKey(),captureProject.getId());
+            if(StringUtils.isNotEmpty(response)) {
+                JsonNode jsonNode = new ObjectMapper().readTree(response).get(PROJECTS);
+                for (final JsonNode pN : jsonNode) {
+                    JsonNode itNode = pN.get(ISSUE_TYPES);
+                    for (final JsonNode iN : itNode) {
+                        Map<String, Object> iFMap = new HashMap<>();
 
-                    com.thed.zephyr.capture.model.jira
-                            .IssueType issueType = new ObjectMapper()
-                            .readValue(iN.toString(),com.thed.zephyr.capture.model.jira.
-                                    IssueType.class);
-                    JsonNode fN = iN.get(FIELDS);
-                    iFMap.put(FIELDS, fN);
-                    iFMap.put(ISSUE_TYPE,issueType);
+                        com.thed.zephyr.capture.model.jira
+                                .IssueType issueType = new ObjectMapper()
+                                .readValue(iN.toString(), com.thed.zephyr.capture.model.jira.
+                                        IssueType.class);
+                        JsonNode fN = iN.get(FIELDS);
+                        iFMap.put(FIELDS, fN);
+                        iFMap.put(ISSUE_TYPE, issueType);
 
-                    for(final JsonNode vN: fN)
-                    {
-                        JsonNode options = vN.has(ALLOWED_VALUES) ? vN.get(ALLOWED_VALUES): new ObjectMapper().createArrayNode();
-                        List<FieldOption> fieldOptions = new ArrayList<>();
-                        String key = vN.get(KEY).asText();
-                        if(key.equals("assignee")){
-                            fieldOptions = addAssigneeOptions();
-                        }
-                        List<FieldOption> finalFieldOptions = fieldOptions;
-                        options.forEach(jsonNode1 -> {
-                            String name = jsonNode1.has("name") ? jsonNode1.get("name").asText():
-                                    jsonNode1.get("value").asText();
-                            String value = jsonNode1.has("id") ? jsonNode1.get("id").asText(): null;
-                            List<FieldOption> children = new ArrayList<>();
-                            ArrayNode childrenJson = (ArrayNode)jsonNode1.get("children");
-                            if (childrenJson != null){
-                                for (JsonNode childJson:childrenJson){
-                                    String childText = childJson.get("value").asText();
-                                    String childValue = childJson.get("id").asText();
-                                    children.add(new FieldOption(childText, childValue));
-                                }
+                        for (final JsonNode vN : fN) {
+                            JsonNode options = vN.has(ALLOWED_VALUES) ? vN.get(ALLOWED_VALUES) : new ObjectMapper().createArrayNode();
+                            List<FieldOption> fieldOptions = new ArrayList<>();
+                            String key = vN.get(KEY).asText();
+                            if (key.equals("assignee")) {
+                                fieldOptions = addAssigneeOptions();
                             }
-                            if(StringUtils.isNotEmpty(name) && StringUtils.isNotEmpty(value)) {
-                                if(key.equals("fixVersions")){
-                                    Boolean released = jsonNode1.get("released").asBoolean();
-                                    finalFieldOptions.add(new FixVersionsFieldOption(name, value, children, released));
+                            List<FieldOption> finalFieldOptions = fieldOptions;
+                            options.forEach(jsonNode1 -> {
+                                String name = jsonNode1.has("name") ? jsonNode1.get("name").asText() :
+                                        jsonNode1.get("value").asText();
+                                String value = jsonNode1.has("id") ? jsonNode1.get("id").asText() : null;
+                                List<FieldOption> children = new ArrayList<>();
+                                ArrayNode childrenJson = (ArrayNode) jsonNode1.get("children");
+                                if (childrenJson != null) {
+                                    for (JsonNode childJson : childrenJson) {
+                                        String childText = childJson.get("value").asText();
+                                        String childValue = childJson.get("id").asText();
+                                        children.add(new FieldOption(childText, childValue));
+                                    }
+                                }
+                                if (StringUtils.isNotEmpty(name) && StringUtils.isNotEmpty(value)) {
+                                    if (key.equals("fixVersions")) {
+                                        Boolean released = jsonNode1.get("released").asBoolean();
+                                        finalFieldOptions.add(new FixVersionsFieldOption(name, value, children, released));
+                                    } else {
+                                        finalFieldOptions.add(new FieldOption(name, value, children));
+                                    }
+                                }
+                            });
+
+                            ObjectNode objectNode = (ObjectNode) vN;
+                            if (!key.equalsIgnoreCase("issuelinks")) {
+                                objectNode.set(OPTIONS, new ObjectMapper().valueToTree(finalFieldOptions));
+                            } else {
+                                if (issuelinksTypesList.size() > 0) {
+                                    objectNode.set(OPTIONS, new ObjectMapper().convertValue(issuelinksTypesList, JsonNode.class));
                                 } else {
-                                    finalFieldOptions.add(new FieldOption(name,value, children));
+                                    objectNode.set(OPTIONS, new ObjectMapper().valueToTree(fieldOptions));
                                 }
                             }
-                        });
-
-                        ObjectNode objectNode = (ObjectNode)vN;
-                        if(!key.equalsIgnoreCase("issuelinks")){
-                            objectNode.set(OPTIONS, new ObjectMapper().valueToTree(finalFieldOptions));
-                        }else{
-                            if(issuelinksTypesList.size()>0){
-                                objectNode.set(OPTIONS, new ObjectMapper().convertValue(issuelinksTypesList,JsonNode.class));
-                            }else {
-                                objectNode.set(OPTIONS, new ObjectMapper().valueToTree(fieldOptions));
+                            CustomField customField = new ObjectMapper()
+                                    .readValue(vN.toString(), CustomField.class);
+                            String typeKey = customField.getSchema() != null &&
+                                    customField.getSchema().getCustom() != null ?
+                                    customField.getSchema().getCustom() : customField.getSchema().getType();
+                            objectNode.put("typeKey", typeKey);
+                            boolean systemField = false;
+                            if (customField.getSchema() != null
+                                    && customField.getSchema().getSystem() != null
+                                    && customField.getSchema().getSystem().equals(customField.getKey())) {
+                                systemField = true;
                             }
+                            if (customField != null && customField.getSchema().getCustom() != null &&
+                                    customField.getSchema().getCustom().endsWith("grouppicker")) {
+                                objectNode.set(OPTIONS, new ObjectMapper().valueToTree(groupService.findGroups(null)));
+                            }
+                            objectNode.put("systemField", systemField);
+                            objectNode.remove(ALLOWED_VALUES);
+                            fieldValueMap.put(key, vN);
                         }
-                        CustomField customField = new ObjectMapper()
-                                .readValue(vN.toString(), CustomField.class);
-                        String typeKey = customField.getSchema() != null &&
-                                customField.getSchema().getCustom() != null ?
-                                customField.getSchema().getCustom(): customField.getSchema().getType();
-                        objectNode.put("typeKey",typeKey);
-                        boolean systemField = false;
-                        if(customField.getSchema() != null
-                           && customField.getSchema().getSystem() != null
-                           && customField.getSchema().getSystem().equals(customField.getKey())){
-                            systemField = true;
-                        }
-                        if(customField != null && customField.getSchema().getCustom() != null &&
-                        		customField.getSchema().getCustom().endsWith("grouppicker")) {
-                        	objectNode.set(OPTIONS, new ObjectMapper().valueToTree(groupService.findGroups(null)));
-                        }
-                        objectNode.put("systemField",systemField);
-                        objectNode.remove(ALLOWED_VALUES);
-                        fieldValueMap.put(key, vN);
-                    }
 
-                    fieldMap.add(iFMap);
+                        fieldMap.add(iFMap);
+                    }
                 }
             }
 
@@ -201,6 +197,44 @@ public class MetadataServiceImpl implements MetadataService {
          return resultMap;
     }
 
+    @Override
+    public String getMetaDataCacheOrFresh(AtlassianHostUser hostUser, String projectKey, Long projectId) {
+        String metadata = null;
+        try {
+            AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+            metadata = tenantAwareCache.getOrElse(acHostModel, createProjectMetaKey(projectKey), new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+
+                    List<IssueType> issueTypes = issueTypeService.getIssueTypesByProject(projectId);
+                    List<Long> issueTypeIds = new ArrayList<>();
+                    issueTypes.forEach(issueType -> {
+                        issueTypeIds.add(issueType.getId());
+                    });
+                    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                    AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+                    String uri = host.getHost().getBaseUrl();
+                    URI targetUrl= UriComponentsBuilder.fromUriString(uri)
+                            .path(JiraConstants.REST_API_CREATE_ISSUE_SCHEMA)
+                            .queryParam("projectIds", projectId)
+                            .queryParam("issuetypeIds", issueTypeIds.toArray())
+                            .queryParam("expand", ApplicationConstants.METADATA_EXPAND_KEY)
+                            .build()
+                            .encode()
+                            .toUri();
+                    String response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, String.class);
+                    log.debug("Response for metadata {} {}",projectId,response);
+                    return response;
+                }
+            }, dynamicProperty.getIntProp(ApplicationConstants.METADATA_CACHE_EXPIRATION_DYNAMIC_PROP,ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+
+        } catch (Exception exp) {
+            log.error("Exception while getting the project metadata from JIRA." + exp.getMessage(), exp);
+        }
+        return metadata;
+    }
+
+
     private List<FieldOption> addAssigneeOptions() {
         List<FieldOption> fieldOpts = new ArrayList<>();
         // -1 is used by JIRA to for automatically assignment.
@@ -212,5 +246,9 @@ public class MetadataServiceImpl implements MetadataService {
         fieldOpts.add(new FieldOption(i18n.getMessage("issue.assignee.tome"), "-2"));
         fieldOpts.add(new FieldOption(i18n.getMessage("issue.assignee.unassigned"), ""));
         return fieldOpts;
+    }
+
+    private String createProjectMetaKey(String projectKey) {
+        return ApplicationConstants.METADATA_CACHE_KEY_PREFIX + projectKey;
     }
 }

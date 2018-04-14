@@ -982,7 +982,7 @@ public class SessionController extends CaptureAbstractController{
 			log.info("End of getActiveSessionLink()");
 			return ResponseEntity.ok(activeSessionLink);
 		} catch(Exception ex) {
-			log.error("Error in getActiveSessionLink() -> ", ex);
+			log.error("Error in getActiveSessionLink() -> ", ex.getMessage());
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
