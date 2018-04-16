@@ -220,4 +220,7 @@ public class ApplicationConstants {
     /* permissions */
     public static final String PERMISSIONS = "permissions";
     public static final String HAVE_PERMISSIONS = "havePermission";
+
+    public static final String SESSION_LIST = "sessionList";
+    public static final String TOTAL_COUNT = "total";
 }

@@ -22,7 +22,7 @@ public class NoteRepositoryImpl {
 	
 	public void deleteBySessionId(String sessionId) {
 		DeleteQuery deleteQuery = new DeleteQuery();
-		deleteQuery.setQuery(QueryBuilders.matchQuery(ApplicationConstants.SESSION_ID_FIELD, sessionId));		
+		deleteQuery.setQuery(QueryBuilders.matchPhraseQuery(ApplicationConstants.SESSION_ID_FIELD, sessionId));
 		elasticsearchTemplate.delete(deleteQuery, Note.class);
 	}
 }
