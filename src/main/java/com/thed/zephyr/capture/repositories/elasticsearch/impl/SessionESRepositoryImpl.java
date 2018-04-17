@@ -1,9 +1,14 @@
 package com.thed.zephyr.capture.repositories.elasticsearch.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.model.Mail;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Session.Status;
+import com.thed.zephyr.capture.service.email.AmazonSEService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
@@ -14,6 +19,8 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
@@ -24,6 +31,7 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilde
 import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.stereotype.Component;
 
+import javax.mail.MessagingException;
 import java.util.*;
 
 /**
@@ -32,10 +40,19 @@ import java.util.*;
  */
 @Component
 public class SessionESRepositoryImpl {
-	
+
+	private static final Logger log = LoggerFactory.getLogger(SessionESRepositoryImpl.class);
+
+
 	@Autowired
 	private ElasticsearchTemplate elasticsearchTemplate;
-	
+
+	@Autowired
+	private DynamicProperty dynamicProperty;
+
+	@Autowired
+	private AmazonSEService amazonSEService;
+
 	private static Map<Character, Character> escapeCharactersMap = new HashMap<>();
 	
 	static {
@@ -129,6 +146,28 @@ public class SessionESRepositoryImpl {
 		sessions.forEach(session -> {
 			if(session.getCtId().equals(ctId)){
 				sessionList.add(session);
+			}else{
+				//error not matched ctId
+				log.error("Error during getting sessions from elasticsearch , ctId missmatch");
+				Mail mail = new Mail();
+				String toEmail = dynamicProperty.getStringProp(ApplicationConstants.FEEDBACK_SEND_EMAIL, "atlassian.dev@getzephyr.com").get();
+
+				JsonNode jsonNode = new ObjectMapper().convertValue(session, JsonNode.class);
+				String body = "<p>Looking sessions for ctId:"+ctId+" </p>" +
+						"<p>Found session ctId: "+session.getCtId()+" </p>" +
+						"<p>Found session Object: "+jsonNode.toString()+" </p>";
+
+				mail.setTo(toEmail);
+				mail.setSubject("Mismatch during retrieving sessions for ctId:"+ctId);
+				mail.setText(body);
+
+				try {
+					if (amazonSEService.sendMail(mail)) {
+                        log.info("Successfully sent email to : {}", toEmail);
+                    }
+				} catch (MessagingException e) {
+					log.error("Error during sending Mismatch Session Email. for ctId:"+ctId);
+				}
 			}
 		});
 		results.put(ApplicationConstants.SESSION_LIST,sessionList);

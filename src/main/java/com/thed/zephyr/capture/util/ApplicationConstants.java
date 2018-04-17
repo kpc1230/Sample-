@@ -92,6 +92,8 @@ public class ApplicationConstants {
     public static final String SESSION_ACTIVITIES = "sessionActivities";
     public static final String HTML = "html";
     public static final String TEXT = "text";
+    public static final String ENTRANCE_CHECKING = "entrance.checking";
+    public static final String ENTRANCE_CHECKING_LIST = "entrance.checking.tenant.list";
 
     /*** for MetadataField ***/
     public static String PROJECTS = "projects";
