@@ -38,29 +38,39 @@ public class EntranceInterceptor extends HandlerInterceptorAdapter {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        Boolean passRequest = false;
-        //check entrance allowed flag
-        Boolean isAllowed = dynamicProperty.getBoolProp(ApplicationConstants.ENTRANCE_CHECKING,true).getValue();
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if(auth != null && isAllowed){
-            AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+            Boolean passRequest = false;
+            //check entrance allowed flag
+            Boolean isAllowed = dynamicProperty.getBoolProp(ApplicationConstants.ENTRANCE_CHECKING,false).getValue();
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if(auth != null && isAllowed){
+                if(auth.getPrincipal() instanceof String && auth.getPrincipal().toString().equals("anonymousUser")){
+                    log.info("AnnonymousUser trying to access.");
+                    return true;
+                }else{
+                    try {
+                        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
 
-            List<String> getAllowedTenantList = dynamicProperty.getStringListProp(ApplicationConstants.ENTRANCE_CHECKING_LIST,new ArrayList<>()).getValue();
+                        List<String> getAllowedTenantList = dynamicProperty.getStringListProp(ApplicationConstants.ENTRANCE_CHECKING_LIST,new ArrayList<>()).getValue();
 
-            if(getAllowedTenantList != null && getAllowedTenantList.size()>0){
-                for(String clientKey: getAllowedTenantList){
-                    if(clientKey.equals(host.getHost().getClientKey())) {
-                        passRequest = true;
-                        break;
+                        if(getAllowedTenantList != null && getAllowedTenantList.size()>0){
+                            for(String clientKey: getAllowedTenantList){
+                                if(clientKey.equals(host.getHost().getClientKey())) {
+                                    passRequest = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!passRequest) {
+                            String errorContent = errorContent();
+                            response.getWriter().write(errorContent);
+                            log.info("Checked tenant from dynamic property to deny them clientKey:{}",host.getHost().getClientKey());
+                            return false;
+                        }
+                    }catch (ClassCastException ex){
+                        log.error("error during getting jwt auth principal. {}",ex.getMessage());
                     }
-                }
-            }
 
-            if (!passRequest) {
-                String errorContent = errorContent();
-                response.getWriter().write(errorContent);
-                log.info("Checked tenant from dynamic property to deny them clientKey:{}",host.getHost().getClientKey());
-                return false;
             }
         }
         return true;
