@@ -9,7 +9,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.thed.zephyr.capture.model.FeedbackRequest;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.db.DynamoDBTableNameResolver;
+import com.thed.zephyr.capture.service.email.CaptureEmailService;
+import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +49,12 @@ public class SessionActivityRepositoryImpl {
     private DynamoDBMapper dynamoDBMapper;
     @Autowired
     private DynamoDBTableNameResolver dynamoDBTableNameResolver;
+    @Autowired
+    private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+    @Autowired
+    private CaptureEmailService captureEmailService;
+    @Autowired
+    private DynamicProperty dynamicProperty;
 
 
     public SessionActivity findOne(String id){
@@ -63,6 +74,7 @@ public class SessionActivityRepositoryImpl {
     }
     
     public List<SessionActivity> findBySessionId(String sessionId, Optional<String> propertyName){
+        String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
     	List<QueryFilter> queryFilters = new LinkedList<>();
     	QuerySpec querySpec = new QuerySpec();
     	querySpec.withHashKey(new KeyAttribute(ApplicationConstants.SESSION_ID_FIELD, sessionId));
@@ -78,12 +90,15 @@ public class SessionActivityRepositoryImpl {
         Index index = table.getIndex(ApplicationConstants.GSI_SESSIONID_TIMESTAMP);
         ItemCollection<QueryOutcome> activityItemList = index.query(querySpec);
         IteratorSupport<Item, QueryOutcome> iterator = activityItemList.iterator();
-
         while (iterator.hasNext()){
             Item item = iterator.next();
             SessionActivity sessionActivity = convertItemToSessionActivity(item);
-            result.add(sessionActivity);
-
+            if (StringUtils.equals(ctId, sessionActivity.getCtId())){
+                result.add(sessionActivity);
+            } else{
+                log.warn("WARNING some one else's sessionActivity in scope  sessionId:{} current ctId:{}", sessionActivity.getId(), ctId);
+                sendWarningEmail(ctId, sessionId, sessionActivity);
+            }
         }
         return result;
     }
@@ -113,5 +128,20 @@ public class SessionActivityRepositoryImpl {
         }
 
         return null;
+    }
+
+    private void sendWarningEmail(String ctId, String sessionId, SessionActivity sessionActivity){
+        FeedbackRequest feedbackRequest = new FeedbackRequest();
+        String toEmail = dynamicProperty.getStringProp(ApplicationConstants.FEEDBACK_SEND_EMAIL, "atlassian.dev@getzephyr.com").get();
+        feedbackRequest.setEmail(toEmail);
+        feedbackRequest.setSummary("WARNING data mix up");
+        String desc = "WARNING some one else's sessionActivity in scope sessionId:" + sessionActivity.getId() + " current ctId:" + ctId;
+        feedbackRequest.setDescription(desc);
+        feedbackRequest.setName("Admin");
+        try {
+            captureEmailService.sendFeedBackEmail(feedbackRequest);
+        } catch (Exception e) {
+            log.error("Can't send warning email.", e);
+        }
     }
 }
