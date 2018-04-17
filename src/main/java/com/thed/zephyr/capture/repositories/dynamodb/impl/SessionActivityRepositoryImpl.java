@@ -65,6 +65,11 @@ public class SessionActivityRepositoryImpl {
         	return null;
         }
         SessionActivity sessionActivity = convertItemToSessionActivity(item);
+        if(isTenantCorrect(sessionActivity)){
+            return sessionActivity;
+        }
+        log.warn("WARNING some one else's sessionActivity in scope findOne() sessionId:{}", sessionActivity.getId());
+        sendWarningEmail(sessionActivity);
 
         return sessionActivity;
     }
@@ -74,7 +79,7 @@ public class SessionActivityRepositoryImpl {
     }
     
     public List<SessionActivity> findBySessionId(String sessionId, Optional<String> propertyName){
-        String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+
     	List<QueryFilter> queryFilters = new LinkedList<>();
     	QuerySpec querySpec = new QuerySpec();
     	querySpec.withHashKey(new KeyAttribute(ApplicationConstants.SESSION_ID_FIELD, sessionId));
@@ -93,11 +98,11 @@ public class SessionActivityRepositoryImpl {
         while (iterator.hasNext()){
             Item item = iterator.next();
             SessionActivity sessionActivity = convertItemToSessionActivity(item);
-            if (StringUtils.equals(ctId, sessionActivity.getCtId())){
+            if (isTenantCorrect(sessionActivity)){
                 result.add(sessionActivity);
             } else{
-                log.warn("WARNING some one else's sessionActivity in scope  sessionId:{} current ctId:{}", sessionActivity.getId(), ctId);
-                sendWarningEmail(ctId, sessionId, sessionActivity);
+                log.warn("WARNING some one else's sessionActivity in scope findBySessionId()  sessionId:{}", sessionActivity.getId());
+                sendWarningEmail(sessionActivity);
             }
         }
         return result;
@@ -130,7 +135,13 @@ public class SessionActivityRepositoryImpl {
         return null;
     }
 
-    private void sendWarningEmail(String ctId, String sessionId, SessionActivity sessionActivity){
+    private boolean isTenantCorrect(SessionActivity sessionActivity){
+        String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+        return StringUtils.equals(ctId, sessionActivity.getCtId());
+    }
+
+    private void sendWarningEmail(SessionActivity sessionActivity){
+        String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
         FeedbackRequest feedbackRequest = new FeedbackRequest();
         String toEmail = dynamicProperty.getStringProp(ApplicationConstants.FEEDBACK_SEND_EMAIL, "atlassian.dev@getzephyr.com").get();
         feedbackRequest.setEmail(toEmail);
