@@ -47,11 +47,15 @@ public class IssueWebHookHandlerImpl implements IssueWebHookHandler {
         booleanQuery.must(termsQuery("issuesRaised.issueId", issueId.toString()));
         Iterable<Session> search = sessionESRepository.search(booleanQuery);
         for (Session session:search) {
-            removeRaisedIssie(session, issueId);
-            sessionESRepository.save(session);
-            sessionRepository.save(session);
-            removeIssueRaisedUnraisedSessionActivity(session.getId(), issueId);
-            log.debug("Raised issueId:{} was deleted from sessionId:{}", issueId, session.getId());
+            if(ctId.equals(session.getCtId())){
+                removeRaisedIssie(session, issueId);
+                sessionESRepository.save(session);
+                sessionRepository.save(session);
+                removeIssueRaisedUnraisedSessionActivity(session.getId(), issueId);
+                log.debug("Raised issueId:{} was deleted from sessionId:{}", issueId, session.getId());
+            } else{
+                log.info("Session missmatch on issueDeleteEventHandler() for rised issues ctId:{}",session.getCtId());
+            }
         }
     }
 
