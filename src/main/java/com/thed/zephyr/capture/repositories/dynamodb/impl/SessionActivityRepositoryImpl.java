@@ -67,11 +67,12 @@ public class SessionActivityRepositoryImpl {
         SessionActivity sessionActivity = convertItemToSessionActivity(item);
         if(isTenantCorrect(sessionActivity)){
             return sessionActivity;
+        }else {
+            String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+            log.warn("WARNING some one else's sessionActivity in scope findOne() sessionActivityId:{} current ctId:{}", sessionActivity.getId(), ctId);
+            sendWarningEmail(sessionActivity);
+            return null;
         }
-        log.warn("WARNING some one else's sessionActivity in scope findOne() sessionId:{}", sessionActivity.getId());
-        sendWarningEmail(sessionActivity);
-
-        return sessionActivity;
     }
 
     public List<SessionActivity> findBySessionId(String sessionId){
@@ -102,7 +103,6 @@ public class SessionActivityRepositoryImpl {
                 result.add(sessionActivity);
             } else{
                 log.warn("WARNING some one else's sessionActivity in scope findBySessionId()  sessionId:{}", sessionActivity.getId());
-                sendWarningEmail(sessionActivity);
             }
         }
         return result;
