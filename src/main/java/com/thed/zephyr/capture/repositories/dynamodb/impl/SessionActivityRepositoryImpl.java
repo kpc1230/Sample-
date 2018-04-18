@@ -66,8 +66,8 @@ public class SessionActivityRepositoryImpl {
     }
     
     public List<SessionActivity> findBySessionId(String sessionId, Optional<String> propertyName){
-
-    	List<QueryFilter> queryFilters = new LinkedList<>();
+        String ctId = CaptureUtil.getCurrentCtId();
+        List<QueryFilter> queryFilters = new LinkedList<>();
     	QuerySpec querySpec = new QuerySpec();
     	querySpec.withHashKey(new KeyAttribute(ApplicationConstants.SESSION_ID_FIELD, sessionId));
     	if(propertyName.isPresent() && !StringUtils.isBlank(propertyName.get())) {
@@ -89,8 +89,8 @@ public class SessionActivityRepositoryImpl {
             if (isTenantCorrect(sessionActivity)){
                 result.add(sessionActivity);
             } else{
-                errCtIds.add(sessionActivity.getCtId());
-                log.warn("WARNING some one else's sessionActivity in scope findBySessionId()  sessionActivityId:{}", sessionActivity.getId());
+                errCtIds.add(sessionActivity.getId());
+                log.warn("WARNING some one else's sessionActivity in scope findBySessionId()  sessionActivityId:{} sessionId:{} ctId:{} \n" + getStuckTrace(), sessionActivity.getId(), sessionId, ctId);
             }
         }
 
@@ -148,5 +148,17 @@ public class SessionActivityRepositoryImpl {
         } catch (Exception e) {
             log.error("Can't send warning email.", e);
         }
+    }
+
+    private String getStuckTrace(){
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        StringBuffer sb = new StringBuffer();
+        for (int i=0;i<stackTrace.length;i++){
+            if(StringUtils.contains(stackTrace[i].getClassName(), "com.thed.zephyr.capture")){
+                sb.append(stackTrace[i] + "\n");
+            }
+        }
+
+        return sb.toString();
     }
 }
