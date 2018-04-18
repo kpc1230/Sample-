@@ -19,7 +19,7 @@ import java.util.Set;
 @Repository
 public interface SessionESRepository extends ElasticsearchRepository<Session, String> {
 	
-	@Query("{\"query\":{\"bool\":{\"must\":[{\"match\":{\"ctId\":\"?0\"}},{\"match\":{\"issuesRaised.issueId\":?1}}]}}}")
+	@Query("{\"query\":{\"bool\":{\"must\":[{\"match_phrase\":{\"ctId\":\"?0\"}},{\"match\":{\"issuesRaised.issueId\":?1}}]}}}")
     Page<Session> findByCtIdAndProjectIdAndIssueId(String ctId, Long issueId, Pageable pageable);
 
     Page<Session> findByCtIdAndProjectIdAndRelatedIssueIds(String ctId, Long projectId, Long relatedIssueId, Pageable pageable);

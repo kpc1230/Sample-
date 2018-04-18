@@ -35,11 +35,11 @@ public class LicenseCheckHandlerInterceptor extends HandlerInterceptorAdapter {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         Boolean forceLicenseCheck = dynamicProperty.getBoolProp(ApplicationConstants.FORCE_LICENSE_CHECK, true).get();
-//        if (forceLicenseCheck && !handlerRequiresLicense(handler) && !licenseCheck(request)) {
-//            String errorContent = errorContent();
-//            response.getWriter().write(errorContent);
-//            return false;
-//        }
+        if (forceLicenseCheck && !handlerRequiresLicense(handler) && !licenseCheck(request)) {
+            String errorContent = errorContent();
+            response.getWriter().write(errorContent);
+            return false;
+        }
         return true;
     }
 

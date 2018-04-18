@@ -937,7 +937,7 @@ public class SessionController extends CaptureAbstractController{
 			log.info("End of getActiveSessionUser()");
 			return ResponseEntity.ok(sessionResult.getSession());
 		} catch(Exception ex) {
-			log.error("Error in getActiveSessionUser() -> ", ex);
+			log.error("Error in getActiveSessionUser() -> {}", ex.getMessage());
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
@@ -968,7 +968,7 @@ public class SessionController extends CaptureAbstractController{
 			log.info("End of getActiveSessionLink()");
 			return ResponseEntity.ok(activeSessionLink);
 		} catch(Exception ex) {
-			log.error("Error in getActiveSessionLink() -> ", ex);
+			log.error("Error in getActiveSessionLink() -> {}", ex.getMessage());
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}

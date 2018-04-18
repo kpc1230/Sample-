@@ -56,7 +56,7 @@ public class SessionActivityRepositoryImpl {
         }else {
             String ctId = CaptureUtil.getCurrentCtId();
             log.warn("WARNING some one else's sessionActivity in scope findOne() sessionActivityId:{} current ctId:{}", sessionActivity.getId(), ctId);
-            sendWarningEmail(sessionActivity.getCtId());
+            sendWarningEmail(sessionActivity.getId());
             return null;
         }
     }
@@ -82,21 +82,21 @@ public class SessionActivityRepositoryImpl {
         Index index = table.getIndex(ApplicationConstants.GSI_SESSIONID_TIMESTAMP);
         ItemCollection<QueryOutcome> activityItemList = index.query(querySpec);
         IteratorSupport<Item, QueryOutcome> iterator = activityItemList.iterator();
-        List<String> errCtIds = new ArrayList<>();
+        List<String> errSessActIds = new ArrayList<>();
         while (iterator.hasNext()){
             Item item = iterator.next();
             SessionActivity sessionActivity = convertItemToSessionActivity(item);
             if (isTenantCorrect(sessionActivity)){
                 result.add(sessionActivity);
             } else{
-                errCtIds.add(sessionActivity.getId());
+                errSessActIds.add(sessionActivity.getId());
                 log.warn("WARNING some one else's sessionActivity in scope findBySessionId()  sessionActivityId:{} sessionId:{} ctId:{} \n" + getStuckTrace(), sessionActivity.getId(), sessionId, ctId);
             }
         }
 
-        if(errCtIds != null && errCtIds.size()>0){
-            String ctIds = String.join(" , ", errCtIds);
-            sendWarningEmail(ctIds);
+        if(errSessActIds != null && errSessActIds.size()>0){
+            String sessAcIds = String.join(" , ", errSessActIds);
+            sendWarningEmail(sessAcIds);
         }
 
         return result;
@@ -134,13 +134,13 @@ public class SessionActivityRepositoryImpl {
         return StringUtils.equals(ctId, sessionActivity.getCtId());
     }
 
-    private void sendWarningEmail(String ctIds){
+    private void sendWarningEmail(String sessActIds){
         String ctId = CaptureUtil.getCurrentCtId();
         FeedbackRequest feedbackRequest = new FeedbackRequest();
         String toEmail = dynamicProperty.getStringProp(ApplicationConstants.FEEDBACK_SEND_EMAIL, "atlassian.dev@getzephyr.com").get();
         feedbackRequest.setEmail(toEmail);
         feedbackRequest.setSummary("WARNING data mix up");
-        String desc = "WARNING some one else's sessionActivity in scope sessionActivityId(s):" + ctIds + " current ctId:" + ctId;
+        String desc = "WARNING some one else's sessionActivity in scope sessionActivityId(s):" + sessActIds + " current ctId:" + ctId;
         feedbackRequest.setDescription(desc);
         feedbackRequest.setName("Admin");
         try {
