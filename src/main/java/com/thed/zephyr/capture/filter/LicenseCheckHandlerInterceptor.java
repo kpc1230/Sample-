@@ -1,8 +1,6 @@
 package com.thed.zephyr.capture.filter;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 import com.thed.zephyr.capture.annotation.LicenseCheck;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
@@ -12,8 +10,6 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -22,8 +18,6 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.lang.annotation.Annotation;
@@ -41,11 +35,11 @@ public class LicenseCheckHandlerInterceptor extends HandlerInterceptorAdapter {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         Boolean forceLicenseCheck = dynamicProperty.getBoolProp(ApplicationConstants.FORCE_LICENSE_CHECK, true).get();
-        if (forceLicenseCheck && !handlerRequiresLicense(handler) && !licenseCheck(request)) {
-            String errorContent = errorContent();
-            response.getWriter().write(errorContent);
-            return false;
-        }
+//        if (forceLicenseCheck && !handlerRequiresLicense(handler) && !licenseCheck(request)) {
+//            String errorContent = errorContent();
+//            response.getWriter().write(errorContent);
+//            return false;
+//        }
         return true;
     }
 

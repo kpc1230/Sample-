@@ -112,7 +112,7 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
-		Page<Session> sessionsPage = sessionRepository.queryByCtIdAndProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, CaptureUtil.getPageRequest(offset, limit));
+		Page<Session> sessionsPage = sessionRepository.queryByCtIdAndProjectId(CaptureUtil.getCurrentCtId(), projectId, CaptureUtil.getPageRequest(offset, limit));
 		SessionSearchList response  = new SessionSearchList(sessionsPage.getContent(), offset, limit, sessionsPage.getTotalElements());
 		return response;
 	}
@@ -121,7 +121,7 @@ public class SessionServiceImpl implements SessionService {
 	public Session createSession(String loggedUserKey, SessionRequest sessionRequest) {
 		Session session = new Session();
 		session.setCreator(loggedUserKey);
-		session.setCtId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository));
+		session.setCtId(CaptureUtil.getCurrentCtId());
 		session.setStatus(Status.CREATED);
 		session.setName(sessionRequest.getName());
 		session.setTimeCreated(new Date());
@@ -367,7 +367,7 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public SessionExtensionResponse getSessionsForExtension(String user) {
-		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+		String ctId = CaptureUtil.getCurrentCtId();
 		List<Session> privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user).getContent();
 		List<Session> sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user).getContent();
 		List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, privateSessionsList.size(), true);
@@ -377,7 +377,7 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public List<CaptureUser> fetchAllAssignees() {
-		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+		String ctId = CaptureUtil.getCurrentCtId();
 		List<CaptureUser> userList = new ArrayList<>();
 		Set<String> users= sessionESRepository.fetchAllAssigneesForCtId(ctId);
 		if(users!=null&&users.size()>0){
@@ -395,7 +395,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField,
 												boolean sortAscending, int startAt, int size) {
-		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+		String ctId = CaptureUtil.getCurrentCtId();
 		Map<String,Object> sessionMap = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
 		List<Session>  sessionsList = new ArrayList<>();
 		List<Session> convertedSessList = new ArrayList<>();

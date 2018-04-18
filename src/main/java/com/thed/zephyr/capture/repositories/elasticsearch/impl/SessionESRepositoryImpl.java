@@ -143,33 +143,40 @@ public class SessionESRepositoryImpl {
     	Pageable pageable = CaptureUtil.getPageRequest((startAt / size), size);
 		SearchQuery query = new NativeSearchQueryBuilder().withFilter(boolQueryBuilder).withSort(sortFieldBuilder).withPageable(pageable).build();
 		AggregatedPage<Session> sessions = elasticsearchTemplate.queryForPage(query, Session.class);
+		List<Session> crossList = new ArrayList<>();
 		sessions.forEach(session -> {
 			if(session.getCtId().equals(ctId)){
 				sessionList.add(session);
 			}else{
-				//error not matched ctId
-				log.error("Error during getting sessions from elasticsearch , ctId missmatch");
-				Mail mail = new Mail();
-				String toEmail = dynamicProperty.getStringProp(ApplicationConstants.FEEDBACK_SEND_EMAIL, "atlassian.dev@getzephyr.com").get();
-
-				JsonNode jsonNode = new ObjectMapper().convertValue(session, JsonNode.class);
-				String body = "<p>Looking sessions for ctId:"+ctId+" </p>" +
-						"<p>Found session ctId: "+session.getCtId()+" </p>" +
-						"<p>Found session Object: "+jsonNode.toString()+" </p>";
-
-				mail.setTo(toEmail);
-				mail.setSubject("Mismatch during retrieving sessions for ctId:"+ctId);
-				mail.setText(body);
-
-				try {
-					if (amazonSEService.sendMail(mail)) {
-                        log.info("Successfully sent email to : {}", toEmail);
-                    }
-				} catch (MessagingException e) {
-					log.error("Error during sending Mismatch Session Email. for ctId:"+ctId);
-				}
+				crossList.add(session);
 			}
 		});
+
+		if(crossList != null && crossList.size()>0) {
+			//error not matched ctId
+			log.error("Error during getting sessions from elasticsearch , ctId missmatch");
+			Mail mail = new Mail();
+			String toEmail = dynamicProperty.getStringProp(ApplicationConstants.FEEDBACK_SEND_EMAIL, "atlassian.dev@getzephyr.com").get();
+
+			String body = "<p>Looking sessions for ctId:" + ctId + " </p>";
+
+			for(Session session: crossList) {
+				JsonNode jsonNode = new ObjectMapper().convertValue(session, JsonNode.class);
+				body += "<p>Found session Object: " + jsonNode.toString() + " </p>";
+			}
+
+			mail.setTo(toEmail);
+			mail.setSubject("Mismatch during retrieving sessions for ctId:" + ctId);
+			mail.setText(body);
+
+			try {
+				if (amazonSEService.sendMail(mail)) {
+					log.info("Successfully sent email to : {}", toEmail);
+				}
+			} catch (MessagingException e) {
+				log.error("Error during sending Mismatch Session Email. for ctId:" + ctId);
+			}
+		}
 		results.put(ApplicationConstants.SESSION_LIST,sessionList);
 		results.put(ApplicationConstants.TOTAL_COUNT,sessions.getTotalElements());
 		return results;

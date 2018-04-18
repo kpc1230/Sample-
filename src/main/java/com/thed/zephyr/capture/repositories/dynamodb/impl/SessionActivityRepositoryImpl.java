@@ -1,18 +1,16 @@
 package com.thed.zephyr.capture.repositories.dynamodb.impl;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.internal.IteratorSupport;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.thed.zephyr.capture.model.FeedbackRequest;
+import com.thed.zephyr.capture.model.SessionActivity;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.db.DynamoDBTableNameResolver;
 import com.thed.zephyr.capture.service.email.CaptureEmailService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang.StringUtils;
@@ -20,20 +18,8 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Index;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
-import com.amazonaws.services.dynamodbv2.document.QueryFilter;
-import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
-import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.document.internal.IteratorSupport;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.thed.zephyr.capture.model.SessionActivity;
-import com.thed.zephyr.capture.util.ApplicationConstants;
+import java.math.BigDecimal;
+import java.util.*;
 
 /**
  * Created by aliakseimatsarski on 8/23/17.
@@ -68,9 +54,9 @@ public class SessionActivityRepositoryImpl {
         if(isTenantCorrect(sessionActivity)){
             return sessionActivity;
         }else {
-            String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+            String ctId = CaptureUtil.getCurrentCtId();
             log.warn("WARNING some one else's sessionActivity in scope findOne() sessionActivityId:{} current ctId:{}", sessionActivity.getId(), ctId);
-            sendWarningEmail(sessionActivity);
+            sendWarningEmail(sessionActivity.getCtId());
             return null;
         }
     }
@@ -96,15 +82,23 @@ public class SessionActivityRepositoryImpl {
         Index index = table.getIndex(ApplicationConstants.GSI_SESSIONID_TIMESTAMP);
         ItemCollection<QueryOutcome> activityItemList = index.query(querySpec);
         IteratorSupport<Item, QueryOutcome> iterator = activityItemList.iterator();
+        List<String> errCtIds = new ArrayList<>();
         while (iterator.hasNext()){
             Item item = iterator.next();
             SessionActivity sessionActivity = convertItemToSessionActivity(item);
             if (isTenantCorrect(sessionActivity)){
                 result.add(sessionActivity);
             } else{
-                log.warn("WARNING some one else's sessionActivity in scope findBySessionId()  sessionId:{}", sessionActivity.getId());
+                errCtIds.add(sessionActivity.getCtId());
+                log.warn("WARNING some one else's sessionActivity in scope findBySessionId()  sessionActivityId:{}", sessionActivity.getId());
             }
         }
+
+        if(errCtIds != null && errCtIds.size()>0){
+            String ctIds = String.join(" , ", errCtIds);
+            sendWarningEmail(ctIds);
+        }
+
         return result;
     }
 
@@ -136,17 +130,17 @@ public class SessionActivityRepositoryImpl {
     }
 
     private boolean isTenantCorrect(SessionActivity sessionActivity){
-        String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+        String ctId = CaptureUtil.getCurrentCtId();
         return StringUtils.equals(ctId, sessionActivity.getCtId());
     }
 
-    private void sendWarningEmail(SessionActivity sessionActivity){
-        String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+    private void sendWarningEmail(String ctIds){
+        String ctId = CaptureUtil.getCurrentCtId();
         FeedbackRequest feedbackRequest = new FeedbackRequest();
         String toEmail = dynamicProperty.getStringProp(ApplicationConstants.FEEDBACK_SEND_EMAIL, "atlassian.dev@getzephyr.com").get();
         feedbackRequest.setEmail(toEmail);
         feedbackRequest.setSummary("WARNING data mix up");
-        String desc = "WARNING some one else's sessionActivity in scope sessionId:" + sessionActivity.getId() + " current ctId:" + ctId;
+        String desc = "WARNING some one else's sessionActivity in scope sessionActivityId(s):" + ctIds + " current ctId:" + ctId;
         feedbackRequest.setDescription(desc);
         feedbackRequest.setName("Admin");
         try {

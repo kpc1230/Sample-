@@ -187,6 +187,7 @@ public class SessionController extends CaptureAbstractController{
 											@PathVariable("sessionId") String sessionId,
 											@RequestBody List<String> listOfIssues) throws CaptureValidationException {
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
+		validateAndGetSession(sessionId);
 		boolean isLocked = false;
 		try {
 			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
@@ -248,7 +249,7 @@ public class SessionController extends CaptureAbstractController{
 		}
 		try {
 			String user = getUser();
-			Session session = sessionService.getSession(sessionId);
+			Session session = validateAndGetSession(sessionId);
 			if (session != null && !permissionService.canSeeSession(user, session)) {
 				throw new CaptureValidationException(i18n.getMessage("session.update.not.editable"));
 			} else if(Objects.isNull(session)) {
@@ -699,8 +700,9 @@ public class SessionController extends CaptureAbstractController{
 											 @RequestParam("offset") Optional<Integer> offset,
 											 @RequestParam("limit") Optional<Integer> limit,
 											   HttpServletRequest request) throws CaptureValidationException {
-		log.info("Start of sessionActivities() --> params " + sessionId);
 		try {
+			log.info("Start of sessionActivities() --> params " + sessionId);
+			validateAndGetSession(sessionId);
 			List<SessionActivity> sessionActivities = sessionActivityService.getAllSessionActivityBySession(sessionId,
 					CaptureUtil.getPageRequest(offset.orElse(0), limit.orElse(ApplicationConstants.DEFAULT_RESULT_SIZE))
 			);
@@ -822,7 +824,8 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of inviteSession() ");
 		try {
 			Session loadedSession  = validateAndGetSession(inviteSessionRequest.getSessionId());
-			if (loadedSession == null) {
+			String ctId = CaptureUtil.getCurrentCtId();
+			if (loadedSession == null || !ctId.equals(loadedSession.getCtId())) {
 				ErrorCollection errorCollection = new ErrorCollection();
 				errorCollection.addError("Error during invite session");
 				return badRequest(errorCollection);

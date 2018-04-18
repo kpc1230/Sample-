@@ -1,17 +1,20 @@
 package com.thed.zephyr.capture.controller;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
-
+import com.atlassian.connect.spring.AtlassianHostUser;
+import com.thed.zephyr.capture.exception.CaptureRuntimeException;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.*;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
+import com.thed.zephyr.capture.model.util.NoteSearchList;
 import com.thed.zephyr.capture.model.view.NotesFilterStateUI;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import com.thed.zephyr.capture.service.data.NoteService;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.validator.NoteSessionActivityValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,28 +22,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
-import com.thed.zephyr.capture.exception.CaptureRuntimeException;
-import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.model.jira.CaptureProject;
-import com.thed.zephyr.capture.model.util.NoteSearchList;
-import com.thed.zephyr.capture.service.data.NoteService;
-import com.thed.zephyr.capture.service.jira.ProjectService;
-import com.thed.zephyr.capture.validator.NoteSessionActivityValidator;
-
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 /**
  * Controller class for implementing Notes.
@@ -78,12 +67,12 @@ public class NoteController extends CaptureAbstractController {
         log.info("createNote start for the name:" + noteRequest.getNoteData());
         NoteRequest created = null;
         try {
-        	Session session = sessionService.getSession(noteRequest.getSessionId());
+        	Session session = validateAndGetSession(noteRequest.getSessionId());
             if (session != null && !permissionService.canCreateNote(getUser(), session)) {
 				throw new CaptureValidationException(i18n.getMessage("note.create.permission.violation"));
 			}
             noteRequest.setUser(hostUser.getUserKey().get());
-            noteRequest.setCtId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository));
+            noteRequest.setCtId(CaptureUtil.getCurrentCtId());
             created = noteService.create(noteRequest);
         } catch (CaptureValidationException e) {
             throw e;
@@ -121,7 +110,7 @@ public class NoteController extends CaptureAbstractController {
             }
             noteRequest.setSessionActivityId(noteSessionActivityId);
             noteRequest.setUser(hostUser.getUserKey().get());
-            noteRequest.setCtId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository));
+            noteRequest.setCtId(CaptureUtil.getCurrentCtId());
             updated = noteService.update(noteRequest);
         } catch (CaptureValidationException e) {
             throw e;
@@ -186,7 +175,7 @@ public class NoteController extends CaptureAbstractController {
         }
         NoteSearchList result = null;
         try {
-            result = noteService.getNotesByProjectId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, noteFilter, page, limit);
+            result = noteService.getNotesByProjectId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(), projectId, noteFilter, page, limit);
         } catch (Exception exception) {
             log.error("Error during getting notes by projectId:{} method:POST page:{} limit:{}", projectId, page, limit, exception);
             throw new CaptureRuntimeException(exception.getMessage());
@@ -222,7 +211,7 @@ public class NoteController extends CaptureAbstractController {
         }
         NoteSearchList result = null;
         try {
-            result = noteService.getNotesByProjectId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, populateNoteFilter(notesFilterStateUI), page, limit);
+            result = noteService.getNotesByProjectId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(), projectId, populateNoteFilter(notesFilterStateUI), page, limit);
         } catch (Exception exception) {
             log.error("Error during getting notes by projectId:{} method:GET page:{} limit:{}", projectId, page, limit, exception);
             throw new CaptureRuntimeException(exception.getMessage());
@@ -243,7 +232,8 @@ public class NoteController extends CaptureAbstractController {
 
         NoteSearchList result = null;
         try {
-            result = noteService.getNotesBySessionId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), sessionId, page, limit);
+            validateAndGetSession(sessionId);
+            result = noteService.getNotesBySessionId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(), sessionId, page, limit);
         } catch (Exception exception) {
             log.error("Error during getting notes by sessionId:{} page:{} limit:{}", sessionId, page, limit, exception);
             throw new CaptureRuntimeException(exception.getMessage());

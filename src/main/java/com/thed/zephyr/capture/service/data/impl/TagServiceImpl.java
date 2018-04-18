@@ -1,6 +1,5 @@
 package com.thed.zephyr.capture.service.data.impl;
 
-import com.thed.zephyr.capture.model.Note;
 import com.thed.zephyr.capture.model.NoteSessionActivity;
 import com.thed.zephyr.capture.model.Tag;
 import com.thed.zephyr.capture.repositories.elasticsearch.TagRepository;
@@ -86,7 +85,7 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public void deleteTags(String noteSessionActivityId) {
-        List<Tag> tags = tagRepository.findByCtIdAndNoteIds(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), noteSessionActivityId);
+        List<Tag> tags = tagRepository.findByCtIdAndNoteIds(CaptureUtil.getCurrentCtId(), noteSessionActivityId);
         for (Tag tag:tags){
             if(tag.getNoteIds().size() == 1){
                 tagRepository.delete(tag);
@@ -99,6 +98,6 @@ public class TagServiceImpl implements TagService {
     
     @Override
     public List<Tag> getTags(String noteSessionActivityId) {
-        return tagRepository.findByCtIdAndNoteIds(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), noteSessionActivityId);
+        return tagRepository.findByCtIdAndNoteIds(CaptureUtil.getCurrentCtId(), noteSessionActivityId);
     }
 }
