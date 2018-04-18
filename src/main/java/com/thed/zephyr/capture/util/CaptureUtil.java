@@ -110,10 +110,23 @@ public class CaptureUtil {
         return hostUser;
     }
 
-    public static String getCurrentCtId(DynamoDBAcHostRepository dynamoDBAcHostRepository){
-        AtlassianHostUser atlassianHostUser = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        AcHostModel acHostModel = (AcHostModel) dynamoDBAcHostRepository.findOne(atlassianHostUser.getHost().getClientKey());
-        return acHostModel.getCtId();
+    public static String getCurrentCtId(){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if(auth != null) {
+            if(auth.getPrincipal() instanceof String && auth.getPrincipal().toString().equals("anonymousUser")){
+                log.info("Trying to use AnnonymousUser ctId");
+                return null;
+            }else{
+                try {
+                    AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
+                    AcHostModel acHostModel = (AcHostModel) atlassianHostUser.getHost();
+                    return acHostModel.getCtId();
+                }catch (Exception ex){
+                    log.error("error during getting ctId {}",ex.getMessage());
+                }
+            }
+        }
+        return null;
     }
     
     public static AcHostModel getAcHostModel(DynamoDBAcHostRepository dynamoDBAcHostRepository) {

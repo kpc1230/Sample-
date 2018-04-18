@@ -188,6 +188,7 @@ public class SessionController extends CaptureAbstractController{
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
 		boolean isLocked = false;
 		try {
+			validateAndGetSession(sessionId);
 			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
@@ -247,7 +248,7 @@ public class SessionController extends CaptureAbstractController{
 		}
 		try {
 			String user = getUser();
-			Session session = sessionService.getSession(sessionId);
+			Session session = validateAndGetSession(sessionId);
 			if (session != null && !permissionService.canSeeSession(user, session)) {
 				throw new CaptureValidationException(i18n.getMessage("session.update.not.editable"));
 			} else if(Objects.isNull(session)) {
@@ -709,8 +710,9 @@ public class SessionController extends CaptureAbstractController{
 											 @RequestParam("offset") Optional<Integer> offset,
 											 @RequestParam("limit") Optional<Integer> limit,
 											   HttpServletRequest request) throws CaptureValidationException {
-		log.info("Start of sessionActivities() --> params " + sessionId);
 		try {
+			log.info("Start of sessionActivities() --> params " + sessionId);
+			validateAndGetSession(sessionId);
 			List<SessionActivity> sessionActivities = sessionActivityService.getAllSessionActivityBySession(sessionId,
 					CaptureUtil.getPageRequest(offset.orElse(0), limit.orElse(ApplicationConstants.DEFAULT_RESULT_SIZE))
 			);
@@ -832,7 +834,8 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of inviteSession() ");
 		try {
 			Session loadedSession  = validateAndGetSession(inviteSessionRequest.getSessionId());
-			if (loadedSession == null) {
+			String ctId = CaptureUtil.getCurrentCtId();
+			if (loadedSession == null || !ctId.equals(loadedSession.getCtId())) {
 				ErrorCollection errorCollection = new ErrorCollection();
 				errorCollection.addError("Error during invite session");
 				return badRequest(errorCollection);
@@ -951,7 +954,7 @@ public class SessionController extends CaptureAbstractController{
 			log.info("End of getActiveSessionUser()");
 			return ResponseEntity.ok(sessionResult.getSession());
 		} catch(Exception ex) {
-			log.error("Error in getActiveSessionUser() -> ", ex);
+			log.error("Error in getActiveSessionUser() -> {}", ex.getMessage());
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
@@ -982,7 +985,7 @@ public class SessionController extends CaptureAbstractController{
 			log.info("End of getActiveSessionLink()");
 			return ResponseEntity.ok(activeSessionLink);
 		} catch(Exception ex) {
-			log.error("Error in getActiveSessionLink() -> ", ex.getMessage());
+			log.error("Error in getActiveSessionLink() -> {}", ex.getMessage());
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}

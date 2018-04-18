@@ -96,6 +96,8 @@ public class ApplicationConstants {
     public static final String WIKI_TYPE = "rendererType";
     public static final String WIKI_KEY = "unrenderedMarkup";
     public static final String METADATA_EXPAND_KEY = "projects.issuetypes.fields";
+    public static final String ENTRANCE_CHECKING = "entrance.checking";
+    public static final String ENTRANCE_CHECKING_LIST = "entrance.checking.tenant.list";
 
     /*** for MetadataField ***/
     public static String PROJECTS = "projects";
@@ -234,4 +236,6 @@ public class ApplicationConstants {
     public static final String METADATA_CACHE_KEY_PREFIX = "metadata-";
     public static final String METADATA_CACHE_EXPIRATION_DYNAMIC_PROP = "metadata.cache.expiration";
 
+    public static final String SESSION_LIST = "sessionList";
+    public static final String TOTAL_COUNT = "total";
 }

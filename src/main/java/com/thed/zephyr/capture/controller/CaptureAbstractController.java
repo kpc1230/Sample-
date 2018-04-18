@@ -1,26 +1,32 @@
 package com.thed.zephyr.capture.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
+import com.atlassian.connect.spring.AtlassianHostUser;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.model.ErrorCollection;
+import com.thed.zephyr.capture.model.Mail;
+import com.thed.zephyr.capture.model.Session;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.email.AmazonSEService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.atlassian.connect.spring.AtlassianHostUser;
-import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.exception.model.ErrorDto;
-import com.thed.zephyr.capture.model.AcHostModel;
-import com.thed.zephyr.capture.model.ErrorCollection;
-import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
-import com.thed.zephyr.capture.service.data.SessionService;
-import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import javax.mail.MessagingException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Abstract controller to use in capture and contains 
@@ -30,6 +36,9 @@ import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
  */
 public abstract class CaptureAbstractController {
 
+	private static final Logger log = LoggerFactory.getLogger(CaptureAbstractController.class);
+
+
 	@Autowired
 	protected CaptureI18NMessageSource i18n;
 	
@@ -38,6 +47,12 @@ public abstract class CaptureAbstractController {
 	
 	@Autowired
 	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+
+	@Autowired
+	private DynamicProperty dynamicProperty;
+
+	@Autowired
+	private AmazonSEService amazonSEService;
 
 	/**
 	 * Fetches the user key from the authentication object.
@@ -68,6 +83,29 @@ public abstract class CaptureAbstractController {
 		}
 		Session loadedSession = sessionService.getSession(sessionId);
 		if(Objects.isNull(loadedSession)) {
+			throw new CaptureValidationException(i18n.getMessage("session.invalid", new Object[]{sessionId}));
+		}
+		String ctId = CaptureUtil.getCurrentCtId();
+		log.info("Security context and session's ctId:{},{}",ctId,loadedSession.getCtId());
+		if(!ctId.equals(loadedSession.getCtId())){
+			log.error("Missmatch during getting session by sessionId:{}, ctId:{}",sessionId,ctId);
+			Mail mail = new Mail();
+			String toEmail = dynamicProperty.getStringProp(ApplicationConstants.FEEDBACK_SEND_EMAIL, "atlassian.dev@getzephyr.com").get();
+			String body = "<p>Looking session by :" + ctId + " </p>";
+			body += "<p>Found session with sessionId: "+loadedSession.getId()+"</p>";
+			body += "<p>Found session with ctId: "+loadedSession.getCtId()+"</p>";
+			mail.setTo(toEmail);
+			mail.setSubject("Mismatch during retrieving session for ctId:" + ctId);
+			mail.setText(body);
+
+			try {
+				if (amazonSEService.sendMail(mail)) {
+					log.info("Successfully sent email to : {}", toEmail);
+				}
+			} catch (MessagingException e) {
+				log.error("Error during sending Mismatch Session Email. for ctId:" + ctId);
+			}
+
 			throw new CaptureValidationException(i18n.getMessage("session.invalid", new Object[]{sessionId}));
 		}
 		return loadedSession;

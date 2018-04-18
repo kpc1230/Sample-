@@ -218,7 +218,7 @@ public class IssueServiceImpl implements IssueService {
     public TestSectionResponse getIssueSessionDetails(CaptureIssue issue) throws JSONException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        String ctdId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+        String ctdId = CaptureUtil.getCurrentCtId();
         SessionDto raisedDuringSessionDto = sessionService.getSessionRaisedDuring(host.getUserKey().get(), ctdId, issue.getId());
         SessionDtoSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(host.getUserKey().get(), ctdId, issue.getProjectId(), issue.getId());
         TestSectionResponse testSectionResponse = new TestSectionResponse();

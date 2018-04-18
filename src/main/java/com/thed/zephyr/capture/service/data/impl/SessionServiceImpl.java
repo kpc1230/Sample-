@@ -46,7 +46,6 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.elasticsearch.core.aggregation.AggregatedPage;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -113,7 +112,7 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public SessionSearchList getSessionsForProject(Long projectId, Integer offset, Integer limit) throws CaptureValidationException {
-		Page<Session> sessionsPage = sessionRepository.queryByCtIdAndProjectId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), projectId, CaptureUtil.getPageRequest(offset, limit));
+		Page<Session> sessionsPage = sessionRepository.queryByCtIdAndProjectId(CaptureUtil.getCurrentCtId(), projectId, CaptureUtil.getPageRequest(offset, limit));
 		SessionSearchList response  = new SessionSearchList(sessionsPage.getContent(), offset, limit, sessionsPage.getTotalElements());
 		return response;
 	}
@@ -122,7 +121,7 @@ public class SessionServiceImpl implements SessionService {
 	public Session createSession(String loggedUserKey, SessionRequest sessionRequest) {
 		Session session = new Session();
 		session.setCreator(loggedUserKey);
-		session.setCtId(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository));
+		session.setCtId(CaptureUtil.getCurrentCtId());
 		session.setStatus(Status.CREATED);
 		session.setName(sessionRequest.getName());
 		session.setTimeCreated(new Date());
@@ -372,7 +371,7 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public SessionExtensionResponse getSessionsForExtension(String user) {
-		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+		String ctId = CaptureUtil.getCurrentCtId();
 		List<Session> privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user).getContent();
 		List<Session> sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user).getContent();
 		List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, privateSessionsList.size(), true);
@@ -382,7 +381,7 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public List<CaptureUser> fetchAllAssignees() {
-		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
+		String ctId = CaptureUtil.getCurrentCtId();
 		List<CaptureUser> userList = new ArrayList<>();
 		Set<String> users= sessionESRepository.fetchAllAssigneesForCtId(ctId);
 		if(users!=null&&users.size()>0){
@@ -400,11 +399,21 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField,
 												boolean sortAscending, int startAt, int size) {
-		String ctId = CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository);
-		AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
-		List<Session> sessionsList = pageResponse.getContent();
+		String ctId = CaptureUtil.getCurrentCtId();
+		Map<String,Object> sessionMap = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
+		List<Session>  sessionsList = new ArrayList<>();
+		Long totalElement = 0l;
+		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
+			String key = entry.getKey();
+			if(key.equals(ApplicationConstants.SESSION_LIST)){
+				sessionsList  = (List<Session>)entry.getValue();
+			}
+			if(key.equals(ApplicationConstants.TOTAL_COUNT)){
+				totalElement  = (Long)entry.getValue();
+			}
+		}
 		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, sessionsList, size, false);
-		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, pageResponse.getTotalElements());
+		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, totalElement);
 		return sessionDtoSearchList;
 	}
 
@@ -628,11 +637,17 @@ public class SessionServiceImpl implements SessionService {
 		CompletableFuture.runAsync(() -> {
 			int index = 0;
 			int maxResults = 20;
-			AggregatedPage<Session> pageResponse = updateProjectNameIntoES(ctid, projectId, projectName, index, maxResults);
+			Map<String, Object> sessionMap = updateProjectNameIntoES(ctid, projectId, projectName, index, maxResults);
 			index = index  + maxResults;
-			Long total = pageResponse.getTotalElements();
+			Long total = 0l;
+			for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
+				String key = entry.getKey();
+				if(key.equals(ApplicationConstants.TOTAL_COUNT)){
+					total  = (Long)entry.getValue();
+				}
+			}
 			while(index < total.intValue()) {
-				pageResponse = updateProjectNameIntoES(ctid, projectId, projectName, index, maxResults);
+				updateProjectNameIntoES(ctid, projectId, projectName, index, maxResults);
 				index = index + maxResults;
 			}
 		});
@@ -729,15 +744,21 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public void updateUserDisplayNamesForSessions(String ctid, String userKey, String userDisplayName) {
+	public void updateUserDisplayNamesForSessions(String ctId, String userKey, String userDisplayName) {
 		CompletableFuture.runAsync(() -> {
 			int index = 0;
 			int maxResults = 20;
-			AggregatedPage<Session> pageResponse = updateUserDisplayNameIntoES(ctid, userKey, userDisplayName, index, maxResults);
+			Map<String, Object> sessionMap = updateUserDisplayNameIntoES(ctId, userKey, userDisplayName, index, maxResults);
 			index = index  + maxResults;
-			Long total = pageResponse.getTotalElements();
+			Long total = 0l;
+			for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
+				String key = entry.getKey();
+				if(key.equals(ApplicationConstants.TOTAL_COUNT)){
+					total  = (Long)entry.getValue();
+				}
+			}
 			while(index < total.intValue()) {
-				pageResponse = updateUserDisplayNameIntoES(ctid, userKey, userDisplayName, index, maxResults);
+				updateUserDisplayNameIntoES(ctId, userKey, userDisplayName, index, maxResults);
 				index = index + maxResults;
 			}
 		});
@@ -1508,14 +1529,21 @@ public class SessionServiceImpl implements SessionService {
 		return Duration.ofMillis(timeSpent.getMillis());
 	}
 	
-	private AggregatedPage<Session> updateProjectNameIntoES(String ctid, Long projectId, String projectName, int index, int maxResults) {
-		AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctid, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
+	private Map<String, Object> updateProjectNameIntoES(String ctId, Long projectId, String projectName, int index, int maxResults) {
+		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctId, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
 				Optional.empty(), true, index, maxResults);
-		for(Session session : pageResponse.getContent()) {
+		List<Session> sessionList = new ArrayList<>();
+		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
+			String key = entry.getKey();
+			if(key.equals(ApplicationConstants.SESSION_LIST)){
+				sessionList  = (List<Session>)entry.getValue();
+			}
+		}
+		for(Session session : sessionList) {
 			session.setProjectName(projectName);
 			sessionESRepository.save(session);
 		}
-		return pageResponse;
+		return sessionMap;
 	}
 	
 	private void deleteSessionDataForCtid(String ctid) {
@@ -1573,14 +1601,22 @@ public class SessionServiceImpl implements SessionService {
         return 0;
     }
 	
-	private AggregatedPage<Session> updateUserDisplayNameIntoES(String ctid, String userKey, String userDisplayName, int index, int maxResults) {
-		AggregatedPage<Session> pageResponse = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(),
+	private Map<String, Object> updateUserDisplayNameIntoES(String ctid, String userKey, String userDisplayName, int index, int maxResults) {
+		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(),
 				Optional.empty(), true, index, maxResults);
-		for(Session session : pageResponse.getContent()) {
+		List<Session> sessionList = new ArrayList<>();
+		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
+			String key = entry.getKey();
+			if(key.equals(ApplicationConstants.SESSION_LIST)){
+				sessionList  = (List<Session>)entry.getValue();
+			}
+		}
+
+		for(Session session : sessionList) {
 			session.setUserDisplayName(userDisplayName);
 			sessionESRepository.save(session);
 		}
-		return pageResponse;
+		return sessionMap;
 	}
 
 	private String getBaseUrl() {

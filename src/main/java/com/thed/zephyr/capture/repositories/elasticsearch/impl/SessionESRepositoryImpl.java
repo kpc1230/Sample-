@@ -1,12 +1,14 @@
 package com.thed.zephyr.capture.repositories.elasticsearch.impl;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.model.Mail;
+import com.thed.zephyr.capture.model.Session;
+import com.thed.zephyr.capture.model.Session.Status;
+import com.thed.zephyr.capture.service.email.AmazonSEService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
@@ -17,6 +19,8 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
@@ -27,10 +31,8 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilde
 import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.stereotype.Component;
 
-import com.thed.zephyr.capture.model.Session;
-import com.thed.zephyr.capture.model.Session.Status;
-import com.thed.zephyr.capture.util.ApplicationConstants;
-import com.thed.zephyr.capture.util.CaptureUtil;
+import javax.mail.MessagingException;
+import java.util.*;
 
 /**
  * @author manjunath
@@ -38,10 +40,19 @@ import com.thed.zephyr.capture.util.CaptureUtil;
  */
 @Component
 public class SessionESRepositoryImpl {
-	
+
+	private static final Logger log = LoggerFactory.getLogger(SessionESRepositoryImpl.class);
+
+
 	@Autowired
 	private ElasticsearchTemplate elasticsearchTemplate;
-	
+
+	@Autowired
+	private DynamicProperty dynamicProperty;
+
+	@Autowired
+	private AmazonSEService amazonSEService;
+
 	private static Map<Character, Character> escapeCharactersMap = new HashMap<>();
 	
 	static {
@@ -67,10 +78,12 @@ public class SessionESRepositoryImpl {
 		escapeCharactersMap.put('\\', '\\');
 	}
 	
-	public AggregatedPage<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm,
+	public Map<String, Object> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm,
 			Optional<String> sortField, boolean sortAscending, int startAt, int size) {
+		Map<String,Object> results = new HashMap<>();
+		List<Session> sessionList = new ArrayList<>();
 		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
+		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
 		boolQueryBuilder.must(ctidQueryBuilder);
 		
 		if(projectId.isPresent()) { //Check if project is selected then add to query.
@@ -79,7 +92,7 @@ public class SessionESRepositoryImpl {
     	}
     	
     	if(assignee.isPresent() && !StringUtils.isEmpty(assignee.get())) { //Check if assignee is selected then add to query.
-    		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.ASSIGNEE_FIELD, assignee.get());
+    		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_FIELD, assignee.get());
 			boolQueryBuilder.must(assigneeQueryBuilder);
 
     	}
@@ -129,12 +142,49 @@ public class SessionESRepositoryImpl {
     	}
     	Pageable pageable = CaptureUtil.getPageRequest((startAt / size), size);
 		SearchQuery query = new NativeSearchQueryBuilder().withFilter(boolQueryBuilder).withSort(sortFieldBuilder).withPageable(pageable).build();
-		return elasticsearchTemplate.queryForPage(query, Session.class);
+		AggregatedPage<Session> sessions = elasticsearchTemplate.queryForPage(query, Session.class);
+		List<Session> crossList = new ArrayList<>();
+		sessions.forEach(session -> {
+			if(session.getCtId().equals(ctId)){
+				sessionList.add(session);
+			}else{
+				crossList.add(session);
+			}
+		});
+
+		if(crossList != null && crossList.size()>0) {
+			//error not matched ctId
+			log.error("Error during getting sessions from elasticsearch , ctId missmatch");
+			Mail mail = new Mail();
+			String toEmail = dynamicProperty.getStringProp(ApplicationConstants.FEEDBACK_SEND_EMAIL, "atlassian.dev@getzephyr.com").get();
+
+			String body = "<p>Looking sessions for ctId:" + ctId + " </p>";
+
+			for(Session session: crossList) {
+				JsonNode jsonNode = new ObjectMapper().convertValue(session, JsonNode.class);
+				body += "<p>Found session Object: " + jsonNode.toString() + " </p>";
+			}
+
+			mail.setTo(toEmail);
+			mail.setSubject("Mismatch during retrieving sessions for ctId:" + ctId);
+			mail.setText(body);
+
+			try {
+				if (amazonSEService.sendMail(mail)) {
+					log.info("Successfully sent email to : {}", toEmail);
+				}
+			} catch (MessagingException e) {
+				log.error("Error during sending Mismatch Session Email. for ctId:" + ctId);
+			}
+		}
+		results.put(ApplicationConstants.SESSION_LIST,sessionList);
+		results.put(ApplicationConstants.TOTAL_COUNT,sessions.getTotalElements());
+		return results;
 	}
 	
 	public Set<String> fetchAllAssigneesForCtId(String ctId) {
     	BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
+		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
 		boolQueryBuilder.must(ctidQueryBuilder);
 		SearchQuery query = new NativeSearchQueryBuilder().withTypes("session").withFilter(boolQueryBuilder).withPageable(CaptureUtil.getPageRequest(0, 1000))
 				.withSourceFilter(new FetchSourceFilter(new String[]{"assignee"}, null)).build();
@@ -150,7 +200,7 @@ public class SessionESRepositoryImpl {
 	
 	public AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user) {
 		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
+		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
 		boolQueryBuilder.must(ctidQueryBuilder);
 		
 		MatchQueryBuilder statusQueryBuilder = (QueryBuilders.matchQuery(ApplicationConstants.STATUS_FIELD, Status.COMPLETED.name()));
@@ -170,7 +220,7 @@ public class SessionESRepositoryImpl {
 	
 	public AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user) {
 		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
+		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
 		boolQueryBuilder.must(ctidQueryBuilder);
 		
 		MatchQueryBuilder sharedQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.SHARED_FIELD, true);
@@ -180,7 +230,7 @@ public class SessionESRepositoryImpl {
 		boolQueryBuilder.must(statusQueryBuilder);
 		
     	if(!StringUtils.isEmpty(user)) {
-    		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.ASSIGNEE_FIELD, user);
+    		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_FIELD, user);
 			boolQueryBuilder.mustNot(assigneeQueryBuilder);
 
     	}		
@@ -192,7 +242,7 @@ public class SessionESRepositoryImpl {
 	
 	public void deleteSessionsByCtId(String ctId) {
 		DeleteQuery deleteQuery = new DeleteQuery();
-		deleteQuery.setQuery(QueryBuilders.matchQuery(ApplicationConstants.TENANT_ID_FIELD, ctId));		
+		deleteQuery.setQuery(QueryBuilders.matchPhraseQuery(ApplicationConstants.TENANT_ID_FIELD, ctId));
 		elasticsearchTemplate.delete(deleteQuery, Session.class);
 	}
 }
