@@ -85,7 +85,10 @@ public class JiraAuthServiceImpl implements JiraAuthService {
         long timestamp = Long.valueOf(tokenParts[2]);
         String jiraToken = !StringUtils.equals(tokenParts[3], "null")?tokenParts[3]:null;
         String userAgent = tokenParts[4];
-        String apiToken = !StringUtils.equals(tokenParts[5], "null")?tokenParts[5]:null;
+        String apiToken = null;
+        if(tokenParts.length > 5){
+            apiToken = !StringUtils.equals(tokenParts[5], "null")?tokenParts[5]:null;
+        }
 
         return new BEAuthToken(clientKey, userKey, timestamp, jiraToken, userAgent, apiToken);
     }
