@@ -906,7 +906,7 @@ public class SessionServiceImpl implements SessionService {
             });
         }
 		Session savedSession = sessionRepository.save(session);
-		session.setStatusOrder(getStatusOrder(session.getStatus()));
+		session.setStatusOrder(session.getStatus().getOrder());
 		log.debug("Save session in ES id:{}", savedSession.getId());
 		Session currentSession = sessionESRepository.findById(savedSession.getId());
 		if(currentSession != null){
@@ -1527,20 +1527,6 @@ public class SessionServiceImpl implements SessionService {
 		return sessionMap;
 	}
 
-	private int getStatusOrder(Status status) {
-        switch (status) {
-            case CREATED:
-                return 1;
-            case STARTED:
-                return 2;
-            case PAUSED:
-                return 3;
-            case COMPLETED:
-                return 4;
-        }
-        return 0;
-    }
-	
 	private Map<String, Object> updateUserDisplayNameIntoES(String ctid, String userKey, String userDisplayName, int index, int maxResults) {
 		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(),
 				Optional.empty(), true, index, maxResults);

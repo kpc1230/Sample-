@@ -279,7 +279,11 @@ public class Session  implements Comparable<Session>, Serializable{
         Status(int order) {
             this.order = order;
         }
-    };
+
+        public int getOrder(){
+            return order;
+        }
+    }
 
     @Override
     public boolean equals(Object o) {

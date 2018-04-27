@@ -3,11 +3,12 @@ package com.thed.zephyr.capture.service.db.elasticsearch;
 import com.atlassian.connect.spring.AtlassianHost;
 import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.thed.zephyr.capture.exception.HazelcastInstanceNotDefinedException;
-import com.thed.zephyr.capture.model.AcHostModel;
-import com.thed.zephyr.capture.model.Session;
+import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
+import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionRepository;
+import com.thed.zephyr.capture.repositories.elasticsearch.NoteRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.JobProgressService;
 import com.thed.zephyr.capture.service.cache.LockService;
@@ -16,8 +17,8 @@ import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse;
 import org.elasticsearch.action.admin.indices.alias.exists.AliasesExistResponse;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.client.Client;
@@ -29,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -54,6 +56,12 @@ public class ESUtilService {
     private ProjectService projectService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private NoteRepository noteRepository;
+    @Autowired
+    private DynamicProperty dynamicProperty;
+    @Autowired
+    private SessionActivityRepository sessionActivityRepository;
 
     public void createAliases(){
         Iterable<AtlassianHost> allHosts = atlassianHostRepository.findAll();
@@ -85,7 +93,13 @@ public class ESUtilService {
         }
     }
 
-    public void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctId, String userName) throws HazelcastInstanceNotDefinedException {
+    public void reindexESCluster(){
+
+    }
+
+
+
+    public void reindexTenantESData(AcHostModel acHostModel, String jobProgressId, String ctId, String userName) throws HazelcastInstanceNotDefinedException {
         jobProgressService.createJobProgress(acHostModel, ApplicationConstants.REINDEX_CAPTURE_ES_DATA, ApplicationConstants.JOB_STATUS_INPROGRESS, jobProgressId);
         CompletableFuture.runAsync(() -> {
             CaptureUtil.putAcHostModelIntoContext(acHostModel, userName);
@@ -96,8 +110,8 @@ public class ESUtilService {
                     return;
                 }
                 log.debug("Re-Indexing Session type data begin:");
-                deleteSessionDataForCtid(ctId);
-                loadSessionDataFromDBToES(acHostModel, jobProgressId);
+                cleanESData();
+                reindexSessionsWithNotes(acHostModel, jobProgressId);
                 jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
                 String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
                 jobProgressService.setMessage(acHostModel, jobProgressId, message);
@@ -120,43 +134,47 @@ public class ESUtilService {
         });
     }
 
-    private void deleteSessionDataForCtid(String ctid) {
-        sessionESRepository.deleteSessionsByCtId(ctid);
-        log.info("Successfully deleted all the sessions related to tenant id -> " + ctid);
+    private void cleanESData() {
+        sessionESRepository.deleteAll();
+        noteRepository.deleteAll();
+        log.info("Successfully deleted all the sessions and notes during reindex ctId:{}", CaptureUtil.getCurrentCtId());
     }
 
-    private void loadSessionDataFromDBToES(AcHostModel acHostModel, String jobProgressId) throws HazelcastInstanceNotDefinedException {
-        int maxResults = 20;
-        Long total = 0L;
-        int index = 0;
-        Page<Session> pageResponse = loadSessionDataIntoES(acHostModel, jobProgressId, index, maxResults);
-        log.debug("Session reindex: getting sessions page size:{} ctId:{}", pageResponse.getTotalElements(), acHostModel.getCtId());
-        total = pageResponse.getTotalElements();
-        index = index + maxResults;
-        jobProgressService.setTotalSteps(acHostModel, jobProgressId, total.intValue());
-        jobProgressService.addCompletedSteps(acHostModel, jobProgressId, pageResponse.getNumberOfElements());
-        while(index < total.intValue()) {
-            pageResponse = loadSessionDataIntoES(acHostModel, jobProgressId, index, maxResults);
-            log.debug("Session reindex: getting sessions page size:{} ctId:{}", pageResponse.getTotalElements(), acHostModel.getCtId());
-            index = index + maxResults;
-            jobProgressService.addCompletedSteps(acHostModel, jobProgressId,  pageResponse.getNumberOfElements());
+    private void reindexSessionsWithNotes(AcHostModel acHostModel, String jobProgressId) throws HazelcastInstanceNotDefinedException {
+        int maxResults = dynamicProperty.getIntProp(ApplicationConstants.MAX_SESSION_REINDEX_DYNAMIC_PROP, ApplicationConstants.DEFAULT_SESSION_REINDEX).get();
+        int offset = 0;
+        Page<Session> pageResponse;
+        do{
+            pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(offset, maxResults));
+            jobProgressService.setTotalSteps(acHostModel, jobProgressId, Long.valueOf(pageResponse.getTotalElements()).intValue());
+            reindexSessionList(acHostModel, pageResponse.getContent(), jobProgressId);
+            offset++;
+        }while (pageResponse.getContent().size() > 0);
+
+    }
+
+    private void reindexSessionList(AcHostModel acHostModel, List<Session> sessions, String jobProgressId) throws HazelcastInstanceNotDefinedException {
+        CaptureProject project;
+        CaptureUser user;
+        for (Session session:sessions){
+            String projectId = String.valueOf(session.getProjectId());
+            project = projectService.getCaptureProjectViaAddon(acHostModel, projectId);
+            user = userService.findUserByKey(acHostModel, session.getAssignee());
+            session.setProjectName(project != null?project.getName():"not found id=" + projectId);
+            session.setUserDisplayName(user != null ? user.getDisplayName() : session.getAssignee());
+            session.setStatusOrder(session.getStatus().getOrder());
+            sessionESRepository.save(session);
+            reindexNotes(session);
+            jobProgressService.addCompletedSteps(acHostModel, jobProgressId,  1);
         }
     }
 
-    private Page<Session> loadSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, int index, int maxResults) {
-        CaptureProject project = null;
-        CaptureUser user = null;
-        Page<Session> pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(index / maxResults, maxResults));
-        for(Session session : pageResponse.getContent()) {
-            project = projectService.getCaptureProjectViaAddon(acHostModel, String.valueOf(session.getProjectId()));
-            if(project != null){
-                user = userService.findUserByKey(acHostModel, session.getAssignee());
-                session.setProjectName(project.getName());
-                session.setUserDisplayName(user != null ? user.getDisplayName() : session.getAssignee());
-                session.setStatusOrder(getStatusOrder(session.getStatus()));
-                sessionESRepository.save(session);
+    private void reindexNotes(Session session){
+            List<SessionActivity> sessionActivities = sessionActivityRepository.findBySessionId(session.getId());
+            for (SessionActivity sessionActivity:sessionActivities){
+                if(sessionActivity instanceof NoteSessionActivity){
+                    noteRepository.save(new Note((NoteSessionActivity)sessionActivity));
+                }
             }
-        }
-        return pageResponse;
     }
 }

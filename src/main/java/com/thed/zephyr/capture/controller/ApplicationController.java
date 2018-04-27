@@ -11,6 +11,7 @@ import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.db.elasticsearch.ESUtilService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
@@ -56,6 +57,8 @@ public class ApplicationController {
     private SessionService sessionService;
     @Autowired
     private HazelcastInstance hazelcastInstance;
+    @Autowired
+    private ESUtilService esUtilService;
 
     @LicenseCheck
     @RequestMapping(value = "/adminGenConf")
@@ -209,7 +212,7 @@ public class ApplicationController {
     		log.info("Start of reindex()");
             AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
             String jobProgressId = new UniqueIdGenerator().getStringId();
-            sessionService.reindexSessionDataIntoES(acHostModel, jobProgressId, acHostModel.getCtId(), hostUser.getUserKey().get());
+            esUtilService.reindexTenantESData(acHostModel, jobProgressId, acHostModel.getCtId(), hostUser.getUserKey().get());
             log.info("End of reindex()");
             Map<String, String> response = new HashMap<>();
             response.put("jobProgressId", jobProgressId);
