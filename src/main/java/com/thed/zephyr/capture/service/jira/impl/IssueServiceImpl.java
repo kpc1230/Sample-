@@ -350,15 +350,16 @@ public class IssueServiceImpl implements IssueService {
      *
      * @param issueKey
      * @param issueLinks
-     * @param host
+     * @param hostUser
      */
-    private void updateIssueLinks(String issueKey,IssueLinks issueLinks,AtlassianHostUser host) {
-        final JiraRestClient postJiraRestClient  =  createPostJiraRestClient(host);
+    private void updateIssueLinks(String issueKey,IssueLinks issueLinks,AtlassianHostUser hostUser) {
+        final JiraRestClient postJiraRestClient  =  createPostJiraRestClient(hostUser);
        CompletableFuture.runAsync(() -> {
+           CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
             log.debug("New Thread Started in order to update issues links ");
             try{
                 if(issueLinks.getIssues()!=null&&issueLinks.getIssues().length>0) {
-                    List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(host);
+                    List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(hostUser);
                     IssuelinksType linkType = null;
                     try {
                         linkType = linkTypes.stream().filter(o -> o.getInward().equals(issueLinks.getLinktype()) || o.getOutward().equals(issueLinks.getLinktype())).findFirst().get();

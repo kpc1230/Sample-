@@ -7,6 +7,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -380,7 +382,9 @@ public class JobProgressServiceImpl implements JobProgressService {
         if (!lockService.tryLock(acHostModel.getClientKey(), lockKey, 1)){
             return;
         }
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
         CompletableFuture.runAsync(() -> {
+            CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
         	final Long currentTime = new Date().getTime();
             try {
             	EntryObject entryObject = new PredicateBuilder().getEntryObject();

@@ -1,10 +1,13 @@
 package com.thed.zephyr.capture.util;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.Tag;
+import com.thed.zephyr.capture.model.be.BEContextAuthentication;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
@@ -133,6 +136,16 @@ public class CaptureUtil {
         AtlassianHostUser atlassianHostUser = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         AcHostModel acHostModel = (AcHostModel) dynamoDBAcHostRepository.findOne(atlassianHostUser.getHost().getClientKey());
         return acHostModel;
+    }
+
+    public static void putAcHostModelIntoContext(AcHostModel acHostModel, String userName){
+        if(acHostModel == null){
+            throw new IllegalArgumentException("Can't set up security context with AcHostModel null");
+        }
+        AtlassianHostUser atlassianHostUser = new AtlassianHostUser(acHostModel, Optional.ofNullable(userName));
+        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet();
+        JwtAuthentication beContextAuthentication = new JwtAuthentication(atlassianHostUser, jwtClaimsSet);
+        SecurityContextHolder.getContext().setAuthentication(beContextAuthentication);
     }
     
     public static AcHostModel getAcHostModel(DynamoDBAcHostRepository dynamoDBAcHostRepository, String baseUrl) {

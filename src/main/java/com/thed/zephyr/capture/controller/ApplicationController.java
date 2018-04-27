@@ -209,7 +209,7 @@ public class ApplicationController {
     		log.info("Start of reindex()");
             AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
             String jobProgressId = new UniqueIdGenerator().getStringId();
-            sessionService.reindexSessionDataIntoES(acHostModel, jobProgressId, acHostModel.getCtId());
+            sessionService.reindexSessionDataIntoES(acHostModel, jobProgressId, acHostModel.getCtId(), hostUser.getUserKey().get());
             log.info("End of reindex()");
             Map<String, String> response = new HashMap<>();
             response.put("jobProgressId", jobProgressId);

@@ -10,6 +10,7 @@ import com.atlassian.jira.rest.client.api.domain.input.AttachmentInput;
 import com.atlassian.jira.rest.client.internal.json.AttachmentJsonParser;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
@@ -242,8 +243,9 @@ public class AttachmentServiceImpl implements AttachmentService {
         }
     }
 
-    public void addAttachmentToIssue(Issue issue, File imageDataTempFile,String testSessionId,String baseUrl,AtlassianHostUser hostUser) throws IOException {
+    public void addAttachmentToIssue(Issue issue, File imageDataTempFile, String testSessionId, String baseUrl, AtlassianHostUser hostUser) throws IOException {
         CompletableFuture.runAsync(() -> {
+            CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
             log.debug("Thread addAttachmentToIssue started for the issue key : {} , with Attachment : {} , baseUrl : {} ", issue.getKey(), imageDataTempFile.getName(),baseUrl);
             LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
             String response;
