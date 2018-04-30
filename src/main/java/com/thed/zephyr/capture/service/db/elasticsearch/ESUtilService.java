@@ -16,6 +16,7 @@ import com.thed.zephyr.capture.service.data.LicenseService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.*;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.exists.AliasesExistResponse;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
@@ -136,10 +137,15 @@ public class ESUtilService {
                 cleanESData();
                 reindexSessionsWithNotes(acHostModel, jobProgressId);
                 jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
+                log.info("Was re-indexed {} sessions for tenant ctId:{}", jobProgressService.getTotalSteps(acHostModel, jobProgressId), acHostModel.getCtId());
                 String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
                 jobProgressService.setMessage(acHostModel, jobProgressId, message);
             } catch(Exception ex) {
-                log.error("Error during reindex for tenant ctId:{}", acHostModel.getCtId(), ex);
+                if(StringUtils.equals("503 Service Temporarily Unavailable", ex.getMessage())){
+                    log.info("Jira is not available, skip the reindex ctId:{}", acHostModel.getCtId());
+                } else{
+                    log.error("Error during reindex for tenant ctId:{}", acHostModel.getCtId(), ex);
+                }
                 try {
                     jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_FAILED, jobProgressId);
                     String errorMessage = captureI18NMessageSource.getMessage("capture.common.internal.server.error");
@@ -182,6 +188,7 @@ public class ESUtilService {
     private void reindexSessionList(AcHostModel acHostModel, List<Session> sessions, String jobProgressId) throws HazelcastInstanceNotDefinedException {
         CaptureProject project;
         CaptureUser user;
+        int notesCount = 0;
         for (Session session:sessions){
             String projectId = String.valueOf(session.getProjectId());
             project = projectService.getCaptureProjectViaAddon(acHostModel, projectId);
@@ -190,17 +197,23 @@ public class ESUtilService {
             session.setUserDisplayName(user != null ? user.getDisplayName() : session.getAssignee());
             session.setStatusOrder(session.getStatus().getOrder());
             sessionESRepository.save(session);
-            reindexNotes(session);
+            int sessionNotesCount = reindexNotes(session);
+            notesCount = notesCount + sessionNotesCount;
             jobProgressService.addCompletedSteps(acHostModel, jobProgressId,  1);
         }
+        log.info("Was re-indexed {} Notes for tenant ctId:{}", notesCount, acHostModel.getCtId());
     }
 
-    private void reindexNotes(Session session){
-            List<SessionActivity> sessionActivities = sessionActivityRepository.findBySessionId(session.getId());
-            for (SessionActivity sessionActivity:sessionActivities){
-                if(sessionActivity instanceof NoteSessionActivity){
-                    noteRepository.save(new Note((NoteSessionActivity)sessionActivity));
-                }
+    private int reindexNotes(Session session){
+        int notesCount = 0;
+        List<SessionActivity> sessionActivities = sessionActivityRepository.findBySessionId(session.getId());
+        for (SessionActivity sessionActivity:sessionActivities){
+            if(sessionActivity instanceof NoteSessionActivity){
+                notesCount++;
+                noteRepository.save(new Note((NoteSessionActivity)sessionActivity));
             }
+        }
+
+        return notesCount;
     }
 }

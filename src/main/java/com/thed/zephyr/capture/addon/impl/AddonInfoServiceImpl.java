@@ -43,11 +43,12 @@ public class AddonInfoServiceImpl implements AddonInfoService {
             if (StringUtils.equals(exception.getMessage(), "401 Unauthorized")){
                 log.warn("The getting add-on info request Unauthorized tenantKey:{}", acHostModel.getClientKey() , exception);
                 throw new UnauthorizedException(exception);
+            }else if(StringUtils.equals(exception.getMessage(), "503 Service Temporarily Unavailable")){
+                throw exception;
             }
             log.error("Error during getting addon information from jira.", exception);
             throw exception;
         }
-
     }
 
     @Override
