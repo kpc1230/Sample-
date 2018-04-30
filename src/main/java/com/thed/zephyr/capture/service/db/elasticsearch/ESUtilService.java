@@ -12,6 +12,7 @@ import com.thed.zephyr.capture.repositories.elasticsearch.NoteRepository;
 import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.JobProgressService;
 import com.thed.zephyr.capture.service.cache.LockService;
+import com.thed.zephyr.capture.service.data.LicenseService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.*;
@@ -60,6 +61,8 @@ public class ESUtilService {
     private DynamicProperty dynamicProperty;
     @Autowired
     private SessionActivityRepository sessionActivityRepository;
+    @Autowired
+    private LicenseService licenseService;
 
     public void createAliases(){
         Iterable<AtlassianHost> allHosts = atlassianHostRepository.findAll();
@@ -120,6 +123,10 @@ public class ESUtilService {
         CompletableFuture.runAsync(() -> {
             CaptureUtil.putAcHostModelIntoContext(acHostModel, userName);
             try {
+                LicenseService.Status licenseStatus = licenseService.getLicenseStatus();
+                if(licenseStatus != LicenseService.Status.ACTIVE){
+                    return;
+                }
                 if (!lockService.tryLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA, 5)){
                     log.warn("Re-index sessions process already in progress for tenant ctId:{}", acHostModel.getCtId());
                     jobProgressService.setErrorMessage(acHostModel, jobProgressId, captureI18NMessageSource.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.reindex.executions.inprogress"));
