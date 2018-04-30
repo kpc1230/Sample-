@@ -14,6 +14,7 @@ import com.thed.zephyr.capture.repositories.elasticsearch.IndexResolver;
 import com.thed.zephyr.capture.service.db.*;
 import com.thed.zephyr.capture.service.db.elasticsearch.ESUtilService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,8 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
     private ESUtilService esUtilService;
     @Autowired
     private IndexResolver indexResolver;
+    @Autowired
+    private DynamicProperty dynamicProperty;
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
@@ -54,6 +57,9 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         createVariableTableIfNotExist(tables, dynamoDB);
         esUtilService.createAliases();
         indexResolver.setAppStarted(true);
+        if(dynamicProperty.getBoolProp(ApplicationConstants.PERFORM_ES_CLUSTER_REINDEX_DYNAMIC_PROP, false).get()){
+            esUtilService.reindexESCluster();
+        }
     }
 
     @EventListener

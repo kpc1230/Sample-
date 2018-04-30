@@ -14,10 +14,7 @@ import com.thed.zephyr.capture.service.JobProgressService;
 import com.thed.zephyr.capture.service.cache.LockService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
-import com.thed.zephyr.capture.util.ApplicationConstants;
-import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
-import com.thed.zephyr.capture.util.CaptureUtil;
-import com.thed.zephyr.capture.util.DynamicProperty;
+import com.thed.zephyr.capture.util.*;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.exists.AliasesExistResponse;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
@@ -30,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -94,18 +92,36 @@ public class ESUtilService {
     }
 
     public void reindexESCluster(){
-
+        long startTime = new Date().getTime();
+        int poolSize = dynamicProperty.getIntProp(ApplicationConstants.REINDEX_ES_CLUSTER_THREAD_POOL_SIZE_DYNAMIC_PROP, ApplicationConstants.DEFAULT_REINDEX_ES_CLUSTER_THREAD_POOL_SIZE).get();
+        BlockingPool blockingPool = new BlockingPool(poolSize);
+        Iterable<AtlassianHost> allHosts = atlassianHostRepository.findAll();
+        int count = 0;
+        for (AtlassianHost host:allHosts){
+            count++;
+            if(((AcHostModel)host).getStatus() != AcHostModel.TenantStatus.ACTIVE){
+                continue;
+            }
+            try {
+                blockingPool.takeJob();
+                reindexTenantESData((AcHostModel)host, null, "system", blockingPool);
+                log.info("Re-indexed {} tenants",count);
+            } catch (HazelcastInstanceNotDefinedException e) {
+                log.error("Error during whole ES cluser reindex for tenant ctId:{}", ((AcHostModel)host).getCtId(), e);
+            }
+        }
+        blockingPool.isPoolFull();
+        long duration = new Date().getTime() - startTime;
+        log.info("Elasticsearch cluster reindex done duration:{}", duration );
     }
 
-
-
-    public void reindexTenantESData(AcHostModel acHostModel, String jobProgressId, String ctId, String userName) throws HazelcastInstanceNotDefinedException {
+    public void reindexTenantESData(AcHostModel acHostModel, String jobProgressId, String userName, BlockingPool blockingPool) throws HazelcastInstanceNotDefinedException {
         jobProgressService.createJobProgress(acHostModel, ApplicationConstants.REINDEX_CAPTURE_ES_DATA, ApplicationConstants.JOB_STATUS_INPROGRESS, jobProgressId);
         CompletableFuture.runAsync(() -> {
             CaptureUtil.putAcHostModelIntoContext(acHostModel, userName);
             try {
                 if (!lockService.tryLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA, 5)){
-                    log.warn("Re-index sessions process already in progress for tenant ctId:{}", ctId);
+                    log.warn("Re-index sessions process already in progress for tenant ctId:{}", acHostModel.getCtId());
                     jobProgressService.setErrorMessage(acHostModel, jobProgressId, captureI18NMessageSource.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.reindex.executions.inprogress"));
                     return;
                 }
@@ -116,19 +132,22 @@ public class ESUtilService {
                 String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
                 jobProgressService.setMessage(acHostModel, jobProgressId, message);
             } catch(Exception ex) {
-                log.error("Error during reindex for tenant ctId:{}", ctId, ex);
+                log.error("Error during reindex for tenant ctId:{}", acHostModel.getCtId(), ex);
                 try {
                     jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_FAILED, jobProgressId);
                     String errorMessage = captureI18NMessageSource.getMessage("capture.common.internal.server.error");
                     jobProgressService.setErrorMessage(acHostModel, jobProgressId, errorMessage);
                 } catch (HazelcastInstanceNotDefinedException exception) {
-                    log.error("Error during deleting reindex job progress for tenant ctId:{}", ctId, exception);
+                    log.error("Error during deleting reindex job progress for tenant ctId:{}", acHostModel.getCtId(), exception);
                 }
             } finally {
+                if(blockingPool != null){
+                    blockingPool.releaseJob();
+                }
                 try {
                     lockService.deleteLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);
                 } catch (HazelcastInstanceNotDefinedException exception) {
-                    log.error("Error during clearing reindex lock for tenant ctId:{}", ctId, exception);
+                    log.error("Error during clearing reindex lock for tenant ctId:{}", acHostModel.getCtId(), exception);
                 }
             }
         });

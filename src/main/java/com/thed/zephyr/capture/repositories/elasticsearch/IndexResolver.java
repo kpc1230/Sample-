@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component("indexResolverBean")
 public class IndexResolver {
 
-    private Boolean appStarted = false;
+    static private Boolean appStarted = false;
 
     private String index;
 

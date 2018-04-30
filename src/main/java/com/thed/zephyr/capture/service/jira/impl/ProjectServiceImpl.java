@@ -145,8 +145,8 @@ public class ProjectServiceImpl implements ProjectService {
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.PROJECT_CACHE_EXPIRATION_DYNAMIC_PROP,ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
 
-        } catch (Exception exp) {
-            log.error("Exception while getting the project from JIRA." + exp.getMessage(), exp);
+        } catch (Exception exception) {
+            log.error("Exception while getting the project from JIRA ctId:{}",acHostModel.getCtId(), exception);
         }
         return captureProject;
     }
