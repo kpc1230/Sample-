@@ -177,17 +177,18 @@ public class ESUtilService {
     private void reindexSessionsWithNotes(AcHostModel acHostModel, String jobProgressId) throws HazelcastInstanceNotDefinedException {
         int maxResults = dynamicProperty.getIntProp(ApplicationConstants.MAX_SESSION_REINDEX_DYNAMIC_PROP, ApplicationConstants.DEFAULT_SESSION_REINDEX).get();
         int offset = 0;
+        int notesCount = 0;
         Page<Session> pageResponse;
         do{
             pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(offset, maxResults));
             jobProgressService.setTotalSteps(acHostModel, jobProgressId, Long.valueOf(pageResponse.getTotalElements()).intValue());
-            reindexSessionList(acHostModel, pageResponse.getContent(), jobProgressId);
+            notesCount = notesCount + reindexSessionList(acHostModel, pageResponse.getContent(), jobProgressId);
             offset++;
         }while (pageResponse.getContent().size() > 0);
-
+        log.info("Was re-indexed {} Notes for tenant ctId:{}", notesCount, acHostModel.getCtId());
     }
 
-    private void reindexSessionList(AcHostModel acHostModel, List<Session> sessions, String jobProgressId) throws HazelcastInstanceNotDefinedException {
+    private int reindexSessionList(AcHostModel acHostModel, List<Session> sessions, String jobProgressId) throws HazelcastInstanceNotDefinedException {
         CaptureProject project;
         CaptureUser user;
         int notesCount = 0;
@@ -203,7 +204,7 @@ public class ESUtilService {
             notesCount = notesCount + sessionNotesCount;
             jobProgressService.addCompletedSteps(acHostModel, jobProgressId,  1);
         }
-        log.info("Was re-indexed {} Notes for tenant ctId:{}", notesCount, acHostModel.getCtId());
+        return notesCount;
     }
 
     private int reindexNotes(Session session){
