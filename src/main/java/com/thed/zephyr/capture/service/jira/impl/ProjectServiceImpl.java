@@ -139,7 +139,7 @@ public class ProjectServiceImpl implements ProjectService {
                 @Override
                 public CaptureProject call() throws Exception {
                 	String uri = acHostModel.getBaseUrl() + JiraConstants.REST_API_PROJECT_2 + projectIdOrKey;
-                     log.info("Getting project from jira using url: {}",uri);
+                     log.debug("Getting project from jira using url: {}",uri);
                 	 CaptureProject response = atlassianHostRestClients.authenticatedAsAddon().getForObject(uri, CaptureProject.class);
                     return response;
                 }

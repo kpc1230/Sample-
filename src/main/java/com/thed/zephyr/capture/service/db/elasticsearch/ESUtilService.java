@@ -137,9 +137,9 @@ public class ESUtilService {
                 long startTime = new Date().getTime();
                 cleanESData();
                 reindexSessionsWithNotes(acHostModel, jobProgressId);
-                jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
                 long duration = new Date().getTime() - startTime;
-                log.info("Was re-indexed {} sessions for tenant ctId:{} duration:{}", jobProgressService.getTotalSteps(acHostModel, jobProgressId), acHostModel.getCtId(), duration);
+                log.info("Tenant ctId:{} was re-indexed duration:{}", acHostModel.getCtId(), duration);
+                jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
                 String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
                 jobProgressService.setMessage(acHostModel, jobProgressId, message);
             } catch(Exception ex) {
@@ -178,14 +178,21 @@ public class ESUtilService {
         int maxResults = dynamicProperty.getIntProp(ApplicationConstants.MAX_SESSION_REINDEX_DYNAMIC_PROP, ApplicationConstants.DEFAULT_SESSION_REINDEX).get();
         int offset = 0;
         int notesCount = 0;
+        int sessionCount = 0;
         Page<Session> pageResponse;
         do{
             pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(offset, maxResults));
-            jobProgressService.setTotalSteps(acHostModel, jobProgressId, Long.valueOf(pageResponse.getTotalElements()).intValue());
-            notesCount = notesCount + reindexSessionList(acHostModel, pageResponse.getContent(), jobProgressId);
-            offset++;
+            if(pageResponse.getContent().size() == 0 && offset == 0){
+                jobProgressService.setTotalSteps(acHostModel, jobProgressId, 0);
+            } else if(pageResponse.getContent().size() != 0){
+                sessionCount = Long.valueOf(pageResponse.getTotalElements()).intValue();
+                jobProgressService.setTotalSteps(acHostModel, jobProgressId, sessionCount);
+                notesCount = notesCount + reindexSessionList(acHostModel, pageResponse.getContent(), jobProgressId);
+                offset++;
+            }
         }while (pageResponse.getContent().size() > 0);
         log.info("Was re-indexed {} Notes for tenant ctId:{}", notesCount, acHostModel.getCtId());
+        log.info("Was re-indexed {} sessions for tenant ctId:{}", sessionCount, acHostModel.getCtId());
     }
 
     private int reindexSessionList(AcHostModel acHostModel, List<Session> sessions, String jobProgressId) throws HazelcastInstanceNotDefinedException {
