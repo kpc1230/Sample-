@@ -185,10 +185,11 @@ public class ESUtilService {
             if(pageResponse.getContent().size() == 0 && offset == 0){
                 jobProgressService.setTotalSteps(acHostModel, jobProgressId, 0);
             } else if(pageResponse.getContent().size() != 0){
-                sessionCount = Long.valueOf(pageResponse.getTotalElements()).intValue();
+                sessionCount = sessionCount + pageResponse.getContent().size();
                 jobProgressService.setTotalSteps(acHostModel, jobProgressId, sessionCount);
                 notesCount = notesCount + reindexSessionList(acHostModel, pageResponse.getContent(), jobProgressId);
                 offset++;
+                log.info("Currently re-indexed {} sessions for tenant ctId:{}", sessionCount, acHostModel.getCtId());
             }
         }while (pageResponse.getContent().size() > 0);
         log.info("Was re-indexed {} Notes for tenant ctId:{}", notesCount, acHostModel.getCtId());
