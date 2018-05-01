@@ -134,10 +134,12 @@ public class ESUtilService {
                     return;
                 }
                 log.debug("Re-Indexing Session type data begin:");
+                long startTime = new Date().getTime();
                 cleanESData();
                 reindexSessionsWithNotes(acHostModel, jobProgressId);
                 jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
-                log.info("Was re-indexed {} sessions for tenant ctId:{}", jobProgressService.getTotalSteps(acHostModel, jobProgressId), acHostModel.getCtId());
+                long duration = new Date().getTime() - startTime;
+                log.info("Was re-indexed {} sessions for tenant ctId:{} duration:{}", jobProgressService.getTotalSteps(acHostModel, jobProgressId), acHostModel.getCtId(), duration);
                 String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
                 jobProgressService.setMessage(acHostModel, jobProgressId, message);
             } catch(Exception ex) {
