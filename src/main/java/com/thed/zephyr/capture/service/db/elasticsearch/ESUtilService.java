@@ -124,10 +124,10 @@ public class ESUtilService {
         CompletableFuture.runAsync(() -> {
             CaptureUtil.putAcHostModelIntoContext(acHostModel, userName);
             try {
-                LicenseService.Status licenseStatus = licenseService.getLicenseStatus();
-                if(licenseStatus != LicenseService.Status.ACTIVE && !StringUtils.equals("cb5f120c-ffff-4a14-a720-0064b1dfb439", acHostModel.getCtId())){
+                /*LicenseService.Status licenseStatus = licenseService.getLicenseStatus();
+                if(licenseStatus != LicenseService.Status.ACTIVE){
                     return;
-                }
+                }*/
                 if (!lockService.tryLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA, 5)){
                     log.warn("Re-index sessions process already in progress for tenant ctId:{}", acHostModel.getCtId());
                     jobProgressService.setErrorMessage(acHostModel, jobProgressId, captureI18NMessageSource.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.reindex.executions.inprogress"));
