@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.jira.impl;
 import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
@@ -211,7 +212,9 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         log.debug("populateIssueTestStatusAndTestSessions Completed");
     }
     private void setEntityPropertiesByThread(StringBuilder sb, String baseUrl, String path) {
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
         CompletableFuture.runAsync(() -> {
+            CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
             log.debug("Adding JIRA Issue context field Started.. baseUri :{}, path : {} , value : {} ", baseUrl, path, sb);
             try {
                 setEntityProperties(sb, baseUrl, path);

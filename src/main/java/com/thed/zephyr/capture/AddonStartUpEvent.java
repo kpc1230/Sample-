@@ -6,18 +6,21 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.TableCollection;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
+import com.atlassian.connect.spring.AddonInstalledEvent;
 import com.atlassian.connect.spring.AddonUninstalledEvent;
 import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.repositories.elasticsearch.IndexResolver;
 import com.thed.zephyr.capture.service.db.*;
+import com.thed.zephyr.capture.service.db.elasticsearch.ESUtilService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 
@@ -27,6 +30,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEvent> {
 
+
     @Autowired
     private Logger log;
     @Autowired
@@ -35,6 +39,12 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
     private DynamoDBTableNameResolver dynamoDBTableNameResolver;
     @Autowired
     private AtlassianHostRepository atlassianHostRepository;
+    @Autowired
+    private ESUtilService esUtilService;
+    @Autowired
+    private IndexResolver indexResolver;
+    @Autowired
+    private DynamicProperty dynamicProperty;
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
@@ -45,6 +55,11 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         createTemplateTableIfNotExist(tables, dynamoDB);
         createSessionActivityTableIfNotExist(tables, dynamoDB);
         createVariableTableIfNotExist(tables, dynamoDB);
+        esUtilService.createAliases();
+        indexResolver.setAppStarted(true);
+        if(dynamicProperty.getBoolProp(ApplicationConstants.PERFORM_ES_CLUSTER_REINDEX_DYNAMIC_PROP, false).get()){
+            esUtilService.reindexESCluster();
+        }
     }
 
     @EventListener
@@ -58,6 +73,17 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         } catch (Exception exception) {
             log.error("Error during uninstalledEvent", exception);
         }
+    }
+
+    @EventListener
+    public void installedEvent(AddonInstalledEvent addonInstalledEvent){
+        log.info("Add-on installed event triggered ...");
+        AcHostModel acHostModel = (AcHostModel)atlassianHostRepository.findOne(addonInstalledEvent.getHost().getClientKey());
+        esUtilService.createAlias(acHostModel.getCtId());
+    }
+
+    private void reindexESCluster(){
+
     }
 
 	private void createTenantTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {

@@ -6,6 +6,9 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldIndex;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.util.Date;
 import java.util.Set;
@@ -13,7 +16,7 @@ import java.util.Set;
 /**
  * Created by aliakseimatsarski on 8/14/17.
  */
-@Document(indexName = ApplicationConstants.ES_INDEX_NAME, type = "note")
+@Document(indexName = "#{indexResolverBean.index}", type = "note")
 final public class Note {
 
     @Id
@@ -21,6 +24,7 @@ final public class Note {
 
     private String noteSessionActivityId;
 
+    @Field(type = FieldType.String, index = FieldIndex.not_analyzed, store = true)
     private String ctId;
 
     private String sessionId;

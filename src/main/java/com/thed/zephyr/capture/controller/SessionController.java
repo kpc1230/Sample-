@@ -135,7 +135,7 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@PostMapping(consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> createSession(@Valid @RequestBody SessionRequest sessionRequest) throws CaptureValidationException {
+	public ResponseEntity<?> createSession(@AuthenticationPrincipal AtlassianHostUser hostUser, @Valid @RequestBody SessionRequest sessionRequest) throws CaptureValidationException {
 		log.info("Start of createSession() --> params " + sessionRequest.toString());
 		try {
 			String loggedUserKey = getUser();
@@ -153,6 +153,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			Session createdSession = sessionService.createSession(loggedUserKey, sessionRequest);
 			CompletableFuture.runAsync(() -> {
+				CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
 				//Save status changed information as activity.
 	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
 	        	if(!loggedUserKey.equals(createdSession.getAssignee())) {
@@ -168,6 +169,7 @@ public class SessionController extends CaptureAbstractController{
 	        	sessionService.update(updateResult, false); //Updating the session object into database.
 	        	//Save status changed information as activity.
 	        	CompletableFuture.runAsync(() -> {
+                    CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
 	        		sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, true);
 	        	});
 	        }
@@ -391,6 +393,7 @@ public class SessionController extends CaptureAbstractController{
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
         	CompletableFuture.runAsync(() -> {
+                CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
         		sessionActivityService.setStatus(session, new Date(), loggedUserKey);
         	});
         	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
@@ -512,12 +515,14 @@ public class SessionController extends CaptureAbstractController{
 			Session session = completeSessionResult.getSessionUpdateResult().getSession();
 			//Save status changed information as activity.
 			CompletableFuture.runAsync(() -> {
+                CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
 				sessionActivityService.setStatus(session, new Date(), loggedUserKey);
 			});
 			sessionService.update(completeSessionResult.getSessionUpdateResult(), false);
 			List<SessionServiceImpl.CompleteSessionIssueLink> issueLinks = completeSessionResult.getIssuesToLink();
 			DateTime timestamp = new DateTime(completeSessionResult.getSessionUpdateResult().getSession().getTimeCreated());
 			CompletableFuture.runAsync(() -> {
+                CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
 				if (issueLinks != null && issueLinks.size() > 0) {
 					log.debug("Thread to Link Issues started");
 					issueService.linkIssues(issueLinks, hostUser);
@@ -658,6 +663,7 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult, false);
 			//Save removed raised issue information as activity.
 			CompletableFuture.runAsync(() -> {
+                CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
 				sessionActivityService.removeRaisedIssue(loadedSession, captureIssue, dateTime, loggedUserKey);
 			});
 			//This is to removed raisedinsession from issue entity
@@ -898,7 +904,7 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@PostMapping(value = "/{sessionId}/clone", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> cloneSession(@PathVariable("sessionId") String sessionId, @RequestParam("name") String name) throws CaptureValidationException {
+	public ResponseEntity<?> cloneSession(@AuthenticationPrincipal AtlassianHostUser hostUser, @PathVariable("sessionId") String sessionId, @RequestParam("name") String name) throws CaptureValidationException {
 		log.info("Start of cloneSession() --> params - sessionId: " + sessionId + " name: " + name);
 		try {
 			String loggedUserKey = getUser();
@@ -918,6 +924,7 @@ public class SessionController extends CaptureAbstractController{
 			Session newSession = sessionService.cloneSession(loggedUserKey, loadedSession, name);
 			//Save status changed information as activity.
         	CompletableFuture.runAsync(() -> {
+                CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
         		sessionActivityService.setStatus(newSession, new Date(), loggedUserKey);
 				if(!loggedUserKey.equals(newSession.getAssignee())) {
 					//Save if the assigned user and logged in user are different into the session as activity.
@@ -1045,6 +1052,7 @@ public class SessionController extends CaptureAbstractController{
 			Session session = updateResult.getSession();
 			//Save status changed information as activity.
 			CompletableFuture.runAsync(() -> {
+                CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
 				sessionActivityService.setStatus(session, new Date(), loggedUserKey,firsTimeFlag);
 			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);

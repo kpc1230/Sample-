@@ -6,13 +6,17 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldIndex;
+import org.springframework.data.elasticsearch.annotations.FieldType;
+
 import java.util.Set;
 import java.util.TreeSet;
 
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
-@Document(indexName = ApplicationConstants.ES_INDEX_NAME, type = "tag")
+@Document(indexName = "#{indexResolverBean.index}", type = "tag")
 public class Tag implements Comparable<Tag>{
     // Static tag types with special meanings
     public static final String QUESTION = "#?";
@@ -31,6 +35,7 @@ public class Tag implements Comparable<Tag>{
     @Id
     private String id;
 
+    @Field(type = FieldType.String, index = FieldIndex.not_analyzed, store = true)
     private String ctId;
 
     private Long projectId;

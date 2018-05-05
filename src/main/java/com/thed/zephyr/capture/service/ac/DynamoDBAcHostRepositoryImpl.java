@@ -103,7 +103,7 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
         Iterable<AcHostModel> acHostModelList = acHostModelRepository.findAll();
         List<AtlassianHost> result = new ArrayList<>();
         for(AcHostModel acHostModel:acHostModelList){
-            result.add((AtlassianHost)acHostModel);
+            result.add(acHostModel);
         }
 
         return result;

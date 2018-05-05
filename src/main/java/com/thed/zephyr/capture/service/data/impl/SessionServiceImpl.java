@@ -139,7 +139,9 @@ public class SessionServiceImpl implements SessionService {
         Session createdSession = sessionRepository.save(session);
         if(log.isDebugEnabled()) log.debug("Created Session -- > Session ID - " + createdSession.getId());
         String baseUrl = getBaseUrl();
+		AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
 		CompletableFuture.runAsync(() -> {
+			CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
 			sessionESRepository.save(createdSession);
 			setIssueTestStatusAndTestSession(createdSession.getRelatedIssueIds(), createdSession.getCtId(), createdSession.getProjectId(), baseUrl);
 		});
@@ -222,7 +224,9 @@ public class SessionServiceImpl implements SessionService {
 				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
 				clearActiveSessionFromCache(loggedUserKey);
 				update(updateResult, false);
+				AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
 				CompletableFuture.runAsync(() -> {
+					CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
 					sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
 				});
 			}
@@ -260,7 +264,9 @@ public class SessionServiceImpl implements SessionService {
     				activeSession.setStatus(Status.PAUSED);
     				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
     				update(updateResult,true);
-    				CompletableFuture.runAsync(() -> {
+					AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+					CompletableFuture.runAsync(() -> {
+						CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
     					sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
     				});
     			}
@@ -580,11 +586,13 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public void setIssueTestStatusAndTestSession(Set<Long> relatedIssues, String ctId, Long projectId, String baseUrl) {
 		log.debug("setIssueTestStatusAndTestSession method started ...");
+		AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
 		if (relatedIssues != null) {
 			CompletableFuture.runAsync(() -> {
 				log.debug("Master Thread::::::started with relatedIssues: {}, ctId: {}, projectId: {}",relatedIssues,ctId,projectId);
 				relatedIssues.forEach(issueId -> {
 					CompletableFuture.runAsync(() -> {
+						CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
 						log.debug("Child Thread::::::started populate JIRA testing status for Issue: {}", issueId);
 						StringBuilder sessionIdBuilder = new StringBuilder();
 						String testingStatuKey = null;
@@ -634,7 +642,9 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public void updateProjectNameForSessions(String ctid, Long projectId, String projectName) {
+		AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
 		CompletableFuture.runAsync(() -> {
+			CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
 			int index = 0;
 			int maxResults = 20;
 			Map<String, Object> sessionMap = updateProjectNameIntoES(ctid, projectId, projectName, index, maxResults);
@@ -709,43 +719,10 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctId) throws HazelcastInstanceNotDefinedException {
-		jobProgressService.createJobProgress(acHostModel, ApplicationConstants.REINDEX_CAPTURE_ES_DATA, ApplicationConstants.JOB_STATUS_INPROGRESS, jobProgressId);
-		CompletableFuture.runAsync(() -> {
-			try {
-				if (!lockService.tryLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA, 5)){
-					log.warn("Re-index sessions process already in progress for tenant ctId:{}", ctId);
-					jobProgressService.setErrorMessage(acHostModel, jobProgressId, captureI18NMessageSource.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.reindex.executions.inprogress"));
-					return;
-				}
-				log.debug("Re-Indexing Session type data begin:");
-				deleteSessionDataForCtid(ctId);
-				loadSessionDataFromDBToES(acHostModel, jobProgressId);
-				jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
-				String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
-				jobProgressService.setMessage(acHostModel, jobProgressId, message);
-			} catch(Exception ex) {
-				log.error("Error during reindex for tenant ctId:{}", ctId, ex);
-				try {
-					jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_FAILED, jobProgressId);
-					String errorMessage = captureI18NMessageSource.getMessage("capture.common.internal.server.error");
-					jobProgressService.setErrorMessage(acHostModel, jobProgressId, errorMessage);
-				} catch (HazelcastInstanceNotDefinedException exception) {
-					log.error("Error during deleting reindex job progress for tenant ctId:{}", ctId, exception);
-				}
-			} finally {
-				try {
-					lockService.deleteLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA);
-				} catch (HazelcastInstanceNotDefinedException exception) {
-					log.error("Error during clearing reindex lock for tenant ctId:{}", ctId, exception);
-				}
-			}
-		});
-	}
-
-	@Override
 	public void updateUserDisplayNamesForSessions(String ctId, String userKey, String userDisplayName) {
+		AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
 		CompletableFuture.runAsync(() -> {
+			CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
 			int index = 0;
 			int maxResults = 20;
 			Map<String, Object> sessionMap = updateUserDisplayNameIntoES(ctId, userKey, userDisplayName, index, maxResults);
@@ -920,14 +897,16 @@ public class SessionServiceImpl implements SessionService {
      * @param leavers -- List of users leaving the session which needs to updated into session.
      */
 	private void save(Session session, List<String> leavers) {
-    	for (String leaver : leavers) {
+		AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+		for (String leaver : leavers) {
             clearActiveSessionFromCache(leaver);
             CompletableFuture.runAsync(() -> {
+				CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
             	sessionActivityService.addParticipantLeft(session, new Date(), leaver);
             });
         }
 		Session savedSession = sessionRepository.save(session);
-		session.setStatusOrder(getStatusOrder(session.getStatus()));
+		session.setStatusOrder(session.getStatus().getOrder());
 		log.debug("Save session in ES id:{}", savedSession.getId());
 		Session currentSession = sessionESRepository.findById(savedSession.getId());
 		if(currentSession != null){
@@ -948,7 +927,8 @@ public class SessionServiceImpl implements SessionService {
 	 * @return -- Returns the DeactivateResult object which holds the updated session object and any validation errors.
 	 */
 	private DeactivateResult validateDeactivateSession(Session session, String user, Status status, Duration timeLogged) {
-        if (!Objects.isNull(session)) {
+		AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+		if (!Objects.isNull(session)) {
             if (user.equals(session.getAssignee())) { // Pause if it is assigned to same user
                 List<String> leavingUsers = new ArrayList<>();
                 if(!Objects.isNull(session.getParticipants())) {
@@ -964,7 +944,8 @@ public class SessionServiceImpl implements SessionService {
                 session.setTimeLogged(timeLogged);
                 return new DeactivateResult(validateUpdate(user, session), leavingUsers);
             } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user))) { // Just leave if it isn't
-                CompletableFuture.runAsync(() -> {
+				CompletableFuture.runAsync(() -> {
+					CaptureUtil.putAcHostModelIntoContext((AcHostModel) hostUser.getHost(), hostUser.getUserKey().get());
                 	sessionActivityService.addParticipantLeft(session, new Date(), user);
                 });
             }
@@ -1545,62 +1526,7 @@ public class SessionServiceImpl implements SessionService {
 		}
 		return sessionMap;
 	}
-	
-	private void deleteSessionDataForCtid(String ctid) {
-		sessionESRepository.deleteSessionsByCtId(ctid);
-		log.info("Successfully deleted all the sessions related to tenant id -> " + ctid);
-	}
-	
-	
-	private void loadSessionDataFromDBToES(AcHostModel acHostModel, String jobProgressId) throws HazelcastInstanceNotDefinedException {
-		int maxResults = 20;
-		Long total = 0L;
-		int index = 0;
-		Page<Session> pageResponse = loadSessionDataIntoES(acHostModel, jobProgressId, index, maxResults);
-		log.debug("Session reindex: getting sessions page size:{} ctId:{}", pageResponse.getTotalElements(), acHostModel.getCtId());
-		total = pageResponse.getTotalElements();
-		index = index + maxResults;
-		jobProgressService.setTotalSteps(acHostModel, jobProgressId, total.intValue());
-		jobProgressService.addCompletedSteps(acHostModel, jobProgressId, pageResponse.getNumberOfElements());
-		while(index < total.intValue()) {
-			pageResponse = loadSessionDataIntoES(acHostModel, jobProgressId, index, maxResults);
-			log.debug("Session reindex: getting sessions page size:{} ctId:{}", pageResponse.getTotalElements(), acHostModel.getCtId());
-			index = index + maxResults;
-			jobProgressService.addCompletedSteps(acHostModel, jobProgressId,  pageResponse.getNumberOfElements());
-		}
-	}
-	
-	private Page<Session> loadSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, int index, int maxResults) {
-		CaptureProject project = null;
-		CaptureUser user = null;
-		Page<Session> pageResponse = sessionRepository.findByCtId(acHostModel.getCtId(), CaptureUtil.getPageRequest(index / maxResults, maxResults));
-		for(Session session : pageResponse.getContent()) {
-			project = projectService.getCaptureProjectViaAddon(acHostModel, String.valueOf(session.getProjectId()));
-			if(project != null){
-				user = userService.findUserByKey(acHostModel, session.getAssignee());
-				session.setProjectName(project.getName());
-				session.setUserDisplayName(user != null ? user.getDisplayName() : session.getAssignee());
-				session.setStatusOrder(getStatusOrder(session.getStatus()));
-				sessionESRepository.save(session);
-			}
-		}
-		return pageResponse;
-	}
-	
-	private int getStatusOrder(Status status) {
-        switch (status) {
-            case CREATED:
-                return 1;
-            case STARTED:
-                return 2;
-            case PAUSED:
-                return 3;
-            case COMPLETED:
-                return 4;
-        }
-        return 0;
-    }
-	
+
 	private Map<String, Object> updateUserDisplayNameIntoES(String ctid, String userKey, String userDisplayName, int index, int maxResults) {
 		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(),
 				Optional.empty(), true, index, maxResults);

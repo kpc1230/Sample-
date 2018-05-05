@@ -139,14 +139,14 @@ public class ProjectServiceImpl implements ProjectService {
                 @Override
                 public CaptureProject call() throws Exception {
                 	String uri = acHostModel.getBaseUrl() + JiraConstants.REST_API_PROJECT_2 + projectIdOrKey;
-                     log.info("Getting project from jira using url: {}",uri);
+                     log.debug("Getting project from jira using url: {}",uri);
                 	 CaptureProject response = atlassianHostRestClients.authenticatedAsAddon().getForObject(uri, CaptureProject.class);
                     return response;
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.PROJECT_CACHE_EXPIRATION_DYNAMIC_PROP,ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
 
-        } catch (Exception exp) {
-            log.error("Exception while getting the project from JIRA." + exp.getMessage(), exp);
+        } catch (Exception exception) {
+            log.error("Exception while getting the project from JIRA ctId:{}",acHostModel.getCtId(), exception);
         }
         return captureProject;
     }

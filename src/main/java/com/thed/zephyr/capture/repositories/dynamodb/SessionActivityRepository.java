@@ -19,7 +19,7 @@ import java.util.Optional;
 public interface SessionActivityRepository extends CrudRepository<SessionActivity, String> {
 
     List<SessionActivity> findBySessionId(String sessionId);
-    
+
     List<SessionActivity> findBySessionId(String sessionId, Optional<String> propertyName);
     
     @EnableScan

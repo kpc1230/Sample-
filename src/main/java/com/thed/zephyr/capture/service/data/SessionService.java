@@ -168,9 +168,9 @@ public interface SessionService {
 	 * @param projectId -- Session Project ID.
 	 * @param assignee -- Session Assignee.
 	 * @param status -- Session Status.
-	 * @param seachTerm -- User input search term to filter on session name.
+	 * @param searchTerm -- User input search term to filter on session name.
 	 * @param sortField -- Field to sort.
-	 * @param sotrOrder -- Boolean flag to indicate on ascending or descending.
+	 * @param sortAscending -- Boolean flag to indicate on ascending or descending.
 	 * @param startAt -- Position to fetch the sessions.
 	 * @param size -- Number of sessions to fetch.
 	 * @return
@@ -268,7 +268,7 @@ public interface SessionService {
 	 * Adds the Issue as Raised In for active User
 	 * @param userKey
 	 * @param issueRaisedId
-	 * @param sessionId
+	 * @param session
 	 */
 	void addRaisedInSession(String userKey, Long issueRaisedId, Session session);
 
@@ -281,7 +281,7 @@ public interface SessionService {
 
 	void setIssueTestStatusAndTestSession(Set<Long> relatedIssues, String ctId, Long projectId, String baseUrl);
 	
-	void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctid) throws HazelcastInstanceNotDefinedException;
+	//void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctId, String userName) throws HazelcastInstanceNotDefinedException;
 	
 	void updateUserDisplayNamesForSessions(String ctid, String userKey, String userDisplayName);
 
