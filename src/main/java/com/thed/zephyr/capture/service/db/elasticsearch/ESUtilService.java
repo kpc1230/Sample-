@@ -122,7 +122,6 @@ public class ESUtilService {
         blockingPool.isPoolFull();
         long duration = new Date().getTime() - startTime;
         log.info("Elasticsearch cluster reindex done duration:{}", duration );
-        hazelcastInstance.getList(ApplicationConstants.MAINTENANCE_DONE_LIST).clear();
     }
 
     public void reindexTenantESData(AcHostModel acHostModel, String jobProgressId, String userName, BlockingPool blockingPool, boolean isClusterReindex) throws HazelcastInstanceNotDefinedException {
