@@ -1,0 +1,18 @@
+package com.thed.zephyr.connect.util;
+
+option java_package = "com.thed.zephyr.connect.util";
+option java_outer_classname = "BackupSystemInfoBuffer";
+
+message BackupSystemInfo {
+
+    required string dataVersion = 1;
+    required string createDate = 2;
+    required string creator = 3;
+    required string numberOfObjects = 4;
+    required bool attachments = 5;
+    optional string comment = 6;
+    required string host = 7;
+    required string ztId = 8;
+    required string backupCheckSum = 9;
+    optional string jiraId = 10;
+}

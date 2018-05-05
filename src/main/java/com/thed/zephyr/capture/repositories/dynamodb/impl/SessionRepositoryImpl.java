@@ -92,7 +92,7 @@ public class SessionRepositoryImpl {
     	});
     	return sessionsList;
     }
-    
+
     /**
      * Fetch private sessions for the user.
      * <ul>Conditions:

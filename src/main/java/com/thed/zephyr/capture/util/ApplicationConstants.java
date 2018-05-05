@@ -1,7 +1,6 @@
 package com.thed.zephyr.capture.util;
 
 public class ApplicationConstants {
-
     public static final String MDC_TENANTKEY = "tenantKey";
     public static final String MDC_CAPID = "capid";
     public static final String PLUGIN_KEY = "addonKey";
@@ -47,8 +46,6 @@ public class ApplicationConstants {
     public static final String GSI_SESSIONID_TIMESTAMP = "idx_session_id_timestamp";
     public static final String GSI_CT_ID_SESSION_ID = "idx_ct_id_session_id";
     public static final String GSI_CT_ID_OWNER_NAME = "idx_ct_id_owner_name";
-
-
     public static final String BROWSER_FIREFOX_EXTENSION_DOWNLOAD = "browser.firefox.extension.download.url";
     public static final String BROWSER_SAFARI_EXTENSION_DOWNLOAD = "browser.safari.extension.download.url";
     public static final String BROWSER_IE_64_EXTENSION_DOWNLOAD = "browser.ie.extension.download.url";
@@ -60,7 +57,6 @@ public class ApplicationConstants {
     public static final String BROWSER_FIREFOX = "firefox";
     public static final String BROWSER_MSIE = "msie";
     public static final String BROWSER_MSIE_ALT = "trident/"; // IE11 browser has name Mozilla and can be identified by the keyword
-
     public static final String BROWSER_SAFARI = "safari";
     public static final String OS_LINUX = "linux";
     public static final String OS_WINDOWS = "windows";
@@ -69,7 +65,6 @@ public class ApplicationConstants {
     public static final String HZ_LOCK_IMAP_NAME = "capture_cloud_lock_imap";
     public static final Integer DEFAULT_LOCK_TIMEOUT_SEC = 5;
     public static final Integer MAX_LOCK_TIMEOUT_SEC = 300;
-
     public static final String VERSIONS = "versions";
     public static final String CAPTURE_BASEURL = "baseUrl";
     public static final String AES_ENCRYPTION_SECRET_KEY = "aes.encryption.secret.key";
@@ -82,7 +77,6 @@ public class ApplicationConstants {
     public static final String EDIT_ISSUE_PERMISSION = "EDIT_ISSUE";
     public static final String BROWSE_PROJECT_PERMISSION = "BROWSE_PROJECTS";
     public static final String COMMENT_ISSUE = "COMMENT_ISSUE";
-
     public static final String SYSTEM_ADMIN = "SYSTEM_ADMIN";
     public static final String ASSIGNABLE_USER = "ASSIGNABLE_USER";
     public static final String PROJECT_ADMIN = "PROJECT_ADMIN";
@@ -110,21 +104,17 @@ public class ApplicationConstants {
     public static String FIELD_LIST_BEANS = "fieldListBeans";
     public static String FIELD_DETAILS = "fieldDetails";
     public static String USER_BEANS = "userBeans";
-    
     public static int MAX_NOTE_LENGTH = 2000;
     public static final int RELATED_ISSUES_LIMIT = 100;
     public static final Integer DEFAULT_RESULT_SIZE = 20 ;
-    
     public static final String RELATED_ISSUES_LIMIT_DYNAMIC_KEY = "session.issue.max.limit";
     public static final String PARTICIPANT_LIMIT_DYNAMIC_KEY = "session.participant.limit";
-    
     public static final String SORTFIELD_CREATED = "created";
     public static final String SORTFIELD_SESSION_NAME = "sessionname";
     public static final String SORTFIELD_PROJECT = "project";
     public static final String SORTFIELD_ASSIGNEE = "assignee";
     public static final String SORTFIELD_STATUS = "status";
     public static final String SORTFIELD_SHARED = "shared";
-    
     public static final String SORT_ASCENDING = "ASC";
     public static final String TENANT_ID_FIELD = "ctId";
     public static final String PROJECT_ID = "projectId";
@@ -144,15 +134,12 @@ public class ApplicationConstants {
     public static final String DEFAULT_SMTP_PASSWORD = "ApnTtFsyojiOKBMfDGj8+cPlw7eISDrYIEwQQ6ulXmI1";
     public static final int DEFAULT_SMTP_PORT = 465;
     public static final String DEFAULT_SES_REGION = "us-west-2";
-    
     public static final String SESSION_ID_FIELD = "sessionId";
-
     public static final String DIAL_HOME_JOB = "app.dial.home.job";
     public static final String VERSION_PING_DEFAULT_CRON_EXPR = "0 40 14 * * *";
     public static final String VERSION_PING_CRON_EXPR = "version.ping.cron.expression" ;
     public static final String PING_HOME_URL = "app.dial.home.url";
     public static final String PING_HOME_VERSION_CHECK_URL = "https://version.yourzephyr.com/capture_version_check.php";
-
     public static final int DEFAULT_CACHE_EXPIRATION = 60; //in Seconds
     public static final int MEDIUM_CACHE_EXPIRATION = 180; //in Seconds
     public static final int FIVE_MIN_CACHE_EXPIRATION = 300; //in Seconds
@@ -177,15 +164,13 @@ public class ApplicationConstants {
 
     /** Tenant cache const **/
     public static final String LOCATION_ACHOST = "tenants";
-
     public static final String SESSION_LOCK_KEY = "session_";
-
     public static final String SESSION_URL_TEMPLATE = "/plugins/servlet/ac/%s/view-session-url?session.id=%s&origin=nav&invite=true";
 
     /** ES constants **/
     public static final String ES_INDEX_NAME = "capture";
     public static final String ES_SESSION_TYPE_NAME = "session";
-    
+
     /** Job progress status constants **/
     public static final int JOB_STATUS_INPROGRESS = 0;
     public static final int JOB_STATUS_COMPLETED = 1;
@@ -202,31 +187,23 @@ public class ApplicationConstants {
     public static final int INDEX_JOB_STATUS_INPROGRESS = 0;
     public static final int INDEX_JOB_STATUS_COMPLETED = 1;
     public static final int INDEX_JOB_STATUS_FAILED = 2;
-    
     public static final String SORTFIELD_ES_CREATED = "timeCreated";
     public static final String SORTFIELD_ES_SESSION_NAME = "name.lower_case_sort";
     public static final String SORTFIELD_ES_PROJECT = "projectName.lower_case_sort";
     public static final String SORTFIELD_ES_ASSIGNEE = "userDisplayName.lower_case_sort";
     public static final String SORTFIELD_ES_STATUS = "statusOrder";
-
     public static final String FEEDBACK_SEND_EMAIL = "feedback.send.email";
-    
     public static final String INCOMEPLETE_STATUS = "Incomplete";
-
     public static final String CAPTURE_TESTING_ISSUE_LINKTYPE = "Zephyr Capture testing";
-
     public static final String ADG3_MODE = "adg3mode";
     public static final String ADG3_FLAG_USER_PROP = "adg-flag";
     public static final String ADG3_FLAG_CACHE_PREFIX = "adg-flag-cache";
-
     public static final String EXT_LINK = "{JIRA_URL}/plugins/servlet/ac/{KEY}/get-browser-extension-page";
-
     public static final String FORCE_LICENSE_CHECK = "force.license.check";
 
     /* permissions */
     public static final String PERMISSIONS = "permissions";
     public static final String HAVE_PERMISSIONS = "havePermission";
-
     public static final String ATLASSIAN_ACCESS_TOKEN = "atlassian-token";
     public static final String HEADER_PARAM_ACCESS_TOKEN = "accessToken";
     public static final String HEADER_PARAM_JIRA_BASE_URL = "jiraBaseUrl";
@@ -235,7 +212,6 @@ public class ApplicationConstants {
     /** Fields metadata cache const **/
     public static final String METADATA_CACHE_KEY_PREFIX = "metadata-";
     public static final String METADATA_CACHE_EXPIRATION_DYNAMIC_PROP = "metadata.cache.expiration";
-
     public static final String SESSION_LIST = "sessionList";
     public static final String TOTAL_COUNT = "total";
 
@@ -249,4 +225,37 @@ public class ApplicationConstants {
     public static String PERFORM_ES_CLUSTER_REINDEX_DYNAMIC_PROP = "perform.es.cluser.reindex";
     public static final String MAINTENANCE_ACTIVE = "maintenance_active";
     public static final String MAINTENANCE_DONE_LIST = "maintenance_done_list";
+    public static final String BACKUP_JOB = "backup_job";
+    public static final String RESTORE_JOB = "restore_job";
+    public static final String BACKUP_LOCK_KEY = "backup_lock_key";
+    public static final String RESTORE_LOCK_KEY = "restore_lock_key";
+
+    /**
+     * AWS plugin constants
+     */
+    public static final String S3_BACKUP_FOLDER = "backup";
+    public static final String TEMPORARY_FOLDER_PATH = "capture/temp/";
+    public static final String S3_DELIMITER = "/";
+    public static final int NUMBER_STORED_BACKUPS = 20;
+    public static final String SESSION_ENTITY = "session";
+    public static final String SESSIONACTIVITY_ENTITY = "sessionActivity";
+    public static final String TEMPLATE_ENTITY = "template";
+    public static final String VARIABLE_ENTITY = "variable";
+    public static final Integer MAX_BULK_RECORDS_DEFAULT_LIMIT = 20;
+    public static final String BUCKET_KEY_SEPARATOR = ":";
+
+    /**** Backup archive file names ****/
+    public static final String BACKUP_ARCHIVE_NAME = "BackupData";
+    public static final String SYSTEM_INFO_BACKUP_ARCHIVE_NAME = "SystemInfo";
+    public static final int CreateTarArchiveException_ERROR_KEY = 136;
+    public static final int ExtractTarArchiveException_ERROR_KEY = 107;
+    public static final int IncompatibleBackupException_ERROR_KEY = 108;
+    public static final String CAPTURE_VERSION_KEY = "captureVersion";
+    public static final String JIRA_VERSION_KEY = "jiraVersion";
+    public static final String TOTAL_STORED_OBJECTS = "total_objects";
+    public static final String S3_ATTACHMENT_PREFIX = "ctId_";
+    public static final String ALLOW_FOREIGN_CTID_DYNAMIC_KEY = "backup.restore.allow.foreign.ctid";
+    public static final String DAILY_BACKUP_JOB_ENABLE= "app.daily.backup.job";
+    public static final String DAILY_BACKUP_JOB_CRON_EXP = "app.daily.backup.job.cron.expression" ;
+    public static final String DAILY_BACKUP_JOB_DEFAULT_CRON_EXPR = "0 0 0 * * *";
 }

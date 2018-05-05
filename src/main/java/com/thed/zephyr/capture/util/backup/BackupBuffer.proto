@@ -1,0 +1,16 @@
+package com.thed.zephyr.connect.util;
+
+option java_package = "com.thed.zephyr.connect.util";
+option java_outer_classname = "BackupBuffer";
+
+message Backup {
+
+    message Object {
+        required string bucket = 1;
+        required string key = 2;
+        required string jsonString = 3;
+        optional string bucketType = 4;
+    }
+
+    repeated Object objects = 1;
+}
