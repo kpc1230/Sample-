@@ -238,6 +238,7 @@ public class ApplicationConstants {
 
     public static final String SESSION_LIST = "sessionList";
     public static final String TOTAL_COUNT = "total";
+
     /** Dynamic properties constants **/
     public static final String REINDEX_ES_CLUSTER_THREAD_POOL_SIZE_DYNAMIC_PROP = "reindex.es.cluster.thread.pool.size";
     public static final int DEFAULT_REINDEX_ES_CLUSTER_THREAD_POOL_SIZE = 10;
@@ -246,4 +247,6 @@ public class ApplicationConstants {
     public static final int DEFAULT_SESSION_REINDEX = 100;
     public static final int DEFAULT_SESSION_ACTIVITY_REINDEX = 500;
     public static String PERFORM_ES_CLUSTER_REINDEX_DYNAMIC_PROP = "perform.es.cluser.reindex";
+    public static final String MAINTENANCE_ACTIVE = "maintenance_active";
+    public static final String MAINTENANCE_DONE_LIST = "maintenance_done_list";
 }

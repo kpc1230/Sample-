@@ -42,6 +42,8 @@ public class AddonInfoServiceImpl implements AddonInfoService {
         } catch (RestClientException exception) {
             if (StringUtils.equals(exception.getMessage(), "401 Unauthorized")){
                 throw new UnauthorizedException(exception);
+            } else if(StringUtils.equals(exception.getMessage(), "404 Not Found")){
+                return null;
             }
             throw exception;
         }

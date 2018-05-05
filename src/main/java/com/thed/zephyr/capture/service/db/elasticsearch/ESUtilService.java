@@ -2,7 +2,9 @@ package com.thed.zephyr.capture.service.db.elasticsearch;
 
 import com.atlassian.connect.spring.AtlassianHost;
 import com.atlassian.connect.spring.AtlassianHostRepository;
+import com.hazelcast.core.HazelcastInstance;
 import com.thed.zephyr.capture.exception.HazelcastInstanceNotDefinedException;
+import com.thed.zephyr.capture.exception.UnauthorizedException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
@@ -64,6 +66,8 @@ public class ESUtilService {
     private SessionActivityRepository sessionActivityRepository;
     @Autowired
     private LicenseService licenseService;
+    @Autowired
+    private HazelcastInstance hazelcastInstance;
 
     public void createAliases(){
         Iterable<AtlassianHost> allHosts = atlassianHostRepository.findAll();
@@ -101,6 +105,7 @@ public class ESUtilService {
         BlockingPool blockingPool = new BlockingPool(poolSize);
         Iterable<AtlassianHost> allHosts = atlassianHostRepository.findAll();
         int count = 0;
+        hazelcastInstance.getList(ApplicationConstants.MAINTENANCE_DONE_LIST).clear();
         for (AtlassianHost host:allHosts){
             count++;
             if(((AcHostModel)host).getStatus() != AcHostModel.TenantStatus.ACTIVE){
@@ -108,29 +113,28 @@ public class ESUtilService {
             }
             try {
                 blockingPool.takeJob();
-                reindexTenantESData((AcHostModel)host, null, "system", blockingPool);
-                log.info("Re-indexed {} tenants",count);
-            } catch (HazelcastInstanceNotDefinedException e) {
-                log.error("Error during whole ES cluser reindex for tenant ctId:{}", ((AcHostModel)host).getCtId(), e);
+                reindexTenantESData((AcHostModel)host, null, "system", blockingPool, true);
+                log.info("Re-indexed {} tenants", count);
+            } catch (HazelcastInstanceNotDefinedException exception) {
+                log.error("Error during whole ES cluser reindex for tenant ctId:{}", ((AcHostModel)host).getCtId(), exception);
             }
         }
         blockingPool.isPoolFull();
         long duration = new Date().getTime() - startTime;
         log.info("Elasticsearch cluster reindex done duration:{}", duration );
+        hazelcastInstance.getList(ApplicationConstants.MAINTENANCE_DONE_LIST).clear();
     }
 
-    public void reindexTenantESData(AcHostModel acHostModel, String jobProgressId, String userName, BlockingPool blockingPool) throws HazelcastInstanceNotDefinedException {
+    public void reindexTenantESData(AcHostModel acHostModel, String jobProgressId, String userName, BlockingPool blockingPool, boolean isClusterReindex) throws HazelcastInstanceNotDefinedException {
         jobProgressService.createJobProgress(acHostModel, ApplicationConstants.REINDEX_CAPTURE_ES_DATA, ApplicationConstants.JOB_STATUS_INPROGRESS, jobProgressId);
         CompletableFuture.runAsync(() -> {
             CaptureUtil.putAcHostModelIntoContext(acHostModel, userName);
             try {
-                if(!StringUtils.equals("cb5f120c-ffff-4a14-a720-0064b1dfb439", acHostModel.getCtId())){
-                    LicenseService.Status licenseStatus = licenseService.getLicenseStatus();
-                    if(licenseStatus != LicenseService.Status.ACTIVE){
-                        return;
-                    }
+                LicenseService.Status licenseStatus = licenseService.getLicenseStatus();
+                if(licenseStatus != LicenseService.Status.ACTIVE){
+                    log.warn("Tenant license INACTIVE, therefore skip re-index ctId:{}", acHostModel.getCtId());
+                    return;
                 }
-
                 if (!lockService.tryLock(acHostModel.getClientKey(), ApplicationConstants.REINDEX_CAPTURE_ES_DATA, 5)){
                     log.warn("Re-index sessions process already in progress for tenant ctId:{}", acHostModel.getCtId());
                     jobProgressService.setErrorMessage(acHostModel, jobProgressId, captureI18NMessageSource.getMessage("capture.admin.plugin.test.section.item.zephyr.configuration.reindex.executions.inprogress"));
@@ -145,6 +149,8 @@ public class ESUtilService {
                 jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.INDEX_JOB_STATUS_COMPLETED, jobProgressId);
                 String message = captureI18NMessageSource.getMessage("capture.job.progress.status.success.message");
                 jobProgressService.setMessage(acHostModel, jobProgressId, message);
+            } catch (UnauthorizedException exception){
+                log.warn("Can't authorize in Jira during re-index. The addon possibly was uninstalled ctId:{}", acHostModel.getCtId());
             } catch(Exception ex) {
                 if(StringUtils.equals("503 Service Temporarily Unavailable", ex.getMessage())){
                     log.info("Jira is not available, skip the reindex ctId:{}", acHostModel.getCtId());
@@ -159,6 +165,9 @@ public class ESUtilService {
                     log.error("Error during deleting reindex job progress for tenant ctId:{}", acHostModel.getCtId(), exception);
                 }
             } finally {
+                if(isClusterReindex){
+                    hazelcastInstance.getList(ApplicationConstants.MAINTENANCE_DONE_LIST).add(acHostModel.getCtId());
+                }
                 if(blockingPool != null){
                     blockingPool.releaseJob();
                 }

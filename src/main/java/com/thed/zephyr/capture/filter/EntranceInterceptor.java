@@ -29,10 +29,8 @@ public class EntranceInterceptor extends HandlerInterceptorAdapter {
 
     @Autowired
     private Logger log;
-
     @Autowired
     DynamicProperty dynamicProperty;
-
     @Autowired
     private ResourceLoader resourceLoader;
 

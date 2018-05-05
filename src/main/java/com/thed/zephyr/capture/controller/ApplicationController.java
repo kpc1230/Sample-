@@ -212,7 +212,7 @@ public class ApplicationController {
     		log.info("Start of reindex()");
             AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
             String jobProgressId = new UniqueIdGenerator().getStringId();
-            esUtilService.reindexTenantESData(acHostModel, jobProgressId, hostUser.getUserKey().get(), null);
+            esUtilService.reindexTenantESData(acHostModel, jobProgressId, hostUser.getUserKey().get(), null, false);
             log.info("End of reindex()");
             Map<String, String> response = new HashMap<>();
             response.put("jobProgressId", jobProgressId);

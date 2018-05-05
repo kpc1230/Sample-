@@ -56,7 +56,7 @@ public class LicenseServiceImpl implements LicenseService {
     public Status getLicenseStatus() throws UnauthorizedException {
         Status status = Status.INACTIVE;
         AddonInfo addonInfo = getAddonInfo();
-        if(addonInfo.getLicense().isActive()){
+        if(addonInfo != null && addonInfo.getLicense() !=null && addonInfo.getLicense().isActive()){
             status = Status.ACTIVE;
         }
         return status;

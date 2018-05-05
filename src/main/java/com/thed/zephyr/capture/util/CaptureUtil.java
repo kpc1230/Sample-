@@ -9,6 +9,7 @@ import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.Tag;
 import com.thed.zephyr.capture.model.be.BEContextAuthentication;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.tomcat.util.codec.binary.Base64;
@@ -16,11 +17,15 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -301,5 +306,21 @@ public class CaptureUtil {
             userAgent = browserAgent;
         }
         return userAgent;
+    }
+
+    public static String readHtmlTemplate(String templatePath, String baseUrl, ResourceLoader resourceLoader){
+        String content = null;
+        try{
+            Resource resource = resourceLoader.getResource(templatePath);
+            InputStream inputStream = resource.getInputStream();
+            StringWriter writer = new StringWriter();
+            IOUtils.copy(inputStream, writer);
+            content = writer.toString();
+            content = StringUtils.replace(content, "{base-url}", baseUrl);
+        } catch (Exception exception){
+            log.error("Error during get errorEntrance.html content.", exception);
+        }
+
+        return content;
     }
 }
