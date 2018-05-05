@@ -1,7 +1,7 @@
 package com.thed.zephyr.capture.service.jira;
 
 
-import com.atlassian.jira.rest.client.api.domain.Project;
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 
 import java.util.Map;
@@ -12,4 +12,6 @@ import java.util.Map;
 public interface MetadataService {
 
     Map<String, Object> createFieldScreenRenderer(CaptureProject captureProject);
+
+    String getMetaDataCacheOrFresh(AtlassianHostUser hostUser, String projectKey, Long projectId);
 }

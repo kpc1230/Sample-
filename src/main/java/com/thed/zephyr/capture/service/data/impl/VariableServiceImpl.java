@@ -1,18 +1,5 @@
 package com.thed.zephyr.capture.service.data.impl;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.Variable;
@@ -24,6 +11,14 @@ import com.thed.zephyr.capture.service.data.VariableService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DefaultVariables;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Venkatareddy on 08/24/2017.
@@ -48,7 +43,7 @@ public class VariableServiceImpl implements VariableService {
 		if (existing != null) {
 			throw new CaptureValidationException(i18n.getMessage("variable.already.present"));
 		}
-		Variable newVariable = new Variable(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), 
+		Variable newVariable = new Variable(CaptureUtil.getCurrentCtId(),
 				input.getOwnerName(), input.getName(), input.getValue());
 		repository.save(newVariable);
 	}
@@ -79,7 +74,7 @@ public class VariableServiceImpl implements VariableService {
 	 * @return
 	 */
 	protected Page<Variable> getVariableObjects(String ownerName, Integer offset, Integer limit){
-		return repository.findByCtIdAndOwnerName(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), 
+		return repository.findByCtIdAndOwnerName(CaptureUtil.getCurrentCtId(),
 				ownerName, getPageRequest(offset, limit));
 	}
 
@@ -91,7 +86,7 @@ public class VariableServiceImpl implements VariableService {
 	private List<Variable> createDefaultVariables(String ownerName) {
 		List<Variable> variableList = new ArrayList<>();
         for (String name : DefaultVariables.DEFAULT_VARIABLES.keySet()) {
-            Variable var = new Variable(CaptureUtil.getCurrentCtId(dynamoDBAcHostRepository), ownerName, name, 
+            Variable var = new Variable(CaptureUtil.getCurrentCtId(), ownerName, name,
             		DefaultVariables.DEFAULT_VARIABLES.get(name));
             repository.save(var);
             variableList.add(var);

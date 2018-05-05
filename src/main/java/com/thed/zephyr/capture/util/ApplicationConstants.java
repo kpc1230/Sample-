@@ -92,6 +92,12 @@ public class ApplicationConstants {
     public static final String SESSION_ACTIVITIES = "sessionActivities";
     public static final String HTML = "html";
     public static final String TEXT = "text";
+    public static final String ATLASSIAN_WIKI_RENDERER = "atlassian-wiki-renderer";
+    public static final String WIKI_TYPE = "rendererType";
+    public static final String WIKI_KEY = "unrenderedMarkup";
+    public static final String METADATA_EXPAND_KEY = "projects.issuetypes.fields";
+    public static final String ENTRANCE_CHECKING = "entrance.checking";
+    public static final String ENTRANCE_CHECKING_LIST = "entrance.checking.tenant.list";
 
     /*** for MetadataField ***/
     public static String PROJECTS = "projects";
@@ -215,4 +221,21 @@ public class ApplicationConstants {
 
     public static final String EXT_LINK = "{JIRA_URL}/plugins/servlet/ac/{KEY}/get-browser-extension-page";
 
+    public static final String FORCE_LICENSE_CHECK = "force.license.check";
+
+    /* permissions */
+    public static final String PERMISSIONS = "permissions";
+    public static final String HAVE_PERMISSIONS = "havePermission";
+
+    public static final String ATLASSIAN_ACCESS_TOKEN = "atlassian-token";
+    public static final String HEADER_PARAM_ACCESS_TOKEN = "accessToken";
+    public static final String HEADER_PARAM_JIRA_BASE_URL = "jiraBaseUrl";
+    public static final String HEADER_PARAM_USER_KEY = "userKey";
+
+    /** Fields metadata cache const **/
+    public static final String METADATA_CACHE_KEY_PREFIX = "metadata-";
+    public static final String METADATA_CACHE_EXPIRATION_DYNAMIC_PROP = "metadata.cache.expiration";
+
+    public static final String SESSION_LIST = "sessionList";
+    public static final String TOTAL_COUNT = "total";
 }

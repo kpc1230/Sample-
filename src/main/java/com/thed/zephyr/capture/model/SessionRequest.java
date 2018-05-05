@@ -1,9 +1,6 @@
 package com.thed.zephyr.capture.model;
 
-import com.thed.zephyr.capture.util.CaptureConstants;
-
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -23,6 +20,7 @@ public class SessionRequest {
 	private Set<String> relatedIssues;
 	private String assignee;
 	private String additionalInfo;
+	private String wikiParsedData;
 	private Boolean shared = false;
 	private String defaultTemplateId;
 	private Boolean startNow = false;
@@ -34,12 +32,13 @@ public class SessionRequest {
 	public SessionRequest() {
 	}
 
-	public SessionRequest(String name, String projectKey, Set<String> relatedIssues, String assignee, String additionalInfo, Boolean shared, String defaultTemplateId, Boolean startNow, Long projectId, Set<Long> relatedIssueIds) {
+	public SessionRequest(String name, String projectKey, Set<String> relatedIssues, String assignee, String additionalInfo, String wikiParsedData, Boolean shared, String defaultTemplateId, Boolean startNow, Long projectId, Set<Long> relatedIssueIds) {
 		this.name = name;
 		this.projectKey = projectKey;
 		this.relatedIssues = relatedIssues;
 		this.assignee = assignee;
 		this.additionalInfo = additionalInfo;
+		this.wikiParsedData = wikiParsedData;
 		this.shared = shared;
 		this.defaultTemplateId = defaultTemplateId;
 		this.startNow = startNow;
@@ -85,6 +84,14 @@ public class SessionRequest {
 
 	public void setAdditionalInfo(String additionalInfo) {
 		this.additionalInfo = additionalInfo;
+	}
+
+	public String getWikiParsedData() {
+		return wikiParsedData;
+	}
+
+	public void setWikiParsedData(String wikiParsedData) {
+		this.wikiParsedData = wikiParsedData;
 	}
 
 	public Boolean getShared() {
@@ -138,7 +145,7 @@ public class SessionRequest {
 	@Override
 	public String toString() {
 		return "SessionRequest [name=" + name + ", projectKey=" + projectKey + ", relatedIssues=" + relatedIssues
-				+ ", assignee=" + assignee + ", additionalInfo=" + additionalInfo + ", shared=" + shared
+				+ ", assignee=" + assignee + ", additionalInfo=" + additionalInfo +", wikiParsedData=" + wikiParsedData + ", shared=" + shared
 				+ ", defaultTemplateId=" + defaultTemplateId + ", startNow=" + startNow + "]";
 	}
 	

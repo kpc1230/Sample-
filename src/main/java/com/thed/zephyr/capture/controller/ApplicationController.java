@@ -3,7 +3,10 @@ package com.thed.zephyr.capture.controller;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.IgnoreJwt;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.thed.zephyr.capture.addon.AddonInfoService;
+import com.thed.zephyr.capture.annotation.LicenseCheck;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
@@ -23,11 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -38,30 +37,27 @@ import java.util.Map;
  */
 @Controller
 public class ApplicationController {
+
     @Autowired
     private Logger log;
-
     @Autowired
     private UserService jiraUserService;
-
     @Autowired
     private DynamicProperty dynamicProperty;
-
     @Autowired
     private Environment env;
-
     @Autowired
     private CaptureI18NMessageSource i18n;
-
     @Autowired
     private ITenantAwareCache tenantAwareCache;
-
     @Autowired
     private AddonInfoService addonInfoService;
-    
     @Autowired
     private SessionService sessionService;
+    @Autowired
+    private HazelcastInstance hazelcastInstance;
 
+    @LicenseCheck
     @RequestMapping(value = "/adminGenConf")
     public String getGeneralConfigurationPage(@AuthenticationPrincipal AtlassianHostUser hostUser,
                                               @RequestParam String user_id, Model model) {
@@ -84,6 +80,7 @@ public class ApplicationController {
         return "generalConfigPage";
     }
 
+    @LicenseCheck
     @RequestMapping(value = "/browseTestSessions")
     public String getSessionNavigatorPage(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -99,6 +96,7 @@ public class ApplicationController {
         return "sessionNavigator";
     }
 
+    @LicenseCheck
     @RequestMapping(value = "/viewSession")
     public String getViewSessionPage(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -114,6 +112,7 @@ public class ApplicationController {
         return "viewSession";
     }
 
+    @LicenseCheck
     @RequestMapping(value = "/public/rest/testing")
     public String getTestingIssueView(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId, @RequestParam String issueKey, @RequestParam String boardsPage, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -132,6 +131,7 @@ public class ApplicationController {
         return "testingIssueView";
     }
 
+    @LicenseCheck
     @RequestMapping(value = "/projectTestSessions")
     public String projectTestSessions(@RequestParam String projectId, @RequestParam String projectKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -147,6 +147,7 @@ public class ApplicationController {
         return "projectTestSessions";
     }
 
+    @LicenseCheck
     @RequestMapping(value = "/createTestSessionDialog")
     public String createTestSessionDialog(@RequestParam String projectId, @RequestParam String projectKey, @RequestParam String issueId, @RequestParam String issueKey, Model model) {
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
@@ -164,14 +165,16 @@ public class ApplicationController {
         return "createTestSessionDialog";
     }
 
-   @RequestMapping(value = "/wikiHelp")
+    @LicenseCheck
+    @RequestMapping(value = "/wikiHelp")
     public String wikiHelp() {
         log.debug("Requesting the wiki help page");
         return "wikiHelp";
     }
+
+    @IgnoreJwt
     @RequestMapping(value = "/capture-i18n")
     @ResponseBody
-    @IgnoreJwt
     public ResponseEntity<?> getI18NMessages() {
         Map<String, String> messages = getI18NMessagesBasedOnSessionLocale();
         return ResponseEntity.ok(messages);
@@ -187,12 +190,19 @@ public class ApplicationController {
         return ResponseEntity.ok(map);
     }
 
-    private Map<String, String> getI18NMessagesBasedOnSessionLocale() {
-        Locale locale = LocaleContextHolder.getLocale();
-        String basename = "i18n/capture-i18n";
-        return i18n.getKeyValues(basename, locale);
+    /* THIS METHOD SHOULD BE DELETED AFTER ATLASSIAN MIGRATION WILL BE DONE!!!!!!!*/
+    @IgnoreJwt
+    @RequestMapping(value = "/private/clear/achost/form/cache", method = RequestMethod.DELETE)
+    @ResponseBody
+    public ResponseEntity<?> deleteAcHostFromCache(@RequestParam("clientKey") String clientKey) {
+        IMap<String, AcHostModel> tenants = hazelcastInstance.getMap(ApplicationConstants.LOCATION_ACHOST);
+        tenants.delete(clientKey);
+        Map<String,String> map = new HashedMap();
+        map.put("status","success");
+        log.info("The AcHost was deleted from cache clientKey:{}", clientKey);
+        return ResponseEntity.ok(map);
     }
-    
+
     @PostMapping(value = "/reindex")
     public ResponseEntity<?> reindex(@AuthenticationPrincipal AtlassianHostUser hostUser) {
     	try {
@@ -223,5 +233,11 @@ public class ApplicationController {
     	response.put("result", flag);
     	log.info("End of checkBESupportedVersion()");
     	return ResponseEntity.ok(response);
+    }
+
+    private Map<String, String> getI18NMessagesBasedOnSessionLocale() {
+        Locale locale = LocaleContextHolder.getLocale();
+        String basename = "i18n/capture-i18n";
+        return i18n.getKeyValues(basename, locale);
     }
 }

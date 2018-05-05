@@ -1,13 +1,11 @@
 package com.thed.zephyr.capture.controller;
 
 import com.atlassian.jira.rest.client.api.RestClientException;
-import com.atlassian.jira.rest.client.api.domain.util.ErrorCollection;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
-import com.thed.zephyr.capture.exception.model.ErrorDto;
+import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.service.jira.AttachmentService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
-
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -20,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.util.StringUtils;
 
 import java.io.Serializable;
-import java.util.*;
 
 /**
  * Created by niravshah on 8/25/17.
@@ -40,9 +37,10 @@ public class AttachmentController {
     @RequestMapping(value = "/issue-attach-new", method = RequestMethod.POST)
     public ResponseEntity<String> uploadAttachments(
             @RequestParam("issueKey") String issueKey,
-            @RequestParam("files") MultipartFile[] multipartFiles) {
-        log.info("UploadAttachments() --> for issueKey:{} number attachments:{}", issueKey, multipartFiles.length);
-        String fullIconUrl = attachmentService.addAttachments(multipartFiles, issueKey);
+            @RequestParam("files") MultipartFile[] multipartFiles) throws CaptureValidationException {
+        String fullIconUrl = attachmentService.addAttachments(multipartFiles,issueKey);
+        log.info("UploadAttachments() --> for IssueKey {} " + issueKey);
+
         return new ResponseEntity<>(fullIconUrl,HttpStatus.OK);
     }
 
@@ -50,8 +48,8 @@ public class AttachmentController {
     public ResponseEntity<?> uploadAttachments(
             @RequestParam("issueKey") String issueKey,
             @RequestParam(value = "testSessionId",required = false) String testSessionId,
-            @RequestBody String requestBody) {
-        log.info("UploadAttachments() --> for issueKey:{} testSessionId:{}", issueKey, testSessionId);
+            @RequestBody String requestBody) throws CaptureValidationException {
+        log.info("UploadAttachments() --> for IssueKey {} " + requestBody);
         final JSONArray json;
         try {
             json = new JSONArray(requestBody);
@@ -88,8 +86,12 @@ public class AttachmentController {
             } catch (JSONException jsonEx) {
                 log.error("Error Adding Value to JSON", jsonEx);
             }
-        } catch(Exception e) {
-            log.error("Error adding attachment", e);
+        }catch(CaptureValidationException cve) {
+            log.error("Error adding attachment",cve);
+            throw cve;
+        }
+        catch(Exception e) {
+            log.error("Error adding attachment",e);
             throw new CaptureRuntimeException(e);
         }
         return new ResponseEntity<>(HttpStatus.OK);

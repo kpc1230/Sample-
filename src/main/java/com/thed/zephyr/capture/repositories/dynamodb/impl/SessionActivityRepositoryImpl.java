@@ -1,34 +1,25 @@
 package com.thed.zephyr.capture.repositories.dynamodb.impl;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.internal.IteratorSupport;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.thed.zephyr.capture.model.FeedbackRequest;
+import com.thed.zephyr.capture.model.SessionActivity;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.db.DynamoDBTableNameResolver;
+import com.thed.zephyr.capture.service.email.CaptureEmailService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Index;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
-import com.amazonaws.services.dynamodbv2.document.QueryFilter;
-import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
-import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.document.internal.IteratorSupport;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.thed.zephyr.capture.model.SessionActivity;
-import com.thed.zephyr.capture.util.ApplicationConstants;
+import java.math.BigDecimal;
+import java.util.*;
 
 /**
  * Created by aliakseimatsarski on 8/23/17.
@@ -44,6 +35,12 @@ public class SessionActivityRepositoryImpl {
     private DynamoDBMapper dynamoDBMapper;
     @Autowired
     private DynamoDBTableNameResolver dynamoDBTableNameResolver;
+    @Autowired
+    private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+    @Autowired
+    private CaptureEmailService captureEmailService;
+    @Autowired
+    private DynamicProperty dynamicProperty;
 
 
     public SessionActivity findOne(String id){
@@ -54,8 +51,14 @@ public class SessionActivityRepositoryImpl {
         	return null;
         }
         SessionActivity sessionActivity = convertItemToSessionActivity(item);
-
-        return sessionActivity;
+        if(isTenantCorrect(sessionActivity)){
+            return sessionActivity;
+        }else {
+            String ctId = CaptureUtil.getCurrentCtId();
+            log.warn("WARNING some one else's sessionActivity in scope findOne() sessionActivityId:{} current ctId:{}", sessionActivity.getId(), ctId);
+            sendWarningEmail(sessionActivity.getId());
+            return null;
+        }
     }
 
     public List<SessionActivity> findBySessionId(String sessionId){
@@ -63,7 +66,8 @@ public class SessionActivityRepositoryImpl {
     }
     
     public List<SessionActivity> findBySessionId(String sessionId, Optional<String> propertyName){
-    	List<QueryFilter> queryFilters = new LinkedList<>();
+        String ctId = CaptureUtil.getCurrentCtId();
+        List<QueryFilter> queryFilters = new LinkedList<>();
     	QuerySpec querySpec = new QuerySpec();
     	querySpec.withHashKey(new KeyAttribute(ApplicationConstants.SESSION_ID_FIELD, sessionId));
     	if(propertyName.isPresent() && !StringUtils.isBlank(propertyName.get())) {
@@ -78,13 +82,23 @@ public class SessionActivityRepositoryImpl {
         Index index = table.getIndex(ApplicationConstants.GSI_SESSIONID_TIMESTAMP);
         ItemCollection<QueryOutcome> activityItemList = index.query(querySpec);
         IteratorSupport<Item, QueryOutcome> iterator = activityItemList.iterator();
-
+        List<String> errSessActIds = new ArrayList<>();
         while (iterator.hasNext()){
             Item item = iterator.next();
             SessionActivity sessionActivity = convertItemToSessionActivity(item);
-            result.add(sessionActivity);
-
+            if (isTenantCorrect(sessionActivity)){
+                result.add(sessionActivity);
+            } else{
+                errSessActIds.add(sessionActivity.getId());
+                log.warn("WARNING some one else's sessionActivity in scope findBySessionId()  sessionActivityId:{} sessionId:{} ctId:{} \n" + getStuckTrace(), sessionActivity.getId(), sessionId, ctId);
+            }
         }
+
+        if(errSessActIds != null && errSessActIds.size()>0){
+            String sessAcIds = String.join(" , ", errSessActIds);
+            sendWarningEmail(sessAcIds);
+        }
+
         return result;
     }
 
@@ -113,5 +127,38 @@ public class SessionActivityRepositoryImpl {
         }
 
         return null;
+    }
+
+    private boolean isTenantCorrect(SessionActivity sessionActivity){
+        String ctId = CaptureUtil.getCurrentCtId();
+        return StringUtils.equals(ctId, sessionActivity.getCtId());
+    }
+
+    private void sendWarningEmail(String sessActIds){
+        String ctId = CaptureUtil.getCurrentCtId();
+        FeedbackRequest feedbackRequest = new FeedbackRequest();
+        String toEmail = dynamicProperty.getStringProp(ApplicationConstants.FEEDBACK_SEND_EMAIL, "atlassian.dev@getzephyr.com").get();
+        feedbackRequest.setEmail(toEmail);
+        feedbackRequest.setSummary("WARNING data mix up");
+        String desc = "WARNING some one else's sessionActivity in scope sessionActivityId(s):" + sessActIds + " current ctId:" + ctId;
+        feedbackRequest.setDescription(desc);
+        feedbackRequest.setName("Admin");
+        try {
+            captureEmailService.sendFeedBackEmail(feedbackRequest);
+        } catch (Exception e) {
+            log.error("Can't send warning email.", e);
+        }
+    }
+
+    private String getStuckTrace(){
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        StringBuffer sb = new StringBuffer();
+        for (int i=0;i<stackTrace.length;i++){
+            if(StringUtils.contains(stackTrace[i].getClassName(), "com.thed.zephyr.capture")){
+                sb.append(stackTrace[i] + "\n");
+            }
+        }
+
+        return sb.toString();
     }
 }

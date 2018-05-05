@@ -37,3 +37,7 @@ pom.xml.orig
 chromedriver.log
 node_modules/
 *debuglog.txt
+*.db
+*.patch
+capture/**
+capture/log/**

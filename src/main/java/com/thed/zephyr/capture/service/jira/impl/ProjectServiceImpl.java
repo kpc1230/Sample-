@@ -5,23 +5,29 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.BasicProject;
 import com.atlassian.jira.rest.client.api.domain.Project;
-import com.google.common.collect.Lists;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
+import com.thed.zephyr.capture.service.cache.LockService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
-
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
+
+import static com.thed.zephyr.capture.util.JiraConstants.REST_API_PROJECT;
 
 /**
  * Created by Masud on 8/13/17.
@@ -39,6 +45,9 @@ public class ProjectServiceImpl implements ProjectService {
     private DynamicProperty dynamicProperty;
     @Autowired
     private AtlassianHostRestClients atlassianHostRestClients;
+    @Autowired
+    private LockService lockService;
+
 
     @Override
     public Project getProjectObj(Long projectId) {
@@ -52,12 +61,35 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ArrayList<BasicProject> getProjects() throws Exception {
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        String userKey = hostUser.getUserKey().isPresent()?hostUser.getUserKey().get():"undefined";
+        Integer expiration = dynamicProperty.getIntProp("user.projects.cache.expiration.sec", 30).get();
+        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+        log.debug("Getting projects by user:{} from cache", userKey);
+        String lockKey = ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + userKey + "-" + acHostModel.getCtId();
+        if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
+            log.error("Not able to get the lock during getting Projects by user:{}", userKey);
+            throw new CaptureRuntimeException("Not able to get the lock during getting Projects by user:{}" + userKey);
+        }
         try{
-            ArrayList<BasicProject> basicProjects = Lists.newArrayList(jiraRestClient.getProjectClient().getAllProjects().claim());
-            return basicProjects;
+            String projectString =  tenantAwareCache.getOrElse(acHostModel, createUserProjectsKey(userKey), new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    JsonNode jsonProjectsStr = atlassianHostRestClients.authenticatedAs(hostUser).getForObject(REST_API_PROJECT, JsonNode.class);
+                    log.debug("Getting projects from Jira by user:{} jsonProjectsStr:{}", userKey, jsonProjectsStr.toString());
+
+                    return jsonProjectsStr.toString();
+                }
+            }, expiration);
+            ObjectMapper om = new ObjectMapper();
+            ArrayList<BasicProject> result = parseBasicProjects(om.readTree(projectString));
+
+            return result;
         } catch (Exception exception){
-            log.error("Error during getting projects from Jira.", exception);
+            log.error("Error during getting projects from Jira user:{}", hostUser.getUserKey().get(), exception);
             throw new Exception("Error during getting projects.");
+        } finally {
+            lockService.deleteLock(hostUser.getHost().getClientKey(), lockKey);
         }
     }
 
@@ -96,7 +128,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private String buildProjectCacheKey(String projectIdOrKey){
-        return ApplicationConstants.PROJECT_CACHE_KEY_PREFIX+projectIdOrKey;
+        return String.valueOf(ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + projectIdOrKey);
     }
     
     @Override
@@ -107,7 +139,7 @@ public class ProjectServiceImpl implements ProjectService {
                 @Override
                 public CaptureProject call() throws Exception {
                 	String uri = acHostModel.getBaseUrl() + JiraConstants.REST_API_PROJECT_2 + projectIdOrKey;
-
+                     log.info("Getting project from jira using url: {}",uri);
                 	 CaptureProject response = atlassianHostRestClients.authenticatedAsAddon().getForObject(uri, CaptureProject.class);
                     return response;
                 }
@@ -119,4 +151,30 @@ public class ProjectServiceImpl implements ProjectService {
         return captureProject;
     }
 
+    /**
+    * Parse and make list of basic projects
+    * @param projectString
+    * @return
+    */
+    private ArrayList<BasicProject> parseBasicProjects(JsonNode projectString) {
+        ArrayList<BasicProject> basicProjects = new ArrayList<>();
+        projectString.forEach(jsonNode -> {
+            Long projectId = jsonNode.get("id").asLong();
+            BasicProject basicProject =
+                    new BasicProject(
+                            URI.create(jsonNode.get("self").asText()),
+                            jsonNode.get("key").asText(),
+                            projectId,
+                            jsonNode.get("name").asText()
+                    );
+                basicProjects.add(basicProject);
+        });
+        log.debug("Parsed BasicProjects count:{} jsonProjectString:{}", basicProjects.size(), projectString.toString());
+
+        return basicProjects;
+    }
+
+    private String createUserProjectsKey(String userKey){
+        return String.valueOf(ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + userKey);
+    }
 }

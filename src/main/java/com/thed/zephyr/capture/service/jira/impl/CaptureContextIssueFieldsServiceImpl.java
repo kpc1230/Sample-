@@ -138,7 +138,8 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
                 }
             }
         } catch (Exception e) {
-            log.warn("Error Retrieving Context Parameters", e.getMessage());
+            //do nothing
+            //log.warn("Error Retrieving Context Parameters", e.getMessage());
         }
         return StringUtils.EMPTY;
     }

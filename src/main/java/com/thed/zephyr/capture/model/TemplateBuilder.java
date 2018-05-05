@@ -7,6 +7,7 @@ import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Class to create Template Object from TemplateRequest and vice versa.
@@ -161,4 +162,22 @@ public final class TemplateBuilder {
 
 		return request;
 	}
+
+    /**
+     *
+     * @param template
+     * @param projectKey
+     * @return
+     */
+    public static TemplateRequest createTemplateRequest(Template template, String projectKey, CaptureUser user) {
+        TemplateRequest request = createTemplateRequest(template);
+        if(StringUtils.isNotEmpty(projectKey)){
+            request.setProjectKey(projectKey);		}
+        if(user != null){
+            request.setOwnerName(user.getKey());
+            request.setOwnerDisplayName(user.getDisplayName());
+        }
+
+        return request;
+    }
 }

@@ -24,6 +24,7 @@ import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.ActivityStreamFilterUI;
 import com.thed.zephyr.capture.model.view.NotesFilterStateUI;
 import com.thed.zephyr.capture.model.view.SessionDto;
+import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.cache.LockService;
 import com.thed.zephyr.capture.service.data.InviteService;
@@ -36,10 +37,7 @@ import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.UpdateResult
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
-import com.thed.zephyr.capture.util.ApplicationConstants;
-import com.thed.zephyr.capture.util.CaptureUtil;
-import com.thed.zephyr.capture.util.EmojiUtil;
-import com.thed.zephyr.capture.util.WikiParser;
+import com.thed.zephyr.capture.util.*;
 import com.thed.zephyr.capture.validator.SessionValidator;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
@@ -92,10 +90,10 @@ public class SessionController extends CaptureAbstractController{
 	private LockService lockService;
 
 	@Autowired
-	private WikiParser wikiParser;
+	private WikiMarkupRenderer wikiMarkupRenderer;
 
 	@Autowired
-	private EmojiUtil emojiUtil;
+	private SessionActivityRepository sessionActivityRepository;
 
 	@Autowired
 	private AddonDescriptorLoader ad;
@@ -117,11 +115,12 @@ public class SessionController extends CaptureAbstractController{
 			SessionSearchList sessionsSearch = sessionService.getSessionsForProject(projectId, offset, limit);
 			sessionsSearch.getContent().stream().forEach(session -> {
 				String additionalInfo = session.getAdditionalInfo();
-				if(StringUtils.isNotEmpty(additionalInfo)){
-					additionalInfo = emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser,additionalInfo));
+				String wikiParsedData = session.getWikiParsedData();
+				if(StringUtils.isEmpty(wikiParsedData) && StringUtils.isNotEmpty(additionalInfo)){
+					wikiParsedData = wikiMarkupRenderer.getWikiRender(additionalInfo);
 				}
 				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
-						project, session.getDefaultTemplateId(),session.getAdditionalInfo(), additionalInfo, session.getTimeCreated(), null, session.getJiraPropIndex()); //Send only what UI is required instead of whole session object.
+						project, session.getDefaultTemplateId(),additionalInfo, wikiParsedData, session.getTimeCreated(), null, session.getJiraPropIndex()); //Send only what UI is required instead of whole session object.
 				sessionDtoList.add(lightSession);
 			});
 			LightSessionSearchList response = new LightSessionSearchList(sessionDtoList, sessionsSearch.getOffset(), sessionsSearch.getLimit(), sessionsSearch.getTotal());
@@ -189,6 +188,7 @@ public class SessionController extends CaptureAbstractController{
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
 		boolean isLocked = false;
 		try {
+			validateAndGetSession(sessionId);
 			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
 				throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
@@ -248,7 +248,7 @@ public class SessionController extends CaptureAbstractController{
 		}
 		try {
 			String user = getUser();
-			Session session = sessionService.getSession(sessionId);
+			Session session = validateAndGetSession(sessionId);
 			if (session != null && !permissionService.canSeeSession(user, session)) {
 				throw new CaptureValidationException(i18n.getMessage("session.update.not.editable"));
 			} else if(Objects.isNull(session)) {
@@ -291,6 +291,17 @@ public class SessionController extends CaptureAbstractController{
             Set<Long> updatedRelatedIssues = new TreeSet<>();
             updatedRelatedIssues.addAll(sessionRequest.getRelatedIssueIds());
             updatedRelatedIssues.addAll(currentRelatedIssues);
+            String additionalInfo = sessionRequest.getAdditionalInfo();
+            String wikiParsedData = loadedSession.getWikiParsedData();
+            if(StringUtils.isNotEmpty(additionalInfo) &&
+			  (StringUtils.isEmpty(wikiParsedData) ||
+			  !sessionRequest.getAdditionalInfo().equals(loadedSession.getAdditionalInfo()))){
+				wikiParsedData = wikiMarkupRenderer.getWikiRender(additionalInfo);
+				loadedSession.setWikiParsedData(wikiParsedData);
+				sessionRequest.setWikiParsedData(wikiParsedData);
+			}else{
+            	wikiParsedData = null;
+			}
 			UpdateResult updateResult = sessionService.updateSession(loggedUserKey, loadedSession, sessionRequest);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
@@ -699,8 +710,9 @@ public class SessionController extends CaptureAbstractController{
 											 @RequestParam("offset") Optional<Integer> offset,
 											 @RequestParam("limit") Optional<Integer> limit,
 											   HttpServletRequest request) throws CaptureValidationException {
-		log.info("Start of sessionActivities() --> params " + sessionId);
 		try {
+			log.info("Start of sessionActivities() --> params " + sessionId);
+			validateAndGetSession(sessionId);
 			List<SessionActivity> sessionActivities = sessionActivityService.getAllSessionActivityBySession(sessionId,
 					CaptureUtil.getPageRequest(offset.orElse(0), limit.orElse(ApplicationConstants.DEFAULT_RESULT_SIZE))
 			);
@@ -713,7 +725,7 @@ public class SessionController extends CaptureAbstractController{
 				ActivityStreamFilterUI activityStreamFilterUI = new ActivityStreamFilterUI(notesFilterStateUI);
 				sessionActivities =  getSessionActivityItems(sessionActivities, activityStreamFilterUI, getUser());
 			}
-			List<?> finalSessionActivities = sessionActivities.stream().map(new SessionActivityFunction(issueService, wikiParser, emojiUtil)).collect(Collectors.toList());
+			List<?> finalSessionActivities = sessionActivities.stream().map(new SessionActivityFunction(issueService, wikiMarkupRenderer, sessionActivityRepository)).collect(Collectors.toList());
 			log.info("End of sessionActivities()");
 			return ResponseEntity.ok(finalSessionActivities);
 		} catch(Exception ex) {
@@ -822,7 +834,8 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of inviteSession() ");
 		try {
 			Session loadedSession  = validateAndGetSession(inviteSessionRequest.getSessionId());
-			if (loadedSession == null) {
+			String ctId = CaptureUtil.getCurrentCtId();
+			if (loadedSession == null || !ctId.equals(loadedSession.getCtId())) {
 				ErrorCollection errorCollection = new ErrorCollection();
 				errorCollection.addError("Error during invite session");
 				return badRequest(errorCollection);
@@ -851,15 +864,22 @@ public class SessionController extends CaptureAbstractController{
 			isLocked = true;
 			String loggedUserKey = getUser();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			String editedAdditionalInfo = json.get("rawAdditionalInfo").asText();
-			UpdateResult updateResult = sessionService.updateSessionAdditionalInfo(loggedUserKey, loadedSession, editedAdditionalInfo);
+			String editedAdditionalInfo = json.get("additionalInfo").asText();
+			String wikiParsedData = loadedSession.getWikiParsedData();
+			if(StringUtils.isNotEmpty(editedAdditionalInfo) && (StringUtils.isEmpty(wikiParsedData)
+			||	!editedAdditionalInfo.equals(loadedSession.getAdditionalInfo()))) {
+				wikiParsedData = wikiMarkupRenderer.getWikiRender(editedAdditionalInfo);
+			}else{
+				wikiParsedData = null;
+			}
+			UpdateResult updateResult = sessionService.updateSessionAdditionalInfo(loggedUserKey, loadedSession, editedAdditionalInfo, wikiParsedData);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult, true);
 			Map<String, String> jsonResponse = new HashMap<>();
-			jsonResponse.put("additionalInfo", emojiUtil.emojify(CaptureUtil.createWikiData(wikiParser, updateResult.getSession().getAdditionalInfo())));
-			jsonResponse.put("rawAdditionalInfo", updateResult.getSession().getAdditionalInfo());
+			jsonResponse.put("additionalInfo",   updateResult.getSession().getAdditionalInfo());
+			jsonResponse.put("wikiParsedData", updateResult.getSession().getWikiParsedData());
 			log.info("End of updateAdditionalInfo()");
 			return ResponseEntity.ok(jsonResponse);
 		} catch(CaptureValidationException ex) {
@@ -934,7 +954,7 @@ public class SessionController extends CaptureAbstractController{
 			log.info("End of getActiveSessionUser()");
 			return ResponseEntity.ok(sessionResult.getSession());
 		} catch(Exception ex) {
-			log.error("Error in getActiveSessionUser() -> ", ex);
+			log.error("Error in getActiveSessionUser() -> {}", ex.getMessage());
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}
@@ -965,7 +985,7 @@ public class SessionController extends CaptureAbstractController{
 			log.info("End of getActiveSessionLink()");
 			return ResponseEntity.ok(activeSessionLink);
 		} catch(Exception ex) {
-			log.error("Error in getActiveSessionLink() -> ", ex);
+			log.error("Error in getActiveSessionLink() -> {}", ex.getMessage());
 			throw new CaptureRuntimeException(ex.getMessage(), ex);
 		}
 	}

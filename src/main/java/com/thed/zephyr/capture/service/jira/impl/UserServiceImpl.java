@@ -9,13 +9,12 @@ import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -40,9 +39,8 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public JsonNode getUserProperty(String userName, String propName) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        String uri = host.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "/" + propName + "?username=" + userName;
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        String uri = hostUser.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "/" + propName + "?username=" + userName;
 
         try {
             JsonNode response = atlassianHostRestClients.authenticatedAsAddon().getForObject(uri, JsonNode.class);
@@ -56,9 +54,8 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public JsonNode getAllUserProperties(String userName) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        String uri = host.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "?username=" + userName;
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        String uri = hostUser.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "?username=" + userName;
         try {
             JsonNode response = atlassianHostRestClients.authenticatedAsAddon().getForObject(uri, JsonNode.class);
             return response;
@@ -70,9 +67,8 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public boolean deleteUserProperty(String userName, String propName) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        String uri = host.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "/" + propName;
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        String uri = hostUser.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "/" + propName;
         try {
             atlassianHostRestClients.authenticatedAsAddon().delete(uri);
             return true;
@@ -85,9 +81,8 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public boolean createOrUpdateUserProperty(String userName, String propName, JsonNode jsonNode) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        String uri = host.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "/" + propName + "?username=" + userName;
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        String uri = hostUser.getHost().getBaseUrl() + JiraConstants.REST_API_BASE_USER_PROPERTIES + "/" + propName + "?username=" + userName;
         try {
             atlassianHostRestClients.authenticatedAsAddon().put(uri, jsonNode);
             return true;
@@ -104,11 +99,8 @@ public class UserServiceImpl implements UserService{
      */
     @Override
     public JsonNode getAssignableUserByProjectKey(String projectKey,String username){
-
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-
-        String uri = host.getHost().getBaseUrl();
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        String uri = hostUser.getHost().getBaseUrl();
         URI targetUrl= UriComponentsBuilder.fromUriString(uri)
                 .path(JiraConstants.REST_API_ASSIGNABLE_USER)
                 .queryParam("project", projectKey)
@@ -117,7 +109,7 @@ public class UserServiceImpl implements UserService{
                 .encode()
                 .toUri();
         try {
-            String response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, String.class);
+            String response = atlassianHostRestClients.authenticatedAs(hostUser).getForObject(targetUrl, String.class);
             return new ObjectMapper().readTree(response);
         } catch (Exception exception) {
             log.error("Error during getting assignable user by project from jira.", exception);
@@ -137,10 +129,9 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public CaptureUser findUserByName(String username) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        AcHostModel acHostModel = (AcHostModel) host.getHost();
-        String uri = host.getHost().getBaseUrl();
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+        String uri = hostUser.getHost().getBaseUrl();
         CaptureUser captureUser = null;
         try {
             captureUser = tenantAwareCache.getOrElse(acHostModel, buildUserCacheKey(username), new Callable<CaptureUser>() {
@@ -166,13 +157,19 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public CaptureUser findUserByKey(String key) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        AcHostModel acHostModel = (AcHostModel) host.getHost();
-        return findUserByKey(acHostModel, key);
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        if(hostUser != null) {
+            AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+            return findUserByKey(acHostModel, key);
+        }else{
+            return null;
+        }
     }
-    
+
     public CaptureUser findUserByKey(AcHostModel acHostModel, String key) {
+        if(StringUtils.isEmpty(key)){
+            return null;
+        }
         String uri = acHostModel.getBaseUrl();
         CaptureUser captureUser = null;
         try {

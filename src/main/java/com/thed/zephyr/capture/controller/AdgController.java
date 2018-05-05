@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.thed.zephyr.capture.annotation.LicenseCheck;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.util.CaptureUtil;
@@ -25,6 +26,7 @@ public class AdgController {
     @Autowired
     private ITenantAwareCache tenantAwareCache;
 
+    @LicenseCheck
     @GetMapping(value = "/adg-config")
     public String getAdgConfig(@AuthenticationPrincipal AtlassianHostUser hostUser, Model model){
         model.addAttribute("userKey",hostUser.getUserKey().get());

@@ -100,10 +100,33 @@ public class CaptureUtil {
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         return host.getHost().getBaseUrl();
     }
-    public static String getCurrentCtId(DynamoDBAcHostRepository dynamoDBAcHostRepository){
-        AtlassianHostUser atlassianHostUser = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        AcHostModel acHostModel = (AcHostModel) dynamoDBAcHostRepository.findOne(atlassianHostUser.getHost().getClientKey());
-        return acHostModel.getCtId();
+
+    public static AtlassianHostUser getAtlassianHostUser(){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser hostUser=null;
+        if(auth != null && auth.getPrincipal() != null) {
+            hostUser = (AtlassianHostUser) auth.getPrincipal();
+        }
+        return hostUser;
+    }
+
+    public static String getCurrentCtId(){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if(auth != null) {
+            if(auth.getPrincipal() instanceof String && auth.getPrincipal().toString().equals("anonymousUser")){
+                log.info("Trying to use AnnonymousUser ctId");
+                return null;
+            }else{
+                try {
+                    AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
+                    AcHostModel acHostModel = (AcHostModel) atlassianHostUser.getHost();
+                    return acHostModel.getCtId();
+                }catch (Exception ex){
+                    log.error("error during getting ctId {}",ex.getMessage());
+                }
+            }
+        }
+        return null;
     }
     
     public static AcHostModel getAcHostModel(DynamoDBAcHostRepository dynamoDBAcHostRepository) {
@@ -221,82 +244,18 @@ public class CaptureUtil {
 		return tagList;
 	}
 
-    public static String createWikiData(WikiParser wikiParser, String rawData){
-        String convStr = null;
-        if(StringUtils.isNotEmpty(rawData)){
-            convStr = wikiParser.parseWiki(rawData, ApplicationConstants.HTML);
-            convStr = createNoteData(convStr);
-        }
-    	return convStr;
-    }
+
 	public static String createNoteData(String noteData) {
-//		StringBuilder data = new StringBuilder();
-//		String[] lines = noteData.split("\\r?\\n");
-//		boolean isPrevNewLine = true;
-//		boolean isFirstLine = true;
-//		for(String line : lines) {
-//			switch(line.trim()) {
-//				case "": {
-//					if(isPrevNewLine) {
-//						isPrevNewLine = false;
-//						data.append("");
-//					}
-//					break;
-//				} default: {
-//					if(!isFirstLine && isPrevNewLine) {
-//						data.append("<br/>");
-//					} else {
-//						data.append("");
-//					}
-//					data.append(getAtlassiaonWikiformatted(line));
-//					isFirstLine = false;
-//					isPrevNewLine = true;
-//				}
-//			}
-//		}
-//		data.append("");
 		return StringUtils.isNotEmpty(noteData)?getAtlassiaonWikiformatted(noteData):noteData;
 	}
 	
 	private static String getAtlassiaonWikiformatted(String line) {
-		StringBuilder finalData = new StringBuilder();
-        String lineStr = line.replace("\n","<br /> ");
-		String[] words = lineStr.split("[\\s]+");
-		for(String word : words) {
-			String tagName = null;
-			String cssClass = null;
-			if(word.length() >= 2) { //replacing if start tag is there.
-				String startTag = word.substring(0, 2);
-				switch(startTag) {
-					case Tag.QUESTION: 
-						tagName = Tag.QUESTION_TAG_NAME;
-						cssClass = "tag-question";
-						break;
-					case Tag.FOLLOWUP:
-						cssClass = "tag-followUp";
-						tagName = Tag.FOLLOWUP_TAG_NAME;
-						break;
-					case Tag.ASSUMPTION: 
-						tagName = Tag.ASSUMPTION_TAG_NAME;
-						cssClass = "tag-assumption";
-						break;
-					case Tag.IDEA:
-						cssClass = "tag-idea";
-						tagName = Tag.IDEA_TAG_NAME;	
-				}
-			}
-			String target = String.format(" target=\"".concat("%s")+"\"","_parent");
-			if(Objects.nonNull(tagName) && Objects.nonNull(cssClass)) {
-				finalData.append(" <span class=\"note-tag ").append(cssClass).append("\"></span>").append(word.length() > 2 ? word.substring(2) : "");
-			} else {
-				if(word.matches("^(https|http|ftp|ftps)://(.)+$")) {
-					finalData.append(" <a ".concat(target)+" href=\"").append(word).append("\">").append(word).append("</a>");
-				} else {
-					finalData.append(" " + word);
-				}
-			}
-		}
-		return finalData.toString().replace("\n","<br />");
+        return line
+                .replace(Tag.QUESTION," <span class=\"note-tag tag-question  \"></span>")
+                .replace(Tag.IDEA," <span class=\"note-tag tag-idea  \"></span>")
+                .replace(Tag.ASSUMPTION," <span class=\"note-tag tag-assumption  \"></span>")
+                .replace(Tag.FOLLOWUP," <span class=\"note-tag tag-followUp  \"></span>")
+                .replace("<a", "<a target=\"_parent\"");
 	}
 	
 	private static String getTagData(String noteData, String tag) {

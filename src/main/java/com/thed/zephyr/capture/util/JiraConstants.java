@@ -35,5 +35,6 @@ public class JiraConstants {
     public static final String REST_API_PROJECT_2 = "/rest/api/2/project/";
     public static final String EMOICON_PREFIX = "/images/icons/emoticons/";
     public static final String REST_API_GROUP_PICKER = REST_API_BASE + "/groups/picker";
+    public static final String REST_API_WIKI_RENDER = "/rest/api/1.0/render";
 
 }

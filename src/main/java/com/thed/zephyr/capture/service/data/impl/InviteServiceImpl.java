@@ -71,25 +71,29 @@ public class InviteServiceImpl implements InviteService{
                     .forEach(username -> {
                         CaptureUser captureUser =
                                 userService.findUserByKey(username);
-                        toEmails.add(captureUser.getEmailAddress());
+                        if(captureUser != null) {
+                            toEmails.add(captureUser.getEmailAddress());
+                        }
                     });
         }
 
         //session link
         String SESSION_LINK = host.getHost().getBaseUrl()+ CaptureUtil.createSessionLink(session.getId(),ad.getDescriptor().getKey());
 
+        String displayName = loggedUser != null ? loggedUser.getDisplayName() : " ";
+
         //subject
-        String subject = "[JIRA] "+i18n.getMessage("capture.session.invite.subject",new Object[]{loggedUser.getDisplayName(),session.getName()});
+        String subject = "[JIRA] "+i18n.getMessage("capture.session.invite.subject",new Object[]{displayName,session.getName()});
 
         //note
         String NOTE = inviteSessionRequest.getMessage() != null ?
                  inviteSessionRequest.getMessage(): "Please come to join.";
 
         Map<String, Object> model = new HashMap<>();
-        model.put("fullname",loggedUser.getDisplayName());
+        model.put("fullname",displayName);
         model.put("sessionlink",SESSION_LINK);
         model.put("sessionid",session.getId());
-        model.put("firstline",i18n.getMessage("capture.session.invite.body.firstline", new Object[]{loggedUser.getDisplayName()}));
+        model.put("firstline",i18n.getMessage("capture.session.invite.body.firstline", new Object[]{displayName}));
         model.put("secondline",i18n.getMessage("capture.session.invite.body.link",new Object[]{SESSION_LINK,SESSION_LINK}));
         model.put("note",NOTE);
 

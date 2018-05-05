@@ -19,7 +19,7 @@ public class LightSession {
     private final CaptureProject project;
     private final String defaultTemplateId;
     private final String additionalInfo;
-    private final String rawAdditionalInfo;
+    private final String wikiParsedData;
     private Date timeCreated;
     private final Map<String, Object> rawData;
     private final String jiraPropIndex;
@@ -32,8 +32,8 @@ public class LightSession {
                         boolean shared,
                         CaptureProject project,
                         String defaultTemplateId,
-                        String rawAdditionalInfo,
                         String additionalInfo,
+                        String wikiParsedData,
                         Date timeCreated,
                         Map<String, Object> rawData,
                         String jiraPropIndex) {
@@ -46,7 +46,7 @@ public class LightSession {
         this.project = project;
         this.defaultTemplateId = defaultTemplateId;
         this.additionalInfo = additionalInfo;
-        this.rawAdditionalInfo = rawAdditionalInfo;
+        this.wikiParsedData = wikiParsedData;
         this.timeCreated = timeCreated;
         this.rawData = rawData;
         this.jiraPropIndex = jiraPropIndex;
@@ -100,9 +100,9 @@ public class LightSession {
 		this.timeCreated = timeCreated;
 	}
 
-	public String getRawAdditionalInfo() {
-		return rawAdditionalInfo;
-	}
+    public String getWikiParsedData() {
+        return wikiParsedData;
+    }
 
     public String getJiraPropIndex() {
         return jiraPropIndex;

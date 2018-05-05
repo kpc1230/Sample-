@@ -49,20 +49,12 @@ public class IssueController {
 
     @Autowired
     private Logger log;
-
     @Autowired
     private IssueService issueService;
-
-    @Autowired
-    @Qualifier("jiraRestClientPOST")
-    private JiraRestClient postJiraRestClient;
-
     @Autowired
     private PermissionService permissionService;
-
     @Autowired
     private CaptureI18NMessageSource i18n;
-    
     @Autowired
     private IssueSearchService issueSearchService;
 

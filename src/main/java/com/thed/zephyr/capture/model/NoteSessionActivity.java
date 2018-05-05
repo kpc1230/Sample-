@@ -3,7 +3,6 @@ package com.thed.zephyr.capture.model;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.thed.zephyr.capture.service.db.converter.ResolutionTypeConverter;
 import com.thed.zephyr.capture.service.db.converter.TagSetConverter;
-import org.joda.time.DateTime;
 
 import java.util.Date;
 import java.util.Set;
@@ -14,6 +13,7 @@ import java.util.Set;
 public class NoteSessionActivity extends SessionActivity {
 
     private String noteData;
+    private String wikiParsedData;
 
     @DynamoDBTypeConverted(converter = ResolutionTypeConverter.class)
     private Resolution resolutionState;
@@ -24,9 +24,10 @@ public class NoteSessionActivity extends SessionActivity {
     public NoteSessionActivity() {
     }
 
-    public NoteSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, String noteData, Resolution resolutionState, Set<String> tags) {
+    public NoteSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, String noteData, String wikiParsedData, Resolution resolutionState, Set<String> tags) {
         super(sessionId, ctId, timestamp, user, projectId);
         this.noteData = noteData;
+        this.wikiParsedData = wikiParsedData;
         this.resolutionState = resolutionState;
         this.tags = tags;
     }
@@ -37,6 +38,14 @@ public class NoteSessionActivity extends SessionActivity {
 
     public void setNoteData(String noteData) {
         this.noteData = noteData;
+    }
+
+    public String getWikiParsedData() {
+        return wikiParsedData;
+    }
+
+    public void setWikiParsedData(String wikiParsedData) {
+        this.wikiParsedData = wikiParsedData;
     }
 
     public Resolution getResolutionState() {

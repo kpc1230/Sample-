@@ -1,13 +1,11 @@
 package com.thed.zephyr.capture.model;
 
-import java.util.Date;
-import java.util.Set;
-
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.thed.zephyr.capture.util.CaptureUtil;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import java.util.Date;
+import java.util.Set;
 
 final public class NoteRequest {
 
@@ -26,9 +24,9 @@ final public class NoteRequest {
     /**
      * Raw data of the note itself
      */
-    private String noteData;
+    private String wikiParsedData;
     private Long projectId;
-    private String rawNoteData;
+    private String noteData;
 
     private Set<String> tags;
     
@@ -55,7 +53,8 @@ final public class NoteRequest {
 		this.createdTime = note.getCreatedTime();
 		this.user = note.getAuthor();
 		this.author = note.getAuthor();
-		this.rawNoteData = note.getNoteData();
+		this.noteData = note.getNoteData();
+		this.wikiParsedData = note.getWikiParsedData();
 		this.resolutionState = note.getResolutionState().name();
 		this.projectId = note.getProjectId();
 		this.sessionActivityId = note.getNoteSessionActivityId();
@@ -69,9 +68,10 @@ final public class NoteRequest {
     		this.createdTime = note.getCreatedTime();
     		this.user = note.getAuthor();
     		this.author = note.getAuthor();
-    		this.rawNoteData = note.getNoteData();
+    		this.noteData = note.getNoteData();
+    		this.wikiParsedData = note.getWikiParsedData();
     		this.resolutionState = note.getResolutionState().name();
-    		this.noteData = CaptureUtil.createNoteData(note.getNoteData());
+    		this.noteData = note.getNoteData();
     		this.projectId = note.getProjectId();
     		this.tags = tags;//createLightTag(tags);
     		this.sessionActivityId = note.getNoteSessionActivityId();
@@ -86,16 +86,16 @@ final public class NoteRequest {
     		this.createdTime = note.getTimestamp();
     		this.user = note.getUser();
     		this.author = note.getUser();
-    		this.rawNoteData = note.getNoteData();
+    		this.noteData = note.getNoteData();
+    		this.wikiParsedData = note.getWikiParsedData();
     		this.resolutionState = note.getResolutionState().name();
-    		this.noteData = CaptureUtil.createNoteData(note.getNoteData());
     		this.projectId = note.getProjectId();
     		this.tags = tags;//createLightTag(tags);
     	}
     }
 
     public NoteRequest(String id, String ctId, String sessionId, Date createdTime, String author,
-			String rawNoteData, String resolutionState, Long projectId, Set<String> tags) {
+			String noteData, String wikiParsedData, String resolutionState, Long projectId, Set<String> tags) {
 		super();
 		this.id = id;
 		this.ctId = ctId;
@@ -103,10 +103,10 @@ final public class NoteRequest {
 		this.createdTime = createdTime;
 		this.user = author;
 		this.author = author;
-		this.rawNoteData = rawNoteData;
+		this.noteData = noteData;
+		this.wikiParsedData = wikiParsedData;
 		this.resolutionState = resolutionState;
 		this.projectId = projectId;
-		this.noteData = CaptureUtil.createNoteData(rawNoteData);
 		this.tags = tags;//createLightTag(tags);
 	}
 
@@ -171,12 +171,12 @@ final public class NoteRequest {
         return ToStringBuilder.reflectionToString(this);
     }
 
-    public String getRawNoteData() {
-		return rawNoteData;
+	public String getWikiParsedData() {
+		return wikiParsedData;
 	}
 
-	public void setRawNoteData(String rawNoteData) {
-		this.rawNoteData = rawNoteData;
+	public void setWikiParsedData(String wikiParsedData) {
+		this.wikiParsedData = wikiParsedData;
 	}
 
 	public JsonNode toJson() {

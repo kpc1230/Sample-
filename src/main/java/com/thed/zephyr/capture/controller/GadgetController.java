@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.controller;
 
+import com.thed.zephyr.capture.annotation.LicenseCheck;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -29,6 +30,7 @@ public class GadgetController {
     @Autowired
     private CaptureI18NMessageSource i18n;
 
+    @LicenseCheck
     @RequestMapping(value = "/public/html/gadget")
     public String renderGagdets(@RequestParam String dashboardView, @RequestParam String dashboardId, @RequestParam String dashboardItem, @RequestParam String gadgetType, @RequestParam String xdm_e, @RequestParam String cp, Model model) {
         log.debug("Render Gagdets method is called with Params dashboardView : " + dashboardView + " dashboardId: " + dashboardId + " dashboardItem: " + dashboardItem + " gadgetType: " + gadgetType + " xdm_e: " + xdm_e + " cp:" + cp);

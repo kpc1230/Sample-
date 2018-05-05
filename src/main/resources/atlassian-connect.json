@@ -96,13 +96,6 @@
           "condition": "user_is_logged_in",
           "invert": false
         }]
-      },
-      {
-        "url": "/zephyr-products-info",
-        "key": "zephyr-products-info",
-        "name": {
-          "value": "Zephyr Products"
-        }
       }
     ],
     "webPanels": [
@@ -333,19 +326,6 @@
             "invert": false
           }
         ]
-      },
-      {
-        "url": "zephyr-products-info",
-        "key": "zephyr-products",
-        "context": "page",
-        "location": "capture-admin/capture-admin-config",
-        "weight": 10,
-        "tooltip": {
-          "value":    "Zephyr Products"
-        },
-        "name": {
-          "value":    "Zephyr Products"
-        }
       },
       {
         "context": "page",
@@ -686,13 +666,13 @@
   "scopes": ["READ", "WRITE","ADMIN","ACT_AS_USER"],
   "translations": {
     "paths": {
-      "fr-FR": "/capture/i18n/descriptor/fr_FR.json",
-      "ru-RU": "/capture/i18n/descriptor/ru_RU.json",
-      "de-DE": "/capture/i18n/descriptor/de_DE.json",
-      "pt-PT": "/capture/i18n/descriptor/pt_PT.json",
-      "es-ES": "/capture/i18n/descriptor/es_ES.json",
-      "ja-JP": "/capture/i18n/descriptor/ja_JP.json",
-      "ko-KR": "/capture/i18n/descriptor/ko_KR.json"
+      "fr-FR": "/i18n/descriptor/fr_FR.json",
+      "ru-RU": "/i18n/descriptor/ru_RU.json",
+      "de-DE": "/i18n/descriptor/de_DE.json",
+      "pt-PT": "/i18n/descriptor/pt_PT.json",
+      "es-ES": "/i18n/descriptor/es_ES.json",
+      "ja-JP": "/i18n/descriptor/ja_JP.json",
+      "ko-KR": "/i18n/descriptor/ko_KR.json"
     }
   }
 }

@@ -36,6 +36,7 @@ public class Session  implements Comparable<Session>, Serializable{
     @MultiField(mainField = @Field(type = FieldType.String), otherFields = @InnerField(type = FieldType.String, suffix = "lower_case_sort", indexAnalyzer = "case_insensitive_sort", searchAnalyzer = "case_insensitive_sort"))
     private String name;
     private String additionalInfo;
+    private String wikiParsedData;
     @DynamoDBTypeConverted(converter = SessionStatusTypeConverter.class)
     private Status status;
     @DynamoDBTypeConverted(converter = EmptySetConverter.class)
@@ -70,13 +71,14 @@ public class Session  implements Comparable<Session>, Serializable{
     public Session() {
     }
 
-    public Session(String id, String ctId, String creator, String assignee, String name, String additionalInfo, Status status, Set<Long> relatedIssueIds, Long projectId, Date timeCreated, Date timeFinished, Duration timeLogged, Collection<IssueRaisedBean> issuesRaised, Collection<SessionActivity> sessionActivity, boolean shared, Collection<Participant> participants, String defaultTemplateId) {
+    public Session(String id, String ctId, String creator, String assignee, String name, String additionalInfo, String wikiParsedData, Status status, Set<Long> relatedIssueIds, Long projectId, Date timeCreated, Date timeFinished, Duration timeLogged, Collection<IssueRaisedBean> issuesRaised, Collection<SessionActivity> sessionActivity, boolean shared, Collection<Participant> participants, String defaultTemplateId) {
         this.id = id;
         this.ctId = ctId;
         this.creator = creator;
         this.assignee = assignee;
         this.name = name;
         this.additionalInfo = additionalInfo;
+        this.wikiParsedData = wikiParsedData;
         this.status = status;
         this.relatedIssueIds = relatedIssueIds;
         this.projectId = projectId;
@@ -136,6 +138,14 @@ public class Session  implements Comparable<Session>, Serializable{
 
     public void setAdditionalInfo(String additionalInfo) {
         this.additionalInfo = additionalInfo;
+    }
+
+    public String getWikiParsedData() {
+        return wikiParsedData;
+    }
+
+    public void setWikiParsedData(String wikiParsedData) {
+        this.wikiParsedData = wikiParsedData;
     }
 
     public Status getStatus() {
@@ -277,6 +287,8 @@ public class Session  implements Comparable<Session>, Serializable{
 
         if (additionalInfo != null ? !additionalInfo.equals(session.additionalInfo) : session.additionalInfo != null)
             return false;
+        if (wikiParsedData != null ? !wikiParsedData.equals(session.wikiParsedData) : session.wikiParsedData != null)
+            return false;
         if (assignee != null ? !assignee.equals(session.assignee) : session.assignee != null) return false;
         if (creator != null ? !creator.equals(session.creator) : session.creator != null) return false;
         if (id != null ? !id.equals(session.id) : session.id != null) return false;
@@ -301,6 +313,7 @@ public class Session  implements Comparable<Session>, Serializable{
         result = 31 * result + (assignee != null ? assignee.hashCode() : 0);
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (additionalInfo != null ? additionalInfo.hashCode() : 0);
+        result = 31 * result + (wikiParsedData != null ? wikiParsedData.hashCode() : 0);
         result = 31 * result + (status != null ? status.hashCode() : 0);
         result = 31 * result + (timeCreated != null ? timeCreated.hashCode() : 0);
         result = 31 * result + (timeFinished != null ? timeFinished.hashCode() : 0);
