@@ -25,6 +25,7 @@ import com.thed.zephyr.capture.service.cache.LockService;
 import com.thed.zephyr.capture.service.data.BackUpService;
 import com.thed.zephyr.capture.service.data.LicenseService;
 import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.db.elasticsearch.ESUtilService;
 import com.thed.zephyr.capture.util.*;
 import com.thed.zephyr.capture.util.backup.BackUpUtils;
 import com.thed.zephyr.capture.util.backup.BackupBuffer.Backup;
@@ -62,8 +63,6 @@ public class BackUpServiceImpl implements BackUpService {
     @Autowired
     private CaptureI18NMessageSource captureI18NMessageSource;
     @Autowired
-    private AmazonS3Client amazonS3Client;
-    @Autowired
     private S3Service s3Service;
     @Autowired
     private SessionRepository sessionRepository;
@@ -78,8 +77,6 @@ public class BackUpServiceImpl implements BackUpService {
     @Autowired
     private ITenantAwareCache tenantAwareCache;
     @Autowired
-    private DynamoDBAcHostRepository dynamoDBAcHostRepository;
-    @Autowired
     private DynamoDBOperations dynamoDBOperations;
     @Autowired
     private SessionService sessionService;
@@ -89,6 +86,8 @@ public class BackUpServiceImpl implements BackUpService {
     private LicenseService licenseService;
     @Autowired
     private HazelcastInstance hazelcastInstance;
+    @Autowired
+    private ESUtilService esUtilService;
 
 
     @Override
@@ -174,7 +173,7 @@ public class BackUpServiceImpl implements BackUpService {
 
                         jobProgressService.setStepMessage(acHostModel, jobProgressTicket, JobProgress.toJsonString(captureI18NMessageSource.getMessage("capture.job.backup.process.index.new.data"), null));
                         String reIndexJobProgressTicket = new UniqueIdGenerator().getStringId();
-                        sessionService.reindexSessionDataIntoES(acHostModel, reIndexJobProgressTicket, acHostModel.getCtId());
+                        esUtilService.reindexTenantESData(acHostModel, reIndexJobProgressTicket, userKey, null, false);
                         lockService.deleteLock(acHostModel.getClientKey(), lockKey);
                         jobProgressService.completedWithStatus(acHostModel, ApplicationConstants.JOB_STATUS_COMPLETED, jobProgressTicket);
                         log.info("Restore job has been completed for the tenant {} , took {} milli seconds ", acHostModel.getCtId(), (System.currentTimeMillis() - startTime));
