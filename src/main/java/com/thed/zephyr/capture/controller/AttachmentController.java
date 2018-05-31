@@ -38,8 +38,8 @@ public class AttachmentController {
     public ResponseEntity<String> uploadAttachments(
             @RequestParam("issueKey") String issueKey,
             @RequestParam("files") MultipartFile[] multipartFiles) throws CaptureValidationException {
-        String fullIconUrl = attachmentService.addAttachments(multipartFiles,issueKey);
-        log.info("UploadAttachments() --> for IssueKey {} " + issueKey);
+        String fullIconUrl = attachmentService.addAttachments(multipartFiles, issueKey);
+        log.info("UploadAttachments() --> for IssueKey {} ", issueKey);
 
         return new ResponseEntity<>(fullIconUrl,HttpStatus.OK);
     }
@@ -49,7 +49,7 @@ public class AttachmentController {
             @RequestParam("issueKey") String issueKey,
             @RequestParam(value = "testSessionId",required = false) String testSessionId,
             @RequestBody String requestBody) throws CaptureValidationException {
-        log.info("UploadAttachments() --> for IssueKey {} " + requestBody);
+        log.info("UploadAttachments() --> for IssueKey {}", issueKey);
         final JSONArray json;
         try {
             json = new JSONArray(requestBody);
