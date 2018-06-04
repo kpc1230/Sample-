@@ -298,7 +298,7 @@ public class PermissionServiceImpl implements PermissionService {
     public boolean canCreateNote(String user, Session session) {
         boolean isParticipant = session.getParticipants() != null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user)) : false;
         boolean isAssignee = session.getAssignee().equals(user);
-        boolean isCreator = session.getCreator().equals(user);
+        boolean isCreator = StringUtils.isEmpty(session.getCreator())?true:session.getCreator().equals(user);
         return isParticipant || isAssignee || isCreator;
     }
 
