@@ -12,6 +12,7 @@ import com.thed.zephyr.capture.model.view.IssueSearchDto;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.IssueSearchService;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,9 +34,10 @@ import java.util.regex.Pattern;
 @Service
 public class IssueSearchServiceImpl  implements IssueSearchService {
 
+	@Autowired
+	private Logger log;
     @Autowired
     private JiraRestClient jiraRestClient;
-    
     @Autowired
 	private ITenantAwareCache iTenantAwareCache;
     
@@ -106,8 +108,8 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
         		    		return issues;
         				}				
         			}, 1800);
-        		} catch (Exception e) {
-        			e.printStackTrace();
+        		} catch (Exception exception) {
+					log.error("Error during getting IssueSearchDto from cache of Jira", exception);
         		}
         		return new IssueSearchList(searchedIssues, 0, 20, searchedIssues.size());
         	}

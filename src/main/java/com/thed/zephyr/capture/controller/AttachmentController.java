@@ -22,15 +22,14 @@ import java.io.Serializable;
 /**
  * Created by niravshah on 8/25/17.
  */
+
 @RestController
 public class AttachmentController {
 
     @Autowired
     private Logger log;
-
     @Autowired
     private AttachmentService attachmentService;
-
     @Autowired
     private CaptureI18NMessageSource i18n;
 
@@ -38,9 +37,9 @@ public class AttachmentController {
     public ResponseEntity<String> uploadAttachments(
             @RequestParam("issueKey") String issueKey,
             @RequestParam("files") MultipartFile[] multipartFiles) throws CaptureValidationException {
-        String fullIconUrl = attachmentService.addAttachments(multipartFiles,issueKey);
-        log.info("UploadAttachments() --> for IssueKey {} " + issueKey);
-        return new ResponseEntity<>(fullIconUrl,HttpStatus.OK);
+        String fullIconUrl = attachmentService.addAttachments(multipartFiles, issueKey);
+        log.debug("UploadAttachments() --> for IssueKey {}", issueKey);
+        return new ResponseEntity<>(fullIconUrl, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/issue-attach", method = RequestMethod.POST)
@@ -48,20 +47,20 @@ public class AttachmentController {
             @RequestParam("issueKey") String issueKey,
             @RequestParam(value = "testSessionId",required = false) String testSessionId,
             @RequestBody String requestBody) throws CaptureValidationException {
-        log.info("UploadAttachments() --> for IssueKey {} " + requestBody);
+        log.info("UploadAttachments() --> for IssueKey {}", issueKey);
         final JSONArray json;
         try {
             json = new JSONArray(requestBody);
-            String fullIconUrl = attachmentService.addAttachmentsByThreads(issueKey,testSessionId,json);
-            return new ResponseEntity<>(new AttachmentResponse(fullIconUrl),HttpStatus.OK);
+            String fullIconUrl = attachmentService.addAttachmentsByThreads(issueKey, testSessionId, json);
+            return new ResponseEntity<>(new AttachmentResponse(fullIconUrl), HttpStatus.OK);
         } catch(CaptureRuntimeException e) {
-            log.error("Error adding attachment",e);
+            log.error("Error adding attachment", e);
             throw e;
         } catch (JSONException e) {
-            log.error("JSON Error adding attachment",e);
-            throw new CaptureRuntimeException(i18n.getMessage("rest.resource.malformed.json"),e);
+            log.error("JSON Error adding attachment", e);
+            throw new CaptureRuntimeException(i18n.getMessage("rest.resource.malformed.json"), e);
         } catch(RestClientException e) {
-            log.error("Error adding attachment",e);
+            log.error("Error adding attachment", e);
             JSONArray errorArray = new JSONArray();
             try {
                 e.getErrorCollections().stream().forEach(errorCollection -> {
@@ -69,28 +68,28 @@ public class AttachmentController {
                         try {
                             JSONObject jsonObject = new JSONObject();
                             if(StringUtils.startsWith(errorMessage,"Issue does not exist")) {
-                                jsonObject.put("errorMessage", i18n.getMessage("file.error.issue.key.invalid",new Object[]{issueKey}));
+                                jsonObject.put("errorMessage", i18n.getMessage("file.error.issue.key.invalid", new Object[]{issueKey}));
                             } else {
                                 jsonObject.put("errorMessage", errorMessage);
                             }
                             errorArray.put(jsonObject);
-                        } catch (JSONException e1) {
-                            e1.printStackTrace();
+                        } catch (JSONException exception) {
+                            log.error("Error during create error message for uploadAttachments() method", exception);
                         }
                     });
                 });
                 JSONObject responseJson = new JSONObject();
                 responseJson.put("errors",errorArray);
-                return new ResponseEntity<>(responseJson.toString(),HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(responseJson.toString(), HttpStatus.BAD_REQUEST);
             } catch (JSONException jsonEx) {
-                log.error("Error Adding Value to JSON",jsonEx);
+                log.error("Error Adding Value to JSON", jsonEx);
             }
         }catch(CaptureValidationException cve) {
-            log.error("Error adding attachment",cve);
+            log.error("Error adding attachment", cve);
             throw cve;
         }
         catch(Exception e) {
-            log.error("Error adding attachment",e);
+            log.error("Error adding attachment", e);
             throw new CaptureRuntimeException(e);
         }
         return new ResponseEntity<>(HttpStatus.OK);

@@ -352,12 +352,12 @@ public class IssueServiceImpl implements IssueService {
      * @param issueLinks
      * @param host
      */
-    private void updateIssueLinks(String issueKey,IssueLinks issueLinks,AtlassianHostUser host) {
+    private void updateIssueLinks(String issueKey, IssueLinks issueLinks, AtlassianHostUser host) {
         final JiraRestClient postJiraRestClient  =  createPostJiraRestClient(host);
        CompletableFuture.runAsync(() -> {
             log.debug("New Thread Started in order to update issues links ");
             try{
-                if(issueLinks.getIssues()!=null&&issueLinks.getIssues().length>0) {
+                if(issueLinks.getIssues()!=null && issueLinks.getIssues().length>0) {
                     List<IssuelinksType> linkTypes = issueLinkTypeService.getIssuelinksType(host);
                     IssuelinksType linkType = null;
                     try {
@@ -371,11 +371,11 @@ public class IssueServiceImpl implements IssueService {
                             Arrays.asList(issueLinks.getIssues()).forEach(s -> {
                                 LinkIssuesInput linkIssuesInput = new LinkIssuesInput(s, issueKey, linkTypeToSend);
                                 try {
-                                    log.debug("Linking issues Issue Type: {} , From Issue: {} , To Issue: {} ",linkIssuesInput.getLinkType(),linkIssuesInput.getFromIssueKey(),linkIssuesInput.getToIssueKey());
+                                    log.debug("Linking issues Issue Type: {} , From Issue: {} , To Issue: {} ", linkIssuesInput.getLinkType(), linkIssuesInput.getFromIssueKey(), linkIssuesInput.getToIssueKey());
                                     postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
                                     Thread.sleep(500);
-                                } catch (Exception exp) {
-                                    exp.printStackTrace();
+                                } catch (Exception exception) {
+                                    log.error("Error during create inward link issue", exception);
                                 }
                             });
 
@@ -384,11 +384,11 @@ public class IssueServiceImpl implements IssueService {
                                 Arrays.asList(issueLinks.getIssues()).forEach(s -> {
                                     try {
                                         LinkIssuesInput linkIssuesInput = new LinkIssuesInput(issueKey, s, linkTypeToSend);
-                                        log.debug("Linking issues Issue Type: {} , From Issue: {} , To Issue: {} ",linkIssuesInput.getLinkType(),linkIssuesInput.getFromIssueKey(),linkIssuesInput.getToIssueKey());
+                                        log.debug("Linking issues Issue Type: {} , From Issue: {} , To Issue: {} ", linkIssuesInput.getLinkType(), linkIssuesInput.getFromIssueKey(), linkIssuesInput.getToIssueKey());
                                         postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
                                         Thread.sleep(500);
-                                    } catch (Exception exp) {
-                                        exp.printStackTrace();
+                                    } catch (Exception exception) {
+                                        log.error("Error during create outward link issue", exception);
                                     }
                                 });
                             }

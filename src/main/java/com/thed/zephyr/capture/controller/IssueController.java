@@ -142,8 +142,8 @@ public class IssueController {
                         JSONObject jsonObject = new JSONObject();
                         jsonObject.put("errorMessage", errorMessage);
                         errorArray.put(jsonObject);
-                    } catch (JSONException e1) {
-                        e1.printStackTrace();
+                    } catch (JSONException exception) {
+                        log.error("Error during create error message for addComments() method", exception);
                     }
                 });
             });

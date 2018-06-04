@@ -92,8 +92,8 @@ public class LogstashPlugin {
         } finally {
             try {
                 configFileInputStreamTemp.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException exception) {
+                log.error("Error close file input stream during prepare Logstash config file", exception);
             }
         }
         return compiledConfig.getPath();

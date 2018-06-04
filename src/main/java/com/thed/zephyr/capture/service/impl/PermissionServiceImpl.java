@@ -88,8 +88,8 @@ public class PermissionServiceImpl implements PermissionService {
                 Map<String, Boolean> permissionsMap = getPermissionForProject(projectId, user);
                 return permissionsMap.size() > 0 ? permissionsMap : null;
             }, dynamicProperty.getIntProp(ApplicationConstants.PERMISSION_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
-        } catch (Exception exp) {
-            exp.printStackTrace();
+        } catch (Exception exception) {
+            log.error("Error during getting permissions for project", exception);
         }
         return map != null && map.size() > 0 ? map : new HashMap<>();
     }
@@ -110,8 +110,8 @@ public class PermissionServiceImpl implements PermissionService {
                 });
                 return map2.size() > 0 ? map2 : null;
             }, dynamicProperty.getIntProp(ApplicationConstants.PERMISSION_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
-        } catch (Exception exp) {
-            exp.printStackTrace();
+        } catch (Exception exception) {
+            log.error("Error during getting permission map for issue", exception);
         }
         return map != null && map.size() > 0 ? map : new HashMap<>();
     }
@@ -130,8 +130,8 @@ public class PermissionServiceImpl implements PermissionService {
                 });
                 return map2.size() > 0 ? map2 : null;
             }, dynamicProperty.getIntProp(ApplicationConstants.PERMISSION_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
-        } catch (Exception exp) {
-            exp.printStackTrace();
+        } catch (Exception exception) {
+            log.error("Error during getting all user permission map", exception);
         }
         return map != null && map.size() > 0 ? map : new HashMap<>();
     }

@@ -1015,10 +1015,9 @@ public class SessionServiceImpl implements SessionService {
 	 * @return -- Returns the fetched session id from the cache for the loggedin user.
 	 */
 	private String getActiveSessionIdFromAcHostModel(String user, AcHostModel acHostModel) {
-		String cacheKey = ACTIVE_USER_SESSION_ID_KEY + user;
-		String value = null;
 		try {
-			value = iTenantAwareCache.getOrElse(acHostModel, cacheKey, new Callable<String>() {
+			String cacheKey = ACTIVE_USER_SESSION_ID_KEY + user;
+			String issueId = iTenantAwareCache.getOrElse(acHostModel, cacheKey, new Callable<String>() {
 				public String call() throws Exception {
 					List<Session> activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(acHostModel.getCtId(), Status.STARTED.name(), user);
 					if(Objects.nonNull(activeSessions) && activeSessions.size() > 0)
@@ -1027,10 +1026,12 @@ public class SessionServiceImpl implements SessionService {
 						return null;
 				}				
 			}, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION);
-		} catch (Exception e) {
-			e.printStackTrace();
+
+			return issueId;
+		} catch (Exception exception) {
+			log.error("Error during getting active session id", exception);
 		}
-		return value;
+		return null;
 	}
 	
 	/**
