@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -173,11 +174,11 @@ public class TemplateController extends CaptureAbstractController{
 	}
 
 	@GetMapping(value = "/user")
-	public ResponseEntity<?> getUserTemplates(@RequestParam Integer offset, @RequestParam Integer limit){
+	public ResponseEntity<?> getUserTemplates(@RequestParam Integer offset, @RequestParam Integer limit, @RequestParam Optional<Boolean> mine){
 		log.info("getUserTemplates start.");
 		TemplateSearchList result = null;
 		try {
-			result = templateService.getUserTemplates(getUser(), offset, limit);
+			result = templateService.getUserTemplates(getUser(), offset, limit,mine.isPresent()? mine.get():false);
 		} catch (Exception ex) {
 			log.error("Error during getUserTemplates.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());

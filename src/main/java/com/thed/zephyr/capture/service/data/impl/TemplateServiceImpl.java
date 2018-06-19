@@ -93,10 +93,16 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	@Override
-	public TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit) throws Exception {
+	public TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit,Boolean mine) throws Exception {
 		//Since this Crud repository doesn't support OR query we had to make 2 calls
 		Page<Template> createdBy = repository.findByCtIdAndCreatedBy(CaptureUtil.getCurrentCtId(),userName, getPageRequest(offset, limit));
-		Page<Template> shared = repository.findByCtIdAndShared(CaptureUtil.getCurrentCtId(),true, getPageRequest(offset, limit));
+		Page<Template> shared = null;
+		if(mine){
+			shared = repository.findByCtIdAndSharedAndCreatedBy(CaptureUtil.getCurrentCtId(),true,userName, getPageRequest(offset, limit));
+		}else{
+			shared = repository.findByCtIdAndShared(CaptureUtil.getCurrentCtId(),true,getPageRequest(offset, limit));
+		}
+
 		return mergeTemplates(createdBy, shared, offset, limit);
 	}
 

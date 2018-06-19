@@ -59,7 +59,7 @@ public interface TemplateService {
 	TemplateSearchList getSharedTemplates(String owner, Integer offset, Integer limit) throws Exception;
 
 	TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit) throws Exception;
-	TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit) throws Exception;
+	TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit,Boolean mine) throws Exception;
 	
 	void deleteTemplatesByCtIdAndProject(String ctId, Long projectId);
 }
