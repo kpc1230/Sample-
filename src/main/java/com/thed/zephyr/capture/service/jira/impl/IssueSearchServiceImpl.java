@@ -97,10 +97,12 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
         		String cacheKey = "issue " + (appendEpicIssueType ? "epic" : "") + "_search_project_" + projectKeys;
         		ArrayList<IssueSearchDto> searchedIssues = new ArrayList<>(20);
         		try {
+                    String projKeys = projectKeys;
         			searchedIssues = iTenantAwareCache.getOrElse((AcHostModel)host.getHost(), cacheKey, new Callable<ArrayList<IssueSearchDto>>() {
         				public ArrayList<IssueSearchDto> call() throws Exception {
         					ArrayList<IssueSearchDto> issues = new ArrayList<>(0);
 							SearchResult searchResult = null;
+                            String projectKeys = projKeys.replaceAll(",","\',\'");
 							searchResult = getJQLResult("project in ('" + projectKeys + "')" + (appendEpicIssueType ? " AND issuetype = Epic" : ""), 0, 30); //fetching 20 is better in terms of performance.
         		    		searchResult.getIssues().spliterator().forEachRemaining(issue -> {
         		    			issues.add(new IssueSearchDto(issue.getId(), issue.getKey(), issue.getIssueType().getIconUri().toString(), issue.getSummary()));
