@@ -55,6 +55,9 @@ public class SessionValidator implements Validator {
 			if(Objects.isNull(sessionRequest.getProjectKey())) {
 				errors.rejectValue("projectKey","", i18n.getMessage("session.project.key.needed"));
 			}
+			if (sessionRequest.getName() == null || sessionRequest.getName().trim().length() == 0) {
+				errors.rejectValue("name","", i18n.getMessage("session.name.min.limit"));
+			}
 			if (sessionRequest.getName() !=null&& sessionRequest.getName().length() > CaptureConstants.SESSION_NAME_LENGTH_LIMIT) {
 				errors.rejectValue("name","", i18n.getMessage("session.name.exceed.limit", new Integer[]{sessionRequest.getName().length(),
 						CaptureConstants.SESSION_NAME_LENGTH_LIMIT}));
