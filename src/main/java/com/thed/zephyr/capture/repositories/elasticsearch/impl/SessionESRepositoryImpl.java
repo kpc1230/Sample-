@@ -211,10 +211,10 @@ public class SessionESRepositoryImpl {
 			boolQueryBuilder.must(assigneeQueryBuilder);
 
     	}
-		FieldSortBuilder statusSortFieldBuilder =  SortBuilders.fieldSort(ApplicationConstants.SORTFIELD_ES_STATUS_ENUM).order(SortOrder.DESC);
+
     	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort(ApplicationConstants.SORTFIELD_ES_CREATED).order(SortOrder.DESC);
     	Pageable pageable = CaptureUtil.getPageRequest(0, 50);
-		SearchQuery query = new NativeSearchQueryBuilder().withFilter(boolQueryBuilder).withSort(statusSortFieldBuilder).withSort(sortFieldBuilder).withPageable(pageable).build();
+		SearchQuery query = new NativeSearchQueryBuilder().withFilter(boolQueryBuilder).withSort(sortFieldBuilder).withPageable(pageable).build();
 		return elasticsearchTemplate.queryForPage(query, Session.class);
 	}
 	
@@ -234,10 +234,9 @@ public class SessionESRepositoryImpl {
 			boolQueryBuilder.mustNot(assigneeQueryBuilder);
 
     	}
-		FieldSortBuilder statusSortFieldBuilder =  SortBuilders.fieldSort(ApplicationConstants.SORTFIELD_ES_STATUS_ENUM).order(SortOrder.DESC);
     	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort(ApplicationConstants.SORTFIELD_ES_CREATED).order(SortOrder.DESC);
     	Pageable pageable = CaptureUtil.getPageRequest(0, 50);
-		SearchQuery query = new NativeSearchQueryBuilder().withFilter(boolQueryBuilder).withSort(statusSortFieldBuilder).withSort(sortFieldBuilder).withPageable(pageable).build();
+		SearchQuery query = new NativeSearchQueryBuilder().withFilter(boolQueryBuilder).withSort(sortFieldBuilder).withPageable(pageable).build();
 		return elasticsearchTemplate.queryForPage(query, Session.class);
 	}
 	

@@ -376,7 +376,21 @@ public class SessionServiceImpl implements SessionService {
 		List<Session> sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user).getContent();
 		List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, privateSessionsList.size(), true);
 		List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, sharedSessionsList.size(), true);
-		return new SessionExtensionResponse(privateSessionsDto, sharedSessionsDto);
+		SessionDto activeSessionDto = null;
+		SessionResult activeSession = getActiveSession(user,null);
+		if(activeSession!=null&&activeSession.getSession() !=null){
+			Session session = activeSession.getSession();
+			CaptureProject project = projectService.getCaptureProject(session.getProjectId());
+			activeSessionDto = createSessionDto(user, session, true, project, true);
+			if(session.getAssignee() != null && session.getAssignee().equals(user)){
+				privateSessionsDto.removeIf(sessionDto -> sessionDto.getId().equals(session.getId()));
+				privateSessionsDto.add(0,activeSessionDto);
+			}else{
+				sharedSessionsDto.removeIf(sessionDto -> sessionDto.getId().equals(session.getId()));
+				sharedSessionsDto.add(0,activeSessionDto);
+			}
+		}
+		return new SessionExtensionResponse(privateSessionsDto, sharedSessionsDto,activeSessionDto);
 	}
 
 	@Override
@@ -1328,10 +1342,12 @@ public class SessionServiceImpl implements SessionService {
 	public class SessionExtensionResponse {		
 		private List<SessionDto> privateSessions;		
 		private List<SessionDto> sharedSessions;
+		private SessionDto activeSession;
 		
-		public SessionExtensionResponse(List<SessionDto> privateSessions, List<SessionDto> sharedSessions) {
+		public SessionExtensionResponse(List<SessionDto> privateSessions, List<SessionDto> sharedSessions,SessionDto activeSession) {
 			this.privateSessions = privateSessions;
 			this.sharedSessions = sharedSessions;
+			this.activeSession = activeSession;
 		}
 		
 		public List<SessionDto> getPrivateSessions() {
@@ -1340,7 +1356,11 @@ public class SessionServiceImpl implements SessionService {
 
         public List<SessionDto> getSharedSessions() {
             return sharedSessions;
-        }		
+        }
+
+		public SessionDto getActiveSession() {
+			return activeSession;
+		}
 	}
 	
 	/**
