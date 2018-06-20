@@ -181,7 +181,7 @@ public class MetadataServiceImpl implements MetadataService {
                 userNode.forEach(jsonNode1 -> {
                     userBeans.add(new FieldOption(
                             jsonNode1.get("displayName").asText(),
-                            jsonNode1.get("key").asText()
+                            jsonNode1.get("name").asText()
                     ));
 
                 });
