@@ -81,7 +81,8 @@ public class NoteController extends CaptureAbstractController {
             throw new CaptureRuntimeException(ex.getMessage());
         }
         log.debug("createNote end for " + noteRequest.getNoteData());
-
+        String wikiParsedData = CaptureUtil.replaceIconPath(created.getWikiParsedData());
+        created.setWikiParsedData(wikiParsedData);
         return created(created);
     }
 

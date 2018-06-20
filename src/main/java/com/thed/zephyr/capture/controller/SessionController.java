@@ -307,6 +307,9 @@ public class SessionController extends CaptureAbstractController{
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult, true);
+			wikiParsedData = CaptureUtil.replaceIconPath(wikiParsedData);
+			loadedSession.setWikiParsedData(wikiParsedData);
+			sessionRequest.setWikiParsedData(wikiParsedData);
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, updateResult.getSession(), true);
             sessionService.setIssueTestStatusAndTestSession(updatedRelatedIssues, loadedSession.getCtId(), loadedSession.getProjectId(), hostUser.getHost().getBaseUrl());
 			log.info("End of updateSession()");
@@ -879,7 +882,8 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult, true);
 			Map<String, String> jsonResponse = new HashMap<>();
 			jsonResponse.put("additionalInfo",   updateResult.getSession().getAdditionalInfo());
-			jsonResponse.put("wikiParsedData", updateResult.getSession().getWikiParsedData());
+			wikiParsedData = CaptureUtil.replaceIconPath(updateResult.getSession().getWikiParsedData());
+			jsonResponse.put("wikiParsedData", wikiParsedData);
 			log.info("End of updateAdditionalInfo()");
 			return ResponseEntity.ok(jsonResponse);
 		} catch(CaptureValidationException ex) {

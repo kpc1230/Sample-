@@ -239,4 +239,6 @@ public class ApplicationConstants {
 
     public static final String SESSION_LIST = "sessionList";
     public static final String TOTAL_COUNT = "total";
+
+    public static final String EMO_ICON_PATH = "/images/icons/emoticons/";
 }

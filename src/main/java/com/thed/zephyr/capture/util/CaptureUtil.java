@@ -289,4 +289,13 @@ public class CaptureUtil {
         }
         return userAgent;
     }
+
+    public static String replaceIconPath(String wikiParsedData){
+        String result = wikiParsedData;
+        if(StringUtils.isNotEmpty(wikiParsedData)) {
+            String replacedStr = getAtlassianHostUser().getHost().getBaseUrl() + "/" + ApplicationConstants.EMO_ICON_PATH;
+            result = wikiParsedData.replace(ApplicationConstants.EMO_ICON_PATH, replacedStr);
+        }
+        return result;
+    }
 }

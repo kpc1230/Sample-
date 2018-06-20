@@ -126,7 +126,8 @@ public class SessionServiceImpl implements SessionService {
 		session.setName(sessionRequest.getName());
 		session.setTimeCreated(new Date());
 		session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
-		session.setWikiParsedData(sessionRequest.getWikiParsedData());
+		String wikiParsedData = CaptureUtil.replaceIconPath(sessionRequest.getWikiParsedData());
+		session.setWikiParsedData(wikiParsedData);
 		session.setShared(sessionRequest.getShared());
 		session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
 		session.setProjectId(sessionRequest.getProjectId());
@@ -1444,6 +1445,8 @@ public class SessionServiceImpl implements SessionService {
 			sessionESRepository.save(session);
 			log.warn("getting {} {}",additionalInfo,wikiParsedData);
 		}
+		wikiParsedData = CaptureUtil.replaceIconPath(session.getWikiParsedData());
+		session.setWikiParsedData(wikiParsedData);
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
 				project, session.getDefaultTemplateId(), additionalInfo , wikiParsedData, session.getTimeCreated(), null, session.getJiraPropIndex());
 		if(!usersMap.containsKey(session.getAssignee())) {

@@ -11,7 +11,9 @@ import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.NoteService;
 import com.thed.zephyr.capture.service.jira.UserService;
-import com.thed.zephyr.capture.util.*;
+import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.WikiMarkupRenderer;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -128,7 +130,8 @@ public class NoteServiceImpl implements NoteService {
 		Note note = new Note(noteSessionActivity);
 		note.setId(existingNote.getId());
 		note = noteRepository.save(note);
-
+		wikiParsedData = CaptureUtil.replaceIconPath(note.getWikiParsedData());
+		note.setWikiParsedData(wikiParsedData);
 		return convertNoteTO(user, note);
 	}
 
@@ -190,8 +193,12 @@ public class NoteServiceImpl implements NoteService {
 				wikiParsedData = wikiMarkupRenderer.getWikiRender(note.getNoteData());
 				note.setWikiParsedData(wikiParsedData);
 				noteRepository.save(note);
+				wikiParsedData = CaptureUtil.replaceIconPath(wikiParsedData);
+				note.setWikiParsedData(wikiParsedData);
 				noteList.add(note);
 			}else{
+				wikiParsedData = CaptureUtil.replaceIconPath(wikiParsedData);
+				note.setWikiParsedData(wikiParsedData);
 				noteList.add(note);
 			}
 		});
@@ -214,7 +221,8 @@ public class NoteServiceImpl implements NoteService {
 					note.setWikiParsedData(wikiParsedData);
 					noteRepository.save(note);
 				}
-
+				wikiParsedData = CaptureUtil.replaceIconPath(wikiParsedData);
+				note.setWikiParsedData(wikiParsedData);
 				listNotes.add(note);
 			});
 		}

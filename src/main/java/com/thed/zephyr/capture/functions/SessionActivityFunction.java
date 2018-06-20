@@ -5,6 +5,7 @@ import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.service.jira.IssueService;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.WikiMarkupRenderer;
 import org.apache.commons.lang3.StringUtils;
 
@@ -67,6 +68,8 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 				noteSessionActivity.setWikiParsedData(wikiParsedData);
 				noteSessionActivity = (NoteSessionActivity)sessionActivityRepository.save(noteSessionActivity);
 			}
+			wikiParsedData = CaptureUtil.replaceIconPath(wikiParsedData);
+			noteSessionActivity.setWikiParsedData(wikiParsedData);
 			addNoteActivityInToMap(finalSescionActivityMap, noteSessionActivity);
 			return finalSescionActivityMap;
 		}
