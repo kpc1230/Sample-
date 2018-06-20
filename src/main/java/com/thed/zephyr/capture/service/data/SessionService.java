@@ -217,7 +217,7 @@ public interface SessionService {
 	 * @param user -- Logged in user
 	 * @return -- Returns the Session Extension Response object which holds the private and shared sessions for the user.
 	 */
-	SessionExtensionResponse getSessionsForExtension(String user);
+	SessionExtensionResponse getSessionsForExtension(String user,Boolean onlyActiveSession);
 	
 	/**
 	 * @return -- Returns the List of unique assignees for the logged in user tenant id.

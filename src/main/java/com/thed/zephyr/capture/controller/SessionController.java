@@ -804,11 +804,11 @@ public class SessionController extends CaptureAbstractController{
 	}
 	
 	@GetMapping(value = "/user", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> getSessionsForExtension() throws CaptureValidationException {
+	public ResponseEntity<?> getSessionsForExtension(@RequestParam Optional<Boolean> onlyActiveSession) throws CaptureValidationException {
 		log.info("Start of getSessionsForExtension()");
 		try {
 			String loggedUserKey = getUser();
-			SessionExtensionResponse response = sessionService.getSessionsForExtension(loggedUserKey);
+			SessionExtensionResponse response = sessionService.getSessionsForExtension(loggedUserKey,onlyActiveSession.isPresent()? onlyActiveSession.get():false);
 			log.info("End of getSessionsForExtension()");
 			return ResponseEntity.ok(response);
 		} catch(CaptureValidationException ex) {
