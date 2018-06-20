@@ -762,6 +762,8 @@ public class SessionController extends CaptureAbstractController{
 				throw new CaptureValidationException(i18n.getMessage("session.cud.field.assignee.empty"));
 			}
 			loadedSession.setAssignee(assignee);//set assignee to session
+			//this is current capture production server behavior
+			loadedSession.setStatus(Status.PAUSED);//set session status to pause
 			CaptureUser user = userService.findUserByKey(assignee);
 			if(user != null) loadedSession.setUserDisplayName(user.getDisplayName());
 			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loadedSession, assignee);
@@ -772,6 +774,7 @@ public class SessionController extends CaptureAbstractController{
 			//Save assigned user to the session as activity.
 			CompletableFuture.runAsync(() -> {
 				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, assignee,oldAssignee);
+				sessionActivityService.setStatus(loadedSession, new Date(), loggedUserKey);
 			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession, false);
 			log.info("End of assignSession()");

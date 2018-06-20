@@ -561,10 +561,12 @@ public class SessionServiceImpl implements SessionService {
     public void updateSessionWithIssue(String ctId, Long projectId, String user, Long issueId) {
 		Page<Session> sessions = sessionESRepository.findByCtIdAndStatusAndAssignee(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
 		updateSessionWithIssueId(sessions, issueId,user);
-		Page<Session> sessions2 = sessionESRepository.findByCtIdAndStatusAndCreator(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-		updateSessionWithIssueId(sessions2, issueId,user);
-		Page<Session> sessions3 = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-		updateSessionWithIssueId(sessions3, issueId,user);
+		//We don't do anything unless this user is currently assigned.
+		//ISSUE - CAPCLOUD-423
+//		Page<Session> sessions2 = sessionESRepository.findByCtIdAndStatusAndCreator(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+//		updateSessionWithIssueId(sessions2, issueId,user);
+//		Page<Session> sessions3 = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+//		updateSessionWithIssueId(sessions3, issueId,user);
     }
 
     @Override
