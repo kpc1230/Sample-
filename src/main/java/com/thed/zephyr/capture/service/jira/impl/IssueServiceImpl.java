@@ -802,6 +802,12 @@ public class IssueServiceImpl implements IssueService {
                     childValue.put("id",fieldValue[1]);
                     complexValue.put("child", new ComplexIssueInputFieldValue(childValue));
                     issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                }else if (StringUtils.equals(fieldType, "project")){
+                    Map<String, Object> complexValue = new TreeMap<>();
+                    complexValue.put("id",fieldValue[0]);
+                    issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                }else{
+                    log.warn("This custom field type not supporting so skied field id : {} ,  field type:  {}",fieldId,fieldType);
                 }
             } catch (Exception exception) {
                 log.error("Error during config custom field for Jira issue create request customFieldId:{} issueType:{}", entry.getKey(), issueFields.issueType().id(), exception);
