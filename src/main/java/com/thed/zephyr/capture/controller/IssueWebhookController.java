@@ -12,6 +12,7 @@ import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
+import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
@@ -22,10 +23,12 @@ import com.thed.zephyr.capture.service.jira.IssueWebHookHandler;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -57,7 +60,8 @@ public class IssueWebhookController {
     private ITenantAwareCache tenantAwareCache;
     @Autowired
     private IssueWebHookHandler issueWebHookHandler;
-
+    @Autowired
+    private SessionESRepository sessionESRepository;
 
     @RequestMapping(value = "/created", method = RequestMethod.POST)
     public ResponseEntity issueCreated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode createIssueJson) {
@@ -73,11 +77,28 @@ public class IssueWebhookController {
                 String issueCreatedBy = issueNode.get("fields").get("creator").get("key").asText();
                 SessionServiceImpl.SessionResult sessionResult = sessionService.getActiveSession(hostUser.getUserKey().get(), null);
                 Session session = sessionResult.getSession();
+                List<Session> sessionList = new ArrayList<>();
+                if(session != null) { sessionList.add(session); }
+                Page<Session> participantSessions = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(ctid, Session.Status.STARTED.toString(), hostUser.getUserKey().get(), CaptureUtil.getPageRequest(0, 1000));
+                if(participantSessions != null && participantSessions.getNumberOfElements()>0){
+                   Session partiSession = participantSessions.getContent().get(0);
+                    if(partiSession != null){
+                        partiSession.getParticipants().stream().forEach(participant -> {
+                            if(participant.getTimeLeft() != null
+                               && (participant.getTimeLeft().getTime() - System.currentTimeMillis() > 0)){
+                                sessionList.add(partiSession);
+                            }
+                        });
 
-                if (issueId != null) {
-                    sessionService.updateSessionWithIssue(ctid, projectId, issueCreatedBy, issueId);
-                    if(session != null) {
-                        sessionService.addRaisedInSession(hostUser.getUserKey().get(), issueId, session);
+                    }
+                }
+
+                if (issueId != null){
+                    if(sessionList != null && sessionList.size() > 0) {
+                        sessionService.updateSessionWithIssue(ctid, projectId, issueCreatedBy, issueId);
+                        sessionList.forEach(sessionToUpdate -> {
+                            sessionService.addRaisedInSession(hostUser.getUserKey().get(), issueId, sessionToUpdate);
+                        });
                         Set<Long> issues = new HashSet<>();
                         issues.add(issueId);
                         //Updating issue testing status in order to sync JQL with Testing section

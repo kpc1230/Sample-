@@ -146,19 +146,21 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
 
     @Override
     public void addRaisedInIssueField(String loggedUser, List<Long> listOfIssueIds, Session session) {
-        log.debug("addRaisedInIssueField request from user:{} , sessionId: {} jiraPropIndex:{}", loggedUser, session.getId(), session.getJiraPropIndex());
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        String baseUri = host.getHost().getBaseUrl();
-        listOfIssueIds.stream().forEach(issueId -> {
-            String raisedInPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueId + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_RAISEDIN_NAME.toLowerCase().replace(" ", "_");
-            try {
-                StringBuilder sb = new StringBuilder(session.getJiraPropIndex());
-                setEntityProperties(sb, baseUri, raisedInPath);
-            } catch (Exception e) {
-                log.error("Error adding RaisedIn Issue user:{} , sessionId: {} jiraPropIndex:{}", loggedUser, session.getId(), session.getJiraPropIndex());
-            }
-        });
+        if(session != null) {
+            log.debug("addRaisedInIssueField request from user:{} , sessionId: {} jiraPropIndex:{}", loggedUser, session.getId(), session.getJiraPropIndex());
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+            String baseUri = host.getHost().getBaseUrl();
+            listOfIssueIds.stream().forEach(issueId -> {
+                String raisedInPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueId + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_RAISEDIN_NAME.toLowerCase().replace(" ", "_");
+                try {
+                    StringBuilder sb = new StringBuilder(session.getJiraPropIndex());
+                    setEntityProperties(sb, baseUri, raisedInPath);
+                } catch (Exception e) {
+                    log.error("Error adding RaisedIn Issue user:{} , sessionId: {} jiraPropIndex:{}", loggedUser, session.getId(), session.getJiraPropIndex());
+                }
+            });
+        }
     }
 
 
