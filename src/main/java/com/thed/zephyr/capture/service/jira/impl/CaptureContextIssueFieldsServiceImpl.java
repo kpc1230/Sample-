@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.jira.impl;
 import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.util.CaptureCustomFieldsUtils;
@@ -14,10 +15,7 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -145,21 +143,27 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
     }
 
     @Override
-    public void addRaisedInIssueField(String loggedUser, List<Long> listOfIssueIds, Session session) {
+    public void addRaisedInIssueField(String userKey, List<Long> listOfIssueIds, Session session) {
         if(session != null) {
-            log.debug("addRaisedInIssueField request from user:{} , sessionId: {} jiraPropIndex:{}", loggedUser, session.getId(), session.getJiraPropIndex());
+            log.trace("addRaisedInIssueField request from user:{} , sessionId: {} jiraPropIndex:{}", userKey, session.getId(), session.getJiraPropIndex());
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-            String baseUri = host.getHost().getBaseUrl();
+            AcHostModel acHostModel = (AcHostModel)host.getHost();
             listOfIssueIds.stream().forEach(issueId -> {
-                String raisedInPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueId + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_RAISEDIN_NAME.toLowerCase().replace(" ", "_");
-                try {
-                    StringBuilder sb = new StringBuilder(session.getJiraPropIndex());
-                    setEntityProperties(sb, baseUri, raisedInPath);
-                } catch (Exception e) {
-                    log.error("Error adding RaisedIn Issue user:{} , sessionId: {} jiraPropIndex:{}", loggedUser, session.getId(), session.getJiraPropIndex());
-                }
+                addSessionContextIntoRaisedIssue(acHostModel, userKey, issueId, session);
             });
+        }
+    }
+
+    @Override
+    public void addSessionContextIntoRaisedIssue(AcHostModel acHostModel, String userKey, Long issueId, Session session) {
+        log.trace("Add Session context into raised Issue user:{} , sessionId: {} jiraPropIndex:{} issueId:{}", userKey, session.getId(), session.getJiraPropIndex(), issueId);
+        String raisedInPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueId + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_RAISEDIN_NAME.toLowerCase().replace(" ", "_");
+        try {
+            StringBuilder sb = new StringBuilder(session.getJiraPropIndex());
+            setEntityProperties(sb, acHostModel.getBaseUrl(), raisedInPath);
+        } catch (Exception e) {
+            log.error("Error during adding Session context into RaisedIn Issie user:{} sessionId: {} jiraPropIndex:{} issueId:{}", userKey, session.getId(), session.getJiraPropIndex(), issueId);
         }
     }
 
@@ -237,7 +241,7 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
         request.put("content",sb.toString());
         String resourceUrl = targetUrl.toString();
         HttpEntity<String> requestUpdate = new HttpEntity<>(request.toString(),httpHeaders);
-        atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.PUT,requestUpdate,Void.class);
+        ResponseEntity<Void> exchange = atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.PUT, requestUpdate, Void.class);
     }
     private void removeEntityProperties(String baseUrl, String path) throws JSONException {
         try {

@@ -20,8 +20,6 @@ public class Participant  implements Comparable<Participant>{
     }
 
     public Participant(String user, Date timeJoined, Date timeLeft) {
-     //   this.user = notNull("user", user);
-     //   this.timeJoined = notNull("timeJoined", timeJoined);
         this.user = user;
         this.timeJoined = timeJoined;
         this.timeLeft = timeLeft;

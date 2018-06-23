@@ -8,10 +8,7 @@ import org.springframework.data.elasticsearch.core.aggregation.AggregatedPage;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by aliakseimatsarski on 9/7/17.
@@ -29,7 +26,7 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
     Page<Session> findByCtIdAndStatusAndCreator(String ctId, String status, String creator,Pageable pageable);
 
     Page<Session> findByCtIdAndStatusAndParticipantsUser(String ctId, String status, String participants,Pageable pageable);
-    
+
     List<Session> findByCtIdAndStatusAndAssignee(String ctId, String status, String assignee);
 
     Session findById(String id);

@@ -10,6 +10,7 @@ import com.thed.zephyr.capture.model.Participant;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.SessionRequest;
+import com.thed.zephyr.capture.model.jira.BasicIssue;
 import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
@@ -268,7 +269,6 @@ public interface SessionService {
 	 * Adds the Issue as Raised In for active User
 	 * @param userKey
 	 * @param issueRaisedId
-	 * @param sessionId
 	 */
 	void addRaisedInSession(String userKey, Long issueRaisedId, Session session);
 
@@ -286,5 +286,9 @@ public interface SessionService {
 	void updateUserDisplayNamesForSessions(String ctid, String userKey, String userDisplayName);
 
 	String generateJiraPropIndex(String ctId);
+
+	String getActiveSessionIdByUser(String user, AcHostModel acHostModel);
+
+	void addRaisedIssueToSession(AcHostModel acHostModel, String sessionId, BasicIssue basicIssue, CaptureUser user) throws HazelcastInstanceNotDefinedException;
 }
 

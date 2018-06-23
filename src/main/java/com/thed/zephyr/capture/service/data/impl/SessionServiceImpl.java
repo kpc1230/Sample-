@@ -14,10 +14,7 @@ import com.thed.zephyr.capture.exception.HazelcastInstanceNotDefinedException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.CompleteSessionRequest.CompleteSessionIssueLinkRequest;
 import com.thed.zephyr.capture.model.Session.Status;
-import com.thed.zephyr.capture.model.jira.CaptureIssue;
-import com.thed.zephyr.capture.model.jira.CaptureProject;
-import com.thed.zephyr.capture.model.jira.CaptureUser;
-import com.thed.zephyr.capture.model.jira.TestingStatus;
+import com.thed.zephyr.capture.model.jira.*;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
 import com.thed.zephyr.capture.model.view.FullSessionDto;
@@ -559,14 +556,14 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public void updateSessionWithIssue(String ctId, Long projectId, String user, Long issueId) {
-		Page<Session> sessions = sessionESRepository.findByCtIdAndStatusAndAssignee(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-		updateSessionWithIssueId(sessions, issueId,user);
-		//We don't do anything unless this user is currently assigned.
-		//ISSUE - CAPCLOUD-423
-//		Page<Session> sessions2 = sessionESRepository.findByCtIdAndStatusAndCreator(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-//		updateSessionWithIssueId(sessions2, issueId,user);
-		Page<Session> sessions3 = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-		updateSessionWithIssueId(sessions3, issueId,user);
+		try {
+			Page<Session> sessions = sessionESRepository.findByCtIdAndStatusAndAssignee(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+			updateSessionWithIssueId(sessions, issueId,user);
+			Page<Session> sessions3 = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
+			updateSessionWithIssueId(sessions3, issueId,user);
+		} catch (Exception exception) {
+			log.error("Error during updateSessionWithIssue", exception);
+		}
     }
 
     @Override
@@ -611,6 +608,12 @@ public class SessionServiceImpl implements SessionService {
         }
         return raisedIssues;
     }
+
+    private void setIssueTestStatusAndTestSession(AcHostModel acHostModel, Long issueId, Long projectId){
+		Set<Long> issues = new HashSet<>();
+		issues.add(issueId);
+		setIssueTestStatusAndTestSession(issues, acHostModel.getCtId(), projectId, acHostModel.getBaseUrl());
+	}
 
 	@Override
 	public void setIssueTestStatusAndTestSession(Set<Long> relatedIssues, String ctId, Long projectId, String baseUrl) {
@@ -799,59 +802,56 @@ public class SessionServiceImpl implements SessionService {
 		});
 	}
 
+	@Override
+	public void addRaisedIssueToSession(AcHostModel acHostModel, String sessionId, BasicIssue basicIssue, CaptureUser user) throws HazelcastInstanceNotDefinedException {
+		Date issueCreatedTime = new Date();
+		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
+		if (!lockService.tryLock(acHostModel.getClientKey(), lockKey, 5)) {
+			log.error("Not able to get the lock on session:{}", sessionId);
+			throw new CaptureRuntimeException("Not able to get the lock on session:" + sessionId);
+		}
+		try{
+			Session session = getSession(sessionId);
+			if(session == null){
+				throw new NoSuchElementException("Can't find session with id:" + sessionId);
+			}
+			IssueRaisedBean issueRaisedBean = new IssueRaisedBean(basicIssue.getId(), issueCreatedTime);
+			session.addRaisedIssue(issueRaisedBean);
+			session = save(session, user.getDisplayName(), basicIssue.getProject().getName());
+			sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), issueCreatedTime, user.getKey());
+			captureContextIssueFieldsService.addSessionContextIntoRaisedIssue(acHostModel, user.getKey(), basicIssue.getId(), session);
+			setIssueTestStatusAndTestSession(acHostModel, basicIssue.getId(), basicIssue.getProject().getId());
+		} catch (Exception exception){
+			log.error("Error during adding raised issue into session sessionId:{} issueId:{}", sessionId, basicIssue.getId(), exception);
+		} finally {
+			lockService.deleteLock(acHostModel.getClientKey(), lockKey);
+		}
+	}
 
-	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser) {
-		List<Session> listOfSessionsAsParticipant = sessions != null ? sessions.getContent() : new ArrayList<>();
+	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser) throws HazelcastInstanceNotDefinedException {
 		Date dateTime = new Date();
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-		IssueRaisedBean issueRaisedBean = new IssueRaisedBean(issueId, dateTime);
-		listOfSessionsAsParticipant.forEach(session -> {
-			String sessionId = session.getId();
-			String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
-			boolean isLocked = false;
-			boolean issueAdded = true;
-			Session sessionLatest = null;
-			try {
-				if (!lockService.tryLock(host.getHost().getClientKey(), lockKey, 5)) {
-					log.error("Not able to get the lock on session " + sessionId);
-					throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
-				}
-				isLocked = true;
-				sessionLatest = getSession(sessionId);
-				if (sessionLatest != null) {
-					if (sessionLatest.getIssuesRaised() != null) {
-						for (IssueRaisedBean tempBean : sessionLatest.getIssuesRaised()) {
-							if (tempBean.getIssueId().equals(issueRaisedBean.getIssueId())) {
-								issueAdded = false;
-								break;
-							}
-						}
-						if (issueAdded) sessionLatest.getIssuesRaised().add(issueRaisedBean);
-					} else {
-						Set<IssueRaisedBean> issuesRaised = new TreeSet<>();
-						issuesRaised.add(issueRaisedBean);
-						sessionLatest.setIssuesRaised(issuesRaised);
-						issueAdded = true;
-					}
-					save(sessionLatest, new ArrayList<>());
-				}
-			} catch (Exception ex) {
-				log.error("Error in updateSessionWithIssueId() -> ", ex);
-				throw new CaptureRuntimeException(ex.getMessage(), ex);
-			} finally {
-				if (isLocked) {
-					try {
-						lockService.deleteLock(host.getHost().getClientKey(), lockKey);
-					} catch (HazelcastInstanceNotDefinedException e) {
-					}
-				}
+		String sessionId = sessions.getContent().get(0).getId();
+		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
+		if (!lockService.tryLock(host.getHost().getClientKey(), lockKey, 5)) {
+			log.error("Not able to get the lock on session " + sessionId);
+			throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
+		}
+		try {
+			Session sessionLatest = getSession(sessionId);
+			if (sessionLatest != null) {
+				IssueRaisedBean issueRaisedBean = new IssueRaisedBean(issueId, dateTime);
+				sessionLatest.addRaisedIssue(issueRaisedBean);
+				save(sessionLatest, new ArrayList<>());
+				sessionActivityService.addRaisedIssue(sessionLatest, issueRaisedBean.getIssueId(), dateTime, loggedUser);
 			}
-			if (issueAdded) {
-				sessionActivityService.addRaisedIssue(sessionLatest, issueRaisedBean.getIssueId(), dateTime, loggedUser); //Save removed raised issue information as activity.
-			}
-
-		});
+		} catch (Exception ex) {
+			log.error("Error in updateSessionWithIssueId() -> ", ex);
+			throw new CaptureRuntimeException(ex.getMessage(), ex);
+		} finally {
+			lockService.deleteLock(host.getHost().getClientKey(), lockKey);
+		}
 	}
 
 	/**
@@ -962,7 +962,7 @@ public class SessionServiceImpl implements SessionService {
             });
         }
 		Session savedSession = sessionRepository.save(session);
-		session.setStatusOrder(getStatusOrder(session.getStatus()));
+		session.setStatusOrder(session.getStatus().getOrder());
 		log.debug("Save session in ES id:{}", savedSession.getId());
 		Session currentSession = sessionESRepository.findById(savedSession.getId());
 		if(currentSession != null){
@@ -971,6 +971,16 @@ public class SessionServiceImpl implements SessionService {
 		}
 		sessionESRepository.save(savedSession);
     }
+
+    private Session save(Session session, String userName, String projectName){
+		session = sessionRepository.save(session);
+		session.setStatusOrder(session.getStatus().getOrder());
+		session.setUserDisplayName(userName);
+		session.setProjectName(projectName);
+		sessionESRepository.save(session);
+
+		return session;
+	}
 
 	/**
 	 * Validates the session by the logged in user and also updates the session like status,
@@ -1049,7 +1059,8 @@ public class SessionServiceImpl implements SessionService {
 	 * @param user -- Logged in user key.
 	 * @return -- Returns the fetched session id from the cache for the loggedin user.
 	 */
-	private String getActiveSessionIdFromAcHostModel(String user, AcHostModel acHostModel) {
+	@Override
+	public String getActiveSessionIdByUser(String user, AcHostModel acHostModel) {
 		try {
 			String cacheKey = ACTIVE_USER_SESSION_ID_KEY + user;
 			String issueId = iTenantAwareCache.getOrElse(acHostModel, cacheKey, new Callable<String>() {
@@ -1083,7 +1094,7 @@ public class SessionServiceImpl implements SessionService {
 		} else {
 			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
 		}
-		return acHostModel == null ? null : getActiveSessionIdFromAcHostModel(user, acHostModel);
+		return acHostModel == null ? null : getActiveSessionIdByUser(user, acHostModel);
 	}
 	
 	/**
@@ -1619,26 +1630,12 @@ public class SessionServiceImpl implements SessionService {
 				user = userService.findUserByKey(acHostModel, session.getAssignee());
 				session.setProjectName(project.getName());
 				session.setUserDisplayName(user != null ? user.getDisplayName() : session.getAssignee());
-				session.setStatusOrder(getStatusOrder(session.getStatus()));
+				session.setStatusOrder(session.getStatus().getOrder());
 				sessionESRepository.save(session);
 			}
 		}
 		return pageResponse;
 	}
-	
-	private int getStatusOrder(Status status) {
-        switch (status) {
-            case CREATED:
-                return 1;
-            case STARTED:
-                return 2;
-            case PAUSED:
-                return 3;
-            case COMPLETED:
-                return 4;
-        }
-        return 0;
-    }
 	
 	private Map<String, Object> updateUserDisplayNameIntoES(String ctid, String userKey, String userDisplayName, int index, int maxResults) {
 		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(),

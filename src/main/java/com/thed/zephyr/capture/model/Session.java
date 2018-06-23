@@ -200,6 +200,15 @@ public class Session  implements Comparable<Session>, Serializable{
         return issuesRaised;
     }
 
+    public void addRaisedIssue(IssueRaisedBean issueRaisedBean){
+        if(this.issuesRaised == null){
+            this.issuesRaised = new TreeSet<>();
+            this.issuesRaised.add(issueRaisedBean);
+        }else if(!this.issuesRaised.contains(issueRaisedBean)){
+            this.issuesRaised.add(issueRaisedBean);
+        }
+    }
+
     public void setIssuesRaised(Collection<IssueRaisedBean> issuesRaised) {
         this.issuesRaised = issuesRaised;
     }
@@ -275,7 +284,17 @@ public class Session  implements Comparable<Session>, Serializable{
      */
 
     public enum Status {
-        CREATED, STARTED, PAUSED, COMPLETED
+        CREATED(1), STARTED(2), PAUSED(3), COMPLETED(4);
+
+        int order;
+
+        Status(int order){
+            this.order = order;
+        }
+
+        public int getOrder() {
+            return order;
+        }
     };
 
     @Override

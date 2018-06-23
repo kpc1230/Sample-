@@ -7,10 +7,13 @@ import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.internal.json.AttachmentJsonParser;
 import com.atlassian.jira.rest.client.internal.json.ChangelogItemJsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
-import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.*;
+import com.thed.zephyr.capture.model.jira.BasicIssue;
+import com.thed.zephyr.capture.model.jira.CaptureProject;
+import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
 import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.PermissionService;
@@ -20,10 +23,10 @@ import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.IssueWebHookHandler;
+import com.thed.zephyr.capture.service.jira.WebhookHandlerService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
-import com.thed.zephyr.capture.util.CaptureUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
@@ -37,6 +40,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.*;
 
 
@@ -44,82 +48,60 @@ import java.util.*;
 @RequestMapping("/rest/event/issue")
 public class IssueWebhookController {
 
-    @Autowired
     private Logger log;
-    @Autowired
     private SessionService sessionService;
-    @Autowired
     private SessionActivityService sessionActivityService;
-    @Autowired
     private CaptureI18NMessageSource i18n;
-    @Autowired
     private PermissionService permissionService;
-    @Autowired
     private IssueService issueService;
-    @Autowired
     private ITenantAwareCache tenantAwareCache;
-    @Autowired
     private IssueWebHookHandler issueWebHookHandler;
-    @Autowired
     private SessionESRepository sessionESRepository;
+    private WebhookHandlerService webhookHandlerService;
 
-    @RequestMapping(value = "/created", method = RequestMethod.POST)
-    public ResponseEntity issueCreated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode createIssueJson) {
-        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-        String ctid = acHostModel.getCtId();
-        log.debug("Invoked IssueCreate event");
-        log.debug("JSON from webhook invoker : " + createIssueJson);
-        try {
-            if (null != createIssueJson && createIssueJson.has("issue")) {
-                JsonNode issueNode = createIssueJson.get("issue");
-                Long issueId = issueNode.get("id").asLong();
-                Long projectId = issueNode.get("fields").get("project").get("id").asLong();
-                String issueCreatedBy = issueNode.get("fields").get("creator").get("key").asText();
-                SessionServiceImpl.SessionResult sessionResult = sessionService.getActiveSession(hostUser.getUserKey().get(), null);
-                Session session = sessionResult.getSession();
-                List<Session> sessionList = new ArrayList<>();
-                if(session != null) { sessionList.add(session); }
-                Page<Session> participantSessions = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(ctid, Session.Status.STARTED.toString(), hostUser.getUserKey().get(), CaptureUtil.getPageRequest(0, 1000));
-                if(participantSessions != null && participantSessions.getNumberOfElements()>0){
-                   Session partiSession = participantSessions.getContent().get(0);
-                    if(partiSession != null){
-                        partiSession.getParticipants().stream().forEach(participant -> {
-                            if(participant.getTimeLeft() != null
-                               && (participant.getTimeLeft().getTime() - System.currentTimeMillis() > 0)){
-                                sessionList.add(partiSession);
-                            }
-                        });
-
-                    }
-                }
-
-                if (issueId != null){
-                    if(sessionList != null && sessionList.size() > 0) {
-                        sessionService.updateSessionWithIssue(ctid, projectId, issueCreatedBy, issueId);
-                        sessionList.forEach(sessionToUpdate -> {
-                            sessionService.addRaisedInSession(hostUser.getUserKey().get(), issueId, sessionToUpdate);
-                        });
-                        Set<Long> issues = new HashSet<>();
-                        issues.add(issueId);
-                        //Updating issue testing status in order to sync JQL with Testing section
-                        sessionService.setIssueTestStatusAndTestSession(issues, ctid, projectId, hostUser.getHost().getBaseUrl());
-                    }
-                } else {
-                    log.error("Issue creation details are empty from JIRA");
-                    throw new CaptureValidationException("Issue ID is null");
-                }
-            } else {
-                log.error("Issue creation details are empty from JIRA");
-                throw new CaptureRuntimeException("Issue creation details are empty from JIRA");
-            }
-
-        } catch (Exception e) {
-            log.warn("Unable to handle the issue creation webhook: ", e);
-            throw new CaptureRuntimeException("Unable to handle the issue creation webhook");
-        }
-        return new ResponseEntity(HttpStatus.NO_CONTENT);
+    public IssueWebhookController(@Autowired Logger log,
+                                  @Autowired SessionService sessionService,
+                                  @Autowired SessionActivityService sessionActivityService,
+                                  @Autowired CaptureI18NMessageSource i18n,
+                                  @Autowired PermissionService permissionService,
+                                  @Autowired IssueService issueService,
+                                  @Autowired ITenantAwareCache tenantAwareCache,
+                                  @Autowired IssueWebHookHandler issueWebHookHandler,
+                                  @Autowired SessionESRepository sessionESRepository,
+                                  @Autowired WebhookHandlerService webhookHandlerService) {
+        this.log = log;
+        this.sessionService = sessionService;
+        this.sessionActivityService = sessionActivityService;
+        this.i18n = i18n;
+        this.permissionService = permissionService;
+        this.issueService = issueService;
+        this.tenantAwareCache = tenantAwareCache;
+        this.issueWebHookHandler = issueWebHookHandler;
+        this.sessionESRepository = sessionESRepository;
+        this.webhookHandlerService = webhookHandlerService;
     }
 
+    @RequestMapping(value = "/created", method = RequestMethod.POST)
+    public ResponseEntity issueCreated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode issueJson){
+        log.debug("Issue created event, issueJson:{}", issueJson.toString());
+        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+        if(!issueJson.has("user") || !issueJson.has("issue") || !issueJson.get("issue").has("fields") || !issueJson.get("issue").get("fields").has("project")){
+            log.error("Incorrect issue json from JIRA webhook issueJson:{}", issueJson.toString());
+            return ResponseEntity.ok().build();
+        }
+        ObjectMapper om = new ObjectMapper();
+        try {
+            BasicIssue basicIssue = om.readValue(issueJson.get("issue").toString(), BasicIssue.class);
+            CaptureProject captureProject = om.readValue(issueJson.get("issue").get("fields").get("project").toString(), CaptureProject.class);
+            basicIssue.setProject(captureProject);
+            CaptureUser user = om.readValue(issueJson.get("user").toString(), CaptureUser.class);
+            webhookHandlerService.issueCreateEventHandler(acHostModel, basicIssue, user);
+        } catch (IOException exception) {
+            log.error("Error during read issue json issueJson:{}", issueJson.toString(), exception);
+        }
+
+        return ResponseEntity.ok().build();
+    }
 
     @RequestMapping(value = "/updated", method = RequestMethod.POST)
     public ResponseEntity issueUpdated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode updatedIssueJson) {

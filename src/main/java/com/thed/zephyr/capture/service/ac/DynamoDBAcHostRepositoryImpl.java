@@ -68,11 +68,11 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
 
     @Override
     public AtlassianHost findOne(String tenantKey) {
-        log.debug("Call findOne tenantKey:{}", tenantKey);
+        log.trace("Call findOne tenantKey:{}", tenantKey);
         IMap<String, AcHostModel> tenants = hazelcastInstance.getMap(ApplicationConstants.LOCATION_ACHOST);
         AcHostModel acHostModel = tenants.get(tenantKey);
         if(acHostModel == null){
-            log.debug("Get tenant by key:{} from DynamoDB", tenantKey);
+            log.trace("Get tenant by key:{} from DynamoDB", tenantKey);
             List<AcHostModel> acHostModels = acHostModelRepository.findByClientKey(tenantKey);
             if(acHostModels.size() > 0){
                 acHostModel = acHostModels.get(0);
@@ -85,7 +85,7 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
                 log.warn("The error during getting AcHostModel from DB. Found more then one row with the same baseUrl:{}", tenantKey);
             }
         } else {
-            log.debug("Get tenant by key:{} from cache", tenantKey);
+            log.trace("Get tenant by key:{} from cache", tenantKey);
         }
 
         return acHostModel;

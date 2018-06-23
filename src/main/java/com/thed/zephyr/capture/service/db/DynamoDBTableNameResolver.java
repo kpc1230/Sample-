@@ -17,14 +17,14 @@ public class DynamoDBTableNameResolver extends DynamoDBMapperConfig.DefaultTable
     public String getTableName(Class clazz, DynamoDBMapperConfig config) {
         String base = super.getTableName(clazz, config);
         String prefix =  environment.getProperty(ApplicationConstants.DYNAMODB_TABEL_NAME_PREFIX);
-        log.debug("Table prefix:{} base:{}", prefix, base);
+        log.trace("Table prefix:{} base:{}", prefix, base);
 
         return prefix == null ? base : prefix + base;
     }
 
     public String getTableNameWithPrefix(String tableName){
         String tableNamePrefix = environment.getProperty(ApplicationConstants.DYNAMODB_TABEL_NAME_PREFIX, "");
-        log.debug("Table name:{} with prefix:{}", tableName, tableNamePrefix);
+        log.trace("Table name:{} with prefix:{}", tableName, tableNamePrefix);
 
         return String.valueOf(tableNamePrefix + tableName);
     }
