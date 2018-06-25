@@ -1,10 +1,12 @@
 package com.thed.zephyr.capture.controller;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.RestClientException;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.service.jira.AttachmentService;
+import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -13,6 +15,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.util.StringUtils;
@@ -31,7 +34,15 @@ public class AttachmentController {
     @Autowired
     private AttachmentService attachmentService;
     @Autowired
+    private MetadataService metadataService;
+    @Autowired
     private CaptureI18NMessageSource i18n;
+
+    @RequestMapping(value = "/issue-attach-meta", method = RequestMethod.GET)
+    public ResponseEntity<String> issueAttachementMeta(@AuthenticationPrincipal AtlassianHostUser hostUser){
+        String response = metadataService.getIssueAttachementMetaCacheOrFresh(hostUser);
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
 
     @RequestMapping(value = "/issue-attach-new", method = RequestMethod.POST)
     public ResponseEntity<String> uploadAttachments(

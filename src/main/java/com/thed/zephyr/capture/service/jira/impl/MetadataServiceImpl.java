@@ -202,30 +202,26 @@ public class MetadataServiceImpl implements MetadataService {
         String metadata = null;
         try {
             AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-            metadata = tenantAwareCache.getOrElse(acHostModel, createProjectMetaKey(projectKey), new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-
-                    List<IssueType> issueTypes = issueTypeService.getIssueTypesByProject(projectId);
-                    List<Long> issueTypeIds = new ArrayList<>();
-                    issueTypes.forEach(issueType -> {
-                        issueTypeIds.add(issueType.getId());
-                    });
-                    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                    AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-                    String uri = host.getHost().getBaseUrl();
-                    URI targetUrl= UriComponentsBuilder.fromUriString(uri)
-                            .path(JiraConstants.REST_API_CREATE_ISSUE_SCHEMA)
-                            .queryParam("projectIds", projectId)
-                            .queryParam("issuetypeIds", issueTypeIds.toArray())
-                            .queryParam("expand", ApplicationConstants.METADATA_EXPAND_KEY)
-                            .build()
-                            .encode()
-                            .toUri();
-                    String response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, String.class);
-                    log.debug("Response for metadata {} {}",projectId,response);
-                    return response;
-                }
+            metadata = tenantAwareCache.getOrElse(acHostModel, createProjectMetaKey(projectKey), () -> {
+                List<IssueType> issueTypes = issueTypeService.getIssueTypesByProject(projectId);
+                List<Long> issueTypeIds = new ArrayList<>();
+                issueTypes.forEach(issueType -> {
+                    issueTypeIds.add(issueType.getId());
+                });
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+                String uri = host.getHost().getBaseUrl();
+                URI targetUrl= UriComponentsBuilder.fromUriString(uri)
+                        .path(JiraConstants.REST_API_CREATE_ISSUE_SCHEMA)
+                        .queryParam("projectIds", projectId)
+                        .queryParam("issuetypeIds", issueTypeIds.toArray())
+                        .queryParam("expand", ApplicationConstants.METADATA_EXPAND_KEY)
+                        .build()
+                        .encode()
+                        .toUri();
+                String response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, String.class);
+                log.debug("Response for metadata {} {}",projectId,response);
+                return response;
             }, dynamicProperty.getIntProp(ApplicationConstants.METADATA_CACHE_EXPIRATION_DYNAMIC_PROP,ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
 
         } catch (Exception exp) {
@@ -234,6 +230,33 @@ public class MetadataServiceImpl implements MetadataService {
         return metadata;
     }
 
+    @Override
+    public String getIssueAttachementMetaCacheOrFresh(AtlassianHostUser hostUser) {
+        String metadata = null;
+        try {
+            AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+            metadata = tenantAwareCache.getOrElse(acHostModel, ApplicationConstants.ISSUE_ATTACH_METADATA_CACHE_KEY_PREFIX, new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                    AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+                    String uri = host.getHost().getBaseUrl();
+                    URI targetUrl= UriComponentsBuilder.fromUriString(uri)
+                            .path(JiraConstants.REST_API_ISSUE_ATTACHEMENT_META_DATE)
+                            .build()
+                            .encode()
+                            .toUri();
+                    String response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, String.class);
+                    log.debug("Response for issue attachment metadata {} {}",response);
+                    return response;
+                }
+            }, dynamicProperty.getIntProp(ApplicationConstants.METADATA_CACHE_EXPIRATION_DYNAMIC_PROP,ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+
+        } catch (Exception exp) {
+            log.error("Exception while getting the issue attachment metadata from JIRA." + exp.getMessage(), exp);
+        }
+        return metadata;
+    }
 
     private List<FieldOption> addAssigneeOptions() {
         List<FieldOption> fieldOpts = new ArrayList<>();

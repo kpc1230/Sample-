@@ -241,4 +241,6 @@ public class ApplicationConstants {
     public static final String TOTAL_COUNT = "total";
 
     public static final String EMO_ICON_PATH = "/images/icons/emoticons/";
+
+    public static final String ISSUE_ATTACH_METADATA_CACHE_KEY_PREFIX = "issue-attach-meta-data";
 }

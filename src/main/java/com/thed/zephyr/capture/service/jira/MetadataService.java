@@ -14,4 +14,6 @@ public interface MetadataService {
     Map<String, Object> createFieldScreenRenderer(CaptureProject captureProject);
 
     String getMetaDataCacheOrFresh(AtlassianHostUser hostUser, String projectKey, Long projectId);
+
+    String getIssueAttachementMetaCacheOrFresh(AtlassianHostUser hostUser);
 }
