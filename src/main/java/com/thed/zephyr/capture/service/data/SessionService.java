@@ -15,6 +15,7 @@ import com.thed.zephyr.capture.model.jira.CaptureIssue;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.model.util.UserActiveSession;
 import com.thed.zephyr.capture.model.view.SessionDto;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.CompleteSessionResult;
 import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl.SessionExtensionResponse;
@@ -77,14 +78,17 @@ public interface SessionService {
 	 * @param sessionId -- Session id of which session to be deleted.
 	 */
 	void deleteSession(String sessionId);
-	
+
+	Session startSession(AcHostModel acHostModel, String sessionId, CaptureUser user) throws HazelcastInstanceNotDefinedException;
+
 	/**
-	 * Starts the session. 
-	 * 
+	 * Starts the session.
+	 *
 	 * @param loggedUserKey -- Logged in user key.
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the started session object.
 	 */
+	@Deprecated
 	UpdateResult startSession(String loggedUserKey, Session session);
 	
 	/**
@@ -262,7 +266,10 @@ public interface SessionService {
 	 * @param baseUrl -- User base url.
 	 * @return -- Returns the SessionResult object which holds the active session and also any validation errors.
 	 */
+	@Deprecated
 	SessionResult getActiveSession(String user, String baseUrl);
+
+	UserActiveSession getActiveSession(AcHostModel acHostModel, CaptureUser user);
 
 
 	/**

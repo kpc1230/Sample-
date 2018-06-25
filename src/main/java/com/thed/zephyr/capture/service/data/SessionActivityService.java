@@ -21,10 +21,11 @@ public interface SessionActivityService {
 
     SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user);
 
+    @Deprecated
     SessionActivity addParticipantLeft(Session session, Date timestamp, String user);
 
-   // Boolean deleteNote(String noteSessionActivityId);
-
+    SessionActivity addParticipantLeft(Session session, Participant participant);
+    
     SessionActivity removeRaisedIssue(Session session, CaptureIssue captureIssue, Date timeRaised, String creator);
 
     SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author);

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.thed.zephyr.capture.service.db.converter.*;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.json.DurationJsonDeserializer;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -227,6 +228,20 @@ public class Session  implements Comparable<Session>, Serializable{
 
     public void setParticipants(Collection<Participant> participants) {
         this.participants = participants;
+    }
+
+    public Participant participantLeaveSession(String userKey, Date leaveTime){
+        if(StringUtils.isEmpty(userKey) || this.participants == null || this.participants.size() == 0){
+            return null;
+        }
+        for(Participant participant:this.participants){
+            if(StringUtils.equals(userKey, participant.getUser()) && !participant.hasLeft()){
+                participant.setTimeLeft(leaveTime);
+                return participant;
+            }
+        }
+
+        return null;
     }
 
     public String getDefaultTemplateId() {

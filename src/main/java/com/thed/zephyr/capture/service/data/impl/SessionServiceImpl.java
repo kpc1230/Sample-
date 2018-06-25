@@ -17,6 +17,7 @@ import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.jira.*;
 import com.thed.zephyr.capture.model.util.SessionDtoSearchList;
 import com.thed.zephyr.capture.model.util.SessionSearchList;
+import com.thed.zephyr.capture.model.util.UserActiveSession;
 import com.thed.zephyr.capture.model.view.FullSessionDto;
 import com.thed.zephyr.capture.model.view.ParticipantDto;
 import com.thed.zephyr.capture.model.view.SessionDisplayDto;
@@ -47,6 +48,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
@@ -203,31 +205,85 @@ public class SessionServiceImpl implements SessionService {
         }
         if(log.isDebugEnabled()) log.debug("Deleted Session -- > Session ID - " + sessionId);
 	}
+
+	@Override
+	public Session startSession(AcHostModel acHostModel, String sessionId, CaptureUser user) throws HazelcastInstanceNotDefinedException {
+		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
+		if(!lockService.tryLock(acHostModel.getClientKey(), lockKey, 5)) {
+			log.error("Not able to get the lock on session " + sessionId);
+			throw new CaptureRuntimeException("Not able to get the lock on session " + sessionId);
+		}
+		try{
+			deactivateActiveUserSession(acHostModel, user);
+			Session session  = getSession(sessionId);
+			Boolean firstTimeStarted = session.getStatus().equals(Status.CREATED);
+			session.setStatus(Status.STARTED);
+			final Session savedSession = save(session, user.getDisplayName(), null);
+			setActiveSessionIdToCache(user.getKey(), sessionId);
+			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
+			CompletableFuture.runAsync(() -> {
+				sessionActivityService.setStatus(savedSession, new Date(), user.getKey(),firstTimeStarted);
+			});
+			setActiveSessionIdToCache(user.getKey(), savedSession.getId());
+			return session;
+		} catch (Exception exception){
+			throw exception;
+		} finally {
+			lockService.deleteLock(acHostModel.getClientKey(), lockKey);
+		}
+	}
+
+	private void deactivateActiveUserSession(AcHostModel acHostModel, CaptureUser user){
+		UserActiveSession userActiveSession = getActiveSession(acHostModel, user);
+		if(!userActiveSession.isUserHasActiveSession()){
+			log.debug("User:{}, doesn't have any active session or participate in any.", user.getKey());
+			return;
+		}
+		log.trace("Deactivate active user session or leave participated");
+		Session session = userActiveSession.getSession();
+		if(userActiveSession.getUserType().equals(UserActiveSession.UserType.PARTICIPANT)){
+			Date leaveTime = new Date();
+			Participant participant = session.participantLeaveSession(user.getKey(), leaveTime);
+			CompletableFuture.runAsync(() -> {
+				sessionActivityService.addParticipantLeft(session, participant);
+			});
+			save(session, user.getDisplayName(), null);
+		} else {
+			session.setStatus(Status.PAUSED);
+			Session savedSession = save(session, user.getDisplayName(), null);
+			CompletableFuture.runAsync(() -> {
+				sessionActivityService.setStatus(savedSession, new Date(), user.getKey(), false);
+			});
+			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
+		}
+		clearActiveSessionFromCache(user.getKey());
+	}
 	
 	@Override
-	public UpdateResult startSession(String loggedUserKey, Session session) {
+	public UpdateResult startSession(String userKey, Session session) {
 		DeactivateResult deactivateResult = null;
-        SessionResult activeSessionResult = getActiveSession(loggedUserKey, null); // Deactivate current active session
+        SessionResult activeSessionResult = getActiveSession(userKey, null); // Deactivate current active session
         if (activeSessionResult.isValid()) {
-            deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), loggedUserKey);
+            deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), userKey);
             if (!deactivateResult.isValid()) {
                 return new UpdateResult(deactivateResult.getErrorCollection(), session);
             }
 			//make active session status paused
-			if(Objects.nonNull(activeSessionResult.getSession()) && loggedUserKey.equals(activeSessionResult.getSession().getAssignee())) {
+			if(Objects.nonNull(activeSessionResult.getSession()) && userKey.equals(activeSessionResult.getSession().getAssignee())) {
 				Session activeSession = activeSessionResult.getSession();
 				activeSession.setStatus(Status.PAUSED);
 				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
-				clearActiveSessionFromCache(loggedUserKey);
+				clearActiveSessionFromCache(userKey);
 				update(updateResult, false);
 				CompletableFuture.runAsync(() -> {
-					sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
+					sessionActivityService.setStatus(activeSession, new Date(), userKey);
 				});
 			}
         }
         session.setStatus(Status.STARTED);
-        return new UpdateResult(validateUpdate(loggedUserKey, session), deactivateResult, loggedUserKey, true, false);
+        return new UpdateResult(validateUpdate(userKey, session), deactivateResult, userKey, true, false);
 	}
+
 
 	@Override
 	public UpdateResult pauseSession(String loggedUserKey, Session session) {
@@ -691,6 +747,7 @@ public class SessionServiceImpl implements SessionService {
 		});
 	}
 
+	@Deprecated
 	@Override
 	public SessionResult getActiveSession(String user, String baseUrl) {
 		String activeSessionId = getActiveSessionIdFromCache(user, baseUrl);
@@ -703,6 +760,34 @@ public class SessionServiceImpl implements SessionService {
 			return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
 		}
 		return new SessionResult(new ErrorCollection(), activeSession);
+	}
+
+	@Override
+	public UserActiveSession getActiveSession(AcHostModel acHostModel, CaptureUser user){
+    	UserActiveSession userActiveSession;
+		String sessionId = getActiveSessionIdByUser(user.getKey(), acHostModel);
+		sessionId = StringUtils.isNotEmpty(sessionId)?sessionId:findActiveSessionByParticipateUser(acHostModel, user);
+		if(StringUtils.isNotEmpty(sessionId)){
+			Session session = getSession(sessionId);
+			userActiveSession = new UserActiveSession(user, session);
+		} else{
+			userActiveSession = new UserActiveSession(user, null);
+		}
+
+		return userActiveSession;
+	}
+
+	private String findActiveSessionByParticipateUser(AcHostModel acHostModel, CaptureUser user){
+		Page<Session> userParticipatedSessionPage = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(acHostModel.getCtId(), Session.Status.STARTED.toString(), user.getKey(), CaptureUtil.getPageRequest(0, 1000));
+		for(Session session:userParticipatedSessionPage.getContent()){
+			for (Participant participant:session.getParticipants()){
+				if(org.apache.commons.lang3.StringUtils.equals(participant.getUser(), user.getKey()) && participant.getTimeLeft() == null){
+					return session.getId();
+				}
+			}
+		}
+
+		return null;
 	}
 
 	@Override
@@ -954,6 +1039,7 @@ public class SessionServiceImpl implements SessionService {
      * @param session  -- Session object to be saved.
      * @param leavers -- List of users leaving the session which needs to updated into session.
      */
+    @Deprecated
 	private void save(Session session, List<String> leavers) {
     	for (String leaver : leavers) {
             clearActiveSessionFromCache(leaver);
@@ -972,7 +1058,10 @@ public class SessionServiceImpl implements SessionService {
 		sessionESRepository.save(savedSession);
     }
 
-    private Session save(Session session, String userName, String projectName){
+    private Session save(Session session, String userName, @Nullable String projectName){
+    	if(StringUtils.isEmpty(projectName)){
+			projectName = projectService.getProjectName(session.getProjectId(), session.getId());
+		}
 		session = sessionRepository.save(session);
 		session.setStatusOrder(session.getStatus().getOrder());
 		session.setUserDisplayName(userName);
@@ -1024,6 +1113,7 @@ public class SessionServiceImpl implements SessionService {
 	 * @param user -- Logged in user key.
 	 * @return -- Returns the DeactivateResult object which holds the updated session object and any validation errors.
 	 */
+	@Deprecated
 	private DeactivateResult validateDeactivateSession(Session session, String user) {
         return validateDeactivateSession(session, user, Status.PAUSED, null);
     }

@@ -78,22 +78,22 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity addParticipantLeft(Session session, Date timestamp, String user) {
+    public SessionActivity addParticipantLeft(Session session, Date timestamp, String userKey) {
         UserLeftSessionActivity sessionActivity = null;
-        Participant participantToRemove = null;
-        if (!Objects.isNull(session.getParticipants())) {
-            for (Iterator<Participant> iterator = session.getParticipants().iterator(); iterator.hasNext(); ) {
-                Participant participant1 = iterator.next();
-                if (user != null && user.equals(participant1.getUser()) && !participant1.hasLeft()) {
-                    participantToRemove = participant1;
-                    break;
-                }
-            }
-        }
-        if (Objects.nonNull(participantToRemove)) {
-            participantToRemove.setTimeLeft(timestamp);
+        Participant participant = session.participantLeaveSession(userKey, timestamp);
+        if (participant != null) {
             sessionActivity = new UserLeftSessionActivity(
-                    session.getId(), session.getCtId(), participantToRemove.getTimeLeft(), participantToRemove.getUser(), session.getProjectId(), participantToRemove);
+                    session.getId(), session.getCtId(), timestamp, userKey, session.getProjectId(), participant);
+            sessionActivityRepository.save(sessionActivity);
+        }
+        return sessionActivity;
+    }
+
+    public SessionActivity addParticipantLeft(Session session, Participant participant) {
+        UserLeftSessionActivity sessionActivity = null;
+        if (participant != null && session != null) {
+            sessionActivity = new UserLeftSessionActivity(
+                    session.getId(), session.getCtId(), participant.getTimeLeft(), participant.getUser(), session.getProjectId(), participant);
             sessionActivityRepository.save(sessionActivity);
         }
         return sessionActivity;

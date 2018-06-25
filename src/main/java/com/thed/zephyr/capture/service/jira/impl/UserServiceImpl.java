@@ -205,8 +205,8 @@ public class UserServiceImpl implements UserService{
 
             CaptureUser response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, CaptureUser.class);
             return response;
-        }catch (Exception ex){
-            log.error("Error during getting active user by user key from jira.", ex);
+        }catch (Exception exception){
+            log.error("Error during getting active user by user name from jira userKey:{}",  username, exception);
         }
         return null;
     }

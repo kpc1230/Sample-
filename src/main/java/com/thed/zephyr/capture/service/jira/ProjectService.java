@@ -6,6 +6,7 @@ import com.atlassian.jira.rest.client.api.domain.Project;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -25,5 +26,7 @@ public interface ProjectService {
     CaptureProject getCaptureProject(String projectKey);
 
     CaptureProject getCaptureProjectViaAddon(AcHostModel acHostModel, String projectIdOrKey);
+
+    String getProjectName(Long projectId, @Nullable String sessionId);
 
 }

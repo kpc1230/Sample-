@@ -86,8 +86,8 @@ public abstract class CaptureAbstractController {
 			throw new CaptureValidationException(i18n.getMessage("session.invalid", new Object[]{sessionId}));
 		}
 		String ctId = CaptureUtil.getCurrentCtId();
-		log.info("Security context and session's ctId:{},{}",ctId,loadedSession.getCtId());
-		if(!ctId.equals(loadedSession.getCtId())){
+		log.debug("Security context and session's ctId:{},{}", ctId, loadedSession.getCtId());
+		if(!StringUtils.equals(ctId, loadedSession.getCtId())){
 			log.error("Missmatch during getting session by sessionId:{}, ctId:{}",sessionId,ctId);
 			Mail mail = new Mail();
 			String toEmail = dynamicProperty.getStringProp(ApplicationConstants.FEEDBACK_SEND_EMAIL, "atlassian.dev@getzephyr.com").get();

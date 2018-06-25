@@ -9,7 +9,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
+import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.cache.LockService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
@@ -17,12 +19,14 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
@@ -35,19 +39,30 @@ import static com.thed.zephyr.capture.util.JiraConstants.REST_API_PROJECT;
 @Service
 public class ProjectServiceImpl implements ProjectService {
 
-    @Autowired
-    private Logger log;
-    @Autowired
-    private JiraRestClient jiraRestClient;
-    @Autowired
-    private ITenantAwareCache tenantAwareCache;
-    @Autowired
-    private DynamicProperty dynamicProperty;
-    @Autowired
-    private AtlassianHostRestClients atlassianHostRestClients;
-    @Autowired
-    private LockService lockService;
 
+    private Logger log;
+    private JiraRestClient jiraRestClient;
+    private ITenantAwareCache tenantAwareCache;
+    private DynamicProperty dynamicProperty;
+    private AtlassianHostRestClients atlassianHostRestClients;
+    private LockService lockService;
+    private SessionESRepository sessionESRepository;
+
+    public ProjectServiceImpl(@Autowired Logger log,
+                              @Autowired JiraRestClient jiraRestClient,
+                              @Autowired ITenantAwareCache tenantAwareCache,
+                              @Autowired DynamicProperty dynamicProperty,
+                              @Autowired AtlassianHostRestClients atlassianHostRestClients,
+                              @Autowired LockService lockService,
+                              @Autowired SessionESRepository sessionESRepository) {
+        this.log = log;
+        this.jiraRestClient = jiraRestClient;
+        this.tenantAwareCache = tenantAwareCache;
+        this.dynamicProperty = dynamicProperty;
+        this.atlassianHostRestClients = atlassianHostRestClients;
+        this.lockService = lockService;
+        this.sessionESRepository = sessionESRepository;
+    }
 
     @Override
     public Project getProjectObj(Long projectId) {
@@ -149,6 +164,25 @@ public class ProjectServiceImpl implements ProjectService {
             log.error("Exception while getting the project from JIRA." + exp.getMessage(), exp);
         }
         return captureProject;
+    }
+
+    @Override
+    public String getProjectName(Long projectId, @Nullable String sessionId){
+        if(StringUtils.isEmpty(sessionId)){
+            return getProjectName(projectId);
+        }
+        Session session = sessionESRepository.findById(sessionId);
+        if(session == null || StringUtils.isEmpty(session.getProjectName())){
+            return getProjectName(projectId);
+        }
+
+        return session.getProjectName();
+    }
+
+    private String getProjectName(Long projectId){
+        CaptureProject captureProject = getCaptureProject(projectId);
+
+        return captureProject != null?captureProject.getName():null;
     }
 
     /**
