@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.service.jira.impl;
 
+import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
@@ -11,6 +12,7 @@ import com.thed.zephyr.capture.model.util.IssueSearchList;
 import com.thed.zephyr.capture.model.view.IssueSearchDto;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.jira.IssueSearchService;
+import com.thed.zephyr.capture.util.JiraConstants;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +20,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,7 +38,10 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     private JiraRestClient jiraRestClient;
     @Autowired
 	private ITenantAwareCache iTenantAwareCache;
-    
+
+    @Autowired
+	private AtlassianHostRestClients atlassianHostRestClients;
+
     private Pattern patttern = Pattern.compile("^[a-zA-Z0-9]+\\-[0-9]+$");
     
     private static Set<String> fields = new HashSet<>();
@@ -151,6 +152,23 @@ public class IssueSearchServiceImpl  implements IssueSearchService {
     public IssueSearchList getEpicIssuesForQuery(String projectKeys, String issueTerm) {
     	return getIssuesForIssueTerm(projectKeys, issueTerm, true);
     }
+
+	@Override
+	public String getSprintByProject(String projectKeys, String term) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+		String sprintUrl = JiraConstants.REST_API_SPRINT;
+		if(StringUtils.isNotEmpty(term)){
+			sprintUrl += term;
+		}
+		String jsonResult = atlassianHostRestClients.authenticatedAs(host)
+				.getForObject(sprintUrl, String.class);
+		if(StringUtils.isNotEmpty(jsonResult)) {
+			return jsonResult;
+		}else{
+			return "{\"results\":[]}";
+		}
+	}
 
 	@Override
 	public IssueSearchList getIssuesForQuery(String projectKeys, String issueTerm) {

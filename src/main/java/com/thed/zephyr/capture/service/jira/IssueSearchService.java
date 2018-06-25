@@ -11,5 +11,6 @@ public interface IssueSearchService {
 	IssueSearchList getIssuesForQuery(String projectKey, String issueTerm);
 		
 	IssueSearchList getEpicIssuesForQuery(String projectKey, String issueTerm);
-	
+
+    String getSprintByProject(String projectKeys, String term);
 }

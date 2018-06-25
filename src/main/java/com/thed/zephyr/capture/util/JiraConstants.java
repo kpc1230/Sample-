@@ -37,5 +37,6 @@ public class JiraConstants {
     public static final String EMOICON_PREFIX = "/images/icons/emoticons/";
     public static final String REST_API_GROUP_PICKER = REST_API_BASE + "/groups/picker";
     public static final String REST_API_WIKI_RENDER = "/rest/api/1.0/render";
+    public static final String REST_API_SPRINT = "/rest/api/2/jql/autocompletedata/suggestions?fieldName=Sprint&fieldValue=";
 
 }

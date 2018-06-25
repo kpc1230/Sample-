@@ -1,6 +1,5 @@
 package com.thed.zephyr.capture.controller;
 
-import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.util.ErrorCollection;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,7 +21,6 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -31,12 +29,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -171,5 +165,13 @@ public class IssueController {
     	IssueSearchList searchIssues = issueSearchService.getEpicIssuesForQuery(projectKeys, term);
         log.info("End of getIssuesEpicForQuery()");
         return ResponseEntity.ok(searchIssues);
+    }
+
+    @GetMapping(value = "/issueSearch/autocompleteSprint")
+    public ResponseEntity<?> getSprintForQuery(@RequestParam("term")  String term, @RequestParam  String projectKeys) {
+        log.info("Start of getIssuesEpicForQuery() --> params - query " + term + " projectKeys " + projectKeys);
+        String resultList = issueSearchService.getSprintByProject(projectKeys, term);
+        log.info("End of getSprintForQuery()");
+        return ResponseEntity.ok(resultList);
     }
 }

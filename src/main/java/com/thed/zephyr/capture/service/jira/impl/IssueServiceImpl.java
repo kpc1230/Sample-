@@ -785,7 +785,20 @@ public class IssueServiceImpl implements IssueService {
                     issueInputBuilder.setFieldValue(fieldId, dateStr);
                 } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "string")){
                     List<String> values = Arrays.asList(fieldValue);
-                    issueInputBuilder.setFieldValue(fieldId, values);
+                    try {
+                        //for sprint fieldType array and items is string
+                        //but sprint value is long so just check if we
+                        //can convert into long to get sprintId
+                        Long sprintId = Long.valueOf(values.get(0));
+                        if(values != null && values.size() > 0 && sprintId > 0){
+                            issueInputBuilder.setFieldValue(fieldId, sprintId);
+                        }else{
+                            issueInputBuilder.setFieldValue(fieldId, values);
+                        }
+                    }catch (Exception e){
+                        issueInputBuilder.setFieldValue(fieldId, values);
+                    }
+
                 } else if (StringUtils.equals(fieldType, "number")){
                     String numberStr = fieldValue[0];
                     if(StringUtils.isNotBlank(numberStr)){
