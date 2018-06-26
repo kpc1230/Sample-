@@ -552,10 +552,11 @@ public class SessionController extends CaptureAbstractController{
 	
 	@PutMapping(value = "/{sessionId}/leave", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> leaveSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
-										  @PathVariable("sessionId") String sessionId) throws CaptureValidationException {
+										  @PathVariable("sessionId") String sessionId,Optional<Boolean> isExtension) throws CaptureValidationException {
 		log.info("Start of leaveSession() --> params " + sessionId);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
 		boolean isLocked = false;
+		Boolean isExt = isExtension.isPresent()&&isExtension.get() ? true : false;
 		try {
 			if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
 				log.error("Not able to get the lock on session " + sessionId);
@@ -576,7 +577,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			sessionService.update(updateResult, true);
 			log.info("End of leaveSession()");
-			return ResponseEntity.ok(leftParticipant);
+			return isExt ? ResponseEntity.noContent().build() : ResponseEntity.ok(leftParticipant);
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
