@@ -54,9 +54,11 @@ public class UserActiveSession {
     }
 
     private Boolean isUserParticipant(CaptureUser user, Session session){
-        for (Participant participant:session.getParticipants()){
-            if(StringUtils.equals(participant.getUser(), user.getKey())){
-                return true;
+        if (session.getParticipants() != null) {
+            for (Participant participant:session.getParticipants()){
+                if(StringUtils.equals(participant.getUser(), user.getKey())){
+                    return true;
+                }
             }
         }
 
