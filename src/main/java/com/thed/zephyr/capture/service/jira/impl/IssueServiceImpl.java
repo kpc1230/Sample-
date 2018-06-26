@@ -729,6 +729,7 @@ public class IssueServiceImpl implements IssueService {
                 String[] fieldValue = entry.getValue();
                 String fieldType = fields.get(fieldId).get("schema").get("type").asText();
                 String items = fields.get(fieldId).get("schema").get("items") != null?fields.get(fieldId).get("schema").get("items").asText():"";
+                String custom = fields.get(fieldId).get("schema").has("custom") ? fields.get(fieldId).get("schema").get("custom").asText() : "";
                 if (StringUtils.equals(fieldType, "string")){
                     issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
                 } else if(StringUtils.equals(fieldType, "option") || StringUtils.equals(fieldType, "version")){
@@ -785,17 +786,20 @@ public class IssueServiceImpl implements IssueService {
                     issueInputBuilder.setFieldValue(fieldId, dateStr);
                 } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "string")){
                     List<String> values = Arrays.asList(fieldValue);
-                    try {
-                        //for sprint fieldType array and items is string
-                        //but sprint value is long so just check if we
-                        //can convert into long to get sprintId
-                        Long sprintId = Long.valueOf(values.get(0));
-                        if(values != null && values.size() > 0 && sprintId > 0){
-                            issueInputBuilder.setFieldValue(fieldId, sprintId);
-                        }else{
-                            issueInputBuilder.setFieldValue(fieldId, values);
+                    //Added check to see is this field is sprint then dont sent amy empty value
+                    if(custom.equals("com.pyxis.greenhopper.jira:gh-sprint")){
+                        try {
+                            //for sprint fieldType array and items is string
+                            //but sprint value is long so just check if we
+                            //can convert into long to get sprintId
+                           if(StringUtils.isNotBlank(values.get(0))){
+                               Long sprintId = Long.valueOf(values.get(0));
+                               issueInputBuilder.setFieldValue(fieldId, sprintId);
+                           }
+                        }catch (Exception e){
+                           // issueInputBuilder.setFieldValue(fieldId, values);
                         }
-                    }catch (Exception e){
+                    }else{
                         issueInputBuilder.setFieldValue(fieldId, values);
                     }
 
