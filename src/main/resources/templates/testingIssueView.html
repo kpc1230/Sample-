@@ -1,75 +1,54 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8"/>
     <meta name="token" th:content="${atlassianConnectToken}"/>
     <title>Session Navigator</title>
-
     <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui.min.css" media="all"></link>
     <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui-experimental.min.css" media="all"></link>
+    <!--<script th:src="@{${atlassianConnectAllJsUrl}}" type="text/javascript"></script>-->
     <link rel="stylesheet" th:href="${captureUIBaseUrl} + '/css/TestingIssueView/TestingIssueView.css'" media="all"></link>
     <script type="text/javascript" th:src="${captureUIBaseUrl} + '/js/polyfills/polyfills.js'" />
 </head>
-<body>
-    
+<body class="ac-content">
     <div id="root" th:attr="data-projectkey=${projectKey}, data-projectid=${projectId}, data-issuekey=${issueKey}, data-issueid=${issueId}, data-pluginkey=${pluginKey}, data-boardspage=${boardsPage}"></div>
-
     <script th:src="@{../../js/utils/i18n.js}"></script>
     <script th:inline="javascript">
     /*<![CDATA[*/
-
         var i18nMessages = /*[[${messages}]]*/ 'messages';
         initI18nMessages(i18nMessages);
-
     /*]]>*/
     </script>
-
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui.min.js"></script>
     <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-experimental.min.js"></script>
-    
-    <script type="text/javascript" th:inline="javascript" id="connect-loader" data-options="sizeToParent:true;">
+    <script type="text/javascript" th:inline="javascript" id="connect-loader">
         //<![CDATA[
-
         (function() {
             var getUrlParam = function (param) {
                 var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
                 return decodeURIComponent(codedParam);
             };
-
             var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
             var options = document.getElementById('connect-loader').getAttribute('data-options');
-
             var script = document.createElement("script");
             script.src = baseUrl + '/atlassian-connect/all.js';
-
             var style = document.createElement("link");
             style.rel = "stylesheet";
             style.href = baseUrl + '/atlassian-connect/all.css';
             if(options) {
                 script.setAttribute('data-options', options);
             }
-
             script.onload = function() {
                 var appScript = document.createElement("script");
                 appScript.src = /*[[${captureUIBaseUrl} + '/js/TestingIssueView/TestingIssueView.js']]*/;
                 document.body.appendChild(appScript);
-
-                AJS.$(document).ready(function() {
-                    AP.resize('100%', '400px');
-                });
-            }
-
+            };
             document.body.appendChild(script);
             document.body.appendChild(style);
-
             document.getElementById('root').dataset['baseurl'] = baseUrl;
-            
         })();
-
         // ]]>
     </script>
-
 </body>
 </html>
