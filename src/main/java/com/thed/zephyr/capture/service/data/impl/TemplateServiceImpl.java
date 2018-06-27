@@ -4,10 +4,7 @@ import com.atlassian.jira.rest.client.api.domain.BasicProject;
 import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
-import com.thed.zephyr.capture.model.Template;
-import com.thed.zephyr.capture.model.TemplateBuilder;
-import com.thed.zephyr.capture.model.TemplateRequest;
-import com.thed.zephyr.capture.model.Variable;
+import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
@@ -28,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import  java.util.Collections;
 
 /**
  * Created by Venkatareddy on 08/18/2017.
@@ -93,14 +91,14 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	@Override
-	public TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit,Boolean mine) throws Exception {
+	public TemplateSearchList getUserTemplates(AcHostModel acHostModel, String userKey, Integer offset, Integer limit, Boolean mine) throws Exception {
 		//Since this Crud repository doesn't support OR query we had to make 2 calls
-		Page<Template> createdBy = repository.findByCtIdAndCreatedBy(CaptureUtil.getCurrentCtId(),userName, getPageRequest(offset, limit));
-		Page<Template> shared = null;
+		Page<Template> createdBy = repository.findByCtIdAndCreatedBy(CaptureUtil.getCurrentCtId(), userKey, getPageRequest(offset, limit));
+		Page<Template> shared;
 		if(mine){
-			shared = repository.findByCtIdAndSharedAndCreatedBy(CaptureUtil.getCurrentCtId(),true,userName, getPageRequest(offset, limit));
+			shared = repository.findByCtIdAndSharedAndCreatedBy(CaptureUtil.getCurrentCtId(),true, userKey, getPageRequest(offset, limit));
 		}else{
-			shared = repository.findByCtIdAndShared(CaptureUtil.getCurrentCtId(),true,getPageRequest(offset, limit));
+			shared = repository.findByCtIdAndShared(CaptureUtil.getCurrentCtId(),true, getPageRequest(offset, limit));
 		}
 
 		return mergeTemplates(createdBy, shared, offset, limit);
@@ -134,8 +132,8 @@ public class TemplateServiceImpl implements TemplateService {
 	private TemplateSearchList mergeTemplates(Page<Template> createdBy, Page<Template> shared, Integer offset, Integer limit) throws Exception {
 	    Set<Template> combinedTemplateSet = new TreeSet<>(new Comparator<Template>() {
             @Override
-            public int compare(Template o1, Template o2) {
-                return o1.getId().compareTo(o2.getId());
+            public int compare(Template template1, Template template2) {
+                return  template1.getTimeCreated().compareTo(template2.getTimeCreated());
             }
         });
 	    ArrayList<BasicProject> projects = projectService.getProjects();
@@ -161,25 +159,33 @@ public class TemplateServiceImpl implements TemplateService {
 
     private TemplateSearchList createSearchList(Collection<Template> templates, Map<Long, BasicProject> projectsMap, Integer offset, Integer limit){
         List<TemplateRequest> templateRequestList = new ArrayList<>();
-        if(templates != null && templates.size() > 0) {
-			templates.forEach(template -> {
-				if(template != null && template.getCreatedBy() != null && template.getProjectId() != null) {
-					CaptureUser user = userService.findUserByKey(template.getCreatedBy());
-					BasicProject basicProject = projectsMap.get(template.getProjectId());
-                    String key;
-					if(basicProject == null){
-						CaptureProject captureProject = projectService.getCaptureProject(template.getProjectId());
-						key = captureProject != null?captureProject.getKey():null;
-                    } else {
-                        key = basicProject.getKey();
-                    }
-                    if (StringUtils.isNotBlank(key)){
-						TemplateRequest templateRequest = TemplateBuilder.createTemplateRequest(template, key, user);
-						templateRequestList.add(templateRequest);
-					}
-				}
-			});
-		}
+        if(templates == null || templates.size() == 0) {
+           return new TemplateSearchList(templateRequestList, offset, limit, 0);
+        }
+        templates.forEach(template -> {
+            if(template != null && template.getCreatedBy() != null && template.getProjectId() != null) {
+                CaptureUser user = userService.findUserByKey(template.getCreatedBy());
+                BasicProject basicProject = projectsMap.get(template.getProjectId());
+                String key;
+                if(basicProject == null){
+                    CaptureProject captureProject = projectService.getCaptureProject(template.getProjectId());
+                    key = captureProject != null?captureProject.getKey():null;
+                } else {
+                    key = basicProject.getKey();
+                }
+                if (StringUtils.isNotBlank(key)){
+                    TemplateRequest templateRequest = TemplateBuilder.createTemplateRequest(template, key, user);
+                    templateRequestList.add(templateRequest);
+                }
+            }
+        });
+        Collections.sort(templateRequestList, new Comparator<TemplateRequest>() {
+            @Override
+            public int compare(TemplateRequest templateRequest1, TemplateRequest templateRequest2) {
+                return templateRequest1.getTimeCreated().compareTo(templateRequest2.getTimeCreated());
+            }
+        });
+
         return new TemplateSearchList(templateRequestList, offset, limit, templates.size());
     }
 

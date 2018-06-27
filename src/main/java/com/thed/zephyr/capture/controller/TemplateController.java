@@ -1,8 +1,10 @@
 package com.thed.zephyr.capture.controller;
 
+import com.atlassian.connect.spring.AtlassianHostUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.TemplateBuilder;
 import com.thed.zephyr.capture.model.TemplateRequest;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
@@ -14,6 +16,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -41,8 +44,8 @@ public class TemplateController extends CaptureAbstractController{
 
 	@PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<TemplateRequest> createTemplate(@RequestBody JsonNode json) throws CaptureValidationException {
-		log.info("createTemplate start...");
-		TemplateRequest created = null;
+		log.trace("createTemplate start...");
+		TemplateRequest created;
 		try {
 			TemplateRequest templateRequest = parseAndValidate(json, true);
 			created = templateService.createTemplate(templateRequest);
@@ -53,14 +56,14 @@ public class TemplateController extends CaptureAbstractController{
 			log.error("Error during createTemplate.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("createTemplate end for name:"+ created.getName() + ":" + created.getId());
+		log.trace("createTemplate end for name:{}:{}", created.getName(), created.getId());
 		return ok(created);
 	}
 
 	@PutMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<TemplateRequest> updateTemplate(@RequestBody JsonNode json)
 			throws CaptureValidationException {
-		log.info("updateTemplate start...");
+		log.trace("updateTemplate start...");
 		TemplateRequest updated = null;
 		try {
 			TemplateRequest templateRequest = parseAndValidate(json, false);
@@ -72,13 +75,13 @@ public class TemplateController extends CaptureAbstractController{
 			log.error("Error during updateTemplate.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("updateTemplate end for the id:{}", updated.getId());
+		log.trace("updateTemplate end for the id:{}", updated.getId());
 		return ok(updated);
 	}
 
 	@GetMapping(value = "/{templateId}", produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<TemplateRequest> getTemplate(@PathVariable String templateId) throws CaptureValidationException {
-		log.info("getTemplate start for the id:{}", templateId);
+		log.trace("getTemplate start for the id:{}", templateId);
 		TemplateRequest template = null;
 		if(!StringUtils.isEmpty(templateId)) {
 			try {
@@ -91,13 +94,13 @@ public class TemplateController extends CaptureAbstractController{
 		if(template == null || !canUse(template) ){
 			throw new CaptureValidationException(i18n.getMessage("template.validate.update.not.exist"));
 		}
-		log.info("getTemplate end for the id:{}", templateId);
+		log.trace("getTemplate end for the id:{}", templateId);
 		return ok(template);
 	}
 
 	@DeleteMapping
 	public ResponseEntity<?> deleteTemplate(@RequestBody JsonNode json) throws CaptureValidationException {
-		log.info("deleteTemplate start ");
+		log.trace("deleteTemplate start ");
 		TemplateRequest templateReq = validateDelete(json);
 		try {
 			templateService.deleteTemplate(templateReq.getId());
@@ -105,43 +108,42 @@ public class TemplateController extends CaptureAbstractController{
 			log.error("Error during deleteTemplate.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("deleteTemplate end for the id:{}", templateReq.getId());
+		log.trace("deleteTemplate end for the id:{}", templateReq.getId());
 		return ok(templateReq);
 	}
 
 	@GetMapping(value = "/shared")
 	public ResponseEntity<?> getSharedTemplates(@RequestParam Integer offset, @RequestParam Integer limit){
-		log.info("getSharedTemplates start.");
-		TemplateSearchList result = null;
+		log.trace("getSharedTemplates start.");
+		TemplateSearchList result;
 		try {
 			result = templateService.getSharedTemplates(getUser(), offset, limit);
 		} catch (Exception ex) {
 			log.error("Error during getSharedTemplates.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("getSharedTemplates end.");
+		log.trace("getSharedTemplates end.");
 		return ok(result);
 	}
 
 	@GetMapping(value = "/favourites")
-	public ResponseEntity<?> getFavouriteTemplates(
-			@RequestParam Integer offset, @RequestParam Integer limit){
-		log.info("getFavouriteTemplates start for the user: {}");
-		TemplateSearchList result = null;
+	public ResponseEntity<?> getFavouriteTemplates(@RequestParam Integer offset, @RequestParam Integer limit){
+		log.trace("getFavouriteTemplates start for the user: {}");
+		TemplateSearchList result;
 		try {
 			result = templateService.getFavouriteTemplates(getUser(), offset, limit);
 		} catch (Exception ex) {
 			log.error("Error during getFavouriteTemplates.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("getFavouriteTemplates end for the user: {}");
+		log.trace("getFavouriteTemplates end");
 		return ok(result);
 	}
 
 	@PutMapping(value = "/favourites")
 	public ResponseEntity<?> updateFavouriteTemplate(@RequestBody JsonNode json) {
-		log.info("updateFavouriteTemplates start");
-		TemplateRequest templateRequest =null;
+		log.trace("updateFavouriteTemplates start");
+		TemplateRequest templateRequest = null;
 		try {
 			String templateId = json.get("id").asText();
 			Boolean flag = json.get("favourite").asBoolean(false);
@@ -154,42 +156,44 @@ public class TemplateController extends CaptureAbstractController{
 			log.error("Error during updateFavouriteTemplates.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("updateFavouriteTemplates end ");
+		log.trace("updateFavouriteTemplates end");
 		return ok(templateRequest);
 	}
 
 
 	@GetMapping(value = "/admin")
 	public ResponseEntity<?> getAllTemplates(@RequestParam Integer offset, @RequestParam Integer limit){
-		log.info("getAllTemplates start.");
-		TemplateSearchList result = null;
+		log.trace("getAllTemplates start.");
+		TemplateSearchList result;
 		try {
 			result = templateService.getTemplates(getUser(), offset, limit);
 		} catch (Exception ex) {
 			log.error("Error during getAllTemplates.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("getAllTemplates end.");
+		log.trace("getAllTemplates end.");
 		return ok(result);
 	}
 
 	@GetMapping(value = "/user")
-	public ResponseEntity<?> getUserTemplates(@RequestParam Integer offset, @RequestParam Integer limit, @RequestParam Optional<Boolean> mine){
-		log.info("getUserTemplates start.");
-		TemplateSearchList result = null;
+	public ResponseEntity<?> getUserTemplates(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestParam Integer offset, @RequestParam Integer limit, @RequestParam Optional<Boolean> mine){
+		log.trace("getUserTemplates start.");
+        AcHostModel acHostModel = (AcHostModel)hostUser.getHost();
+		TemplateSearchList result;
 		try {
-			result = templateService.getUserTemplates(getUser(), offset, limit,mine.isPresent()? mine.get():false);
+			result = templateService.getUserTemplates(acHostModel, hostUser.getUserKey().get(), offset, limit, mine.isPresent()? mine.get():false);
 		} catch (Exception ex) {
 			log.error("Error during getUserTemplates.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
 		}
-		log.info("getUserTemplates end.");
+		log.trace("getUserTemplates end.");
 		return ok(result);
 	}
 
 	private ResponseEntity<TemplateRequest> ok(TemplateRequest template) {
 		return ResponseEntity.ok(template);
 	}
+
 	private ResponseEntity<?> ok(TemplateSearchList templates) {
 		return ResponseEntity.ok(templates);
 	}
@@ -202,7 +206,7 @@ public class TemplateController extends CaptureAbstractController{
 	 * @throws CaptureValidationException
 	 */
 	private TemplateRequest parseAndValidate(JsonNode json, boolean create) throws CaptureValidationException {
-		TemplateRequest templateRequest = null;
+		TemplateRequest templateRequest;
 		if(create) {
 			templateRequest = TemplateBuilder.parseJson(json);
 		} else {
@@ -222,7 +226,6 @@ public class TemplateController extends CaptureAbstractController{
 		if(Objects.isNull(project)) {
 			throw new CaptureValidationException(i18n.getMessage("template.validate.create.cannot.browse.project"));
 		}
-
 		if(create){
 			if (!permissionService.canCreateTemplate(getUser(), project)) {
 				throw new CaptureValidationException(i18n.getMessage("template.validate.create.cannot.create.issue"));
@@ -292,10 +295,6 @@ public class TemplateController extends CaptureAbstractController{
 	}
 
 	private boolean canUse(TemplateRequest templateReq) throws CaptureValidationException{
-		return
-				templateReq.getShared() ||
-				canModifyTemplate(getUser(), templateReq, projectService.getCaptureProject(templateReq.getProjectId()))
-				;
+		return templateReq.getShared() || canModifyTemplate(getUser(), templateReq, projectService.getCaptureProject(templateReq.getProjectId()));
 	}
-
 }

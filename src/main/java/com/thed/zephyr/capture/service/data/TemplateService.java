@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.data;
 
 import com.thed.zephyr.capture.exception.CaptureValidationException;
+import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.TemplateRequest;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
 
@@ -59,7 +60,8 @@ public interface TemplateService {
 	TemplateSearchList getSharedTemplates(String owner, Integer offset, Integer limit) throws Exception;
 
 	TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit) throws Exception;
-	TemplateSearchList getUserTemplates(String userName, Integer offset, Integer limit,Boolean mine) throws Exception;
+
+	TemplateSearchList getUserTemplates(AcHostModel acHostModel, String userKey, Integer offset, Integer limit, Boolean mine) throws Exception;
 	
 	void deleteTemplatesByCtIdAndProject(String ctId, Long projectId);
 }
