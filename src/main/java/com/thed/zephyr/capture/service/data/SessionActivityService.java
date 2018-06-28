@@ -30,6 +30,10 @@ public interface SessionActivityService {
 
     SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author);
 
+    SessionActivity addAttachment(Session session, Long issueId, Attachment attachment, Date creationDate, String author);
+
+    void removeAttachment(String sessionId, String jiraAttachmentId, Long issueId);
+
     SessionActivity createSessionActivity(SessionActivity sessionActivity);
     
     List<SessionActivity> getAllSessionActivityBySession(String sessionId, Pageable pageRequest);

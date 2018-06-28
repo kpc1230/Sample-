@@ -14,6 +14,7 @@ import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.model.jira.BasicIssue;
 import com.thed.zephyr.capture.model.jira.CaptureProject;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
+import com.thed.zephyr.capture.model.util.IssueChangeLog;
 import com.thed.zephyr.capture.predicates.ActiveParticipantPredicate;
 import com.thed.zephyr.capture.repositories.elasticsearch.SessionESRepository;
 import com.thed.zephyr.capture.service.PermissionService;
@@ -85,7 +86,7 @@ public class IssueWebhookController {
     public ResponseEntity issueCreated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode issueJson){
         log.debug("Issue created event, issueJson:{}", issueJson.toString());
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-        if(!issueJson.has("user") || !issueJson.has("issue") || !issueJson.get("issue").has("fields") || !issueJson.get("issue").get("fields").has("project")){
+        if(validateIssueEventJsonBody(issueJson)){
             log.error("Incorrect issue json from JIRA webhook issueJson:{}", issueJson.toString());
             return ResponseEntity.ok().build();
         }
@@ -106,94 +107,30 @@ public class IssueWebhookController {
     @RequestMapping(value = "/updated", method = RequestMethod.POST)
     public ResponseEntity issueUpdated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode updatedIssueJson) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-        log.debug("Invoked IssueUpdated event");
-        try {
-            if (null != updatedIssueJson && updatedIssueJson.has("issue")) {
-                JsonNode issueNode = updatedIssueJson.get("issue");
-                SessionServiceImpl.SessionResult sessionResult = sessionService.getActiveSession(hostUser.getUserKey().get(), null);
-                if (null != issueNode && null != issueNode.get("fields")) {
-                    try {
-                        //Get ChangeLogItems
-                        log.debug("Fetching change log items from request body.");
-                        if (updatedIssueJson.has("changelog")) {
-                            JsonNode changeLogJson = updatedIssueJson.get("changelog");
-                            List<JsonNode> changeLogItems = changeLogJson.findValues("items");
-                            if (changeLogItems != null && changeLogItems.size() > 0 && changeLogItems.get(0).isArray()) {
-                                ChangelogItemJsonParser changelogItemJsonParser = new ChangelogItemJsonParser();
-                                for (final JsonNode changeLogItemJson : changeLogItems) {
-                                    Iterator<JsonNode> jsonNodeIterator = changeLogItemJson.iterator();
-                                    while (jsonNodeIterator.hasNext()) {
-                                        JsonNode jsonNode = jsonNodeIterator.next();
-                                        ChangelogItem changelogItem = changelogItemJsonParser.parse(new JSONObject(jsonNode.toString()));
-                                        if (StringUtils.equalsIgnoreCase("Attachment", changelogItem.getField())) {
-                                            AttachmentJsonParser attachmentJsonParser = new AttachmentJsonParser();
-                                            if (changelogItem.getFrom() != null && changelogItem.getTo() == null) {
-                                                //sessionActivityService.removeRaisedIssue()
-                                                //delete
-                                            } else if (changelogItem.getFrom() == null && changelogItem.getTo() != null) {
-                                                Iterator<JsonNode> jsonNodeAttachmentIterator = issueNode.get("fields").get("attachment").iterator();
-                                                while (jsonNodeAttachmentIterator.hasNext()) {
-                                                    JsonNode attachmentNode = jsonNodeAttachmentIterator.next();
-                                                    if (attachmentNode.get("id").asInt() == Integer.valueOf(changelogItem.getTo())) {
-                                                        String userKey =attachmentNode.get("author").get("key").asText();
-                                                        Attachment jiraAttachment = attachmentJsonParser.parse(new JSONObject(attachmentNode.toString()));
-                                                        if (jiraAttachment != null) {
-                                                            try {
-                                                                com.thed.zephyr.capture.model.jira.Attachment attachment = new
-                                                                        com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
-                                                                        userKey, jiraAttachment.getCreationDate().getMillis(),
-                                                                        jiraAttachment.getSize(), jiraAttachment.getMimeType(),
-                                                                        jiraAttachment.getContentUri());
-                                                                Issue issue = issueService.getIssueObject(issueNode.get("key").asText());
-                                                                SessionActivity sessionActivity = sessionActivityService.addAttachment(sessionResult.getSession(), issue, attachment, new Date(jiraAttachment.getCreationDate().getMillis()), attachment.getAuthor());
-                                                                List<ErrorCollection.ErrorItem> errorItems = validateUpdate(hostUser.getUserKey().get(), sessionService.getSession(sessionActivity.getSessionId()));
-                                                                errorItems.stream().forEach(errorItem -> {
-                                                                    log.error("Error:" + errorItem.getMessage());
-                                                                });
-                                                            } catch (Exception e) {
-                                                                // don't do anything in this case
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                    }
-                                }
-                            }
-                        }
-                        //Delete the cache
-                        Long issueId = issueNode.get("id").asLong();
-                        String issueKey = issueNode.get("id").asText();
-                        if (null != issueNode && null != issueId) {
-                            tenantAwareCache.delete(acHostModel, ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + String.valueOf(issueId));
-                        }
-                        if (null != issueNode && null != issueKey) {
-                            tenantAwareCache.delete(acHostModel, ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + issueKey);
-                        }
-
-                    } catch (Exception e) {
-                        log.error("Error handling issue update", e);
-                    }
-                }
-            } else {
-                log.error("Issue creation details are empty from JIRA");
-                throw new CaptureRuntimeException("Issue creation details are empty from JIRA");
-            }
-
-        } catch (Exception e) {
-            log.warn("Unable to handle the issue creation webhook: ", e);
-            throw new CaptureRuntimeException("Unable to handle the issue creation webhook");
+        log.trace("Invoked IssueUpdated event");
+        if(validateIssueEventJsonBody(updatedIssueJson) || !updatedIssueJson.has("changelog")){
+            log.error("Incorrect issue json from JIRA webhook issueJson:{}", updatedIssueJson.toString());
+            return ResponseEntity.ok().build();
         }
-        return new ResponseEntity(HttpStatus.NO_CONTENT);
+        ObjectMapper om = new ObjectMapper();
+        try{
+            BasicIssue basicIssue = om.readValue(updatedIssueJson.get("issue").toString(), BasicIssue.class);
+            CaptureProject captureProject = om.readValue(updatedIssueJson.get("issue").get("fields").get("project").toString(), CaptureProject.class);
+            basicIssue.setProject(captureProject);
+            CaptureUser user = om.readValue(updatedIssueJson.get("user").toString(), CaptureUser.class);
+            IssueChangeLog issueChangeLog = om.readValue(updatedIssueJson.get("changelog").toString(), IssueChangeLog.class);
+            webhookHandlerService.issueUpdatedEventHandler(acHostModel, basicIssue, issueChangeLog, user, updatedIssueJson);
+        } catch (Exception exception) {
+            log.error("Error during read updatedIssueJson json updatedIssueJson:{}", updatedIssueJson.toString(), exception);
+        }
+
+        return ResponseEntity.ok().build();
     }
 
     @RequestMapping(value = "/deleted", method = RequestMethod.POST)
     public ResponseEntity issueDeleted(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode deletedIssueJson) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-        log.debug("Invoked IssueDelete event");
-        log.debug("JSON from web hook invoker : " + deletedIssueJson);
+        log.trace("Invoked IssueDelete event body:{}", deletedIssueJson.toString());
         try {
             if (null != deletedIssueJson && deletedIssueJson.has("issue")) {
                 JsonNode issueNode = deletedIssueJson.get("issue");
@@ -215,7 +152,7 @@ public class IssueWebhookController {
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
 
-
+    @Deprecated
     private List<ErrorCollection.ErrorItem> validateUpdate(String updater, Session newSession) {
         ErrorCollection errorCollection = new ErrorCollection();
         Session loadedSession = null;
@@ -290,5 +227,13 @@ public class IssueWebhookController {
             }
         }
         return errorCollection.getErrors();
+    }
+
+    private Boolean validateIssueEventJsonBody(JsonNode issueJson){
+        if(!issueJson.has("user") || !issueJson.has("issue") || !issueJson.get("issue").has("fields") || !issueJson.get("issue").get("fields").has("project")){
+            return true;
+        }
+
+        return false;
     }
 }

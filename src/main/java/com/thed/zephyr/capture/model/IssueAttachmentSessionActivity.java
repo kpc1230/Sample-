@@ -4,6 +4,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.thed.zephyr.capture.model.jira.Attachment;
 import com.thed.zephyr.capture.service.db.converter.AttachmentTypeConverter;
 import com.thed.zephyr.capture.util.CaptureUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 
 import java.util.Date;
@@ -72,5 +73,16 @@ public class IssueAttachmentSessionActivity extends SessionActivity {
         result = 31 * result + (issueId != null ? issueId.hashCode() : 0);
         result = 31 * result + (attachment != null ? attachment.hashCode() : 0);
         return result;
+    }
+
+    public String extractJiraAttachmentIdFromActivity(){
+        String self = this.attachment.getSelf().toString();
+        String[] urlParts = self.split("/");
+        String id = urlParts[urlParts.length-1];
+        return id;
+    }
+
+    public Boolean isEqual(String jiraAttachmentId){
+        return  StringUtils.equals(jiraAttachmentId, extractJiraAttachmentIdFromActivity());
     }
 }

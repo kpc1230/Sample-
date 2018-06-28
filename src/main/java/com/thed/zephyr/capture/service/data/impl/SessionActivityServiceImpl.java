@@ -119,10 +119,28 @@ public class SessionActivityServiceImpl implements SessionActivityService {
 
     @Override
     public SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author) {
+        return addAttachment(session, issue.getId(), attachment, creationDate, author);
+    }
+
+    @Override
+    public SessionActivity addAttachment(Session session, Long issueId, Attachment attachment, Date creationDate, String author) {
         SessionActivity sessionActivity =
-                new IssueAttachmentSessionActivity(session.getId(), session.getCtId(), creationDate, author, session.getProjectId(), issue.getId(), attachment);
+                new IssueAttachmentSessionActivity(session.getId(), session.getCtId(), creationDate, author, session.getProjectId(), issueId, attachment);
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
+    }
+
+    @Override
+    public void removeAttachment(String sessionId, String jiraAttachmentId, Long issueId){
+        List<SessionActivity> sessionActivities = sessionActivityRepository.findBySessionId(sessionId);
+        for (SessionActivity sessionActivity:sessionActivities){
+            if (sessionActivity instanceof IssueAttachmentSessionActivity
+                    && issueId.equals(((IssueAttachmentSessionActivity) sessionActivity).getIssueId())
+                    && ((IssueAttachmentSessionActivity) sessionActivity).isEqual(jiraAttachmentId)){
+                sessionActivityRepository.delete(sessionActivity);
+                break;
+            }
+        }
     }
 
     @Override

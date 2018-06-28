@@ -31,6 +31,16 @@ public class Attachment {
         this.contentUri = contentUri;
     }
 
+    public Attachment(com.atlassian.jira.rest.client.api.domain.Attachment jiraAttachment){
+        this.self = jiraAttachment.getSelf();
+        this.filename = jiraAttachment.getFilename();
+        this.author = jiraAttachment.getAuthor().getName();
+        this.creationDate = jiraAttachment.getCreationDate().getMillis();
+        this.size = jiraAttachment.getSize();
+        this.mimeType = jiraAttachment.getMimeType();
+        this.contentUri = jiraAttachment.getContentUri();
+    }
+
     public URI getSelf() {
         return self;
     }
