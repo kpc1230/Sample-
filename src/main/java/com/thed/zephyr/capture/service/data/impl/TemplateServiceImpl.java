@@ -133,7 +133,7 @@ public class TemplateServiceImpl implements TemplateService {
 	    Set<Template> combinedTemplateSet = new TreeSet<>(new Comparator<Template>() {
             @Override
             public int compare(Template template1, Template template2) {
-                return  template1.getTimeCreated().compareTo(template2.getTimeCreated());
+                return  template1.getTimeCreated().compareTo(template2.getTimeCreated())*(-1);
             }
         });
 	    ArrayList<BasicProject> projects = projectService.getProjects();
@@ -182,7 +182,7 @@ public class TemplateServiceImpl implements TemplateService {
         Collections.sort(templateRequestList, new Comparator<TemplateRequest>() {
             @Override
             public int compare(TemplateRequest templateRequest1, TemplateRequest templateRequest2) {
-                return templateRequest1.getTimeCreated().compareTo(templateRequest2.getTimeCreated());
+                return templateRequest1.getTimeCreated().compareTo(templateRequest2.getTimeCreated())*(-1);
             }
         });
 
