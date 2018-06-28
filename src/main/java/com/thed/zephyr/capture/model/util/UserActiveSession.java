@@ -37,8 +37,8 @@ public class UserActiveSession {
         return session;
     }
 
-    public void setSessionId(String sessionId) {
-        this.session = session;
+    public String getSessionId(){
+        return session != null?session.getId():null;
     }
 
     public UserType getUserType() {

@@ -747,7 +747,6 @@ public class SessionServiceImpl implements SessionService {
 		});
 	}
 
-	@Deprecated
 	@Override
 	public SessionResult getActiveSession(String user, String baseUrl) {
 		String activeSessionId = getActiveSessionIdFromCache(user, baseUrl);
@@ -766,7 +765,6 @@ public class SessionServiceImpl implements SessionService {
 	public UserActiveSession getActiveSession(AcHostModel acHostModel, CaptureUser user){
     	UserActiveSession userActiveSession;
 		String sessionId = getActiveSessionIdByUser(user.getKey(), acHostModel);
-		sessionId = StringUtils.isNotEmpty(sessionId)?sessionId:findActiveSessionByParticipateUser(acHostModel, user);
 		if(StringUtils.isNotEmpty(sessionId)){
 			Session session = getSession(sessionId);
 			userActiveSession = new UserActiveSession(user, session);
@@ -775,19 +773,6 @@ public class SessionServiceImpl implements SessionService {
 		}
 
 		return userActiveSession;
-	}
-
-	private String findActiveSessionByParticipateUser(AcHostModel acHostModel, CaptureUser user){
-		Page<Session> userParticipatedSessionPage = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(acHostModel.getCtId(), Session.Status.STARTED.toString(), user.getKey(), CaptureUtil.getPageRequest(0, 1000));
-		for(Session session:userParticipatedSessionPage.getContent()){
-			for (Participant participant:session.getParticipants()){
-				if(org.apache.commons.lang3.StringUtils.equals(participant.getUser(), user.getKey()) && participant.getTimeLeft() == null){
-					return session.getId();
-				}
-			}
-		}
-
-		return null;
 	}
 
 	@Override
@@ -1146,20 +1131,21 @@ public class SessionServiceImpl implements SessionService {
 	/**
 	 * Fetches the session id from the cache for the logged in user.
 	 * 
-	 * @param user -- Logged in user key.
+	 * @param userKey -- Logged in user key.
 	 * @return -- Returns the fetched session id from the cache for the loggedin user.
 	 */
 	@Override
-	public String getActiveSessionIdByUser(String user, AcHostModel acHostModel) {
+	public String getActiveSessionIdByUser(String userKey, AcHostModel acHostModel) {
 		try {
-			String cacheKey = ACTIVE_USER_SESSION_ID_KEY + user;
+			String cacheKey = ACTIVE_USER_SESSION_ID_KEY + userKey;
 			String issueId = iTenantAwareCache.getOrElse(acHostModel, cacheKey, new Callable<String>() {
 				public String call() throws Exception {
-					List<Session> activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(acHostModel.getCtId(), Status.STARTED.name(), user);
-					if(Objects.nonNull(activeSessions) && activeSessions.size() > 0)
-						return activeSessions.get(0).getId();
-					else
-						return null;
+					List<Session> activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(acHostModel.getCtId(), Status.STARTED.name(), userKey);
+					if(Objects.nonNull(activeSessions) && activeSessions.size() > 0) {
+                        return activeSessions.get(0).getId();
+                    } else{
+					    return findActiveSessionByParticipateUser(acHostModel, userKey);
+                    }
 				}				
 			}, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION);
 
@@ -1169,6 +1155,19 @@ public class SessionServiceImpl implements SessionService {
 		}
 		return null;
 	}
+
+    private String findActiveSessionByParticipateUser(AcHostModel acHostModel, String userKey){
+        Page<Session> userParticipatedSessionPage = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(acHostModel.getCtId(), Session.Status.STARTED.toString(), userKey, CaptureUtil.getPageRequest(0, 1000));
+        for(Session session:userParticipatedSessionPage.getContent()){
+            for (Participant participant:session.getParticipants()){
+                if(org.apache.commons.lang3.StringUtils.equals(participant.getUser(), userKey) && participant.getTimeLeft() == null){
+                    return session.getId();
+                }
+            }
+        }
+
+        return null;
+    }
 	
 	/**
 	 * Fetches the session id from the cache for user based on base url.

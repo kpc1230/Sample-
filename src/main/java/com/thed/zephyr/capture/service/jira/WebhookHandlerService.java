@@ -47,7 +47,7 @@ public class WebhookHandlerService {
     public void issueCreateEventHandler(AcHostModel acHostModel, BasicIssue basicIssue, CaptureUser user){
         log.trace("Triggered issueCreateEventHandler...");
         try {
-            String recipientSessionId = getUserActiveSessionId(acHostModel, user);
+            String recipientSessionId = sessionService.getActiveSession(acHostModel, user).getSessionId();
             if(StringUtils.isEmpty(recipientSessionId)){
                 log.debug("User doesn't have any active sessions and doesn't participate in any.");
                 return;
@@ -60,7 +60,7 @@ public class WebhookHandlerService {
 
     public void issueUpdatedEventHandler(AcHostModel acHostModel, BasicIssue basicIssue, IssueChangeLog issueChangeLog, CaptureUser user,JsonNode updatedIssueJson) throws JSONException {
         log.trace("Issue updated issueChangeLog:{}", issueChangeLog.toString());
-        String recipientSessionId = getUserActiveSessionId(acHostModel, user);
+        String recipientSessionId = sessionService.getActiveSession(acHostModel, user).getSessionId();
         if(StringUtils.isEmpty(recipientSessionId)){
             log.debug("User doesn't have any active sessions and doesn't participate in any.");
             return;
@@ -92,26 +92,6 @@ public class WebhookHandlerService {
             if (StringUtils.equals(attachmentJson.get("id").asText(), attachmentId)){
                 AttachmentJsonParser attachmentJsonParser = new AttachmentJsonParser();
                 return new Attachment(attachmentJsonParser.parse(new JSONObject(attachmentJson.toString())));
-            }
-        }
-
-        return null;
-    }
-
-    private String getUserActiveSessionId(AcHostModel acHostModel, CaptureUser user){
-        String recipientSessionId = sessionService.getActiveSessionIdByUser(user.getKey(), acHostModel);
-        recipientSessionId = StringUtils.isNotEmpty(recipientSessionId)?recipientSessionId:findSessionByParticipateUser(acHostModel, user);
-
-        return recipientSessionId;
-    }
-
-    private String findSessionByParticipateUser(AcHostModel acHostModel, CaptureUser user){
-        Page<Session> userParticipatedSessionPage = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(acHostModel.getCtId(), Session.Status.STARTED.toString(), user.getKey(), CaptureUtil.getPageRequest(0, 1000));
-        for(Session session:userParticipatedSessionPage.getContent()){
-            for (Participant participant:session.getParticipants()){
-                if(StringUtils.equals(participant.getUser(), user.getKey()) && participant.getTimeLeft() == null){
-                    return session.getId();
-                }
             }
         }
 

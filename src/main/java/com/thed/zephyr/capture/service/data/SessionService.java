@@ -266,7 +266,6 @@ public interface SessionService {
 	 * @param baseUrl -- User base url.
 	 * @return -- Returns the SessionResult object which holds the active session and also any validation errors.
 	 */
-	@Deprecated
 	SessionResult getActiveSession(String user, String baseUrl);
 
 	UserActiveSession getActiveSession(AcHostModel acHostModel, CaptureUser user);

@@ -812,7 +812,7 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of getSessionsForExtension()");
 		try {
 			String loggedUserKey = getUser();
-			SessionExtensionResponse response = sessionService.getSessionsForExtension(loggedUserKey,onlyActiveSession.isPresent()? onlyActiveSession.get():false);
+			SessionExtensionResponse response = sessionService.getSessionsForExtension(loggedUserKey, onlyActiveSession.isPresent()? onlyActiveSession.get():false);
 			log.info("End of getSessionsForExtension()");
 			return ResponseEntity.ok(response);
 		} catch(CaptureValidationException ex) {
