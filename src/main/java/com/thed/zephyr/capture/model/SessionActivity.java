@@ -3,7 +3,6 @@ package com.thed.zephyr.capture.model;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.thed.zephyr.capture.service.db.converter.DateTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
-import org.joda.time.DateTime;
 import org.springframework.data.annotation.Id;
 
 import java.util.Date;
@@ -29,6 +28,8 @@ abstract public class SessionActivity {
     private Date timestamp;
 
     private String user;
+    
+    private String userAccountId;
 
     private String clazz;
 
@@ -48,6 +49,11 @@ abstract public class SessionActivity {
         this.user = user;
         this.projectId = projectId;
         this.clazz = this.getClass().getCanonicalName();
+    }
+    
+    public SessionActivity(String sessionId, String ctId, Date timestamp, String user, String userAccountId, Long projectId) {
+        this(sessionId, ctId, timestamp, user, projectId);
+        this.userAccountId = userAccountId;
     }
 
     public String getId() {
@@ -114,7 +120,15 @@ abstract public class SessionActivity {
         this.displayName = displayName;
     }
 
-    @Override
+    public String getUserAccountId() {
+		return userAccountId;
+	}
+
+	public void setUserAccountId(String userAccountId) {
+		this.userAccountId = userAccountId;
+	}
+
+	@Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -131,6 +145,10 @@ abstract public class SessionActivity {
         if (user != null ? !user.equals(that.user) : that.user != null) {
             return false;
         }
+        
+        if (userAccountId != null ? !userAccountId.equals(that.userAccountId) : that.userAccountId != null) {
+            return false;
+        }
 
         return true;
     }
@@ -142,6 +160,7 @@ abstract public class SessionActivity {
         result = 31 * result + (ctId != null ? ctId.hashCode() : 0);
         result = 31 * result + (timestamp != null ? timestamp.hashCode() : 0);
         result = 31 * result + (user != null ? user.hashCode() : 0);
+        result = 31 * result + (userAccountId != null ? userAccountId.hashCode() : 0);
         result = 31 * result + (clazz != null ? clazz.hashCode() : 0);
         result = 31 * result + (projectId != null ? projectId.hashCode() : 0);
         return result;

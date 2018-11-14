@@ -20,6 +20,8 @@ public class Variable {
     private String ctId;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_OWNER_NAME)
     private String ownerName;
+    @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_OWNER_NAME_ACCOUNT_ID)
+    private String ownerAccountId;
     private String name;
     private String value;
 
@@ -31,6 +33,11 @@ public class Variable {
         this.ownerName = ownerName;
         this.name = name;
         this.value = value;
+    }
+    
+    public Variable(String ctId, String ownerName, String ownerAccountId, String name, String value) {
+    	this(ctId, ownerName, name, value);
+        this.ownerAccountId = ownerAccountId;
     }
 
     public String getId() {
@@ -73,7 +80,15 @@ public class Variable {
         this.value = value;
     }
 
-    @Override
+    public String getOwnerAccountId() {
+		return ownerAccountId;
+	}
+
+	public void setOwnerAccountId(String ownerAccountId) {
+		this.ownerAccountId = ownerAccountId;
+	}
+
+	@Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -83,6 +98,7 @@ public class Variable {
         if (!id.equals(variable.id)) return false;
         if (!ctId.equals(variable.ctId)) return false;
         if (!ownerName.equals(variable.ownerName)) return false;
+        if (!ownerAccountId.equals(variable.ownerAccountId)) return false;
         if (!name.equals(variable.name)) return false;
         return value.equals(variable.value);
     }
@@ -92,6 +108,7 @@ public class Variable {
         int result = id.hashCode();
         result = 31 * result + ctId.hashCode();
         result = 31 * result + ownerName.hashCode();
+        result = 31 * result + (ownerAccountId != null ? ownerAccountId.hashCode() : 0);
         result = 31 * result + name.hashCode();
         result = 31 * result + value.hashCode();
         return result;
@@ -103,6 +120,7 @@ public class Variable {
                 "id='" + id + '\'' +
                 ", ctId='" + ctId + '\'' +
                 ", ownerName='" + ownerName + '\'' +
+                ", ownerAccountId='" + ownerAccountId + '\'' +
                 ", name='" + name + '\'' +
                 ", value='" + value + '\'' +
                 '}';

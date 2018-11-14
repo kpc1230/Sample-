@@ -3,7 +3,6 @@ package com.thed.zephyr.capture.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.joda.time.DateTime;
 
 import java.util.Date;
 
@@ -15,6 +14,7 @@ import java.util.Date;
 public class Participant  implements Comparable<Participant>{
 
     private String user;
+    private String userAccountId;
     private Date timeJoined;
     private Date timeLeft;
 
@@ -25,6 +25,11 @@ public class Participant  implements Comparable<Participant>{
         this.user = user;
         this.timeJoined = timeJoined;
         this.timeLeft = timeLeft;
+    }
+    
+    public Participant(String user, String userAccountId, Date timeJoined, Date timeLeft) {
+        this(user, timeJoined, timeLeft);
+        this.userAccountId = userAccountId;
     }
 
     public String getUser() {
@@ -58,7 +63,15 @@ public class Participant  implements Comparable<Participant>{
         this.timeLeft = timeLeft;
     }
 
-    public JsonNode toJSON() {
+    public String getUserAccountId() {
+		return userAccountId;
+	}
+
+	public void setUserAccountId(String userAccountId) {
+		this.userAccountId = userAccountId;
+	}
+
+	public JsonNode toJSON() {
         ObjectMapper om = new ObjectMapper();
         JsonNode jsonNode = om.convertValue(this, JsonNode.class);
 
@@ -84,6 +97,9 @@ public class Participant  implements Comparable<Participant>{
         }
         if (!user.equals(that.user)) {
             return false;
+        }        
+        if (!userAccountId.equals(that.userAccountId)) {
+            return false;
         }
 
         return true;
@@ -94,6 +110,7 @@ public class Participant  implements Comparable<Participant>{
         int result = user.hashCode();
         result = 31 * result + timeJoined.hashCode();
         result = 31 * result + (timeLeft != null ? timeLeft.hashCode() : 0);
+        result = 31 * result + (userAccountId != null ? userAccountId.hashCode() : 0);
         return result;
     }
 
@@ -108,6 +125,9 @@ public class Participant  implements Comparable<Participant>{
         } else {
             rc = 1;
         }
+        if (this.userAccountId != null && that.userAccountId != null) {
+            rc = this.userAccountId.compareTo(that.userAccountId);
+        }       
         if (rc == 0) {
             rc = this.timeJoined.compareTo(that.timeJoined);
             if (rc == 0) {

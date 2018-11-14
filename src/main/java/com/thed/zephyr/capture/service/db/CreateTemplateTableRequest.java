@@ -74,6 +74,18 @@ public class CreateTemplateTableRequest {
                         .withWriteCapacityUnits((long) 1))
                 .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                 .withKeySchema(indexFavouriteSchema);
+        
+        List<KeySchemaElement> indexCreatedByAccountIdSchema = Arrays.asList(
+                new KeySchemaElement("ctId" ,KeyType.HASH),
+                new KeySchemaElement("createdByAccountId" ,KeyType.RANGE)
+        );
+        GlobalSecondaryIndex createdByAccountIdIndex = new GlobalSecondaryIndex()
+                .withIndexName(ApplicationConstants.GSI_CT_ID_CREATED_BY_ACCOUNT_ID)
+                .withProvisionedThroughput(new ProvisionedThroughput()
+                        .withReadCapacityUnits((long) 1)
+                        .withWriteCapacityUnits((long) 1))
+                .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
+                .withKeySchema(indexCreatedByAccountIdSchema);
 
         List<KeySchemaElement> indexSharedSchema = Arrays.asList(
                 new KeySchemaElement("ctId" ,KeyType.HASH),
@@ -90,7 +102,7 @@ public class CreateTemplateTableRequest {
         globalSecondaryIndices.add(favouriteIndex);
         globalSecondaryIndices.add(sharedKeyIndex);
         globalSecondaryIndices.add(projectIdIndex);
-
+        globalSecondaryIndices.add(createdByAccountIdIndex);
         return globalSecondaryIndices;
     }
 }

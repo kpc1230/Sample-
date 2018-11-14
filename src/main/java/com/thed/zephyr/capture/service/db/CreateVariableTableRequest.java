@@ -58,8 +58,21 @@ public class CreateVariableTableRequest {
                         .withWriteCapacityUnits((long) 1))
                 .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                 .withKeySchema(ctIdOwnerNameIndexSchema);
+        
+        List<KeySchemaElement> ctIdOwnerAccountIdIndexSchema = Arrays.asList(
+                new KeySchemaElement("ctId" ,KeyType.HASH),
+                new KeySchemaElement("ownerAccountId" ,KeyType.RANGE)
+        );
+        GlobalSecondaryIndex ctIdOwnerAccountIdIndex = new GlobalSecondaryIndex()
+                .withIndexName(ApplicationConstants.GSI_CT_ID_OWNER_NAME_ACCOUNT_ID)
+                .withProvisionedThroughput(new ProvisionedThroughput()
+                        .withReadCapacityUnits((long) 1)
+                        .withWriteCapacityUnits((long) 1))
+                .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
+                .withKeySchema(ctIdOwnerAccountIdIndexSchema);
+        
         globalSecondaryIndices.add(ctIdSessionIdIndex);
-
+        globalSecondaryIndices.add(ctIdOwnerAccountIdIndex);
         return globalSecondaryIndices;
     }
 }
