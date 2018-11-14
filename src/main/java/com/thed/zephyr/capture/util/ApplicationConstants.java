@@ -47,6 +47,8 @@ public class ApplicationConstants {
     public static final String GSI_SESSIONID_TIMESTAMP = "idx_session_id_timestamp";
     public static final String GSI_CT_ID_SESSION_ID = "idx_ct_id_session_id";
     public static final String GSI_CT_ID_OWNER_NAME = "idx_ct_id_owner_name";
+    public static final String GSI_CT_ID_CREATED_BY_ACCOUNT_ID = "idx_ct_id_created_by_account_id";
+    public static final String GSI_CT_ID_OWNER_NAME_ACCOUNT_ID = "idx_ct_id_owner_name_account_id";
 
 
     public static final String BROWSER_FIREFOX_EXTENSION_DOWNLOAD = "browser.firefox.extension.download.url";

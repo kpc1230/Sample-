@@ -7,7 +7,6 @@ import com.thed.zephyr.capture.service.db.converter.DateTypeConverter;
 import com.thed.zephyr.capture.service.db.converter.JsonNodeTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 
-import org.joda.time.DateTime;
 import org.springframework.data.annotation.Id;
 
 import java.util.Date;
@@ -38,6 +37,8 @@ public class Template {
     private JsonNode content;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_CREATED_BY)
     private String createdBy;
+    @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_CREATED_BY_ACCOUNT_ID)
+    private String createdByAccountId;
     @DynamoDBTypeConverted(converter = DateTypeConverter.class)
     private Date timeCreated;
     @DynamoDBTypeConverted(converter = DateTypeConverter.class)
@@ -60,6 +61,12 @@ public class Template {
         this.timeCreated = timeCreated;
         this.timeUpdated = timeUpdated;
         this.timeFavourited = timeFavourited;
+    }
+    
+    public Template(String ctId, String name, Long projectId, Boolean favourite, Boolean shared, JsonNode content, String createdBy, String createdByAccountId, Date createdOn
+    		, Date timeCreated, Date timeUpdated, Date timeFavourited, Set<String> variables) {
+    	this(ctId, name, projectId, favourite, shared, content, createdBy, createdOn, timeCreated, timeUpdated, timeFavourited, variables);
+        this.createdByAccountId = createdByAccountId;
     }
 
     public String getId() {
@@ -150,6 +157,13 @@ public class Template {
 		this.timeFavourited = timeFavourited;
 	}
 
+	public String getCreatedByAccountId() {
+		return createdByAccountId;
+	}
+
+	public void setCreatedByAccountId(String createdByAccountId) {
+		this.createdByAccountId = createdByAccountId;
+	}
 
 	public JsonNode toJSON() {
         ObjectMapper om = new ObjectMapper();

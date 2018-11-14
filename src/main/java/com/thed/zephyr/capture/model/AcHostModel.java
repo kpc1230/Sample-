@@ -33,6 +33,8 @@ public class AcHostModel extends AtlassianHost implements Serializable{
     private Calendar lastModifiedDate;
     private String createdBy;
     private String lastModifiedBy;
+    private String createdByAccountId;
+    private String lastModifiedByAccountId;
   //  @DynamoDBIndexHashKey(globalSecondaryIndexName = ApplicationConstants.GSI_STATUS)
     @DynamoDBTypeConverted(converter = TenantStatusTypeConverter.class)
     private TenantStatus status;
@@ -176,7 +178,25 @@ public class AcHostModel extends AtlassianHost implements Serializable{
         this.status = status;
     }
 
-    public enum TenantStatus {
+    public String getCreatedByAccountId() {
+		return createdByAccountId;
+	}
+
+	public void setCreatedByAccountId(String createdByAccountId) {
+		this.createdByAccountId = createdByAccountId;
+	}
+
+	public String getLastModifiedByAccountId() {
+		return lastModifiedByAccountId;
+	}
+
+	public void setLastModifiedByAccountId(String lastModifiedByAccountId) {
+		this.lastModifiedByAccountId = lastModifiedByAccountId;
+	}
+
+
+
+	public enum TenantStatus {
         ACTIVE,
         LIC_EXPIRED,
         HOST_UNREACHABLE,

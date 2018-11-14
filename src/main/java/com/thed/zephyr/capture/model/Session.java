@@ -33,7 +33,9 @@ public class Session  implements Comparable<Session>, Serializable{
     @DynamoDBIndexHashKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_PROJECT_ID)
     private String ctId;
     private String creator;
+    private String creatorAccountId;
     private String assignee;
+    private String assigneeAccountId;
     @MultiField(mainField = @Field(type = FieldType.String), otherFields = @InnerField(type = FieldType.String, suffix = "lower_case_sort", indexAnalyzer = "case_insensitive_sort", searchAnalyzer = "case_insensitive_sort"))
     private String name;
     private String additionalInfo;
@@ -91,6 +93,13 @@ public class Session  implements Comparable<Session>, Serializable{
         this.shared = shared;
         this.participants = participants;
         this.defaultTemplateId = defaultTemplateId;
+    }
+    
+    public Session(String id, String ctId, String creator, String assignee, String creatorAccountId, String assigneeAccountId, String name, String additionalInfo, 
+    		String wikiParsedData, Status status, Set<Long> relatedIssueIds, Long projectId, Date timeCreated, Date timeFinished, Duration timeLogged, Collection<IssueRaisedBean> issuesRaised, Collection<SessionActivity> sessionActivity, boolean shared, Collection<Participant> participants, String defaultTemplateId) {
+        this(id, ctId, creator, assignee, name, additionalInfo, wikiParsedData, status, relatedIssueIds, projectId, timeCreated, timeFinished, timeLogged, issuesRaised, sessionActivity, shared, participants, defaultTemplateId);
+        this.creatorAccountId = creatorAccountId;
+        this.assigneeAccountId = assigneeAccountId;
     }
 
     public String getId() {
@@ -292,7 +301,23 @@ public class Session  implements Comparable<Session>, Serializable{
         this.jiraPropIndex = jiraPropIndex;
     }
 
-    /**
+    public String getCreatorAccountId() {
+		return creatorAccountId;
+	}
+
+	public void setCreatorAccountId(String creatorAccountId) {
+		this.creatorAccountId = creatorAccountId;
+	}
+
+	public String getAssigneeAccountId() {
+		return assigneeAccountId;
+	}
+
+	public void setAssigneeAccountId(String assigneeAccountId) {
+		this.assigneeAccountId = assigneeAccountId;
+	}
+
+	/**
      * Get the Session Status History (timestamp to status mapping)
      *
      * @return Map time instant to new status
@@ -325,6 +350,8 @@ public class Session  implements Comparable<Session>, Serializable{
             return false;
         if (assignee != null ? !assignee.equals(session.assignee) : session.assignee != null) return false;
         if (creator != null ? !creator.equals(session.creator) : session.creator != null) return false;
+        if (assigneeAccountId != null ? !assigneeAccountId.equals(session.assigneeAccountId) : session.assigneeAccountId != null) return false;
+        if (creatorAccountId != null ? !creatorAccountId.equals(session.creatorAccountId) : session.creatorAccountId != null) return false;
         if (id != null ? !id.equals(session.id) : session.id != null) return false;
         if (participants != null ? !participants.equals(session.participants) : session.participants != null)
             return false;
@@ -345,6 +372,8 @@ public class Session  implements Comparable<Session>, Serializable{
         int result = id != null ? id.hashCode() : 0;
         result = 31 * result + (creator != null ? creator.hashCode() : 0);
         result = 31 * result + (assignee != null ? assignee.hashCode() : 0);
+        result = 31 * result + (creatorAccountId != null ? creatorAccountId.hashCode() : 0);
+        result = 31 * result + (assigneeAccountId != null ? assigneeAccountId.hashCode() : 0);
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (additionalInfo != null ? additionalInfo.hashCode() : 0);
         result = 31 * result + (wikiParsedData != null ? wikiParsedData.hashCode() : 0);
@@ -377,6 +406,8 @@ public class Session  implements Comparable<Session>, Serializable{
             return this.name.compareTo(session.getName());
         } else if (this.creator != null && this.creator.compareTo(session.getCreator()) != 0) {
             return this.creator.compareTo(session.getCreator());
+        } else if (this.creatorAccountId != null && this.creatorAccountId.compareTo(session.getCreatorAccountId()) != 0) {
+            return this.creatorAccountId.compareTo(session.getCreatorAccountId());
         } else if (this.status != null && this.status.compareTo(session.getStatus()) != 0) {
             return this.status.compareTo(session.getStatus());
         } else {
