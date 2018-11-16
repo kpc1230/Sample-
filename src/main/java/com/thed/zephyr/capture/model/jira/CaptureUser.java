@@ -19,6 +19,7 @@ public class CaptureUser implements Serializable{
     private String displayName;
     private Boolean active;
     private Map<String, String> avatarUrls;
+    private String accountId;
     
     public CaptureUser(){
     	
@@ -33,6 +34,10 @@ public class CaptureUser implements Serializable{
 		this.displayName = displayName;
 		this.active = active;
 		this.avatarUrls = avatarUrls;
+	}
+	public CaptureUser(String self, String key, String name, String emailAddress, String displayName, Boolean active, Map<String, String> avatarUrls, String accountId) {
+		this(self, key, name, emailAddress, displayName, active, avatarUrls);
+		this.accountId = accountId;
 	}
 	public String getSelf() {
 		return self;
@@ -54,6 +59,9 @@ public class CaptureUser implements Serializable{
 	}
 	public Map<String, String> getAvatarUrls() {
 		return avatarUrls;
+	}
+	public String getAccountId() {
+		return accountId;
 	}
     
 }
