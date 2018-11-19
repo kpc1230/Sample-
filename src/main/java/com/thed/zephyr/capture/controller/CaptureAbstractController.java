@@ -71,6 +71,22 @@ public abstract class CaptureAbstractController {
 	}
 	
 	/**
+	 * Fetches the user account id from the authentication object.
+	 *
+	 * @return -- Returns the logged in user account id.
+	 * @throws CaptureValidationException -- Thrown while fetching the user account id.
+	 */
+	protected String getUserAccountId() throws CaptureValidationException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+		String userAccountId = host.getUserAccountId().get();
+		if(StringUtils.isBlank(userAccountId)) {
+			throw new CaptureValidationException(i18n.getMessage("rest.resource.user.not.authenticated"));
+		}
+		return userAccountId;
+	}
+	
+	/**
 	 * Validates the session.
 	 * 
 	 * @param sessionId -- Session id requested by user

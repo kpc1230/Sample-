@@ -19,6 +19,7 @@ public class SessionRequest {
 	private String projectKey;
 	private Set<String> relatedIssues;
 	private String assignee;
+	private String assigneeAccountId;
 	private String additionalInfo;
 	private String wikiParsedData;
 	private Boolean shared = false;
@@ -44,6 +45,11 @@ public class SessionRequest {
 		this.startNow = startNow;
 		this.projectId = projectId;
 		this.relatedIssueIds = relatedIssueIds;
+	}
+	
+	public SessionRequest(String name, String projectKey, Set<String> relatedIssues, String assignee, String additionalInfo, String wikiParsedData, Boolean shared, String defaultTemplateId, Boolean startNow, Long projectId, Set<Long> relatedIssueIds, String assigneeAccountId) {
+		this(name, projectKey, relatedIssues, assignee, additionalInfo, wikiParsedData, shared, defaultTemplateId, startNow, projectId, relatedIssueIds);
+		this.assigneeAccountId = assigneeAccountId;
 	}
 
 	public String getName() {
@@ -142,10 +148,18 @@ public class SessionRequest {
 		this.projectName = projectName;
 	}
 
+	public String getAssigneeAccountId() {
+		return assigneeAccountId;
+	}
+
+	public void setAssigneeAccountId(String assigneeAccountId) {
+		this.assigneeAccountId = assigneeAccountId;
+	}
+
 	@Override
 	public String toString() {
 		return "SessionRequest [name=" + name + ", projectKey=" + projectKey + ", relatedIssues=" + relatedIssues
-				+ ", assignee=" + assignee + ", additionalInfo=" + additionalInfo +", wikiParsedData=" + wikiParsedData + ", shared=" + shared
+				+ ", assignee=" + assignee + ", assigneeAccountId=" + assigneeAccountId + ", additionalInfo=" + additionalInfo +", wikiParsedData=" + wikiParsedData + ", shared=" + shared
 				+ ", defaultTemplateId=" + defaultTemplateId + ", startNow=" + startNow + "]";
 	}
 	

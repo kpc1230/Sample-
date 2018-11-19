@@ -40,6 +40,7 @@ public class WebhookController {
         try {
             AcHostModel acHostModel = (AcHostModel)atlassianHostRepository.findOne(hostUser.getHost().getClientKey());
             acHostModel.setStatus(AcHostModel.TenantStatus.ACTIVE);
+            acHostModel.setCreatedByAccountId(hostUser.getUserAccountId().get());
             atlassianHostRepository.save(acHostModel);
         } catch (Exception exception) {
             log.error("Error during plugin enable event.", exception);

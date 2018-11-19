@@ -139,6 +139,7 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of createSession() --> params " + sessionRequest.toString());
 		try {
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			CaptureProject captureProject = projectService.getCaptureProject(sessionRequest.getProjectId());
 			if (captureProject != null) {
 				// Check that the creator and assignee have assign issue permissions in the project
@@ -151,7 +152,7 @@ public class SessionController extends CaptureAbstractController{
 					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
 				}
 			}
-			Session createdSession = sessionService.createSession(loggedUserKey, sessionRequest);
+			Session createdSession = sessionService.createSession(loggedUserKey, loggedUserAccountId, sessionRequest);
 			CompletableFuture.runAsync(() -> {
 				//Save status changed information as activity.
 	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
@@ -277,6 +278,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 		    if (loadedSession != null) {
 				if (!permissionService.canEditSession(loggedUserKey, loadedSession)) {
@@ -302,7 +304,7 @@ public class SessionController extends CaptureAbstractController{
 			}else{
             	wikiParsedData = null;
 			}
-			UpdateResult updateResult = sessionService.updateSession(loggedUserKey, loadedSession, sessionRequest);
+			UpdateResult updateResult = sessionService.updateSession(loggedUserKey, loggedUserAccountId, loadedSession, sessionRequest);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }

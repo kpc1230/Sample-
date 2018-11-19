@@ -48,10 +48,11 @@ public interface SessionService {
 	 * Creates the session. 
 	 * 
 	 * @param loggedUserKey -- Logged in user key.
+	 * @param loggedUserAccountId -- Logged in user account id.
 	 * @param sessionRequest -- Session request object holds the information to create a session.
 	 * @return -- Returns the Session object which created session id.
 	 */
-	Session createSession(String loggedUserKey, SessionRequest sessionRequest);
+	Session createSession(String loggedUserKey, String loggedUserAccountId, SessionRequest sessionRequest);
 	
 	
 	/**
@@ -70,7 +71,7 @@ public interface SessionService {
 	 * @param sessionRequest -- Session request object holds the information to update a session.
 	 * @return -- Returns the UpdateResult object which holds the updated session object.
 	 */
-	UpdateResult updateSession(String loggedUserKey, Session session, SessionRequest sessionRequest);
+	UpdateResult updateSession(String loggedUserKey, String loggedUserAccountId, Session session, SessionRequest sessionRequest);
 	
 	/**
 	 * Deletes the session.

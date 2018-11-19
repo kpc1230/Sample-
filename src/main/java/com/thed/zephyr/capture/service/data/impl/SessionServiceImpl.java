@@ -117,9 +117,10 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public Session createSession(String loggedUserKey, SessionRequest sessionRequest) {
+	public Session createSession(String loggedUserKey, String loggedUserAccountId,  SessionRequest sessionRequest) {
 		Session session = new Session();
 		session.setCreator(loggedUserKey);
+		session.setCreatorAccountId(loggedUserAccountId);
 		session.setCtId(CaptureUtil.getCurrentCtId());
 		session.setStatus(Status.CREATED);
 		session.setName(sessionRequest.getName());
@@ -133,6 +134,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setProjectName(sessionRequest.getProjectName());
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
 		session.setAssignee(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
+		session.setAssignee(!StringUtils.isEmpty(sessionRequest.getAssigneeAccountId()) ? sessionRequest.getAssigneeAccountId() : loggedUserAccountId);
 		CaptureUser user = userService.findUserByKey(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
 		session.setUserDisplayName(user != null ? user.getDisplayName() : null);
 		session.setJiraPropIndex(generateJiraPropIndex(session.getCtId()));
@@ -165,9 +167,10 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public UpdateResult updateSession(String loggedUserKey, Session session, SessionRequest sessionRequest) {
+	public UpdateResult updateSession(String loggedUserKey, String loggedUserAccountId, Session session, SessionRequest sessionRequest) {
 		if(!StringUtils.isEmpty(sessionRequest.getAssignee())) {
 			session.setAssignee(sessionRequest.getAssignee());
+			session.setAssigneeAccountId(sessionRequest.getAssigneeAccountId());
 			CaptureUser user = userService.findUserByKey(sessionRequest.getAssignee());
 			if(user != null) session.setUserDisplayName(user.getDisplayName());
 		}
