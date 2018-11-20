@@ -115,7 +115,7 @@ public class PingHomeServiceImpl implements PingHomeService{
     public void runPing() {
         acHostModelRepository.findAll()
                 .forEach(acHostModel -> {
-                    JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(null)), new JWTClaimsSet());
+                    JwtAuthentication jwtAuthentication = new JwtAuthentication(new AtlassianHostUser(acHostModel, Optional.ofNullable(null)), new JWTClaimsSet.Builder().build());
                     SecurityContextHolder.getContext().setAuthentication(jwtAuthentication);
                     dialHome(acHostModel);
                 });

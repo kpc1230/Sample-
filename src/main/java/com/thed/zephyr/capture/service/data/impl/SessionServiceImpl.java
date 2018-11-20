@@ -134,7 +134,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setProjectName(sessionRequest.getProjectName());
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
 		session.setAssignee(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
-		session.setAssignee(!StringUtils.isEmpty(sessionRequest.getAssigneeAccountId()) ? sessionRequest.getAssigneeAccountId() : loggedUserAccountId);
+		session.setAssigneeAccountId(!StringUtils.isEmpty(sessionRequest.getAssigneeAccountId()) ? sessionRequest.getAssigneeAccountId() : loggedUserAccountId);
 		CaptureUser user = userService.findUserByKey(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
 		session.setUserDisplayName(user != null ? user.getDisplayName() : null);
 		session.setJiraPropIndex(generateJiraPropIndex(session.getCtId()));
