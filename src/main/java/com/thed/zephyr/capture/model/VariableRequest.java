@@ -10,17 +10,19 @@ public class VariableRequest {
 	private String value;
 	private String id;
 	private String ownerName;
+	private String ownerAccountId;
 
 	public VariableRequest() {
 		super();
 	}
 
-	public VariableRequest(String name, String value, String id, String ownerName) {
+	public VariableRequest(String name, String value, String id, String ownerName, String ownerAccountId) {
 		super();
 		this.name = name;
 		this.value = value;
 		this.id = id;
 		this.ownerName = ownerName;
+		this.ownerAccountId = ownerAccountId;
 	}
 
 	public String getName() {
@@ -53,6 +55,14 @@ public class VariableRequest {
 
 	public void setOwnerName(String ownerName) {
 		this.ownerName = ownerName;
+	}
+
+	public String getOwnerAccountId() {
+		return ownerAccountId;
+	}
+
+	public void setOwnerAccountId(String ownerAccountId) {
+		this.ownerAccountId = ownerAccountId;
 	}
 	
 }

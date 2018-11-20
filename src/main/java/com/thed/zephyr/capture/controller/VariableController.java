@@ -55,6 +55,7 @@ public class VariableController extends CaptureAbstractController{
 		log.info("addVariableRequest start for the name:" + variableRequest.getName() + variableRequest.getValue());
 		try {
 			variableRequest.setOwnerName(getUser());
+			variableRequest.setOwnerAccountId(getUserAccountId());
 			variableService.createVariable(variableRequest);
 		} catch (CaptureValidationException e) {
 			throw e;
@@ -72,6 +73,7 @@ public class VariableController extends CaptureAbstractController{
 		log.info("updateVariable start for the id:{}", variableRequest.getId());
 		try {
 			variableRequest.setOwnerName(getUser());
+			variableRequest.setOwnerAccountId(getUserAccountId());
 			variableService.updateVariable(variableRequest);
 		} catch (CaptureValidationException e) {
 			throw e;

@@ -6,7 +6,6 @@ import com.thed.zephyr.capture.model.Variable;
 import com.thed.zephyr.capture.model.VariableRequest;
 import com.thed.zephyr.capture.model.util.VariableSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.VariableRepository;
-import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.VariableService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
@@ -29,9 +28,6 @@ public class VariableServiceImpl implements VariableService {
 
 	@Autowired
 	private VariableRepository repository;
-
-    @Autowired
-	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
     
     @Autowired
     private CaptureI18NMessageSource i18n;
@@ -44,7 +40,7 @@ public class VariableServiceImpl implements VariableService {
 			throw new CaptureValidationException(i18n.getMessage("variable.already.present"));
 		}
 		Variable newVariable = new Variable(CaptureUtil.getCurrentCtId(),
-				input.getOwnerName(), input.getName(), input.getValue());
+				input.getOwnerName(), input.getOwnerAccountId(), input.getName(), input.getValue());
 		repository.save(newVariable);
 	}
 
