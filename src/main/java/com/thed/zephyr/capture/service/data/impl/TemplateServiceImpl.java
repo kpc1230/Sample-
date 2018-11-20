@@ -10,14 +10,12 @@ import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.model.util.TemplateSearchList;
 import com.thed.zephyr.capture.repositories.dynamodb.TemplateRepository;
 import com.thed.zephyr.capture.service.PermissionService;
-import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.data.TemplateService;
 import com.thed.zephyr.capture.service.data.VariableService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -37,8 +35,6 @@ public class TemplateServiceImpl implements TemplateService {
     @Autowired
     private TemplateRepository repository;
     @Autowired
-	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
-    @Autowired
     private ProjectService projectService;
     @Autowired
     private UserService userService;
@@ -46,8 +42,6 @@ public class TemplateServiceImpl implements TemplateService {
 	private VariableService variableService;
 	@Autowired
 	PermissionService permissionService;
-    @Autowired
-    private Logger log;
 
 	@Override
 	public TemplateRequest createTemplate(TemplateRequest templateReq) {

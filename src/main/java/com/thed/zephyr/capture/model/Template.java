@@ -25,7 +25,8 @@ public class Template {
     @DynamoDBIndexHashKey(globalSecondaryIndexNames = {
             ApplicationConstants.GSI_CT_ID_PROJECT_ID,
             ApplicationConstants.GSI_CT_ID_SHARED,
-            ApplicationConstants.GSI_CT_ID_CREATED_BY})
+            ApplicationConstants.GSI_CT_ID_CREATED_BY,
+            ApplicationConstants.GSI_CT_ID_CREATED_BY_ACCOUNT_ID})
     private String ctId;
     private String name;
     @DynamoDBIndexRangeKey(globalSecondaryIndexName = ApplicationConstants.GSI_CT_ID_PROJECT_ID)

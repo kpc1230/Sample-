@@ -213,6 +213,7 @@ public class TemplateController extends CaptureAbstractController{
 			templateRequest = TemplateBuilder.parseUpdateJson(json);
 		}
 		templateRequest.setOwnerName(getUser());
+		templateRequest.setOwnerName(getUserAccountId());
 		validateTemplate(templateRequest, create);
 		return templateRequest;
 	}
@@ -252,6 +253,7 @@ public class TemplateController extends CaptureAbstractController{
 	private TemplateRequest validateDelete(JsonNode json) throws CaptureValidationException{
 		TemplateRequest templateReq = TemplateBuilder.parseUpdateJson(json);
 		templateReq.setOwnerName(getUser());
+		templateReq.setOwnerAccountId(getUserAccountId());
 		validateDelete(templateReq);
 		return templateReq;
 	}

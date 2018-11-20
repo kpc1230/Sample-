@@ -23,6 +23,7 @@ public class TemplateRequest {
 	private String projectKey;
 	private String projectIconUrl;
 	private String ownerName;
+	private String ownerAccountId;
 	private Date timeCreated;
 	private Date timeUpdated;
 	private Date timeVariablesUpdated;
@@ -170,6 +171,14 @@ public class TemplateRequest {
 		this.variables = variables;
 	}
 
+	public String getOwnerAccountId() {
+		return ownerAccountId;
+	}
+
+	public void setOwnerAccountId(String ownerAccountId) {
+		this.ownerAccountId = ownerAccountId;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;
@@ -185,6 +194,7 @@ public class TemplateRequest {
 				Objects.equals(getProjectKey(), that.getProjectKey()) &&
 				Objects.equals(getProjectIconUrl(), that.getProjectIconUrl()) &&
 				Objects.equals(getOwnerName(), that.getOwnerName()) &&
+				Objects.equals(getOwnerAccountId(), that.getOwnerAccountId()) &&
 				Objects.equals(getTimeCreated(), that.getTimeCreated()) &&
 				Objects.equals(getTimeUpdated(), that.getTimeUpdated()) &&
 				Objects.equals(getTimeVariablesUpdated(), that.getTimeVariablesUpdated()) &&
@@ -195,6 +205,6 @@ public class TemplateRequest {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(getName(), getShared(), getFavourited(), getSource(), getId(), getProjectId(), getProjectKey(), getProjectIconUrl(), getOwnerName(), getTimeCreated(), getTimeUpdated(), getTimeVariablesUpdated(), getTimeFavourited(), isVariablesChanged(), getOwnerDisplayName(), getVariables());
+		return Objects.hash(getName(), getShared(), getFavourited(), getSource(), getId(), getProjectId(), getProjectKey(), getProjectIconUrl(), getOwnerName(), getOwnerAccountId(), getTimeCreated(), getTimeUpdated(), getTimeVariablesUpdated(), getTimeFavourited(), isVariablesChanged(), getOwnerDisplayName(), getVariables());
 	}
 }

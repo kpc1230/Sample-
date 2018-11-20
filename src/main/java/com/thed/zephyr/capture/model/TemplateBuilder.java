@@ -32,6 +32,7 @@ public final class TemplateBuilder {
 		template.setShared(templateRequest.getShared());
 		template.setContent(templateRequest.getSource());
 		template.setCreatedBy(templateRequest.getOwnerName());
+		template.setCreatedByAccountId(templateRequest.getOwnerAccountId());
 		template.setTimeCreated(created);
 		//Populate timeUpdated
 		if(templateRequest.getFavourited()){
@@ -81,6 +82,7 @@ public final class TemplateBuilder {
 		tr.setShared(template.getShared());
 		tr.setSource(template.getContent());
 		tr.setOwnerName(template.getCreatedBy());
+		tr.setOwnerAccountId(template.getCreatedByAccountId());
 		tr.setTimeCreated(template.getTimeCreated());
 		tr.setTimeUpdated(template.getTimeUpdated());
 		return tr;
@@ -157,6 +159,7 @@ public final class TemplateBuilder {
 			request.setProjectKey(project.getKey());		}
 		if(user != null){
 			request.setOwnerName(user.getKey());
+			request.setOwnerAccountId(user.getAccountId());
 			request.setOwnerDisplayName(user.getDisplayName());
 		}
 
@@ -175,6 +178,7 @@ public final class TemplateBuilder {
             request.setProjectKey(projectKey);		}
         if(user != null){
             request.setOwnerName(user.getKey());
+            request.setOwnerAccountId(user.getAccountId());
             request.setOwnerDisplayName(user.getDisplayName());
         }
 
