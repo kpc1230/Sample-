@@ -26,7 +26,11 @@ public class SessionDto {
 	
 	private String user;
 	
+	private String userAccountId;
+	
 	private String creator;
+	
+	private String creatorAccountId;
 	
 	private boolean shared;
 	
@@ -77,7 +81,9 @@ public class SessionDto {
     	this.name = session.getName();
     	this.status = session.getStatus();
     	this.user = session.getAssignee();
+    	this.userAccountId = session.getAssigneeAccountId();
     	this.creator = session.getCreator();
+    	this.creatorAccountId = session.getCreatorAccountId();
     	this.shared = session.isShared();
     	this.projectId = String.valueOf(session.getProject() != null ? session.getProject().getId() : "");
     	this.projectKey = session.getProject() != null ? session.getProject().getKey() : "";
@@ -225,4 +231,13 @@ public class SessionDto {
 	public String getJiraPropIndex() {
 		return jiraPropIndex;
 	}
+
+	public String getUserAccountId() {
+		return userAccountId;
+	}
+
+	public String getCreatorAccountId() {
+		return creatorAccountId;
+	}
+
 }

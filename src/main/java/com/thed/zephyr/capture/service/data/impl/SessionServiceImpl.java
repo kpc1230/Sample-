@@ -786,9 +786,10 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public Session cloneSession(String loggedUser, Session cloneSession, String cloneName) {
+	public Session cloneSession(String loggedUser, String loggedUserAccountId, Session cloneSession, String cloneName) {
 		Session session = new Session();
 		session.setCreator(loggedUser);
+		session.setCreatorAccountId(loggedUserAccountId);
 		session.setCtId(cloneSession.getCtId());
 		session.setStatus(Status.CREATED);
 		session.setName(cloneName);
@@ -800,6 +801,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setProjectId(cloneSession.getProjectId());
 		session.setDefaultTemplateId(cloneSession.getDefaultTemplateId());
 		session.setAssignee(cloneSession.getAssignee());
+		session.setAssigneeAccountId(cloneSession.getAssigneeAccountId());
 		Session createdSession = sessionRepository.save(session);
 		if(log.isDebugEnabled()) log.debug("Cloned Session -- > Session ID - " + createdSession.getId());
 		sessionESRepository.save(createdSession);
@@ -1565,7 +1567,7 @@ public class SessionServiceImpl implements SessionService {
 		}
 		wikiParsedData = CaptureUtil.replaceIconPath(session.getWikiParsedData());
 		session.setWikiParsedData(wikiParsedData);
-		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
+		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getCreatorAccountId(), session.getAssignee(), session.getAssigneeAccountId(), session.getStatus(), session.isShared(),
 				project, session.getDefaultTemplateId(), additionalInfo , wikiParsedData, session.getTimeCreated(), null, session.getJiraPropIndex());
 		if(!usersMap.containsKey(session.getAssignee())) {
 			user = userService.findUserByKey(session.getAssignee());

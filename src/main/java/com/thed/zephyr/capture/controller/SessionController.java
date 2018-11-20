@@ -119,7 +119,7 @@ public class SessionController extends CaptureAbstractController{
 				if(StringUtils.isEmpty(wikiParsedData) && StringUtils.isNotEmpty(additionalInfo)){
 					wikiParsedData = wikiMarkupRenderer.getWikiRender(additionalInfo);
 				}
-				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getAssignee(), session.getStatus(), session.isShared(),
+				LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getCreatorAccountId(), session.getAssignee(), session.getAssigneeAccountId(), session.getStatus(), session.isShared(),
 						project, session.getDefaultTemplateId(),additionalInfo, wikiParsedData, session.getTimeCreated(), null, session.getJiraPropIndex()); //Send only what UI is required instead of whole session object.
 				sessionDtoList.add(lightSession);
 			});
@@ -912,6 +912,7 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of cloneSession() --> params - sessionId: " + sessionId + " name: " + name);
 		try {
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
 			if (Objects.nonNull(captureProject)) {
@@ -925,7 +926,7 @@ public class SessionController extends CaptureAbstractController{
 					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
 				}
 			}
-			Session newSession = sessionService.cloneSession(loggedUserKey, loadedSession, name);
+			Session newSession = sessionService.cloneSession(loggedUserKey, loggedUserAccountId,  loadedSession, name);
 			//Save status changed information as activity.
         	CompletableFuture.runAsync(() -> {
         		sessionActivityService.setStatus(newSession, new Date(), loggedUserKey);

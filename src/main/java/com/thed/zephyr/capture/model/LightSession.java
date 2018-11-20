@@ -13,7 +13,9 @@ public class LightSession {
     private final String id;
     private final String name;
     private final String creator;
+    private final String creatorAccountId;
     private final String assignee;
+    private final String assigneeAccountId;
     private final Session.Status status;
     private final boolean shared;
     private final CaptureProject project;
@@ -27,7 +29,9 @@ public class LightSession {
     public LightSession(String id,
                         String name,
                         String creator,
+                        String creatorAccountId,
                         String assignee,
+                        String assigneeAccountId,
                         Session.Status status,
                         boolean shared,
                         CaptureProject project,
@@ -50,6 +54,8 @@ public class LightSession {
         this.timeCreated = timeCreated;
         this.rawData = rawData;
         this.jiraPropIndex = jiraPropIndex;
+        this.creatorAccountId = creatorAccountId;
+        this.assigneeAccountId = assigneeAccountId;
     }
 
     public String getId() {
@@ -107,4 +113,13 @@ public class LightSession {
     public String getJiraPropIndex() {
         return jiraPropIndex;
     }
+
+	public String getCreatorAccountId() {
+		return creatorAccountId;
+	}
+
+	public String getAssigneeAccountId() {
+		return assigneeAccountId;
+	}
+    
 }

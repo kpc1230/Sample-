@@ -252,11 +252,12 @@ public interface SessionService {
 	 * Clones the session for the requested session.
 	 * 
 	 * @param loggedUser -- Logged in user.
+	 * @param loggedUserAccountId -- Logged in user account id.
 	 * @param cloneSession -- Request clone session object.
 	 * @param cloneName -- User request clone session name.
 	 * @return -- Returns the newly created clone session object.
 	 */
-	Session cloneSession(String loggedUser, Session cloneSession, String cloneName);
+	Session cloneSession(String loggedUser, String loggedUserAccountId, Session cloneSession, String cloneName);
 
 	/**
 	 * Fetches the active session from the cache for the user based on base url.
