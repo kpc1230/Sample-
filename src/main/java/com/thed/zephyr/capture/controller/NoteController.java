@@ -72,6 +72,7 @@ public class NoteController extends CaptureAbstractController {
 				throw new CaptureValidationException(i18n.getMessage("note.create.permission.violation"));
 			}
             noteRequest.setUser(hostUser.getUserKey().get());
+            noteRequest.setUserAccountId(hostUser.getUserAccountId().get());
             noteRequest.setCtId(CaptureUtil.getCurrentCtId());
             created = noteService.create(noteRequest);
         } catch (CaptureValidationException e) {
@@ -111,6 +112,7 @@ public class NoteController extends CaptureAbstractController {
             }
             noteRequest.setSessionActivityId(noteSessionActivityId);
             noteRequest.setUser(hostUser.getUserKey().get());
+            noteRequest.setUserAccountId(hostUser.getUserAccountId().get());
             noteRequest.setCtId(CaptureUtil.getCurrentCtId());
             updated = noteService.update(noteRequest);
         } catch (CaptureValidationException e) {

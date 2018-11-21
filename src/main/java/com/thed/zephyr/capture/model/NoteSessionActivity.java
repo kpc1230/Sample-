@@ -24,8 +24,8 @@ public class NoteSessionActivity extends SessionActivity {
     public NoteSessionActivity() {
     }
 
-    public NoteSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, String noteData, String wikiParsedData, Resolution resolutionState, Set<String> tags) {
-        super(sessionId, ctId, timestamp, user, projectId);
+    public NoteSessionActivity(String sessionId, String ctId, Date timestamp, String user, String userAccountId, Long projectId, String noteData, String wikiParsedData, Resolution resolutionState, Set<String> tags) {
+        super(sessionId, ctId, timestamp, user, userAccountId, projectId);
         this.noteData = noteData;
         this.wikiParsedData = wikiParsedData;
         this.resolutionState = resolutionState;

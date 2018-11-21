@@ -30,6 +30,8 @@ final public class Note {
     private Date createdTime;
 
     private String author;
+    
+    private String authorAccountId;
 
     private String noteData;
 
@@ -48,6 +50,7 @@ final public class Note {
         this.ctId = noteSessionActivity.getCtId();
         this.createdTime = noteSessionActivity.getTimestamp();
         this.author = noteSessionActivity.getUser();
+        this.authorAccountId = noteSessionActivity.getUserAccountId();
         this.noteData = noteSessionActivity.getNoteData();
         this.wikiParsedData = noteSessionActivity.getWikiParsedData();
         this.tags = noteSessionActivity.getTags();
@@ -143,7 +146,15 @@ final public class Note {
         this.noteSessionActivityId = noteSessionActivityId;
     }
 
-    @Override
+    public String getAuthorAccountId() {
+		return authorAccountId;
+	}
+
+	public void setAuthorAccountId(String authorAccountId) {
+		this.authorAccountId = authorAccountId;
+	}
+
+	@Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
     }

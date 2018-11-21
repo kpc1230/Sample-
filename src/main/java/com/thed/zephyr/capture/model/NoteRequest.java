@@ -15,11 +15,13 @@ final public class NoteRequest {
 	private String sessionName;
     private Date createdTime;
     private String user;
+    private String userAccountId;
     private String authorDisplayName;
     private boolean canEdit = false;
     private String userIconUrl;
     private String sessionActivityId;
     private String author;
+    private String authorAccountId;
 
     /**
      * Raw data of the note itself
@@ -52,7 +54,9 @@ final public class NoteRequest {
 		this.sessionId = note.getSessionId();
 		this.createdTime = note.getCreatedTime();
 		this.user = note.getAuthor();
+		this.userAccountId = note.getAuthorAccountId();
 		this.author = note.getAuthor();
+		this.authorAccountId = note.getAuthorAccountId();
 		this.noteData = note.getNoteData();
 		this.wikiParsedData = note.getWikiParsedData();
 		this.resolutionState = note.getResolutionState().name();
@@ -67,7 +71,9 @@ final public class NoteRequest {
     		this.sessionId = note.getSessionId();
     		this.createdTime = note.getCreatedTime();
     		this.user = note.getAuthor();
+    		this.userAccountId = note.getAuthorAccountId();
     		this.author = note.getAuthor();
+    		this.authorAccountId = note.getAuthorAccountId();
     		this.noteData = note.getNoteData();
     		this.wikiParsedData = note.getWikiParsedData();
     		this.resolutionState = note.getResolutionState().name();
@@ -85,7 +91,9 @@ final public class NoteRequest {
     		this.sessionId = note.getSessionId();
     		this.createdTime = note.getTimestamp();
     		this.user = note.getUser();
+    		this.userAccountId = note.getUserAccountId();
     		this.author = note.getUser();
+    		this.authorAccountId = note.getUserAccountId();
     		this.noteData = note.getNoteData();
     		this.wikiParsedData = note.getWikiParsedData();
     		this.resolutionState = note.getResolutionState().name();
@@ -94,7 +102,7 @@ final public class NoteRequest {
     	}
     }
 
-    public NoteRequest(String id, String ctId, String sessionId, Date createdTime, String author,
+    public NoteRequest(String id, String ctId, String sessionId, Date createdTime, String author, String authorAccountId,
 			String noteData, String wikiParsedData, String resolutionState, Long projectId, Set<String> tags) {
 		super();
 		this.id = id;
@@ -102,7 +110,9 @@ final public class NoteRequest {
 		this.sessionId = sessionId;
 		this.createdTime = createdTime;
 		this.user = author;
+		this.userAccountId = authorAccountId;
 		this.author = author;
+		this.authorAccountId = authorAccountId;
 		this.noteData = noteData;
 		this.wikiParsedData = wikiParsedData;
 		this.resolutionState = resolutionState;
@@ -241,4 +251,21 @@ final public class NoteRequest {
 	public void setAuthor(String author) {
 		this.author = author;
 	}
+
+	public String getUserAccountId() {
+		return userAccountId;
+	}
+
+	public void setUserAccountId(String userAccountId) {
+		this.userAccountId = userAccountId;
+	}
+
+	public String getAuthorAccountId() {
+		return authorAccountId;
+	}
+
+	public void setAuthorAccountId(String authorAccountId) {
+		this.authorAccountId = authorAccountId;
+	}
+	
 }

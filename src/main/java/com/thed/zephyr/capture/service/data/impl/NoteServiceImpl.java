@@ -66,6 +66,7 @@ public class NoteServiceImpl implements NoteService {
 						noteRequest.getCtId(),
 						new Date(),
 						noteRequest.getUser(),
+						noteRequest.getUserAccountId(),
 						noteRequest.getProjectId(),
 						noteRequest.getNoteData(),
 						wikiParsedData,
