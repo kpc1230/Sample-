@@ -35,6 +35,7 @@ public class CreateTemplateTableRequest {
                 new AttributeDefinition("id", ScalarAttributeType.S),
                 new AttributeDefinition("ctId", ScalarAttributeType.S),
                 new AttributeDefinition("createdBy", ScalarAttributeType.S),
+                new AttributeDefinition("createdByAccountId", ScalarAttributeType.S),
                 new AttributeDefinition("shared", ScalarAttributeType.N),
                 new AttributeDefinition("projectId", ScalarAttributeType.N)
         );

@@ -88,7 +88,8 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
                     }
                     AtlassianHost atlassianHost = ((DynamoDBAcHostRepositoryImpl)atlassianHostRepository).findByCtId(beAuthToken.getCtId());
                     if(null != atlassianHost) {
-                        AtlassianHostUser atlassianHostUser = new AtlassianHostUser(atlassianHost, Optional.ofNullable(beAuthToken.getUserKey()));
+                        AtlassianHostUser atlassianHostUser = AtlassianHostUser.builder(atlassianHost).
+                        		withUserKey(beAuthToken.getUserKey()).withUserAccountId(beAuthToken.getUserAccountId()).build();
                         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder().build();
                         BEContextAuthentication beContextAuthentication = new BEContextAuthentication(atlassianHostUser, jwtClaimsSet, beAuthToken);
                         //Put JwtAuthentication into SecurityContext to mock JwtAuthenticationFilter behavior and allow RequireAuthenticationHandlerInterceptor pass request

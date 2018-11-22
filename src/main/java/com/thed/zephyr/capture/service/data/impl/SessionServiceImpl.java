@@ -40,6 +40,8 @@ import com.thed.zephyr.capture.service.jira.ProjectService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.*;
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.search.SearchParseException;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -446,8 +448,13 @@ public class SessionServiceImpl implements SessionService {
 			}
 			return new SessionExtensionResponse(privateSessionsDto, sharedSessionsDto);
 		}else{
-			List<Session> privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user).getContent();
-			List<Session> sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user).getContent();
+			List<Session> privateSessionsList = new ArrayList<>(0), sharedSessionsList = new ArrayList<>(0);
+			try {
+				privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user).getContent();
+				sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user).getContent();
+			} catch(SearchPhaseExecutionException se) {
+				log.warn("Error in get sessions for user as no data in ES ->" + se.getMessage());
+			}
 			List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, privateSessionsList.size(), true);
 			List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, sharedSessionsList.size(), true);
 			SessionDto activeSessionDto = null;

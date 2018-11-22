@@ -213,7 +213,7 @@ public class TemplateController extends CaptureAbstractController{
 			templateRequest = TemplateBuilder.parseUpdateJson(json);
 		}
 		templateRequest.setOwnerName(getUser());
-		templateRequest.setOwnerName(getUserAccountId());
+		templateRequest.setOwnerAccountId(getUserAccountId());
 		validateTemplate(templateRequest, create);
 		return templateRequest;
 	}

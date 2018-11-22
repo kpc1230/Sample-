@@ -4,6 +4,7 @@ public class BEAuthToken {
 
     private String ctId;
     private String userKey;
+    private String userAccountId;
     private long timestamp;
     private String jiraToken;
     private String userAgent;
@@ -16,16 +17,18 @@ public class BEAuthToken {
         return ctId;
     }
 
-    public BEAuthToken(String ctId, String userKey, long timestamp, String userAgent) {
+    public BEAuthToken(String ctId, String userKey, String userAccountId, long timestamp, String userAgent) {
         this.ctId = ctId;
         this.userKey = userKey;
+        this.userAccountId = userAccountId;
         this.timestamp = timestamp;
         this.userAgent = userAgent;
     }
 
-    public BEAuthToken(String ctId, String userKey, long timestamp, String jiraToken, String userAgent, String apiToken) {
+    public BEAuthToken(String ctId, String userKey, String userAccountId, long timestamp, String jiraToken, String userAgent, String apiToken) {
         this.ctId = ctId;
         this.userKey = userKey;
+        this.userAccountId = userAccountId;
         this.timestamp = timestamp;
         this.jiraToken = jiraToken;
         this.userAgent = userAgent;
@@ -75,4 +78,13 @@ public class BEAuthToken {
     public void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
     }
+
+	public String getUserAccountId() {
+		return userAccountId;
+	}
+
+	public void setUserAccountId(String userAccountId) {
+		this.userAccountId = userAccountId;
+	}
+   
 }

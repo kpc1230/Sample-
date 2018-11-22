@@ -16,6 +16,7 @@ import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.WikiMarkupRenderer;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -211,7 +212,12 @@ public class NoteServiceImpl implements NoteService {
 	@Override
 	public NoteSearchList getNotesBySessionId(String loggedUser, String ctId, String sessionId, Integer page, Integer limit) {
 		Pageable pageable = CaptureUtil.getPageRequest(page, limit);
-		Page<Note> notes = noteRepository.findByCtIdAndSessionIdOrderByCreatedTimeAsc(ctId, sessionId, pageable);
+		Page<Note> notes = null;
+		try {
+			notes = noteRepository.findByCtIdAndSessionIdOrderByCreatedTimeAsc(ctId, sessionId, pageable);
+		} catch(SearchPhaseExecutionException se) {
+			log.warn("Warning message, as there is no data in notes from es ->" , se.getMessage());
+		}
 		List<Note> listNotes = new ArrayList<>();
 		Long total = notes != null?notes.getTotalElements():0;
 		if(total>0){

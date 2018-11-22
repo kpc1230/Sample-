@@ -33,7 +33,8 @@ public class CreateVariableTableRequest {
         List<AttributeDefinition> attributes = Arrays.asList(
                 new AttributeDefinition("id", ScalarAttributeType.S),
                 new AttributeDefinition("ctId", ScalarAttributeType.S),
-                new AttributeDefinition("ownerName", ScalarAttributeType.S)
+                new AttributeDefinition("ownerName", ScalarAttributeType.S),
+                new AttributeDefinition("ownerAccountId", ScalarAttributeType.S)
         );
 
         return attributes;
