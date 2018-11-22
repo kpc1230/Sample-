@@ -155,21 +155,21 @@ public class SessionController extends CaptureAbstractController{
 			Session createdSession = sessionService.createSession(loggedUserKey, loggedUserAccountId, sessionRequest);
 			CompletableFuture.runAsync(() -> {
 				//Save status changed information as activity.
-	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey);
+	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, loggedUserAccountId);
 	        	if(!loggedUserKey.equals(createdSession.getAssignee())) {
 	        		 //Save if the assigned user and logged in user are different into the session as activity.
 	    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, createdSession.getAssignee(),null);
 	        	}
 			});        		
 	        if(sessionRequest.getStartNow()) { //User requested to start the session.
-	        	UpdateResult updateResult = sessionService.startSession(loggedUserKey, createdSession);
+	        	UpdateResult updateResult = sessionService.startSession(loggedUserKey, loggedUserAccountId, createdSession);
 	        	if (!updateResult.isValid()) {
                     return badRequest(updateResult.getErrorCollection());
                 }
 	        	sessionService.update(updateResult, false); //Updating the session object into database.
 	        	//Save status changed information as activity.
 	        	CompletableFuture.runAsync(() -> {
-	        		sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, true);
+	        		sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, loggedUserAccountId, true);
 	        	});
 	        }
 			log.info("End of createSession()");
@@ -278,7 +278,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = getUserAccountId();
+			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 		    if (loadedSession != null) {
 				if (!permissionService.canEditSession(loggedUserKey, loadedSession)) {
@@ -382,6 +382,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			UpdateResult updateResult = sessionService.pauseSession(loggedUserKey, loadedSession);
 			if (!updateResult.isValid()) {
@@ -396,7 +397,7 @@ public class SessionController extends CaptureAbstractController{
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
         	CompletableFuture.runAsync(() -> {
-        		sessionActivityService.setStatus(session, new Date(), loggedUserKey);
+        		sessionActivityService.setStatus(session, new Date(), loggedUserKey, loggedUserAccountId);
         	});
         	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
 			log.info("End of pauseSession()");
@@ -429,6 +430,7 @@ public class SessionController extends CaptureAbstractController{
 			isLocked = true;
 			Date dateTime = new Date();
 			String loggedUserKey = hostUser.getUserKey().get();
+			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Map<String, Object> response = new HashMap<>();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			if (loadedSession != null && !permissionService.canJoinSession(loggedUserKey, loadedSession)) {
@@ -436,7 +438,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			CaptureUser user = userService.findUserByKey(loggedUserKey);
 			Participant participant = new ParticipantBuilder(loggedUserKey).setTimeJoined(dateTime).build();
-			SessionServiceImpl.UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loadedSession, participant);
+			SessionServiceImpl.UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loggedUserAccountId, loadedSession, participant);
 			if (!updateResult.isValid()) {
 				return badRequest(updateResult.getErrorCollection());
 			}
@@ -504,6 +506,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			// If the session status is changed, we better have been allowed to do that!
 			if (!Status.COMPLETED.equals(loadedSession.getStatus())
@@ -517,7 +520,7 @@ public class SessionController extends CaptureAbstractController{
 			Session session = completeSessionResult.getSessionUpdateResult().getSession();
 			//Save status changed information as activity.
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.setStatus(session, new Date(), loggedUserKey);
+				sessionActivityService.setStatus(session, new Date(), loggedUserKey, loggedUserAccountId);
 			});
 			sessionService.update(completeSessionResult.getSessionUpdateResult(), false);
 			List<SessionServiceImpl.CompleteSessionIssueLink> issueLinks = completeSessionResult.getIssuesToLink();
@@ -754,6 +757,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			String oldAssignee = loadedSession.getAssignee();
 			String assigner = hostUser.getUserKey().get();
@@ -777,7 +781,7 @@ public class SessionController extends CaptureAbstractController{
 			//Save assigned user to the session as activity.
 			CompletableFuture.runAsync(() -> {
 				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, assignee,oldAssignee);
-				sessionActivityService.setStatus(loadedSession, new Date(), loggedUserKey);
+				sessionActivityService.setStatus(loadedSession, new Date(), loggedUserKey, loggedUserAccountId);
 			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession, false);
 			log.info("End of assignSession()");
@@ -929,7 +933,7 @@ public class SessionController extends CaptureAbstractController{
 			Session newSession = sessionService.cloneSession(loggedUserKey, loggedUserAccountId,  loadedSession, name);
 			//Save status changed information as activity.
         	CompletableFuture.runAsync(() -> {
-        		sessionActivityService.setStatus(newSession, new Date(), loggedUserKey);
+        		sessionActivityService.setStatus(newSession, new Date(), loggedUserKey, loggedUserAccountId);
 				if(!loggedUserKey.equals(newSession.getAssignee())) {
 					//Save if the assigned user and logged in user are different into the session as activity.
 					sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, newSession.getAssignee(),null);

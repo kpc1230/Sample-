@@ -86,11 +86,12 @@ public interface SessionService {
 	 * Starts the session.
 	 *
 	 * @param loggedUserKey -- Logged in user key.
+	 * @param loggedUserAccountId -- Logged in user account id.
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the started session object.
 	 */
 	@Deprecated
-	UpdateResult startSession(String loggedUserKey, Session session);
+	UpdateResult startSession(String loggedUserKey, String loggedUserAccountId, Session session);
 	
 	/**
 	 * Pauses the session. 
@@ -105,10 +106,11 @@ public interface SessionService {
 	 * Joins the session. 
 	 * 
 	 * @param loggedUserKey -- Logged in user key.
+	 * @param loggedUserAccountId -- Logged in user account id.
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the joined session object.
 	 */
-	UpdateResult joinSession(String loggedUserKey, Session session, Participant participant);
+	UpdateResult joinSession(String loggedUserKey, String loggedUserAccountId, Session session, Participant participant);
 	
 	/**
 	 * Updated the session information into database.

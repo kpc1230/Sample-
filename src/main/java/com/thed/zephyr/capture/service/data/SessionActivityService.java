@@ -15,9 +15,9 @@ import java.util.Optional;
  */
 public interface SessionActivityService {
 
-    SessionActivity setStatus(Session session, Date timestamp, String user);
+    SessionActivity setStatus(Session session, Date timestamp, String user, String userAccountId);
 
-    SessionActivity setStatus(Session session, Date timestamp, String user,boolean firstStarted);
+    SessionActivity setStatus(Session session, Date timestamp, String user, String userAccountId, boolean firstStarted);
 
     SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user);
 

@@ -29,7 +29,7 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     private UserService userService;
 
     @Override
-    public SessionActivity setStatus(Session session, Date timestamp, String user) {
+    public SessionActivity setStatus(Session session, Date timestamp, String user, String userAccountId) {
         if (session.getStatus() != null) {
             boolean firstStarted = (session.getStatus()
                     == Session.Status.CREATED && session.getStatus()
@@ -40,6 +40,7 @@ public class SessionActivityServiceImpl implements SessionActivityService {
                             session.getCtId(),
                             timestamp,
                             user,
+                            userAccountId,
                             session.getProjectId(),
                             session.getStatus(),
                             firstStarted
@@ -51,7 +52,7 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity setStatus(Session session, Date timestamp, String user,boolean firstStarted) {
+    public SessionActivity setStatus(Session session, Date timestamp, String user, String userAccountId, boolean firstStarted) {
         if (session.getStatus() != null) {
            StatusSessionActivity sessionActivity =
                     new StatusSessionActivity(
@@ -59,6 +60,7 @@ public class SessionActivityServiceImpl implements SessionActivityService {
                             session.getCtId(),
                             timestamp,
                             user,
+                            userAccountId,
                             session.getProjectId(),
                             session.getStatus(),
                             firstStarted

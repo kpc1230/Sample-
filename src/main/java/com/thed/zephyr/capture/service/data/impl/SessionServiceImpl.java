@@ -227,7 +227,7 @@ public class SessionServiceImpl implements SessionService {
 			setActiveSessionIdToCache(user.getKey(), sessionId);
 			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.setStatus(savedSession, new Date(), user.getKey(),firstTimeStarted);
+				sessionActivityService.setStatus(savedSession, new Date(), user.getKey(), user.getAccountId(), firstTimeStarted);
 			});
 			setActiveSessionIdToCache(user.getKey(), savedSession.getId());
 			return session;
@@ -257,7 +257,7 @@ public class SessionServiceImpl implements SessionService {
 			session.setStatus(Status.PAUSED);
 			Session savedSession = save(session, user.getDisplayName(), null);
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.setStatus(savedSession, new Date(), user.getKey(), false);
+				sessionActivityService.setStatus(savedSession, new Date(), user.getKey(), user.getAccountId(), false);
 			});
 			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
 		}
@@ -265,7 +265,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 	
 	@Override
-	public UpdateResult startSession(String userKey, Session session) {
+	public UpdateResult startSession(String userKey, String loggedUserAccountId, Session session) {
 		DeactivateResult deactivateResult = null;
         SessionResult activeSessionResult = getActiveSession(userKey, null); // Deactivate current active session
         if (activeSessionResult.isValid()) {
@@ -281,7 +281,7 @@ public class SessionServiceImpl implements SessionService {
 				clearActiveSessionFromCache(userKey);
 				update(updateResult, false);
 				CompletableFuture.runAsync(() -> {
-					sessionActivityService.setStatus(activeSession, new Date(), userKey);
+					sessionActivityService.setStatus(activeSession, new Date(), userKey, loggedUserAccountId);
 				});
 			}
         }
@@ -297,7 +297,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public UpdateResult joinSession(String loggedUserKey, Session session, Participant participant) {
+	public UpdateResult joinSession(String loggedUserKey, String loggedUserAccountId, Session session, Participant participant) {
         ErrorCollection errorCollection = new ErrorCollection();
         DeactivateResult deactivateResult = null;
         if (!Objects.isNull(session) && !StringUtils.isEmpty(loggedUserKey)) {
@@ -320,7 +320,7 @@ public class SessionServiceImpl implements SessionService {
     				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
     				update(updateResult,true);
     				CompletableFuture.runAsync(() -> {
-    					sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey);
+    					sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey, loggedUserAccountId);
     				});
     			}
             }
