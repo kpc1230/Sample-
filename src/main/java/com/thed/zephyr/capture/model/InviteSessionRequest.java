@@ -20,15 +20,17 @@ public class InviteSessionRequest {
     private String message;
     private List<String> emails;
     private List<String> usernames;
+    private List<String> userAccountIds;
 
     public InviteSessionRequest() {
     }
 
-    public InviteSessionRequest(String sessionId, String message, List<String> emails, List<String> usernames) {
+    public InviteSessionRequest(String sessionId, String message, List<String> emails, List<String> usernames, List<String> userAccountIds) {
         this.sessionId = sessionId;
         this.message = message;
         this.emails = emails;
         this.usernames = usernames;
+        this.userAccountIds = userAccountIds;
     }
 
     public String getSessionId() {
@@ -62,4 +64,13 @@ public class InviteSessionRequest {
     public void setUsernames(List<String> usernames) {
         this.usernames = usernames;
     }
+
+	public List<String> getUserAccountIds() {
+		return userAccountIds;
+	}
+
+	public void setUserAccountIds(List<String> userAccountIds) {
+		this.userAccountIds = userAccountIds;
+	}
+    
 }

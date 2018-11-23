@@ -201,6 +201,7 @@ public class SessionController extends CaptureAbstractController{
 			List<IssueRaisedBean> listOfIssueRaised = new ArrayList<>();
 			issueKeys.addAll(listOfIssues);
 			String loggedUser = getUser();
+			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			issueKeys.forEach(issueKey -> {
 				try {
 					CaptureIssue issue = issueService.getCaptureIssue(issueKey);
@@ -221,7 +222,7 @@ public class SessionController extends CaptureAbstractController{
 				throw new CaptureValidationException(i18n.getMessage("session.issue.key.invalid", new Object[]{StringUtils.join(failedKeys, ',')}));
 			}
 			if (listOfIssueRaised != null && listOfIssueRaised.size() > 0) {
-				issues = sessionService.updateSessionWithIssues(loggedUser, sessionId, listOfIssueRaised);
+				issues = sessionService.updateSessionWithIssues(loggedUser, loggedUserAccountId, sessionId, listOfIssueRaised);
 			} else {
 				throw new CaptureValidationException("Issues are empty");
 			}
@@ -655,6 +656,7 @@ public class SessionController extends CaptureAbstractController{
 			isLocked = true;
 			Date dateTime = new Date();
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			CaptureIssue captureIssue = issueService.getCaptureIssue(issueKey);
 			if (captureIssue != null && !permissionService.canUnraiseIssueInSession(loggedUserKey, captureIssue)) {
@@ -667,7 +669,7 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult, false);
 			//Save removed raised issue information as activity.
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.removeRaisedIssue(loadedSession, captureIssue, dateTime, loggedUserKey);
+				sessionActivityService.removeRaisedIssue(loadedSession, captureIssue, dateTime, loggedUserKey, loggedUserAccountId);
 			});
 			//This is to removed raisedinsession from issue entity
 			sessionService.addUnRaisedInSession(loggedUserKey,issueKey,updateResult.getSession());

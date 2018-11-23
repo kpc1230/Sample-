@@ -81,8 +81,9 @@ public class WebhookHandlerService {
         } else{
             //Attachment added into Issue
             Attachment attachment = getAddedAttachmentFromUpdatedIssueJson(issueChangeLogItem.getTo(), updatedIssueJson);
+            attachment.setAuthorAccountId(user.getAccountId());
             Session session = sessionESRepository.findById(sessionId);
-            sessionActivityService.addAttachment(session, basicIssue.getId(), attachment, new Date(attachment.getCreationDate()), attachment.getAuthor());
+            sessionActivityService.addAttachment(session, basicIssue.getId(), attachment, new Date(attachment.getCreationDate()), attachment.getAuthor(), attachment.getAuthorAccountId());
         }
     }
 

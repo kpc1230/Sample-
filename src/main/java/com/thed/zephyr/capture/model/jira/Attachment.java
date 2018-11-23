@@ -13,6 +13,7 @@ public class Attachment {
     private URI self;
     private String filename;
     private String author;
+    private String authorAccountId;
     private long creationDate;
     private int size;
     private String mimeType;
@@ -21,10 +22,11 @@ public class Attachment {
     public Attachment() {
     }
 
-    public Attachment(URI self, String filename, String author, long creationDate, int size, String mimeType, URI contentUri) {
+    public Attachment(URI self, String filename, String author, String authorAccountId, long creationDate, int size, String mimeType, URI contentUri) {
         this.self = self;
         this.filename = filename;
         this.author = author;
+        this.authorAccountId = authorAccountId;
         this.creationDate = creationDate;
         this.size = size;
         this.mimeType = mimeType;
@@ -97,7 +99,15 @@ public class Attachment {
         this.contentUri = contentUri;
     }
 
-    public JsonNode toJSON() {
+    public String getAuthorAccountId() {
+		return authorAccountId;
+	}
+
+	public void setAuthorAccountId(String authorAccountId) {
+		this.authorAccountId = authorAccountId;
+	}
+
+	public JsonNode toJSON() {
         ObjectMapper om = new ObjectMapper();
         JsonNode jsonNode = om.convertValue(this, JsonNode.class);
 

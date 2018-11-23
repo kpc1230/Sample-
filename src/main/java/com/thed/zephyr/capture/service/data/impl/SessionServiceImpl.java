@@ -41,7 +41,6 @@ import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.search.SearchParseException;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -136,8 +135,8 @@ public class SessionServiceImpl implements SessionService {
 		session.setProjectName(sessionRequest.getProjectName());
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
 		session.setAssignee(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
-		session.setAssigneeAccountId(!StringUtils.isEmpty(sessionRequest.getAssigneeAccountId()) ? sessionRequest.getAssigneeAccountId() : StringUtils.isEmpty(sessionRequest.getAssignee()) ? loggedUserAccountId: "");
 		CaptureUser user = userService.findUserByKey(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
+		session.setAssigneeAccountId(user.getAccountId());
 		session.setUserDisplayName(user != null ? user.getDisplayName() : null);
 		session.setJiraPropIndex(generateJiraPropIndex(session.getCtId()));
         Session createdSession = sessionRepository.save(session);
@@ -621,19 +620,19 @@ public class SessionServiceImpl implements SessionService {
 	}
 
     @Override
-    public void updateSessionWithIssue(String ctId, Long projectId, String user, Long issueId) {
+    public void updateSessionWithIssue(String ctId, Long projectId, String user, String userAccountId, Long issueId) {
 		try {
 			Page<Session> sessions = sessionESRepository.findByCtIdAndStatusAndAssignee(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-			updateSessionWithIssueId(sessions, issueId,user);
+			updateSessionWithIssueId(sessions, issueId, user, userAccountId);
 			Page<Session> sessions3 = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(ctId, Status.STARTED.toString(), user, CaptureUtil.getPageRequest(0, 1000));
-			updateSessionWithIssueId(sessions3, issueId,user);
+			updateSessionWithIssueId(sessions3, issueId, user, userAccountId);
 		} catch (Exception exception) {
 			log.error("Error during updateSessionWithIssue", exception);
 		}
     }
 
     @Override
-    public List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<IssueRaisedBean> issues) {
+    public List<CaptureIssue> updateSessionWithIssues(String loggedUser, String loggedUserAccountId, String sessionId, List<IssueRaisedBean> issues) {
         List<CaptureIssue> raisedIssues = Lists.newArrayList();
         Date dateTime = new Date();
         Session session = getSession(sessionId);
@@ -644,7 +643,7 @@ public class SessionServiceImpl implements SessionService {
                 for(IssueRaisedBean issueRaisedBean : issues) {
                 	if(!issuesRaisedMap.containsKey(issueRaisedBean.getIssueId())) {
                 		session.getIssuesRaised().add(issueRaisedBean);
-                		sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser); //Save removed raised issue information as activity.
+                		sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser, loggedUserAccountId); //Save removed raised issue information as activity.
             			issueRaisedIds.add(issueRaisedBean.getIssueId());
                 	}
                 }
@@ -654,7 +653,7 @@ public class SessionServiceImpl implements SessionService {
                 session.setIssuesRaised(issuesRaised);
                 if(issues != null && issues.size() > 0) {
                 	issues.stream().forEach(issueRaisedBean -> {
-                		sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser); //Save removed raised issue information as activity.
+                		sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser, loggedUserAccountId); //Save removed raised issue information as activity.
                 		issueRaisedIds.add(issueRaisedBean.getIssueId());
                 	});
                 }
@@ -900,7 +899,7 @@ public class SessionServiceImpl implements SessionService {
 			IssueRaisedBean issueRaisedBean = new IssueRaisedBean(basicIssue.getId(), issueCreatedTime);
 			session.addRaisedIssue(issueRaisedBean);
 			session = save(session, user.getDisplayName(), basicIssue.getProject().getName());
-			sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), issueCreatedTime, user.getKey());
+			sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), issueCreatedTime, user.getKey(), user.getAccountId());
 			captureContextIssueFieldsService.addSessionContextIntoRaisedIssue(acHostModel, user.getKey(), basicIssue.getId(), session);
 			setIssueTestStatusAndTestSession(acHostModel, basicIssue.getId(), basicIssue.getProject().getId());
 		} catch (Exception exception){
@@ -910,7 +909,7 @@ public class SessionServiceImpl implements SessionService {
 		}
 	}
 
-	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser) throws HazelcastInstanceNotDefinedException {
+	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser, String userAccountId) throws HazelcastInstanceNotDefinedException {
 		Date dateTime = new Date();
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
@@ -926,7 +925,7 @@ public class SessionServiceImpl implements SessionService {
 				IssueRaisedBean issueRaisedBean = new IssueRaisedBean(issueId, dateTime);
 				sessionLatest.addRaisedIssue(issueRaisedBean);
 				save(sessionLatest, new ArrayList<>());
-				sessionActivityService.addRaisedIssue(sessionLatest, issueRaisedBean.getIssueId(), dateTime, loggedUser);
+				sessionActivityService.addRaisedIssue(sessionLatest, issueRaisedBean.getIssueId(), dateTime, loggedUser, userAccountId);
 			}
 		} catch (Exception ex) {
 			log.error("Error in updateSessionWithIssueId() -> ", ex);

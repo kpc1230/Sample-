@@ -26,11 +26,11 @@ public interface SessionActivityService {
 
     SessionActivity addParticipantLeft(Session session, Participant participant);
     
-    SessionActivity removeRaisedIssue(Session session, CaptureIssue captureIssue, Date timeRaised, String creator);
+    SessionActivity removeRaisedIssue(Session session, CaptureIssue captureIssue, Date timeRaised, String creator, String creatorAccountId);
 
-    SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author);
+    SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author, String authorAccountId);
 
-    SessionActivity addAttachment(Session session, Long issueId, Attachment attachment, Date creationDate, String author);
+    SessionActivity addAttachment(Session session, Long issueId, Attachment attachment, Date creationDate, String author, String authorAccountId);
 
     void removeAttachment(String sessionId, String jiraAttachmentId, Long issueId);
 
@@ -49,7 +49,7 @@ public interface SessionActivityService {
      */
     SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignerAccountId, String assignee, String assigneeAccountId, String oldAssignee);
 
-    SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator);
+    SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator, String creatorAccountId);
 
     SessionActivity getSessionActivity(String id);
     

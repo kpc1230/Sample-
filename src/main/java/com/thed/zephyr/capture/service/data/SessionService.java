@@ -236,9 +236,9 @@ public interface SessionService {
 
 	SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String ctId, Long projectId, Long relatedIssueId);
 
-	void updateSessionWithIssue(String ctId,Long projectId,String user,Long issueId);
+	void updateSessionWithIssue(String ctId, Long projectId, String user, String userAccountId, Long issueId);
 
-	List<CaptureIssue> updateSessionWithIssues(String loggedUser, String sessionId, List<IssueRaisedBean> issues);
+	List<CaptureIssue> updateSessionWithIssues(String loggedUser, String loggedUserAccountId, String sessionId, List<IssueRaisedBean> issues);
 
     /**
 	 * Update the additional information into the requested session.

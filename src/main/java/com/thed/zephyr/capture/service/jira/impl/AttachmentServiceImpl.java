@@ -148,10 +148,10 @@ public class AttachmentServiceImpl implements AttachmentService {
             Attachment jiraAttachment = getLastUploadedAttachmentByIssue(updatedIssue);
             com.thed.zephyr.capture.model.jira.Attachment attachment = new
                     com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
-                    jiraAttachment.getAuthor().getName(), jiraAttachment.getCreationDate().getMillis(),
+                    jiraAttachment.getAuthor().getName(), null, jiraAttachment.getCreationDate().getMillis(),
                     jiraAttachment.getSize(), jiraAttachment.getMimeType(),
                     jiraAttachment.getContentUri());
-            sessionActivityService.addAttachment(session, updatedIssue, attachment, new Date(jiraAttachment.getCreationDate().getMillis()), attachment.getAuthor());
+            sessionActivityService.addAttachment(session, updatedIssue, attachment, new Date(jiraAttachment.getCreationDate().getMillis()), attachment.getAuthor(), attachment.getAuthorAccountId());
         }
         return CaptureUtil.getFullIconUrl(issue,host);
     }
@@ -268,7 +268,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                             try{
                                com.thed.zephyr.capture.model.jira.Attachment attachment = new
                                         com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
-                                        hostUser.getUserKey().get(), jiraAttachment.getCreationDate().getMillis(),
+                                        hostUser.getUserKey().get(), hostUser.getUserAccountId().get(), jiraAttachment.getCreationDate().getMillis(),
                                         jiraAttachment.getSize(), jiraAttachment.getMimeType(),
                                         jiraAttachment.getContentUri());
                             } catch (Exception exp) {

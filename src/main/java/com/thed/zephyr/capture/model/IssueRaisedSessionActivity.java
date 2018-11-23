@@ -1,9 +1,5 @@
 package com.thed.zephyr.capture.model;
 
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.thed.zephyr.capture.util.CaptureUtil;
-import org.joda.time.DateTime;
-
 import java.util.Date;
 
 /**
@@ -16,13 +12,13 @@ public class IssueRaisedSessionActivity extends SessionActivity {
     public IssueRaisedSessionActivity() {
     }
 
-    public IssueRaisedSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, Long issueId) {
-        super(sessionId, ctId, timestamp, user, projectId);
+    public IssueRaisedSessionActivity(String sessionId, String ctId, Date timestamp, String user, String userAccountId, Long projectId, Long issueId) {
+        super(sessionId, ctId, timestamp, user, userAccountId, projectId);
         this.issueId = issueId;
     }
 
-    public IssueRaisedSessionActivity(Session session, Date timestamp, String user, Long issueId){
-        super(session.getId(), session.getCtId(), timestamp, user, session.getProjectId());
+    public IssueRaisedSessionActivity(Session session, Date timestamp, String user, String userAccountId, Long issueId){
+        super(session.getId(), session.getCtId(), timestamp, user, userAccountId, session.getProjectId());
         this.issueId = issueId;
     }
 

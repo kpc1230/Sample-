@@ -102,32 +102,32 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator) {
-        IssueRaisedSessionActivity sessionActivity = new IssueRaisedSessionActivity(session, timeRaised, creator, issueId);
+    public SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator, String creatorAccountId) {
+        IssueRaisedSessionActivity sessionActivity = new IssueRaisedSessionActivity(session, timeRaised, creator, creatorAccountId, issueId);
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }
 
     @Override
-    public SessionActivity removeRaisedIssue(Session session, CaptureIssue captureIssue, Date timeRaised, String creator) {
+    public SessionActivity removeRaisedIssue(Session session, CaptureIssue captureIssue, Date timeRaised, String creator, String creatorAccountId) {
 
         IssueUnraisedSessionActivity sessionActivity =
                 new IssueUnraisedSessionActivity(session.getId(),
                         session.getCtId(),
-                        timeRaised, creator, session.getProjectId(), captureIssue.getId());
+                        timeRaised, creator, creatorAccountId, session.getProjectId(), captureIssue.getId());
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }
 
     @Override
-    public SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author) {
-        return addAttachment(session, issue.getId(), attachment, creationDate, author);
+    public SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author, String authorAccountId) {
+        return addAttachment(session, issue.getId(), attachment, creationDate, author, authorAccountId);
     }
 
     @Override
-    public SessionActivity addAttachment(Session session, Long issueId, Attachment attachment, Date creationDate, String author) {
+    public SessionActivity addAttachment(Session session, Long issueId, Attachment attachment, Date creationDate, String author, String authorAccountId) {
         SessionActivity sessionActivity =
-                new IssueAttachmentSessionActivity(session.getId(), session.getCtId(), creationDate, author, session.getProjectId(), issueId, attachment);
+                new IssueAttachmentSessionActivity(session.getId(), session.getCtId(), creationDate, author, authorAccountId, session.getProjectId(), issueId, attachment);
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }
