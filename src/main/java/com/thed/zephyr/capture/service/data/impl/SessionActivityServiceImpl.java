@@ -72,9 +72,9 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user) {
+    public SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user, String userAccountId) {
         UserJoinedSessionActivity sessionActivity =
-                new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), user, session.getProjectId(), participant);
+                new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), user, userAccountId, session.getProjectId(), participant);
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }

@@ -8,6 +8,7 @@ import java.util.Date;
  */
 public class ParticipantBuilder {
     private String user;
+    private String userAccountId;
     private Date timeJoined;
     private Date timeLeft;
 
@@ -20,6 +21,7 @@ public class ParticipantBuilder {
         this.user = participant.getUser();
         this.timeJoined = participant.getTimeJoined();
         this.timeLeft = participant.getTimeLeft();
+        this.userAccountId = participant.getUserAccountId();
     }
 
     public ParticipantBuilder setUser(String user) {
@@ -36,9 +38,14 @@ public class ParticipantBuilder {
         this.timeLeft = timeLeft;
         return this;
     }
+    
+    public ParticipantBuilder setUserAccountId(String userAccountId) {
+        this.userAccountId = userAccountId;
+        return this;
+    }
 
 
     public Participant build() {
-        return new Participant(user, timeJoined, timeLeft);
+        return new Participant(user, userAccountId, timeJoined, timeLeft);
     }
 }

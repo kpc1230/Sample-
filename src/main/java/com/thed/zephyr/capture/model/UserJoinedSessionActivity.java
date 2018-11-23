@@ -3,7 +3,6 @@ package com.thed.zephyr.capture.model;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.thed.zephyr.capture.service.db.converter.ParticipantTypeConverter;
-import org.joda.time.DateTime;
 
 import java.util.Date;
 
@@ -18,8 +17,8 @@ public class UserJoinedSessionActivity extends SessionActivity {
     public UserJoinedSessionActivity() {
     }
 
-    public UserJoinedSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, Participant participant) {
-        super(sessionId, ctId, timestamp, user, projectId);
+    public UserJoinedSessionActivity(String sessionId, String ctId, Date timestamp, String user, String userAccountId, Long projectId, Participant participant) {
+        super(sessionId, ctId, timestamp, user, userAccountId, projectId);
         this.participant = participant;
     }
 

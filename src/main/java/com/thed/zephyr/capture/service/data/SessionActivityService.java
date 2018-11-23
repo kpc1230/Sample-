@@ -19,7 +19,7 @@ public interface SessionActivityService {
 
     SessionActivity setStatus(Session session, Date timestamp, String user, String userAccountId, boolean firstStarted);
 
-    SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user);
+    SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user, String userAccountId);
 
     @Deprecated
     SessionActivity addParticipantLeft(Session session, Date timestamp, String user);

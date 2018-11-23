@@ -438,15 +438,16 @@ public class SessionController extends CaptureAbstractController{
 				throw new CaptureValidationException(i18n.getMessage("session.join.no.permission", new Object[]{loadedSession.getName()}));
 			}
 			CaptureUser user = userService.findUserByKey(loggedUserKey);
-			Participant participant = new ParticipantBuilder(loggedUserKey).setTimeJoined(dateTime).build();
+			Participant participant = new ParticipantBuilder(loggedUserKey).setUserAccountId(loggedUserAccountId).setTimeJoined(dateTime).build();
 			SessionServiceImpl.UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loggedUserAccountId, loadedSession, participant);
 			if (!updateResult.isValid()) {
 				return badRequest(updateResult.getErrorCollection());
 			}
 			sessionService.update(updateResult, true);
 			response.put("user", participant.getUser());
+			response.put("userAccountId", participant.getUserAccountId());
 			response.put("timeJoined", participant.getTimeJoined());
-			response.put("timeLeft", participant.getTimeLeft());
+			response.put("timeLeft", participant.getTimeLeft());			
 			if(Objects.nonNull(user)) {
 				response.put("userDisplayName", user.getDisplayName());
 				String userAvatarSrc = null, userLargeAvatarSrc = null;

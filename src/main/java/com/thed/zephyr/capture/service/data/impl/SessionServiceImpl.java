@@ -327,7 +327,7 @@ public class SessionServiceImpl implements SessionService {
         if (errorCollection.hasErrors()) {
             return new UpdateResult(errorCollection, session);
         }
-        addParticipantToSession(loggedUserKey, session); //set participant info only after all validations are passed.
+        addParticipantToSession(loggedUserKey, loggedUserAccountId, session); //set participant info only after all validations are passed.
         return new UpdateResult(validateUpdate(loggedUserKey, session), deactivateResult, loggedUserKey, true, false);
 	}
 	
@@ -941,14 +941,15 @@ public class SessionServiceImpl implements SessionService {
 	 * @param user -- User requesting to join the requested session as participant.
 	 * @param session -- Request session by the user to join.
 	 */
-	private void addParticipantToSession(String user, Session session) {
+	private void addParticipantToSession(String user, String userAccountId, Session session) {
 		Date currteDate = new Date();
-		Participant newParticipant = new ParticipantBuilder(user).setTimeJoined(currteDate).build();
+		Participant newParticipant = new ParticipantBuilder(user).setUserAccountId(userAccountId).setTimeJoined(currteDate).build();
 		boolean currentlyParticipating = false;
         if(!Objects.isNull(session.getParticipants())) {
         	for(Participant p : session.getParticipants()) {
         		if(p.getUser().equals(user)) {
         			currentlyParticipating = true;
+        			p.setUserAccountId(userAccountId);
         			p.setTimeLeft(null);
         			p.setTimeJoined(new Date());
         			newParticipant = p;
@@ -965,7 +966,7 @@ public class SessionServiceImpl implements SessionService {
         }        
         //Store participant info in sessionActivity
 		if(Objects.nonNull(newParticipant))
-			sessionActivityService.addParticipantJoined(session, currteDate, newParticipant,user);
+			sessionActivityService.addParticipantJoined(session, currteDate, newParticipant,user,userAccountId);
     }
 	
 	/**
