@@ -385,7 +385,7 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUserKey = getUser();
 			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			UpdateResult updateResult = sessionService.pauseSession(loggedUserKey, loadedSession);
+			UpdateResult updateResult = sessionService.pauseSession(loggedUserKey, loggedUserAccountId, loadedSession);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
@@ -515,7 +515,7 @@ public class SessionController extends CaptureAbstractController{
 					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.status.change.permissions.violation"));
 			}
-			CompleteSessionResult completeSessionResult = sessionService.completeSession(loggedUserKey, loadedSession, completeSessionRequest);
+			CompleteSessionResult completeSessionResult = sessionService.completeSession(loggedUserKey, loggedUserAccountId, loadedSession, completeSessionRequest);
 			if (!completeSessionResult.isValid()) {
                 return badRequest(completeSessionResult.getErrorCollection());
             }
@@ -571,9 +571,10 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			Participant leftParticipant = new Participant();
-			UpdateResult updateResult = sessionService.leaveSession(loggedUserKey, loadedSession);
+			UpdateResult updateResult = sessionService.leaveSession(loggedUserKey, loggedUserAccountId, loadedSession);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }

@@ -22,7 +22,7 @@ public interface SessionActivityService {
     SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user, String userAccountId);
 
     @Deprecated
-    SessionActivity addParticipantLeft(Session session, Date timestamp, String user);
+    SessionActivity addParticipantLeft(Session session, Date timestamp, String user, String userAccountId);
 
     SessionActivity addParticipantLeft(Session session, Participant participant);
     

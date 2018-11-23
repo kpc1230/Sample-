@@ -96,11 +96,12 @@ public interface SessionService {
 	/**
 	 * Pauses the session. 
 	 * 
-	 * @param loggedUserKey -- Logged in user key.
+	 * @param loggedUserKey -- Logged in user key.'
+	 * @param loggedUserAccountId -- Logged in user account id.
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the paused session object.
 	 */
-	UpdateResult pauseSession(String loggedUserKey, Session session);
+	UpdateResult pauseSession(String loggedUserKey, String loggedUserAccountId, Session session);
 	
 	/**
 	 * Joins the session. 
@@ -124,10 +125,11 @@ public interface SessionService {
 	 * Leaves the session. 
 	 * 
 	 * @param loggedUserKey -- Logged in user key.
+	 * @param loggedUserAccountId -- Logged in user account id.
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the leaved session object.
 	 */
-	UpdateResult leaveSession(String loggedUserKey, Session session);
+	UpdateResult leaveSession(String loggedUserKey, String loggedUserAccountId, Session session);
 	
 	/**
 	 * Shares the session. 
@@ -162,11 +164,12 @@ public interface SessionService {
 	 * Completes the session.
 	 * 
 	 * @param loggedUserKey -- Logged in user key.
+	 * @param loggedUserAccountId -- Logged in user account id.
 	 * @param session -- Session object.
 	 * @param completeSessionRequest -- Request holds the time spent on the session and the number of issue links for the session.
 	 * @return -- Returns UpdateResult object which holds the completed session object.
 	 */
-	CompleteSessionResult completeSession(String loggedUserKey, Session session, CompleteSessionRequest completeSessionRequest);
+	CompleteSessionResult completeSession(String loggedUserKey, String loggedUserAccountId, Session session, CompleteSessionRequest completeSessionRequest);
 	
 	
 	/**

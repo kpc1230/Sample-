@@ -268,7 +268,7 @@ public class SessionServiceImpl implements SessionService {
 		DeactivateResult deactivateResult = null;
         SessionResult activeSessionResult = getActiveSession(userKey, null); // Deactivate current active session
         if (activeSessionResult.isValid()) {
-            deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), userKey);
+            deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), userKey, loggedUserAccountId);
             if (!deactivateResult.isValid()) {
                 return new UpdateResult(deactivateResult.getErrorCollection(), session);
             }
@@ -290,8 +290,8 @@ public class SessionServiceImpl implements SessionService {
 
 
 	@Override
-	public UpdateResult pauseSession(String loggedUserKey, Session session) {
-		DeactivateResult pauseResult = validateDeactivateSession(session, loggedUserKey);
+	public UpdateResult pauseSession(String loggedUserKey, String loggedUserAccountId, Session session) {
+		DeactivateResult pauseResult = validateDeactivateSession(session, loggedUserKey, loggedUserAccountId);
         return new UpdateResult(pauseResult.getErrorCollection(), pauseResult.getSession(), pauseResult, false, true);
 	}
 
@@ -308,7 +308,7 @@ public class SessionServiceImpl implements SessionService {
             }
             SessionResult activeSessionResult = getActiveSession(loggedUserKey, null); // Deactivate current active session
             if (activeSessionResult.isValid()) {
-                deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), loggedUserKey);
+                deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), loggedUserKey, loggedUserAccountId);
                 if (!deactivateResult.isValid()) {
                     errorCollection.addAllErrors(deactivateResult.getErrorCollection());
                 }
@@ -352,8 +352,8 @@ public class SessionServiceImpl implements SessionService {
     }
 	
 	@Override
-	public UpdateResult leaveSession(String loggedUserKey, Session session) {
-		 DeactivateResult leaveResult = validateDeactivateSession(session, loggedUserKey);
+	public UpdateResult leaveSession(String loggedUserKey, String loggedUserAccountId, Session session) {
+		 DeactivateResult leaveResult = validateDeactivateSession(session, loggedUserKey, loggedUserAccountId);
 	     return new UpdateResult(leaveResult.getErrorCollection(), leaveResult.getSession(), leaveResult, false, true);
 	}
 	
@@ -404,7 +404,7 @@ public class SessionServiceImpl implements SessionService {
     }
 	
 	@Override
-	public CompleteSessionResult completeSession(String loggedUserKey, Session session, CompleteSessionRequest completeSessionRequest) {
+	public CompleteSessionResult completeSession(String loggedUserKey, String loggedUserAccountId, Session session, CompleteSessionRequest completeSessionRequest) {
 		ErrorCollection errorCollection = new ErrorCollection();
 	    String timeSpentRaw = completeSessionRequest.getTimeSpent();
 	    Long millisecondsSpent = getAndValidateTimeSpent(errorCollection, timeSpentRaw);
@@ -417,7 +417,7 @@ public class SessionServiceImpl implements SessionService {
                 issuesToLink.add(new CompleteSessionIssueLink(related, raised));
             }
         }
-        DeactivateResult completeResult = validateDeactivateSession(session, loggedUserKey, Status.COMPLETED, Duration.ofMillis(millisecondsSpent));
+        DeactivateResult completeResult = validateDeactivateSession(session, loggedUserKey, loggedUserAccountId, Status.COMPLETED, Duration.ofMillis(millisecondsSpent));
         UpdateResult updateResult = null;
         if (!completeResult.isValid()) {
         	updateResult =  new UpdateResult(completeResult.getErrorCollection(), null);
@@ -544,7 +544,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public UpdateResult assignSession(String loggedUserKey, Session session, String assignee) {
 		if (Status.STARTED.equals(session.getStatus())) { //If the session that is to be assigned is started, then pause it.
-			DeactivateResult pauseResult = validateDeactivateSession(session, session.getAssignee()); //Pause for current user
+			DeactivateResult pauseResult = validateDeactivateSession(session, session.getAssignee(), session.getAssigneeAccountId()); //Pause for current user
 			if (!pauseResult.isValid()) {
 				return new UpdateResult(pauseResult.getErrorCollection(), pauseResult.getSession());
 			}
@@ -658,7 +658,7 @@ public class SessionServiceImpl implements SessionService {
                 	});
                 }
             }
-            save(session, new ArrayList<>());
+            save(session, new HashMap<>());
             if(Objects.nonNull(session.getIssuesRaised())) {
                 for(IssueRaisedBean issueRaisedBean : session.getIssuesRaised()) {
                 	try {
@@ -924,7 +924,7 @@ public class SessionServiceImpl implements SessionService {
 			if (sessionLatest != null) {
 				IssueRaisedBean issueRaisedBean = new IssueRaisedBean(issueId, dateTime);
 				sessionLatest.addRaisedIssue(issueRaisedBean);
-				save(sessionLatest, new ArrayList<>());
+				save(sessionLatest, new HashMap<>());
 				sessionActivityService.addRaisedIssue(sessionLatest, issueRaisedBean.getIssueId(), dateTime, loggedUser, userAccountId);
 			}
 		} catch (Exception ex) {
@@ -1037,11 +1037,11 @@ public class SessionServiceImpl implements SessionService {
      * @param leavers -- List of users leaving the session which needs to updated into session.
      */
     @Deprecated
-	private void save(Session session, List<String> leavers) {
-    	for (String leaver : leavers) {
-            clearActiveSessionFromCache(leaver);
+	private void save(Session session, Map<String, String> leavers) {
+    	for (Map.Entry<String, String> leaver : leavers.entrySet()) {
+            clearActiveSessionFromCache(leaver.getKey());
             CompletableFuture.runAsync(() -> {
-            	sessionActivityService.addParticipantLeft(session, new Date(), leaver);
+            	sessionActivityService.addParticipantLeft(session, new Date(), leaver.getKey(), leaver.getValue());
             });
         }
 		Session savedSession = sessionRepository.save(session);
@@ -1078,29 +1078,29 @@ public class SessionServiceImpl implements SessionService {
 	 * @param timeLogged -- Logged in time on the session.
 	 * @return -- Returns the DeactivateResult object which holds the updated session object and any validation errors.
 	 */
-	private DeactivateResult validateDeactivateSession(Session session, String user, Status status, Duration timeLogged) {
+	private DeactivateResult validateDeactivateSession(Session session, String user, String userAccountId, Status status, Duration timeLogged) {
         if (!Objects.isNull(session)) {
             if (user.equals(session.getAssignee())) { // Pause if it is assigned to same user
-                List<String> leavingUsers = new ArrayList<>();
+                Map<String, String> leavingUsers = new HashMap<>();
                 if(!Objects.isNull(session.getParticipants())) {
                 	for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) {
-                        leavingUsers.add(p.getUser());
+                		leavingUsers.put(p.getUser(), p.getUserAccountId());
                     }
                 }
                 Session activeUserSession = getActiveSession(user, null).getSession();
                 if (session.getId().equals(!Objects.isNull(activeUserSession) ? activeUserSession.getId() : null)) { // If this is my active session then I want to leave it
-                    leavingUsers.add(user);
+                    leavingUsers.put(user, userAccountId);
                 }
                 session.setStatus(status);
                 session.setTimeLogged(timeLogged);
                 return new DeactivateResult(validateUpdate(user, session), leavingUsers);
             } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user))) { // Just leave if it isn't
                 CompletableFuture.runAsync(() -> {
-                	sessionActivityService.addParticipantLeft(session, new Date(), user);
+                	sessionActivityService.addParticipantLeft(session, new Date(), user, userAccountId);
                 });
             }
         }
-        return new DeactivateResult(validateUpdate(user, session), user);
+        return new DeactivateResult(validateUpdate(user, session), user, userAccountId);
     }
 	
 	/**
@@ -1108,11 +1108,12 @@ public class SessionServiceImpl implements SessionService {
 	 * 
 	 * @param session -- Session object to be validated.
 	 * @param user -- Logged in user key.
+	 * @param userAccountId -- Logged in user account id
 	 * @return -- Returns the DeactivateResult object which holds the updated session object and any validation errors.
 	 */
 	@Deprecated
-	private DeactivateResult validateDeactivateSession(Session session, String user) {
-        return validateDeactivateSession(session, user, Status.PAUSED, null);
+	private DeactivateResult validateDeactivateSession(Session session, String user, String userAccountId) {
+        return validateDeactivateSession(session, user, userAccountId, Status.PAUSED, null);
     }
 	
 	/**
@@ -1252,11 +1253,11 @@ public class SessionServiceImpl implements SessionService {
             return new UpdateResult(errorCollection, newSession);
         }
         
-        List<String> leavers = Lists.newArrayList();
+        Map<String, String> leavers = new HashMap<>();
         if (!newSession.isShared()) { // If we aren't shared, we wanna kick out all the current users
         	if(!Objects.isNull(newSession.getParticipants())) {
             	for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-                    leavers.add(p.getUser());
+            		leavers.put(p.getUser(), p.getUserAccountId());
                 }
             }
         }
@@ -1288,19 +1289,19 @@ public class SessionServiceImpl implements SessionService {
     }
 	
 	public class DeactivateResult extends SessionResult {
-		private List<String> leavers;
+		private Map<String, String> leavers;
 
 		public DeactivateResult(ErrorCollection errorCollection, Session session) {
 		    super(errorCollection, session);
 		}
 
-		public DeactivateResult(UpdateResult result, String leaver) {
+		public DeactivateResult(UpdateResult result, String leaver, String leaverAccountId) {
 		    super(result.getErrorCollection(), result.getSession());
 		    this.leavers = result.getLeavers();
-		    leavers.add(leaver);;
+		    leavers.put(leaver, leaverAccountId);
 		}
 
-		public DeactivateResult(UpdateResult result, List<String> leavers) {
+		public DeactivateResult(UpdateResult result, Map<String, String> leavers) {
 		    super(result.getErrorCollection(), result.getSession());
 		    this.leavers = leavers;
 		}
@@ -1310,11 +1311,11 @@ public class SessionServiceImpl implements SessionService {
 		    this.leavers = result.getLeavers();
 		}
 
-		public void addLeaver(String leaver) {
-		    leavers.add(leaver);
+		public void addLeaver(String leaver, String leaverAccountId) {
+		    leavers.put(leaver, leaverAccountId);
 		}
 
-		public List<String> getLeavers() {
+		public Map<String, String> getLeavers() {
 		    return leavers;
 		}
 	}
@@ -1325,7 +1326,7 @@ public class SessionServiceImpl implements SessionService {
         private final boolean isActivate;
         private final boolean isDeactivate;
         private final String relatedUser;
-        private List<String> leavers;
+        private Map<String, String> leavers;
         private List<Object> events;
 
         public UpdateResult(ErrorCollection errorCollection, Session session) {
@@ -1334,11 +1335,11 @@ public class SessionServiceImpl implements SessionService {
             this.relatedUser = null;
             this.isActivate = false;
             this.isDeactivate = false;
-            this.leavers = new ArrayList<>();
+            this.leavers = new HashMap<>();
             this.events = new ArrayList<>();
         }
 
-        public UpdateResult(ErrorCollection errorCollection, Session session, List<String> leavers) {
+        public UpdateResult(ErrorCollection errorCollection, Session session, Map<String, String> leavers) {
             super(errorCollection, session);
             this.deactivateResult = null;
             this.relatedUser = null;
@@ -1355,7 +1356,7 @@ public class SessionServiceImpl implements SessionService {
             this.isActivate = isActivate;
             this.isDeactivate = isDeactivate;
             this.events = new ArrayList<>();
-            this.leavers = new ArrayList<>();
+            this.leavers = new HashMap<>();
         }
 
         public UpdateResult(UpdateResult result, DeactivateResult leaveResult, String relatedUser, boolean isActivate, boolean isDeactivate) {
@@ -1396,7 +1397,7 @@ public class SessionServiceImpl implements SessionService {
             return events;
         }
 
-        List<String> getLeavers() {
+        Map<String, String> getLeavers() {
             return leavers;
         }
     }

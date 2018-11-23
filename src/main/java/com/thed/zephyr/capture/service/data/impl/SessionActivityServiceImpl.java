@@ -80,12 +80,12 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity addParticipantLeft(Session session, Date timestamp, String userKey) {
+    public SessionActivity addParticipantLeft(Session session, Date timestamp, String userKey, String userAccountId) {
         UserLeftSessionActivity sessionActivity = null;
         Participant participant = session.participantLeaveSession(userKey, timestamp);
         if (participant != null) {
             sessionActivity = new UserLeftSessionActivity(
-                    session.getId(), session.getCtId(), timestamp, userKey, session.getProjectId(), participant);
+                    session.getId(), session.getCtId(), timestamp, userKey, userAccountId, session.getProjectId(), participant);
             sessionActivityRepository.save(sessionActivity);
         }
         return sessionActivity;
@@ -95,7 +95,7 @@ public class SessionActivityServiceImpl implements SessionActivityService {
         UserLeftSessionActivity sessionActivity = null;
         if (participant != null && session != null) {
             sessionActivity = new UserLeftSessionActivity(
-                    session.getId(), session.getCtId(), participant.getTimeLeft(), participant.getUser(), session.getProjectId(), participant);
+                    session.getId(), session.getCtId(), participant.getTimeLeft(), participant.getUser(), participant.getUserAccountId(), session.getProjectId(), participant);
             sessionActivityRepository.save(sessionActivity);
         }
         return sessionActivity;

@@ -1,11 +1,6 @@
 package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.jira.rest.client.api.domain.Attachment;
-import com.atlassian.jira.rest.client.api.domain.ChangelogItem;
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.internal.json.AttachmentJsonParser;
-import com.atlassian.jira.rest.client.internal.json.ChangelogItemJsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
@@ -21,18 +16,14 @@ import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
-import com.thed.zephyr.capture.service.data.impl.SessionServiceImpl;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.IssueWebHookHandler;
 import com.thed.zephyr.capture.service.jira.WebhookHandlerService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
-import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -223,7 +214,7 @@ public class IssueWebhookController {
         // If we aren't shared, we wanna kick out all the current users
         if (!newSession.isShared()) {
             for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-                sessionActivityService.addParticipantLeft(newSession, new Date(), p.getUser());
+                sessionActivityService.addParticipantLeft(newSession, new Date(), p.getUser(), p.getUserAccountId());
             }
         }
         return errorCollection.getErrors();
