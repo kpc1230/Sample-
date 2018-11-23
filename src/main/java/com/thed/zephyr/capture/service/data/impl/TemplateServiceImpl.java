@@ -240,9 +240,9 @@ public class TemplateServiceImpl implements TemplateService {
 				, userService.findUserByKey(created.getCreatedBy()));
 	}
 
-	protected Set<String> getVariables(JsonNode json, String userName){
+	protected Set<String> getVariables(JsonNode json, String userName, String userAccountId){
 		Set<String> variableNames = variableService.parseVariables(json);
-		List<Variable> variableList = variableService.getVariables(userName).getContent();
+		List<Variable> variableList = variableService.getVariables(userName, userAccountId).getContent();
 		return variableList
 				.stream()
 				.filter( var -> variableNames.contains(var.getName().toLowerCase()))
@@ -250,8 +250,8 @@ public class TemplateServiceImpl implements TemplateService {
 				.collect(Collectors.toSet());
 	}
 	
-	protected List<Variable> getUserVariables(String userName){
-		return variableService.getVariables(userName).getContent();
+	protected List<Variable> getUserVariables(String userName, String userAccountId){
+		return variableService.getVariables(userName, userAccountId).getContent();
 	}
 	
 	public void deleteTemplatesByCtIdAndProject(String ctId, Long projectId) {

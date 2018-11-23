@@ -92,7 +92,7 @@ public class VariableController extends CaptureAbstractController{
 		log.info("getVariables start for ownerName:{}", ownerName);
 		VariableSearchList response = null;
 		try {
-			response = variableService.getVariables(ownerName, offset, limit);
+			response = variableService.getVariables(ownerName, getUserAccountId(), offset, limit);
 		} catch (Exception ex) {
 			log.error("Error during getVariables.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());

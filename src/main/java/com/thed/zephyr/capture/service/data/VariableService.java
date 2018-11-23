@@ -13,8 +13,8 @@ import com.thed.zephyr.capture.model.util.VariableSearchList;
  */
 public interface VariableService {
 	public void createVariable(VariableRequest input) throws CaptureValidationException;
-	public VariableSearchList getVariables(String userName, Integer offset, Integer limit);
-	public VariableSearchList getVariables(String userName);
+	public VariableSearchList getVariables(String userName, String userAccountId, Integer offset, Integer limit);
+	public VariableSearchList getVariables(String userName, String userAccountId);
 	public void updateVariable(VariableRequest input) throws CaptureValidationException;
 	public void deleteVariable(VariableRequest input) throws CaptureValidationException;
 	public Set<String> parseVariables(JsonNode noteData) ;

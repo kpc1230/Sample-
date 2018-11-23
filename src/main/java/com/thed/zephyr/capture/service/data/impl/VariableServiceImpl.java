@@ -45,17 +45,17 @@ public class VariableServiceImpl implements VariableService {
 	}
 
 	@Override
-	public VariableSearchList getVariables(String userName){
-		return getVariables(userName, null, null);
+	public VariableSearchList getVariables(String userName, String userAccountId){
+		return getVariables(userName, userAccountId, null, null);
 	}
 
 	@Override
-	public VariableSearchList getVariables(String ownerName, Integer offset, Integer limit) {
+	public VariableSearchList getVariables(String ownerName, String ownerAccountId, Integer offset, Integer limit) {
 		PageRequest page = getPageRequest(offset, limit);
 		Page<Variable> variablePage = getVariableObjects(ownerName, offset, limit);
 		List<Variable> list = variablePage.getContent();
 		if(list == null || list.size() == 0){
-			list = createDefaultVariables(ownerName);
+			list = createDefaultVariables(ownerName, ownerAccountId);
 			page = getPageRequest(null, null);
 		}
 
@@ -79,10 +79,10 @@ public class VariableServiceImpl implements VariableService {
 	 * @param ownerName
 	 * @return
 	 */
-	private List<Variable> createDefaultVariables(String ownerName) {
+	private List<Variable> createDefaultVariables(String ownerName, String ownerAccountId) {
 		List<Variable> variableList = new ArrayList<>();
         for (String name : DefaultVariables.DEFAULT_VARIABLES.keySet()) {
-            Variable var = new Variable(CaptureUtil.getCurrentCtId(), ownerName, name,
+            Variable var = new Variable(CaptureUtil.getCurrentCtId(), ownerName, ownerAccountId, name,
             		DefaultVariables.DEFAULT_VARIABLES.get(name));
             repository.save(var);
             variableList.add(var);
