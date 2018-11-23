@@ -47,7 +47,7 @@ public interface SessionActivityService {
      * @param assignee -- User to which session is assigned.
      * @return -- Returns the saved session activity object.
      */
-    SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignee,String oldAssignee);
+    SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignerAccountId, String assignee, String assigneeAccountId, String oldAssignee);
 
     SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator);
 

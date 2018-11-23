@@ -1,7 +1,6 @@
 package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
-import org.joda.time.DateTime;
 
 import java.util.Date;
 
@@ -11,6 +10,8 @@ import java.util.Date;
 public class UserAssignedSessionActivity extends SessionActivity {
 
     private String assignee;
+    
+    private String assigneeAccountId;
 
     @DynamoDBIgnore
     private String assigneeDisplayName;
@@ -18,9 +19,10 @@ public class UserAssignedSessionActivity extends SessionActivity {
     public UserAssignedSessionActivity() {
     }
 
-    public UserAssignedSessionActivity(String sessionId, String ctId, Date timestamp, String user, Long projectId, String assignee) {
-        super(sessionId, ctId, timestamp, user, projectId);
+    public UserAssignedSessionActivity(String sessionId, String ctId, Date timestamp, String user, String userAccountId, Long projectId, String assignee, String assigneeAccountId) {
+        super(sessionId, ctId, timestamp, user, userAccountId, projectId);
         this.assignee = assignee;
+        this.assigneeAccountId = assigneeAccountId;
     }
 
     public String getAssignee() {
@@ -39,7 +41,15 @@ public class UserAssignedSessionActivity extends SessionActivity {
         this.assigneeDisplayName = assigneeDisplayName;
     }
 
-    @Override
+    public String getAssigneeAccountId() {
+		return assigneeAccountId;
+	}
+
+	public void setAssigneeAccountId(String assigneeAccountId) {
+		this.assigneeAccountId = assigneeAccountId;
+	}
+
+	@Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -56,6 +66,10 @@ public class UserAssignedSessionActivity extends SessionActivity {
         if (assignee != null ? !assignee.equals(that.assignee) : that.assignee != null) {
             return false;
         }
+        
+        if (assigneeAccountId != null ? !assigneeAccountId.equals(that.assigneeAccountId) : that.assigneeAccountId != null) {
+            return false;
+        }
 
         return true;
     }
@@ -64,6 +78,7 @@ public class UserAssignedSessionActivity extends SessionActivity {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (assignee != null ? assignee.hashCode() : 0);
+        result = 31 * result + (assigneeAccountId != null ? assigneeAccountId.hashCode() : 0);
         return result;
     }
 }

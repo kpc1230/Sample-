@@ -158,7 +158,7 @@ public class SessionController extends CaptureAbstractController{
 	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, loggedUserAccountId);
 	        	if(!loggedUserKey.equals(createdSession.getAssignee())) {
 	        		 //Save if the assigned user and logged in user are different into the session as activity.
-	    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, createdSession.getAssignee(),null);
+	    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, loggedUserAccountId, createdSession.getAssignee(), createdSession.getAssigneeAccountId(), null);
 	        	}
 			});        		
 	        if(sessionRequest.getStartNow()) { //User requested to start the session.
@@ -773,6 +773,7 @@ public class SessionController extends CaptureAbstractController{
 			loadedSession.setStatus(Status.PAUSED);//set session status to pause
 			CaptureUser user = userService.findUserByKey(assignee);
 			if(user != null) loadedSession.setUserDisplayName(user.getDisplayName());
+			loadedSession.setAssigneeAccountId(user.getAccountId());
 			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loadedSession, assignee);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
@@ -780,7 +781,7 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult, true);
 			//Save assigned user to the session as activity.
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, assignee,oldAssignee);
+				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, loggedUserAccountId, assignee, user.getAccountId(), oldAssignee);
 				sessionActivityService.setStatus(loadedSession, new Date(), loggedUserKey, loggedUserAccountId);
 			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession, false);
@@ -936,7 +937,7 @@ public class SessionController extends CaptureAbstractController{
         		sessionActivityService.setStatus(newSession, new Date(), loggedUserKey, loggedUserAccountId);
 				if(!loggedUserKey.equals(newSession.getAssignee())) {
 					//Save if the assigned user and logged in user are different into the session as activity.
-					sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, newSession.getAssignee(),null);
+					sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, loggedUserAccountId, newSession.getAssignee(), newSession.getAssigneeAccountId(), null);
 				}
 			});
 			log.info("End of cloneSession()");
