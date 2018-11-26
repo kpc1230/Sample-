@@ -210,6 +210,46 @@ public class UserServiceImpl implements UserService{
         }
         return null;
     }
+    
+    @Override
+    public CaptureUser findUserByAccountId(String accountId) {
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        if(hostUser != null) {
+            AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+            return findUserByAccountId(acHostModel, accountId);
+        }else{
+            return null;
+        }
+    }
+    
+    @Override
+    public CaptureUser findUserByAccountId(AcHostModel acHostModel, String accountId) {
+        if(StringUtils.isEmpty(accountId)){
+            return null;
+        }
+        String uri = acHostModel.getBaseUrl();
+        CaptureUser captureUser = null;
+        try {
+            captureUser = tenantAwareCache.getOrElse(acHostModel, buildUserCacheKey(accountId), new Callable<CaptureUser>() {
+                @Override
+                public CaptureUser call() throws Exception {
+                    URI targetUrl = UriComponentsBuilder.fromUriString(uri)
+                            .path(JiraConstants.REST_API_USER)
+                            .queryParam("accountId", accountId)
+                            .build()
+                            .encode()
+                            .toUri();
+
+                    CaptureUser response = atlassianHostRestClients.authenticatedAsAddon().getForObject(targetUrl, CaptureUser.class);
+                    return response;
+                }
+            }, dynamicProperty.getIntProp(ApplicationConstants.USER_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+
+        } catch (Exception exception) {
+            log.error("Error during getting user by user account id from jira.", exception);
+        }
+        return captureUser;
+    }
 
     private String buildUserCacheKey(String userIdOrKey){
         return ApplicationConstants.USER_CACHE_KEY_PREFIX+userIdOrKey;
