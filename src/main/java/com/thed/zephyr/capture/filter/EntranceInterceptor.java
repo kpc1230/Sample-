@@ -1,6 +1,8 @@
 package com.thed.zephyr.capture.filter;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.service.gdpr.UserAccountActivitesService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.apache.commons.io.IOUtils;
@@ -35,6 +37,9 @@ public class EntranceInterceptor extends HandlerInterceptorAdapter {
 
     @Autowired
     private ResourceLoader resourceLoader;
+    
+    @Autowired
+    private UserAccountActivitesService userAccountActivitesService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -72,6 +77,18 @@ public class EntranceInterceptor extends HandlerInterceptorAdapter {
                     }
 
             }
+        }
+        
+        if(auth != null && dynamicProperty.getBoolProp("user.account.polling", false).get()) { 
+        	try {
+        		 AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+                 AcHostModel acHostModel = (AcHostModel) host.getHost();
+                 //Saving user activities for gdpr reporting.
+                 userAccountActivitesService.saveUserActivities(host.getUserAccountId().get(), acHostModel.getClientKey(),
+                 		acHostModel.getCtId(), request.getRequestURL().toString());
+        	} catch(Exception ex) {
+        		log.error("error during saving user activites for gdpr reporting",ex.getMessage());
+        	}
         }
         return true;
     }

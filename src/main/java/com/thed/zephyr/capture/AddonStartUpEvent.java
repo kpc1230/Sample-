@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 
@@ -45,6 +44,7 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
         createTemplateTableIfNotExist(tables, dynamoDB);
         createSessionActivityTableIfNotExist(tables, dynamoDB);
         createVariableTableIfNotExist(tables, dynamoDB);
+        createUserActivitiesTableIfNotExist(tables, dynamoDB);
     }
 
     @EventListener
@@ -153,6 +153,25 @@ public class AddonStartUpEvent implements ApplicationListener<ApplicationReadyEv
             log.info("The Variable table was successfully created");
         } catch (InterruptedException e) {
             log.error("Error during creation DynamoDB table:{}", variableTableName);
+        }
+    }
+    
+    private void createUserActivitiesTableIfNotExist(TableCollection<ListTablesResult> tables, DynamoDB dynamoDB) {
+        String userActivitiesTableName = dynamoDBTableNameResolver.getTableNameWithPrefix(ApplicationConstants.USER_ACTIVITIES_TABLE_NAME);
+        for (Table table:tables){
+            if(StringUtils.equals(userActivitiesTableName, table.getTableName())){
+                log.debug("The table:{} already created, skip creation", table.getTableName());
+                return;
+            }
+        }
+        log.info("Creating User Activities DynamoDB table ...");
+        try {
+            CreateTableRequest createTableRequest = new CreateUserActivitiesTableRequest().build(userActivitiesTableName);
+            Table table = dynamoDB.createTable(createTableRequest);
+            table.waitForActive();
+            log.info("The User Activities table was successfully created");
+        } catch (InterruptedException e) {
+            log.error("Error during creation DynamoDB table:{}", userActivitiesTableName);
         }
     }
 }

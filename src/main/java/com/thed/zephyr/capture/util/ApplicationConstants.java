@@ -20,6 +20,7 @@ public class ApplicationConstants {
     public static final String NOTE_TABLE_NAME = "note";
     public static final String TEMPLATE_TABLE_NAME = "template";
     public static final String VARIABLE_TABLE_NAME = "variable";
+    public static final String USER_ACTIVITIES_TABLE_NAME = "user_activities";
     public static final String SESSION_ACTIVITY_TABLE_NAME = "session_activity";
     public static final String DYNAMODB_TABEL_NAME_PREFIX = "dynamodb.table.name.prefix";
 
@@ -36,6 +37,8 @@ public class ApplicationConstants {
     public static final long VARIABLE_TABLE_WRITE_CAPACITY_UNITS = 2l;
     public static final long NOTE_TABLE_READ_CAPACITY_UNITS = 2l;
     public static final long NOTE_TABLE_WRITE_CAPACITY_UNITS = 2l;
+    public static final long USER_ACTIVITIES_TABLE_READ_CAPACITY_UNITS = 2l;
+    public static final long USER_ACTIVITIES__TABLE_WRITE_CAPACITY_UNITS = 2l;
 
     /** DynamoDB global secondary indexes **/
     public static final String GSI_CLIENT_KEY = "idx_client_key";
