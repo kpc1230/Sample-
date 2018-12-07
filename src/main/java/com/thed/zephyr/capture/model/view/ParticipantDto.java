@@ -7,6 +7,8 @@ import com.thed.zephyr.capture.model.Participant;
 public class ParticipantDto {
 
     private String user;
+    
+    private String userAccountId;
 
     private String userDisplayName;
 
@@ -23,6 +25,7 @@ public class ParticipantDto {
     public ParticipantDto(final Participant participant, String userAvatarSrc, String userLargeAvatarSrc) {
     	SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
         this.user = participant.getUser();
+        this.userAccountId = participant.getUserAccountId();
         this.userDisplayName = participant.getUser();
         this.timeJoined = format.format(participant.getTimeJoined());
         this.hasLeft = participant.hasLeft();
@@ -60,4 +63,9 @@ public class ParticipantDto {
 	public String getUserLargeAvatarSrc() {
 		return userLargeAvatarSrc;
 	}
+
+	public String getUserAccountId() {
+		return userAccountId;
+	}
+	
 }
