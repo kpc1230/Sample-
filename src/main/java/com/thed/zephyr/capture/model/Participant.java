@@ -10,6 +10,7 @@ import java.util.Date;
 /**
  * Created by aliakseimatsarski on 8/15/17.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Participant  implements Comparable<Participant>{
 
     private String user;
