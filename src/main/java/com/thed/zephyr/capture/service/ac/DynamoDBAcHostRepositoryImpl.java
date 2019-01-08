@@ -4,6 +4,7 @@ import com.atlassian.connect.spring.AtlassianHost;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.model.AcHostModel.GDPRMigrationStatus;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.slf4j.Logger;
@@ -56,6 +57,7 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
         }
         AcHostModel acHostModel = new AcHostModel(atlassianHost);
         acHostModel.setStatus(AcHostModel.TenantStatus.ACTIVE);
+        acHostModel.setMigrated(GDPRMigrationStatus.GDPR);
         removeTenantFromCache(atlassianHost);
 
         return acHostModelRepository.save(acHostModel);
@@ -210,6 +212,7 @@ public class DynamoDBAcHostRepositoryImpl implements DynamoDBAcHostRepository {
         acHostModel.setCtId(oldAcHostModel.getCtId());
         acHostModel.setCreatedDate(oldAcHostModel.getCreatedDate() != null?oldAcHostModel.getCreatedDate():acHostModel.getCreatedDate());
         acHostModel.setStatus(atlassianHost.isAddonInstalled()? AcHostModel.TenantStatus.ACTIVE: AcHostModel.TenantStatus.UNINSTALLED);
+        acHostModel.setMigrated(oldAcHostModel.getMigrated());
         log.info("AcHostModel updated installed:{}", atlassianHost.isAddonInstalled());
         removeTenantFromCache(atlassianHost);
 

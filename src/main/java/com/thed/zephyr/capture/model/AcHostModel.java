@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.atlassian.connect.spring.AtlassianHost;
+import com.thed.zephyr.capture.service.db.converter.GDPRMigrationStatusTypeConverter;
 import com.thed.zephyr.capture.service.db.converter.TenantStatusTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import org.springframework.data.annotation.Id;
@@ -38,6 +39,9 @@ public class AcHostModel extends AtlassianHost implements Serializable{
   //  @DynamoDBIndexHashKey(globalSecondaryIndexName = ApplicationConstants.GSI_STATUS)
     @DynamoDBTypeConverted(converter = TenantStatusTypeConverter.class)
     private TenantStatus status;
+    
+    @DynamoDBTypeConverted(converter = GDPRMigrationStatusTypeConverter.class)
+    private GDPRMigrationStatus migrated;
 
     public AcHostModel(){
 }
@@ -193,8 +197,14 @@ public class AcHostModel extends AtlassianHost implements Serializable{
 	public void setLastModifiedByAccountId(String lastModifiedByAccountId) {
 		this.lastModifiedByAccountId = lastModifiedByAccountId;
 	}
+	
+	public GDPRMigrationStatus getMigrated() {
+		return migrated;
+	}
 
-
+	public void setMigrated(GDPRMigrationStatus migrated) {
+		this.migrated = migrated;
+	}
 
 	public enum TenantStatus {
         ACTIVE,
@@ -205,6 +215,22 @@ public class AcHostModel extends AtlassianHost implements Serializable{
         UNINSTALLED,
         TEMPORARY
     }
+	
+	public enum GDPRMigrationStatus {
+		MIGRATED("migrated"),
+		FAILED("failed"),
+		GDPR("gdpr");
+		
+		GDPRMigrationStatus(String status) {
+			this.status = status;
+		}
+		
+		private String status;
+		
+		public String toString() {
+			return status;
+		}
+	}
 
     @Override
     public String toString(){
@@ -220,7 +246,8 @@ public class AcHostModel extends AtlassianHost implements Serializable{
         sb.append("productType:" + this.getProductType() + ", ");
         sb.append("description:" + this.getDescription() + ", ");
         sb.append("serviceEntitlementNumber:" + this.getServiceEntitlementNumber() + ", ");
-        sb.append("isAddonInstalled:" + this.isAddonInstalled());
+        sb.append("isAddonInstalled:" + this.isAddonInstalled() + ", ");
+        sb.append("GDPRMigratedStatus:" + (this.migrated != null ? this.migrated.toString() : ""));
         sb.append("}");
 
         return sb.toString();
