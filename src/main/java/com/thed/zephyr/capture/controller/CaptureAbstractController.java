@@ -63,11 +63,7 @@ public abstract class CaptureAbstractController {
 	protected String getUser() throws CaptureValidationException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-		String userKey = host.getUserKey().get();
-		if(StringUtils.isBlank(userKey)) {
-			throw new CaptureValidationException(i18n.getMessage("rest.resource.user.not.authenticated"));
-		}
-		return userKey;
+		return host.getUserKey().orElse(null);
 	}
 	
 	/**

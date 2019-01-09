@@ -27,17 +27,17 @@ public class SessionDisplayUtils {
     @Autowired
     private ProjectService projectService;
 
-    public SessionDisplayHelper getDisplayHelper(String user, Session session) {
-        boolean isSessionEditable = permissionService.canEditSession(user, session);
-        boolean isStatusEditable = permissionService.canEditSessionStatus(user, session);
-        boolean canCreateNote = permissionService.canCreateNote(user, session);
-        boolean canJoin = permissionService.canJoinSession(user, session);
-        boolean isJoined = session.getParticipants() !=null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user)) : false;
+    public SessionDisplayHelper getDisplayHelper(String user, String userAccountId, Session session) {
+        boolean isSessionEditable = permissionService.canEditSession(user, userAccountId, session);
+        boolean isStatusEditable = permissionService.canEditSessionStatus(user, userAccountId, session);
+        boolean canCreateNote = permissionService.canCreateNote(user, userAccountId, session);
+        boolean canJoin = permissionService.canJoinSession(user, userAccountId, session);
+        boolean isJoined = session.getParticipants() !=null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user, userAccountId)) : false;
         boolean hasActive = session.getParticipants() !=null ? Iterables.any(session.getParticipants(), new ActiveParticipantPredicate()) : false;
-        boolean canCreateSession = permissionService.canCreateSession(user, projectService.getCaptureProject(session.getProjectId()));
+        boolean canCreateSession = permissionService.canCreateSession(user, userAccountId, projectService.getCaptureProject(session.getProjectId()));
         boolean isAssignee = session.getAssignee().equals(user);
         boolean showInvite = isAssignee && session.isShared();
-        boolean canAssign = permissionService.canAssignSession(user, projectService.getCaptureProject(session.getProjectId()));
+        boolean canAssign = permissionService.canAssignSession(user, userAccountId, projectService.getCaptureProject(session.getProjectId()));
         boolean isComplete = false;
         boolean isCreated = false;
         boolean isStarted = false;
@@ -52,18 +52,18 @@ public class SessionDisplayUtils {
                 hasActive, isStarted, canCreateSession, isAssignee, isComplete, isCreated, showInvite, canAssign);
     }
 
-    public SessionDisplayHelper getDisplayHelper(String user, LightSession session) {
-        boolean isSessionEditable = permissionService.canEditLightSession(user, session);
-        boolean isStatusEditable = permissionService.canEditSessionStatus(user, session);
-        boolean canCreateNote = permissionService.canCreateNote(user, session);
-        boolean canJoin = permissionService.canJoinSession(user, session);
+    public SessionDisplayHelper getDisplayHelper(String user, String userAccountId, LightSession session) {
+        boolean isSessionEditable = permissionService.canEditLightSession(user, userAccountId, session);
+        boolean isStatusEditable = permissionService.canEditSessionStatus(user, userAccountId, session);
+        boolean canCreateNote = permissionService.canCreateNote(user, userAccountId, session);
+        boolean canJoin = permissionService.canJoinSession(user, userAccountId, session);
         Collection<Participant> participant = getParticipants(session);
-        boolean isJoined = Iterables.any(participant, new UserIsParticipantPredicate(user));
+        boolean isJoined = Iterables.any(participant, new UserIsParticipantPredicate(user, userAccountId));
         boolean hasActive = Iterables.any(participant, new ActiveParticipantPredicate());
-        boolean canCreateSession = permissionService.canCreateSession(user, projectService.getCaptureProject(session.getProject().getId()));
+        boolean canCreateSession = permissionService.canCreateSession(user, userAccountId, projectService.getCaptureProject(session.getProject().getId()));
         boolean isAssignee = session.getAssignee().equals(user);
         boolean showInvite = isAssignee && session.isShared();
-        boolean canAssign = permissionService.canAssignSession(user, projectService.getCaptureProject(session.getProject().getId()));
+        boolean canAssign = permissionService.canAssignSession(user, userAccountId, projectService.getCaptureProject(session.getProject().getId()));
         boolean isComplete = false;
         boolean isCreated = false;
         boolean isStarted = false;

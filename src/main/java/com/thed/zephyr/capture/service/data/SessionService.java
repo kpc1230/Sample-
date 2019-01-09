@@ -186,7 +186,7 @@ public interface SessionService {
 	 * @param size -- Number of sessions to fetch.
 	 * @return
 	 */
-	SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
+	SessionDtoSearchList searchSession(String loggedUser, String loggedUserAccountId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
 
 	/**
 	 * @return -- Returns all the session statuses which are required to render in ui.
@@ -202,7 +202,7 @@ public interface SessionService {
 	 * @param isSendFull -- Flag to send whole session related or not.
 	 * @return -- Returns the constructed session dto object.
 	 */
-	SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull);
+	SessionDto constructSessionDto(String loggedInUser, String loggedInUserAccountId, Session session, boolean isSendFull);
 
 	/**
 	 * Get Complete session view details
@@ -211,7 +211,7 @@ public interface SessionService {
 	 * @param session -- Session object
 	 * @return Map of related issues, raised issues and activities
 	 */
-	Map<String, Object> getCompleteSessionView(String loggedUser, Session session);
+	Map<String, Object> getCompleteSessionView(String loggedUser, String loggedUserAccountId, Session session);
 	
 	/**
 	 * Assign session to the assignee. 
@@ -228,16 +228,16 @@ public interface SessionService {
 	 * @param user -- Logged in user
 	 * @return -- Returns the Session Extension Response object which holds the private and shared sessions for the user.
 	 */
-	SessionExtensionResponse getSessionsForExtension(String user,Boolean onlyActiveSession);
+	SessionExtensionResponse getSessionsForExtension(String user, String userAccountId, Boolean onlyActiveSession);
 	
 	/**
 	 * @return -- Returns the List of unique assignees for the logged in user tenant id.
 	 */
 	List<CaptureUser> fetchAllAssignees();
 
-	SessionDto getSessionRaisedDuring(String loggedUserKey, String ctId, Long raisedIssueId);
+	SessionDto getSessionRaisedDuring(String loggedUserKey, String loggedUserAccountId, String ctId, Long raisedIssueId);
 
-	SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String ctId, Long projectId, Long relatedIssueId);
+	SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String loggedUserAccountId, String ctId, Long projectId, Long relatedIssueId);
 
 	void updateSessionWithIssue(String ctId, Long projectId, String user, String userAccountId, Long issueId);
 

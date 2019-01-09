@@ -136,7 +136,8 @@ public class IssueServiceImpl implements IssueService {
                     }
                     return new CaptureIssue(issue.getSelf(),
                             issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution, null, parentId, parentKey);
+                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(),
+                            CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution, null, parentId, parentKey);
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
         } catch(RestClientException restClientException){
@@ -210,7 +211,8 @@ public class IssueServiceImpl implements IssueService {
                     }
                     captureIssues.add(new CaptureIssue(issue.getSelf(),
                             issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution,null, parentId, parentKey));
+                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(),
+                            issue.getReporter().getName(), CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution,null, parentId, parentKey));
                 });
         return captureIssues;
     }
@@ -220,8 +222,8 @@ public class IssueServiceImpl implements IssueService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String ctdId = CaptureUtil.getCurrentCtId();
-        SessionDto raisedDuringSessionDto = sessionService.getSessionRaisedDuring(host.getUserKey().get(), ctdId, issue.getId());
-        SessionDtoSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(host.getUserKey().get(), ctdId, issue.getProjectId(), issue.getId());
+        SessionDto raisedDuringSessionDto = sessionService.getSessionRaisedDuring(host.getUserKey().orElse(null), host.getUserAccountId().get(), ctdId, issue.getId());
+        SessionDtoSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(host.getUserKey().orElse(null), host.getUserAccountId().get(), ctdId, issue.getProjectId(), issue.getId());
         TestSectionResponse testSectionResponse = new TestSectionResponse();
         testSectionResponse.setSessions(sessionByRelatedIssueId.getContent());
         testSectionResponse.setRaisedDuring(raisedDuringSessionDto);
@@ -334,7 +336,8 @@ public class IssueServiceImpl implements IssueService {
             	}
         	}
         }
-        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution ,null, parentId, parentKey);
+        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(),
+        		issue.getReporter().getName(), CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution ,null, parentId, parentKey);
         if (StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {
@@ -546,6 +549,7 @@ public class IssueServiceImpl implements IssueService {
                             finalCaptureIssue = new CaptureIssue(new URI(issue.getString("self")), issue.getString("key"), issue.getLong("id"),
                                     issuetype != null ? issuetype.getString("iconUrl") : "", fields.getString("summary"), fields.getJSONObject("project").getLong("id"),
                                     fields.getJSONObject("project").getString("key"), fields.getJSONObject("reporter") != null ? fields.getJSONObject("reporter").getString("name") : "",
+                                    		 fields.getJSONObject("reporter") != null ? fields.getJSONObject("reporter").getString("accountId") : "",
                                     captureResolution, propertiesMap, parentId, parentKey);
                         }
                     }

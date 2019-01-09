@@ -428,7 +428,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionExtensionResponse getSessionsForExtension(String user,Boolean onlyActiveSession) {
+	public SessionExtensionResponse getSessionsForExtension(String user, String userAccountId, Boolean onlyActiveSession) {
 		String ctId = CaptureUtil.getCurrentCtId();
 		if(onlyActiveSession){
 			List<SessionDto> privateSessionsDto =  new ArrayList<>();
@@ -438,7 +438,7 @@ public class SessionServiceImpl implements SessionService {
 			if(activeSession!=null&&activeSession.getSession() !=null){
 				Session session = activeSession.getSession();
 				CaptureProject project = projectService.getCaptureProject(session.getProjectId());
-				activeSessionDto = createSessionDto(user, session, true, project, true);
+				activeSessionDto = createSessionDto(user, userAccountId, session, true, project, true);
 				if(session.getAssignee() != null && session.getAssignee().equals(user)){
 					privateSessionsDto.add(0,activeSessionDto);
 				}else{
@@ -454,14 +454,14 @@ public class SessionServiceImpl implements SessionService {
 			} catch(SearchPhaseExecutionException se) {
 				log.warn("Error in get sessions for user as no data in ES ->" + se.getMessage());
 			}
-			List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, privateSessionsList.size(), true);
-			List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, sharedSessionsList.size(), true);
+			List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, userAccountId, privateSessionsList, privateSessionsList.size(), true);
+			List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, userAccountId, sharedSessionsList, sharedSessionsList.size(), true);
 			SessionDto activeSessionDto = null;
 			SessionResult activeSession = getActiveSession(user,null);
 			if(activeSession!=null&&activeSession.getSession() !=null){
 				Session session = activeSession.getSession();
 				CaptureProject project = projectService.getCaptureProject(session.getProjectId());
-				activeSessionDto = createSessionDto(user, session, true, project, true);
+				activeSessionDto = createSessionDto(user, userAccountId, session, true, project, true);
 				if(session.getAssignee() != null && session.getAssignee().equals(user)){
 					privateSessionsDto.removeIf(sessionDto -> sessionDto.getId().equals(session.getId()));
 					privateSessionsDto.add(0,activeSessionDto);
@@ -492,7 +492,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField,
+	public SessionDtoSearchList searchSession(String loggedUser, String loggedUserAccountId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField,
 												boolean sortAscending, int startAt, int size) {
 		String ctId = CaptureUtil.getCurrentCtId();
 		Map<String,Object> sessionMap = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
@@ -507,7 +507,7 @@ public class SessionServiceImpl implements SessionService {
 				totalElement  = (Long)entry.getValue();
 			}
 		}
-		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, sessionsList, size, false);
+		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, loggedUserAccountId, sessionsList, size, false);
 		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, totalElement);
 		return sessionDtoSearchList;
 	}
@@ -518,16 +518,16 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull) {
+	public SessionDto constructSessionDto(String loggedInUser, String loggedInUserAccountId, Session session, boolean isSendFull) {
 		CaptureProject project = projectService.getCaptureProject(session.getProjectId());
 		boolean isActive = Status.STARTED.equals(session.getStatus());
-		return createSessionDto(loggedInUser, session, isActive, project, isSendFull);
+		return createSessionDto(loggedInUser, loggedInUserAccountId, session, isActive, project, isSendFull);
 	}
 
 	@Override
-	public Map<String, Object> getCompleteSessionView(String loggedUser, Session session) {
+	public Map<String, Object> getCompleteSessionView(String loggedUser, String loggedUserAccountId, Session session) {
 		Map<String, Object> map = new HashMap<>();
-		map.put(ApplicationConstants.SESSION, constructSessionDto(loggedUser, session, false));
+		map.put(ApplicationConstants.SESSION, constructSessionDto(loggedUser, loggedUserAccountId, session, false));
 		List<IssueRaisedBean> raisedIssues = Objects.nonNull(session.getIssuesRaised()) ? session.getIssuesRaised().stream().collect(Collectors.toList()) : new ArrayList<>(0);
 		map.put(ApplicationConstants.RAISED_ISSUE,
 				issueService.getCaptureIssuesByIssueRaiseBean(raisedIssues));
@@ -563,7 +563,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionDto getSessionRaisedDuring(String loggedUserKey, String ctId, Long raisedIssueId) {
+	public SessionDto getSessionRaisedDuring(String loggedUserKey, String loggedUserAccountId, String ctId, Long raisedIssueId) {
 		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndIssueId(ctId, raisedIssueId, CaptureUtil.getPageRequest(0, 1000));
 		List<Session> content = sessions != null?sessions.getContent():new ArrayList<>();
 		SessionSearchList result = new SessionSearchList();
@@ -588,11 +588,11 @@ public class SessionServiceImpl implements SessionService {
 		if(Objects.isNull(raisedDuring)) {
 			return null;
 		}
-		return constructSessionDto(loggedUserKey, raisedDuring, false);
+		return constructSessionDto(loggedUserKey, loggedUserAccountId, raisedDuring, false);
 	}
 
 	@Override
-	public SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String ctId, Long projectId, Long relatedIssueId) {
+	public SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String loggedUserAccountId, String ctId, Long projectId, Long relatedIssueId) {
 		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(ctId, projectId, relatedIssueId, CaptureUtil.getPageRequest(0, 1000));
 		List<SessionDto> sessionDtoList = Lists.newArrayList();
 		Map<Long, CaptureProject> projectsMap = new HashMap<>();
@@ -608,7 +608,7 @@ public class SessionServiceImpl implements SessionService {
 					project = projectsMap.get(session.getProjectId());
 				}
 				boolean isActive = session.getId().equals(activeSessionId);
-				sessionDto = createSessionDto(loggedUser, session, isActive, project, false);
+				sessionDto = createSessionDto(loggedUser, loggedUserAccountId, session, isActive, project, false);
 				sessionDtoList.add(sessionDto);
 			}
 		}
@@ -1094,7 +1094,7 @@ public class SessionServiceImpl implements SessionService {
                 session.setStatus(status);
                 session.setTimeLogged(timeLogged);
                 return new DeactivateResult(validateUpdate(user, session), leavingUsers);
-            } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user))) { // Just leave if it isn't
+            } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user, userAccountId))) { // Just leave if it isn't
                 CompletableFuture.runAsync(() -> {
                 	sessionActivityService.addParticipantLeft(session, new Date(), user, userAccountId);
                 });
@@ -1499,32 +1499,32 @@ public class SessionServiceImpl implements SessionService {
 	 * @param size -- Number of elements to fetch.
 	 * @return -- Returns the list of light session object based on startAt and size parameters.
 	 */
-	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, List<Session> sessionsList, int size, boolean isSessionFullLoad) {
+	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, String loggedInUserAccountId, List<Session> sessionsList, int size, boolean isSessionFullLoad) {
 		List<SessionDto> sessionDtoList = new ArrayList<>(size);
 		SessionDto sessionDto = null;
 		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, null);
 		for(Session session : sessionsList) {
 			CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
 			boolean isActive = session.getId().equals(activeSessionId);
-			sessionDto = createSessionDto(loggedInUser, session, isActive, project, isSessionFullLoad);
+			sessionDto = createSessionDto(loggedInUser, loggedInUserAccountId, session, isActive, project, isSessionFullLoad);
 			sessionDtoList.add(sessionDto);
 
 		}
 		return sessionDtoList;
 	}
 	
-	private SessionDisplayDto getDisplayHelper(String user, Session session, CaptureProject project) {
-        boolean isSessionEditable = permissionService.canEditSession(user, session);
-        boolean isStatusEditable = permissionService.canEditSessionStatus(user, session);
-        boolean canCreateNote = permissionService.canCreateNote(user, session);
-        boolean canJoin = permissionService.canJoinSession(user, session);
+	private SessionDisplayDto getDisplayHelper(String user, String userAccountId, Session session, CaptureProject project) {
+        boolean isSessionEditable = permissionService.canEditSession(user, userAccountId, session);
+        boolean isStatusEditable = permissionService.canEditSessionStatus(user, userAccountId, session);
+        boolean canCreateNote = permissionService.canCreateNote(user, userAccountId, session);
+        boolean canJoin = permissionService.canJoinSession(user, userAccountId, session);
         Collection<Participant> participant = session.getParticipants();
-        boolean isJoined = Objects.nonNull(participant) ? Iterables.any(participant, new UserIsParticipantPredicate(user)) : false;
+        boolean isJoined = Objects.nonNull(participant) ? Iterables.any(participant, new UserIsParticipantPredicate(user, userAccountId)) : false;
         boolean hasActive = Objects.nonNull(participant) ? Iterables.any(participant, new ActiveParticipantPredicate()) : false;
-        boolean canCreateSession = permissionService.canCreateSession(user, project);
+        boolean canCreateSession = permissionService.canCreateSession(user, userAccountId, project);
         boolean isAssignee = session.getAssignee().equals(user);
         boolean showInvite = isAssignee && session.isShared();
-        boolean canAssign = permissionService.canAssignSession(user, project);
+        boolean canAssign = permissionService.canAssignSession(user, userAccountId, project);
         boolean isComplete = false;
         boolean isCreated = false;
         boolean isStarted = false;
@@ -1539,8 +1539,8 @@ public class SessionServiceImpl implements SessionService {
                 isStarted, canCreateSession, isAssignee, isComplete, isCreated, showInvite, canAssign);
     }
 	
-	private SessionDto createSessionDto(String loggedUser, Session session, boolean isActive, CaptureProject project, boolean isSendFull) {
-		SessionDisplayDto permissions = getDisplayHelper(loggedUser, session, project);
+	private SessionDto createSessionDto(String loggedUser, String loggedUserAccountId, Session session, boolean isActive, CaptureProject project, boolean isSendFull) {
+		SessionDisplayDto permissions = getDisplayHelper(loggedUser, loggedUserAccountId, session, project);
 		Integer activeParticipantCount = 0;
 		CaptureUser user = null;
 		String userAvatarSrc = null, userLargeAvatarSrc = null;

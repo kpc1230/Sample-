@@ -68,7 +68,7 @@ public class NoteController extends CaptureAbstractController {
         NoteRequest created = null;
         try {
         	Session session = validateAndGetSession(noteRequest.getSessionId());
-            if (session != null && !permissionService.canCreateNote(getUser(), session)) {
+            if (session != null && !permissionService.canCreateNote(getUser(), getUserAccountId(), session)) {
 				throw new CaptureValidationException(i18n.getMessage("note.create.permission.violation"));
 			}
             noteRequest.setUser(hostUser.getUserKey().get());
@@ -130,7 +130,7 @@ public class NoteController extends CaptureAbstractController {
         log.info("Delete NoteSessionActivity start for the id:{}", noteSessionActivityId);
         try {
             NoteSessionActivity sessionActivity = (NoteSessionActivity)sessionActivityService.getSessionActivity(noteSessionActivityId);
-            if (!permissionService.canEditNote(getUser(), sessionActivity.getSessionId(),sessionActivity)) {
+            if (!permissionService.canEditNote(getUser(), getUserAccountId(), sessionActivity.getSessionId(),sessionActivity)) {
 				throw new CaptureRuntimeException(i18n.getMessage("note.delete.permission.violation"));
 			}
             noteService.delete(noteSessionActivityId);
@@ -178,7 +178,7 @@ public class NoteController extends CaptureAbstractController {
         }
         NoteSearchList result = null;
         try {
-            result = noteService.getNotesByProjectId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(), projectId, noteFilter, page, limit);
+            result = noteService.getNotesByProjectId(hostUser.getUserKey().orElse(null), hostUser.getUserAccountId().get(), CaptureUtil.getCurrentCtId(), projectId, noteFilter, page, limit);
         } catch (Exception exception) {
             log.error("Error during getting notes by projectId:{} method:POST page:{} limit:{}", projectId, page, limit, exception);
             throw new CaptureRuntimeException(exception.getMessage());
@@ -214,7 +214,7 @@ public class NoteController extends CaptureAbstractController {
         }
         NoteSearchList result = null;
         try {
-            result = noteService.getNotesByProjectId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(), projectId, populateNoteFilter(notesFilterStateUI), page, limit);
+            result = noteService.getNotesByProjectId(hostUser.getUserKey().orElse(null), hostUser.getUserAccountId().get(), CaptureUtil.getCurrentCtId(), projectId, populateNoteFilter(notesFilterStateUI), page, limit);
         } catch (Exception exception) {
             log.error("Error during getting notes by projectId:{} method:GET page:{} limit:{}", projectId, page, limit, exception);
             throw new CaptureRuntimeException(exception.getMessage());
@@ -236,7 +236,7 @@ public class NoteController extends CaptureAbstractController {
         NoteSearchList result = null;
         try {
             validateAndGetSession(sessionId);
-            result = noteService.getNotesBySessionId(hostUser.getUserKey().get(), CaptureUtil.getCurrentCtId(), sessionId, page, limit);
+            result = noteService.getNotesBySessionId(hostUser.getUserKey().orElse(null), hostUser.getUserAccountId().get(), CaptureUtil.getCurrentCtId(), sessionId, page, limit);
         } catch (Exception exception) {
             log.error("Error during getting notes by sessionId:{} page:{} limit:{}", sessionId, page, limit, exception);
             throw new CaptureRuntimeException(exception.getMessage());

@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.service.impl;
 
 import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.connect.spring.AtlassianHostUser.AtlassianHostUserBuilder;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.Permissions;
 import com.atlassian.jira.rest.client.api.domain.input.MyPermissionsInput;
@@ -75,17 +76,17 @@ public class PermissionServiceImpl implements PermissionService {
         return permissions;
     }
 
-    private Map<String, Boolean> getPermissionMapForProject(Long projectId, String user) {
+    private Map<String, Boolean> getPermissionMapForProject(Long projectId, String user, String userAccountId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         AcHostModel acHostModel = (AcHostModel) host.getHost();
         String caheKey = projectId != null ? String.valueOf(projectId) : "";
         caheKey += "-user-";
-        caheKey += user != null ? user : host.getUserKey().get();
+        caheKey += CaptureUtil.getUserId(user, userAccountId, host.getUserAccountId().get());
         Map<String, Boolean> map = null;
         try {
             map = tenantAwareCache.getOrElse(acHostModel, ApplicationConstants.PERMISSION_CACHE_KEY_PREFIX + "project-" + caheKey, () -> {
-                Map<String, Boolean> permissionsMap = getPermissionForProject(projectId, user);
+                Map<String, Boolean> permissionsMap = getPermissionForProject(projectId, user, userAccountId);
                 return permissionsMap.size() > 0 ? permissionsMap : null;
             }, dynamicProperty.getIntProp(ApplicationConstants.PERMISSION_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
         } catch (Exception exception) {
@@ -122,7 +123,7 @@ public class PermissionServiceImpl implements PermissionService {
         AcHostModel acHostModel = (AcHostModel) host.getHost();
         Map<String, Boolean> map = null;
         try {
-            map = tenantAwareCache.getOrElse(acHostModel, ApplicationConstants.PERMISSION_CACHE_KEY_PREFIX + "user-key-" + host.getUserKey().get(), () -> {
+            map = tenantAwareCache.getOrElse(acHostModel, ApplicationConstants.PERMISSION_CACHE_KEY_PREFIX + "user-accountId-" + host.getUserAccountId().get(), () -> {
                 Permissions permi = getAllUserPermissions();
                 Map<String, Boolean> map2 = new HashMap<>();
                 permi.getPermissionMap().forEach((k, v) -> {
@@ -136,17 +137,22 @@ public class PermissionServiceImpl implements PermissionService {
         return map != null && map.size() > 0 ? map : new HashMap<>();
     }
 
-    private Map<String, Boolean> getPermissionForProject(Long projectId, String user) {
+    private Map<String, Boolean> getPermissionForProject(Long projectId, String user, String userAccountId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
-        if(null != user && StringUtils.isNotEmpty(user)){
-            hostUser = new AtlassianHostUser(hostUser.getHost(),Optional.of(user));
+        AtlassianHostUserBuilder atlassianHostUserBuilder = AtlassianHostUser.builder(hostUser.getHost());
+        if(StringUtils.isNotEmpty(userAccountId)) {
+        	atlassianHostUserBuilder.withUserAccountId(userAccountId);        	
+        } else if(StringUtils.isNotEmpty(user)) {
+        	atlassianHostUserBuilder.withUserKey(user);
+        } else {
+        	atlassianHostUserBuilder.withUserAccountId(hostUser.getUserAccountId().get()); 
         }
         String url = JiraConstants.REST_API_MYPERMISSIONS;
         if(projectId != null) {
             url = url + "?projectId=" + projectId.toString();
         }
-        String permissionsStr = restClients.authenticatedAs(hostUser)
+        String permissionsStr = restClients.authenticatedAs(atlassianHostUserBuilder.build())
                 .getForObject(url, String.class);
        return parsePermissions(permissionsStr);
     }
@@ -156,30 +162,35 @@ public class PermissionServiceImpl implements PermissionService {
      * @param user
      * @return map of permissions
      */
-    private Map<String, Boolean> getMyPrmissions(String user) {
+    private Map<String, Boolean> getMyPrmissions(String user, String userAccountId) {
         AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
-        if(null != user && StringUtils.isNotEmpty(user)){
-            hostUser = new AtlassianHostUser(hostUser.getHost(),Optional.of(user));
+        AtlassianHostUserBuilder atlassianHostUserBuilder = AtlassianHostUser.builder(hostUser.getHost());
+        if(StringUtils.isNotEmpty(userAccountId)) {
+        	atlassianHostUserBuilder.withUserAccountId(userAccountId);        	
+        } else if(StringUtils.isNotEmpty(user)) {
+        	atlassianHostUserBuilder.withUserKey(user);
+        } else {
+        	atlassianHostUserBuilder.withUserAccountId(hostUser.getUserAccountId().get()); 
         }
-        String permissionsStr = restClients.authenticatedAs(hostUser)
+        String permissionsStr = restClients.authenticatedAs(atlassianHostUserBuilder.build())
                 .getForObject(REST_API_MYPERMISSIONS, String.class);
        return parsePermissions(permissionsStr);
     }
 
 
-    private boolean checkPermissionForType(Long projectId, Long issueId, String issueKey, String permissionType, String user) {
+    private boolean checkPermissionForType(Long projectId, Long issueId, String issueKey, String permissionType, String user, String userAccountId) {
 
         Map<String, Boolean> perMap = null;
 
         if (null != projectId) {
-            perMap = getPermissionMapForProject(projectId, user);
+            perMap = getPermissionMapForProject(projectId, user, userAccountId);
         } else if (StringUtils.isNotBlank(issueKey) || null != issueId) {
             perMap = getPermissionMapForIssue(issueId, issueKey);
         } else {
             perMap = getAllUserPermissionsMap();
         }
         if(permissionType == CREATE_ISSUE_PERMISSION) {
-            perMap = getMyPrmissions(user);
+            perMap = getMyPrmissions(user, userAccountId);
         }
 
         if (perMap.containsKey(permissionType) && perMap.get(permissionType)) {
@@ -196,8 +207,9 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean hasCreateAttachmentPermission(Long projectId, String issueIdOrKey) {
-        String user = CaptureUtil.getAtlassianHostUser().getUserKey().get();
-        Map<String, Boolean> perMap = getPermissionForProject(projectId, user);
+    	AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+    	String user = hostUser.getUserKey().isPresent() ? hostUser.getUserKey().get() : null;
+        Map<String, Boolean> perMap = getPermissionForProject(projectId, user, hostUser.getUserAccountId().get());
         if (perMap.containsKey(CREATE_ATTACHMENT_PERMISSION) && perMap.get(CREATE_ATTACHMENT_PERMISSION)) {
             return true;
         }
@@ -206,21 +218,22 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean hasCreateAttachmentPermission(String issueIdOrKey) {
-        if (checkPermissionForType(null, null, issueIdOrKey, ApplicationConstants.CREATE_ATTACHMENT_PERMISSION, null))
+        if (checkPermissionForType(null, null, issueIdOrKey, ApplicationConstants.CREATE_ATTACHMENT_PERMISSION, null, null))
             return true;
         return false;
     }
 
     @Override
     public boolean hasCreateIssuePermission() {
-        String user = CaptureUtil.getAtlassianHostUser().getUserKey().get();
-        if (checkPermissionForType(null, null, null, CREATE_ISSUE_PERMISSION, user)) return true;
+    	AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        String user = hostUser.getUserKey().isPresent() ? hostUser.getUserKey().get() : null;
+        if (checkPermissionForType(null, null, null, CREATE_ISSUE_PERMISSION, user, hostUser.getUserAccountId().get())) return true;
         return false;
     }
 
     @Override
-    public boolean hasCreateIssuePermission(Long projectId, String user) {
-        Map<String, Boolean> perMap = getPermissionForProject(projectId, user);
+    public boolean hasCreateIssuePermission(Long projectId, String user, String userAccountId) {
+        Map<String, Boolean> perMap = getPermissionForProject(projectId, user, userAccountId);
         if (perMap.containsKey(CREATE_ISSUE_PERMISSION) && perMap.get(CREATE_ISSUE_PERMISSION)) {
             return true;
         }
@@ -229,242 +242,282 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean hasEditIssuePermission(String issueIdOrKey) {
-        if (checkPermissionForType(null, null, issueIdOrKey, ApplicationConstants.EDIT_ISSUE_PERMISSION, null))
+        if (checkPermissionForType(null, null, issueIdOrKey, ApplicationConstants.EDIT_ISSUE_PERMISSION, null, null))
             return true;
         return false;
     }
 
     @Override
     public boolean hasEditIssuePermission(Long issueId) {
-        if (checkPermissionForType(null, issueId, null, ApplicationConstants.EDIT_ISSUE_PERMISSION, null)) return true;
+        if (checkPermissionForType(null, issueId, null, ApplicationConstants.EDIT_ISSUE_PERMISSION, null, null)) return true;
         return false;
     }
 
     @Override
     public boolean hasBrowsePermission(Long projectId) {
-        if (checkPermissionForType(projectId, null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, null))
+        if (checkPermissionForType(projectId, null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, null, null))
             return true;
         return false;
     }
 
     @Override
     public boolean canAddCommentPermission(String issueKey) {
-        if (checkPermissionForType(null, null, issueKey, ApplicationConstants.COMMENT_ISSUE, null))
+        if (checkPermissionForType(null, null, issueKey, ApplicationConstants.COMMENT_ISSUE, null, null))
             return true;
         return false;
     }
 
     @Override
-    public boolean isSysadmin(String user) {
-        if (checkPermissionForType(null, null, null, ApplicationConstants.SYSTEM_ADMIN, user)) return true;
+    public boolean isSysadmin(String user, String userAccountId) {
+        if (checkPermissionForType(null, null, null, ApplicationConstants.SYSTEM_ADMIN, user, userAccountId)) return true;
         return false;
     }
 
     @Override
-    public boolean canCreateSession(String user, CaptureProject project) {
-        if (project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
+    public boolean canCreateSession(String user, String userAccountId, CaptureProject project) {
+        if (project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user, userAccountId))
             return true;
         return false;
     }
 
     @Override
-    public boolean canBeAssignedSession(String user, CaptureProject project) {
-        if (project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
+    public boolean canBeAssignedSession(String user, String userAccountId, CaptureProject project) {
+        if (project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user, userAccountId))
             return true;
         return false;
     }
 
     @Override
-    public boolean canAssignSession(String user, CaptureProject project) {
-        if (project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
+    public boolean canAssignSession(String user, String userAccountId, CaptureProject project) {
+        if (project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user, userAccountId))
             return true;
         return false;
     }
 
     @Override
-    public boolean canJoinSession(String user, Session session) {
+    public boolean canJoinSession(String user, String userAccountId, Session session) {
         return !session.getAssignee().equals(user) && session.isShared()
-                && (checkPermissionForType(session.getProjectId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user))
+                && (checkPermissionForType(session.getProjectId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user, userAccountId))
                 && session.getStatus().equals(Session.Status.STARTED);
     }
 
     @Override
-    public boolean canJoinSession(String user, LightSession session) {
+    public boolean canJoinSession(String user, String userAccountId, LightSession session) {
         CaptureProject project = session.getProject();
-        return project != null ? (checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user)) : false;
+        return project != null ? (checkPermissionForType(project.getId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user, userAccountId)) : false;
     }
 
     @Override
-    public boolean canCreateNote(String user, Session session) {
-        boolean isParticipant = session.getParticipants() != null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user)) : false;
-        boolean isAssignee = session.getAssignee().equals(user);
-        boolean isCreator = StringUtils.isEmpty(session.getCreator())?true:session.getCreator().equals(user);
+    public boolean canCreateNote(String user, String userAccountId, Session session) {
+        boolean isParticipant = session.getParticipants() != null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user, userAccountId)) : false;
+        boolean isAssignee = StringUtils.isNotEmpty(userAccountId) ? userAccountId.equals(session.getAssigneeAccountId()) :session.getAssignee().equals(user);
+        boolean isCreator = StringUtils.isNotEmpty(userAccountId) ?  userAccountId.equals(session.getCreatorAccountId()) : session.getCreator().equals(user);
         return isParticipant || isAssignee || isCreator;
     }
 
     @Override
-    public boolean canCreateNote(String user, String sessionId) {
+    public boolean canCreateNote(String user, String userAccountId, String sessionId) {
         Session session = sessionService.getSession(sessionId);
-        boolean isParticipant = session.getParticipants() != null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user)) : false;
-        boolean isAssignee = session.getAssignee().equals(user);
-        boolean isCreator = session.getCreator().equals(user);
+        boolean isParticipant = session.getParticipants() != null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user, userAccountId)) : false;
+        boolean isAssignee =  StringUtils.isNotEmpty(userAccountId) ? userAccountId.equals(session.getAssigneeAccountId()) : session.getAssignee().equals(user);
+        boolean isCreator = StringUtils.isNotEmpty(userAccountId) ?  userAccountId.equals(session.getCreatorAccountId()) : session.getCreator().equals(user);
         return isParticipant || isAssignee || isCreator;
     }
 
     @Override
-    public boolean canCreateNote(String user, LightSession session) {
+    public boolean canCreateNote(String user, String userAccountId,  LightSession session) {
         Collection<Participant> participants = sessionService.getSession(session.getId()).getParticipants();
-        boolean isParticipant = participants != null ? Iterables.any(participants, new UserIsParticipantPredicate(user)) : false;
-        boolean isAssignee = session.getAssignee().equals(user);
-        boolean isCreator = session.getCreator().equals(user);
+        boolean isParticipant = participants != null ? Iterables.any(participants, new UserIsParticipantPredicate(user, userAccountId)) : false;
+        boolean isAssignee = StringUtils.isNotEmpty(userAccountId) ? userAccountId.equals(session.getAssigneeAccountId()) : session.getAssignee().equals(user);
+        boolean isCreator = StringUtils.isNotEmpty(userAccountId) ? userAccountId.equals(session.getCreatorAccountId())  : session.getCreator().equals(user);
         return isParticipant || isAssignee || isCreator;
     }
 
     @Override
-    public boolean canEditNote(String user, LightSession session, NoteSessionActivity note) {
+    public boolean canEditNote(String user, String userAccountId, LightSession session, NoteSessionActivity note) {
         if (session == null) {
             return false;
         }
-        return canEditNote(user, session.getAssignee(), note);
+        return canEditNote(user, userAccountId, session.getAssignee(), note);
     }
 
     @Override
-    public boolean canEditNote(String user, Session session, NoteSessionActivity note) {
-        return canEditNote(user, session.getAssignee(), note);
+    public boolean canEditNote(String user, String userAccountId, Session session, NoteSessionActivity note) {
+        return canEditNote(user, userAccountId, session.getAssignee(), note);
     }
 
     @Override
-    public boolean canEditNote(String user, String sessionId, NoteSessionActivity note) {
+    public boolean canEditNote(String user, String userAccountId, String sessionId, NoteSessionActivity note) {
         Session session = sessionService.getSession(sessionId);
         String assignee = session.getAssignee();
-        if (user == null || assignee == null || note == null) {
+        String assigneeAccountId = session.getAssigneeAccountId();
+        if (note == null) {
             return false;
+        }
+        if(StringUtils.isNotEmpty(userAccountId)) {
+        	return userAccountId.equals(assigneeAccountId) || userAccountId.equals(note.getUserAccountId());
+        }
+        if(user == null || assignee == null) {
+        	return false;
         }
         return user.equals(assignee) || user.equals(note.getUser());
     }
 
     @Override
-    public boolean canEditNote(String user, String assignee, Note note) {
-        if (user == null || assignee == null || note == null) {
+    public boolean canEditNote(String user, String userAccountId, String assignee, String assigneeAccountId, Note note) {
+        if (note == null) {
             return false;
+        }
+        if(StringUtils.isNotEmpty(userAccountId)) {
+        	return userAccountId.equals(assigneeAccountId) || userAccountId.equals(note.getAuthorAccountId());
+        }
+        if(user == null) {
+        	return false;
         }
         return user.equals(assignee) || user.equals(note.getAuthor());
     }
 
     @Override
-    public boolean canEditSession(String user, Session session) {
-        return checkPermissionForType(session.getProjectId(), null, null, ApplicationConstants.PROJECT_ADMIN, user)
-                || session.getAssignee().equals(user) || session.getCreator().equals(user);
+    public boolean canEditSession(String user, String userAccountId, Session session) {
+        boolean permissionFlag = checkPermissionForType(session.getProjectId(), null, null, ApplicationConstants.PROJECT_ADMIN, user, userAccountId);
+        if(StringUtils.isNotEmpty(userAccountId)) {
+        	return permissionFlag || userAccountId.equals(session.getAssigneeAccountId()) || userAccountId.equals(session.getCreatorAccountId());
+        }
+        if(user == null) {
+        	return permissionFlag || false;
+        }
+        return permissionFlag || user.equals(session.getAssignee()) || user.equals(session.getCreator());
     }
 
     @Override
-    public boolean canEditLightSession(String user, LightSession session) {
-        return checkPermissionForType(session.getProject().getId(), null, null, ApplicationConstants.PROJECT_ADMIN, user)
-                || session.getAssignee().equals(user) || session.getCreator().equals(user);
+    public boolean canEditLightSession(String user, String userAccountId, LightSession session) {
+        boolean permissionFlag = checkPermissionForType(session.getProject().getId(), null, null, ApplicationConstants.PROJECT_ADMIN, user, userAccountId);
+        if(StringUtils.isNotEmpty(userAccountId)) {
+        	return permissionFlag || userAccountId.equals(session.getAssigneeAccountId()) || userAccountId.equals(session.getCreatorAccountId());
+        }
+        if(user == null) {
+        	return permissionFlag || false;
+        }
+        return permissionFlag || user.equals(session.getAssignee()) || user.equals(session.getCreator());
     }
 
     @Override
-    public boolean canEditSessionStatus(String user, Session session) {
-        return session.getAssignee().equals(user) && !session.getStatus().equals(Session.Status.COMPLETED);
+    public boolean canEditSessionStatus(String user, String userAccountId, Session session) {
+    	if(StringUtils.isNotEmpty(userAccountId)) {
+    		return userAccountId.equals(session.getAssigneeAccountId()) && !session.getStatus().equals(Session.Status.COMPLETED);
+    	}
+    	if(user == null) {
+    		return false;
+    	}
+        return user.equals(session.getAssignee()) && !session.getStatus().equals(Session.Status.COMPLETED);
     }
 
     @Override
-    public boolean canEditSessionStatus(String user, LightSession session) {
-        return session.getAssignee().equals(user) && !session.getStatus().equals(Session.Status.COMPLETED);
+    public boolean canEditSessionStatus(String user, String userAccountId, LightSession session) {
+    	if(StringUtils.isNotEmpty(userAccountId)) {
+    		return userAccountId.equals(session.getAssigneeAccountId()) && !session.getStatus().equals(Session.Status.COMPLETED);
+    	}
+    	if(user == null) {
+    		return false;
+    	}
+        return user.equals(session.getAssignee()) && !session.getStatus().equals(Session.Status.COMPLETED);
     }
 
     @Override
-    public boolean canUnraiseIssueInSession(String user, CaptureIssue issue) {
-        boolean isReporter = isReporter(issue, user);
-        boolean isAssignableUser = checkPermissionForType(issue.getProjectId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user);
-        boolean isProjectAdmin = checkPermissionForType(issue.getProjectId(), null, null, ApplicationConstants.PROJECT_ADMIN, user);
+    public boolean canUnraiseIssueInSession(String user,  String userAccountId, CaptureIssue issue) {
+        boolean isReporter = isReporter(issue, user, userAccountId);
+        boolean isAssignableUser = checkPermissionForType(issue.getProjectId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user, userAccountId);
+        boolean isProjectAdmin = checkPermissionForType(issue.getProjectId(), null, null, ApplicationConstants.PROJECT_ADMIN, user, userAccountId);
         return isReporter || isAssignableUser || isProjectAdmin;
     }
 
     @Override
-    public boolean canSeeIssue(String user, CaptureIssue issue) {
+    public boolean canSeeIssue(String user, String userAccountId, CaptureIssue issue) {
         if(issue == null){
             return false;
         }
-        boolean canSeeIssue = checkPermissionForType(issue.getProjectId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
+        boolean canSeeIssue = checkPermissionForType(issue.getProjectId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user, userAccountId);
         return canSeeIssue;
     }
 
     @Override
-    public boolean canCreateInProject(String user, CaptureProject project) {
-        boolean canCreate = project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
+    public boolean canCreateInProject(String user, String userAccountId, CaptureProject project) {
+        boolean canCreate = project != null && checkPermissionForType(project.getId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user, userAccountId);
         return canCreate;
     }
 
     @Override
-    public boolean showActivityItem(String user, SessionActivity sessionActivity) {
+    public boolean showActivityItem(String user,  String userAccountId, SessionActivity sessionActivity) {
         if (sessionActivity instanceof IssueAttachmentSessionActivity) {
             Long issueId = ((IssueAttachmentSessionActivity) sessionActivity).getIssueId();
             CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
-            return canSeeIssue(user, issue);
+            return canSeeIssue(user, userAccountId, issue);
         } else if (sessionActivity instanceof IssueRaisedSessionActivity) {
             Long issueId = ((IssueRaisedSessionActivity) sessionActivity).getIssueId();
             CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
-            return canSeeIssue(user, issue);
+            return canSeeIssue(user, userAccountId, issue);
         } else if (sessionActivity instanceof IssueUnraisedSessionActivity){
             Long issueId = ((IssueUnraisedSessionActivity) sessionActivity).getIssueId();
             CaptureIssue issue = issueService.getCaptureIssue(String.valueOf(issueId));
-            return canSeeIssue(user, issue);
+            return canSeeIssue(user, userAccountId, issue);
         }
 
         return true;
     }
 
     @Override
-    public boolean canSeeSession(String user, Session session) {
+    public boolean canSeeSession(String user,  String userAccountId, Session session) {
         CaptureProject project = projectService.getCaptureProject(session.getProjectId());
         if (project == null) {
             return false;
         }
-        boolean canSeeRelatedProject = checkPermissionForType(project.getId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
+        boolean canSeeRelatedProject = checkPermissionForType(project.getId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user, userAccountId);
 
         return canSeeRelatedProject;
     }
 
     @Override
-    public boolean canSeeSession(String user, LightSession session) {
-        boolean canSeeRelatedProject = checkPermissionForType(session.getProject().getId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user);
+    public boolean canSeeSession(String user,  String userAccountId, LightSession session) {
+        boolean canSeeRelatedProject = checkPermissionForType(session.getProject().getId(), null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, user, userAccountId);
         return canSeeRelatedProject;
     }
 
     @Override
-    public boolean canCreateTemplate(String user, CaptureProject project) {
+    public boolean canCreateTemplate(String user, String userAccountId, CaptureProject project) {
         if (project == null) {
             return false;
         }
-        boolean canCreate = (checkPermissionForType(project.getId(), null, null, CREATE_ISSUE_PERMISSION, user));
+        boolean canCreate = (checkPermissionForType(project.getId(), null, null, CREATE_ISSUE_PERMISSION, user, userAccountId));
         return canCreate;
     }
 
     @Override
-    public boolean canEditTemplate(String user, CaptureProject project) {
+    public boolean canEditTemplate(String user,  String userAccountId, CaptureProject project) {
         if (project == null) {
             return false;
         }
-        boolean canEdit = (checkPermissionForType(project.getId(), null, null, CREATE_ISSUE_PERMISSION, user));
+        boolean canEdit = (checkPermissionForType(project.getId(), null, null, CREATE_ISSUE_PERMISSION, user, userAccountId));
         return canEdit;
     }
 
     @Override
-    public boolean canUseTemplate(String user, Long projectId) {
-        return canUseTemplate(user, projectService.getCaptureProject(projectId));
+    public boolean canUseTemplate(String user,  String userAccountId, Long projectId) {
+        return canUseTemplate(user, userAccountId, projectService.getCaptureProject(projectId));
     }
 
     @Override
-    public boolean canUseTemplate(String user, CaptureProject project) {
+    public boolean canUseTemplate(String user,  String userAccountId, CaptureProject project) {
         if (project == null) {
             return false;
         }
-        boolean canUse = (checkPermissionForType(project.getId(), null, null, CREATE_ISSUE_PERMISSION, user));
+        boolean canUse = (checkPermissionForType(project.getId(), null, null, CREATE_ISSUE_PERMISSION, user, userAccountId));
         return canUse;
     }
 
-    private boolean isReporter(CaptureIssue issue, String user) {
+    private boolean isReporter(CaptureIssue issue, String user, String userAccountId) {
+    	if(StringUtils.isNotBlank(userAccountId)) {
+    		return userAccountId.equals(issue.getReporterAccountId());
+    	} 
         return user.equals(issue.getReporter());
     }
 

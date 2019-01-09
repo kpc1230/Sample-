@@ -143,12 +143,12 @@ public class SessionController extends CaptureAbstractController{
 			CaptureProject captureProject = projectService.getCaptureProject(sessionRequest.getProjectId());
 			if (captureProject != null) {
 				// Check that the creator and assignee have assign issue permissions in the project
-				if (!permissionService.canCreateSession(loggedUserKey, captureProject)) {
+				if (!permissionService.canCreateSession(loggedUserKey, loggedUserAccountId, captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.creator.fail.permissions"));
 				}
-				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), captureProject)) {
+				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), sessionRequest.getAssigneeAccountId(), captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{sessionRequest.getAssignee()}));
-				} else if(!permissionService.canBeAssignedSession(loggedUserKey, captureProject)) {
+				} else if(!permissionService.canBeAssignedSession(loggedUserKey, loggedUserAccountId, captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
 				}
 			}
@@ -173,7 +173,7 @@ public class SessionController extends CaptureAbstractController{
 	        	});
 	        }
 			log.info("End of createSession()");
-			return ResponseEntity.ok(sessionService.constructSessionDto(loggedUserKey, createdSession, false));
+			return ResponseEntity.ok(sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, createdSession, false));
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -250,13 +250,14 @@ public class SessionController extends CaptureAbstractController{
 		}
 		try {
 			String user = getUser();
+			String userAccountId = getUserAccountId();
 			Session session = validateAndGetSession(sessionId);
-			if (session != null && !permissionService.canSeeSession(user, session)) {
+			if (session != null && !permissionService.canSeeSession(user, userAccountId, session)) {
 				throw new CaptureValidationException(i18n.getMessage("session.update.not.editable"));
 			} else if(Objects.isNull(session)) {
 				throw new CaptureValidationException(i18n.getMessage("session.not.exist.message"));
 			}
-			SessionDto sessionDto = sessionService.constructSessionDto(user, session, true);
+			SessionDto sessionDto = sessionService.constructSessionDto(user, userAccountId, session, true);
 			log.info("End of getSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(Exception ex) {
@@ -282,11 +283,11 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 		    if (loadedSession != null) {
-				if (!permissionService.canEditSession(loggedUserKey, loadedSession)) {
+				if (!permissionService.canEditSession(loggedUserKey, loggedUserAccountId, loadedSession)) {
 					throw new CaptureValidationException(i18n.getMessage("session.update.not.editable"));
 				}
 				CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
-				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), captureProject)) {
+				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), sessionRequest.getAssigneeAccountId(), captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{sessionRequest.getAssignee()}));
 				}
 			}
@@ -313,7 +314,7 @@ public class SessionController extends CaptureAbstractController{
 			wikiParsedData = CaptureUtil.replaceIconPath(wikiParsedData);
 			loadedSession.setWikiParsedData(wikiParsedData);
 			sessionRequest.setWikiParsedData(wikiParsedData);
-			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, updateResult.getSession(), true);
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, updateResult.getSession(), true);
             sessionService.setIssueTestStatusAndTestSession(updatedRelatedIssues, loadedSession.getCtId(), loadedSession.getProjectId(), hostUser.getHost().getBaseUrl());
 			log.info("End of updateSession()");
 			return ResponseEntity.ok(sessionDto);
@@ -340,8 +341,9 @@ public class SessionController extends CaptureAbstractController{
 		}
 		try {
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			if (loadedSession != null && !permissionService.canEditSession(loggedUserKey, loadedSession)) {
+			if (loadedSession != null && !permissionService.canEditSession(loggedUserKey, loggedUserAccountId, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.delete.permission.fail"));
 			}
 			sessionService.deleteSession(sessionId);
@@ -391,7 +393,7 @@ public class SessionController extends CaptureAbstractController{
             }
 			// If the session status is changed, we better have been allowed to do that!
 			if (!Status.PAUSED.equals(loadedSession.getStatus())
-					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
+					&& !permissionService.canEditSessionStatus(loggedUserKey, loggedUserAccountId, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.status.change.permissions.violation"));
 			}
         	sessionService.update(updateResult, false);
@@ -400,7 +402,7 @@ public class SessionController extends CaptureAbstractController{
         	CompletableFuture.runAsync(() -> {
         		sessionActivityService.setStatus(session, new Date(), loggedUserKey, loggedUserAccountId);
         	});
-        	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
+        	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, session, false);
 			log.info("End of pauseSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
@@ -430,11 +432,11 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			Date dateTime = new Date();
-			String loggedUserKey = hostUser.getUserKey().get();
+			String loggedUserKey = getUser();
 			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Map<String, Object> response = new HashMap<>();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			if (loadedSession != null && !permissionService.canJoinSession(loggedUserKey, loadedSession)) {
+			if (loadedSession != null && !permissionService.canJoinSession(loggedUserKey, loggedUserAccountId, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.join.no.permission", new Object[]{loadedSession.getName()}));
 			}
 			CaptureUser user = userService.findUserByKey(loggedUserKey);
@@ -483,7 +485,8 @@ public class SessionController extends CaptureAbstractController{
 		try {
 			Session loadedSession  = validateAndGetSession(sessionId);
 			String loggedUser = getUser();
-			Map<String, Object> map = sessionService.getCompleteSessionView(loggedUser, loadedSession);
+			String loggedUserAccountId = getUserAccountId();
+			Map<String, Object> map = sessionService.getCompleteSessionView(loggedUser, loggedUserAccountId, loadedSession);
 			log.info("End of completeSessionView()");
 			return ResponseEntity.ok(map);
 		} catch(CaptureValidationException ex) {
@@ -512,7 +515,7 @@ public class SessionController extends CaptureAbstractController{
 			Session loadedSession  = validateAndGetSession(sessionId);
 			// If the session status is changed, we better have been allowed to do that!
 			if (!Status.COMPLETED.equals(loadedSession.getStatus())
-					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
+					&& !permissionService.canEditSessionStatus(loggedUserKey, loggedUserAccountId, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.status.change.permissions.violation"));
 			}
 			CompleteSessionResult completeSessionResult = sessionService.completeSession(loggedUserKey, loggedUserAccountId, loadedSession, completeSessionRequest);
@@ -538,7 +541,7 @@ public class SessionController extends CaptureAbstractController{
 				String comment=i18n.getMessage("issue.service.logwork.comment.prefix", new Object[]{completeSessionResult.getSessionUpdateResult().getSession().getName()});
 				issueService.addTimeTrakingToIssue(completeSessionResult.getLogTimeIssue(), timestamp, completeSessionResult.getMillisecondsDuration(),comment,hostUser);
 			}
-			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, session, false);
 
 			log.info("End of completeSession()");
 			return ResponseEntity.ok(sessionDto);
@@ -661,7 +664,7 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			CaptureIssue captureIssue = issueService.getCaptureIssue(issueKey);
-			if (captureIssue != null && !permissionService.canUnraiseIssueInSession(loggedUserKey, captureIssue)) {
+			if (captureIssue != null && !permissionService.canUnraiseIssueInSession(loggedUserKey, loggedUserAccountId, captureIssue)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.unraise.permission"));
 			}
 			UpdateResult updateResult = sessionService.removeRaisedIssue(loggedUserKey, loadedSession, issueKey);
@@ -705,9 +708,10 @@ public class SessionController extends CaptureAbstractController{
 			+ searchTerm.orElse(null) + " sortOrder " + sortOrder.orElse("ASC") + " sortField " + " startAt " + startAt + " size " + size);
 		try {	
 			String loggedUser = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			validateInputParameters(projectId, status);
 			boolean sortAscending = sortOrder.orElse(ApplicationConstants.SORT_ASCENDING).equalsIgnoreCase(ApplicationConstants.SORT_ASCENDING);
-			SessionDtoSearchList sessionDtoSearchList = sessionService.searchSession(loggedUser, projectId, assignee, translateStatuses(status), searchTerm, sortField, sortAscending, startAt, size);
+			SessionDtoSearchList sessionDtoSearchList = sessionService.searchSession(loggedUser, loggedUserAccountId, projectId, assignee, translateStatuses(status), searchTerm, sortField, sortAscending, startAt, size);
 			log.info("End of searchSession()");
 			return ResponseEntity.ok(sessionDtoSearchList);
 		} catch(CaptureValidationException ex) {
@@ -736,7 +740,7 @@ public class SessionController extends CaptureAbstractController{
 			} else {
 				NotesFilterStateUI notesFilterStateUI = new NotesFilterStateUI(request);
 				ActivityStreamFilterUI activityStreamFilterUI = new ActivityStreamFilterUI(notesFilterStateUI);
-				sessionActivities =  getSessionActivityItems(sessionActivities, activityStreamFilterUI, getUser());
+				sessionActivities =  getSessionActivityItems(sessionActivities, activityStreamFilterUI, getUser(), getUserAccountId());
 			}
 			List<?> finalSessionActivities = sessionActivities.stream().map(new SessionActivityFunction(issueService, wikiMarkupRenderer, sessionActivityRepository)).collect(Collectors.toList());
 			log.info("End of sessionActivities()");
@@ -750,7 +754,8 @@ public class SessionController extends CaptureAbstractController{
 	@PutMapping(value = "/{sessionId}/assign", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> assignSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
 										   @PathVariable("sessionId") String sessionId,
-										   @QueryParam("assignee") String assignee) throws CaptureValidationException {
+										   @QueryParam("assignee") String assignee,
+										   @QueryParam("assigneeAccountId") String assigneeAccountId) throws CaptureValidationException {
 		log.info("Start of assignSession() --> params " + sessionId + " assignee " + assignee);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
 		boolean isLocked = false;
@@ -764,9 +769,9 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			String oldAssignee = loadedSession.getAssignee();
-			String assigner = hostUser.getUserKey().get();
+			String assigner = hostUser.getUserKey().orElse(null);
 			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
-			if (!StringUtils.isEmpty(assignee) && !permissionService.canBeAssignedSession(assignee, captureProject)) {
+			if (!StringUtils.isEmpty(assignee) && !permissionService.canBeAssignedSession(assignee, assigneeAccountId, captureProject)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{assignee}));
 			}
 			if (StringUtils.isEmpty(assignee)) {
@@ -788,7 +793,7 @@ public class SessionController extends CaptureAbstractController{
 				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, loggedUserAccountId, assignee, user.getAccountId(), oldAssignee);
 				sessionActivityService.setStatus(loadedSession, new Date(), loggedUserKey, loggedUserAccountId);
 			});
-			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession, false);
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, loadedSession, false);
 			log.info("End of assignSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(Exception ex) {
@@ -823,7 +828,8 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of getSessionsForExtension()");
 		try {
 			String loggedUserKey = getUser();
-			SessionExtensionResponse response = sessionService.getSessionsForExtension(loggedUserKey, onlyActiveSession.isPresent()? onlyActiveSession.get():false);
+			String loggedUserAccountId = getUserAccountId();
+			SessionExtensionResponse response = sessionService.getSessionsForExtension(loggedUserKey, loggedUserAccountId, onlyActiveSession.isPresent()? onlyActiveSession.get():false);
 			log.info("End of getSessionsForExtension()");
 			return ResponseEntity.ok(response);
 		} catch(CaptureValidationException ex) {
@@ -926,12 +932,12 @@ public class SessionController extends CaptureAbstractController{
 			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
 			if (Objects.nonNull(captureProject)) {
 				// Check that the creator and assignee have assign issue permissions in the project
-				if (!permissionService.canCreateSession(loggedUserKey, captureProject)) {
+				if (!permissionService.canCreateSession(loggedUserKey, loggedUserAccountId, captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.creator.fail.permissions"));
 				}
-				if (loadedSession.getAssignee() != null && !permissionService.canBeAssignedSession(loadedSession.getAssignee(), captureProject)) {
+				if (loadedSession.getAssignee() != null && !permissionService.canBeAssignedSession(loadedSession.getAssignee(), loadedSession.getAssigneeAccountId(), captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loadedSession.getAssignee()}));
-				} else if(!permissionService.canBeAssignedSession(loggedUserKey, captureProject)) {
+				} else if(!permissionService.canBeAssignedSession(loggedUserKey, loggedUserAccountId, captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
 				}
 			}
@@ -1028,11 +1034,11 @@ public class SessionController extends CaptureAbstractController{
 	}
 
 	private List<SessionActivity> getSessionActivityItems(final List<SessionActivity> activities, final ActivityStreamFilterUI activityStreamFilter,
-														  final String user) {
+														  final String user, final String userAccountId) {
 		Collection<SessionActivity> sessionActivityItems = Collections2.filter(activities, new Predicate<SessionActivity>() {
 			public boolean apply(SessionActivity sessionActivityItem) {
 				boolean passFilter = activityStreamFilter.showItem(sessionActivityItem);
-				boolean hasPermission = permissionService.showActivityItem(user, sessionActivityItem);
+				boolean hasPermission = permissionService.showActivityItem(user, userAccountId, sessionActivityItem);
 				return passFilter && hasPermission;
 			}
 		});
@@ -1050,14 +1056,14 @@ public class SessionController extends CaptureAbstractController{
                 throw new CaptureValidationException(i18n.getMessage("Can't find user with userKey", new Object[]{userKey}));
             }
 			Session session  = validateAndGetSession(sessionId);
-            if (!permissionService.canEditSessionStatus(user.getKey(), session)) {
+            if (!permissionService.canEditSessionStatus(user.getKey(), user.getAccountId(), session)) {
                 throw new CaptureValidationException(i18n.getMessage("session.status.change.permissions.violation"));
             }
             if(Status.STARTED.equals(session.getStatus())){
                 throw new CaptureValidationException(i18n.getMessage("The Session:" + session.getName() + " already started", new Object[]{}));
             }
 			session = sessionService.startSession(acHostModel, sessionId, user);
-			SessionDto sessionDto = sessionService.constructSessionDto(user.getKey(), session, false);
+			SessionDto sessionDto = sessionService.constructSessionDto(user.getKey(), user.getAccountId(), session, false);
 			log.trace("End of startOrResumeSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {

@@ -1,5 +1,7 @@
 package com.thed.zephyr.capture.predicates;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.google.common.base.Predicate;
 import com.thed.zephyr.capture.model.Participant;
 
@@ -13,14 +15,22 @@ import com.thed.zephyr.capture.model.Participant;
 public class UserIsParticipantPredicate implements Predicate<Participant> {
 	
     private String user;
+    private String userAccountId;
 
-    public UserIsParticipantPredicate(String user) {
+    public UserIsParticipantPredicate(String user, String userAccountId) {
         this.user = user;
+        this.userAccountId = userAccountId;
     }
 
     @Override
     public boolean apply(Participant input) {
-        return !input.hasLeft() && input.getUser().equals(user);
+    	if(StringUtils.isNotEmpty(userAccountId)) {
+    		return !input.hasLeft() && userAccountId.equals(input.getUserAccountId());
+    	}
+    	if(user == null) {
+    		return false;
+    	}
+        return !input.hasLeft() && user.equals(input.getUser());
     }
 
 }

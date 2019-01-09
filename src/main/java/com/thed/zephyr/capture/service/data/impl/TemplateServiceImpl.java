@@ -210,7 +210,7 @@ public class TemplateServiceImpl implements TemplateService {
 			templatePage.getContent().forEach(template -> {
 				Project project = getProject(template.getProjectId());
 				CaptureUser user = userMap.get(template.getCreatedBy());
-				if(permissionService.canUseTemplate(user.getKey(), template.getProjectId())){
+				if(permissionService.canUseTemplate(user.getKey(), user.getAccountId(), template.getProjectId())){
 					returnList.add(TemplateBuilder.createTemplateRequest(template, project, user));
 				}
 			});

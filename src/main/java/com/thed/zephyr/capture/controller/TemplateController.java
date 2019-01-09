@@ -228,7 +228,7 @@ public class TemplateController extends CaptureAbstractController{
 			throw new CaptureValidationException(i18n.getMessage("template.validate.create.cannot.browse.project"));
 		}
 		if(create){
-			if (!permissionService.canCreateTemplate(getUser(), project)) {
+			if (!permissionService.canCreateTemplate(getUser(), getUserAccountId(), project)) {
 				throw new CaptureValidationException(i18n.getMessage("template.validate.create.cannot.create.issue"));
 			}
 		}else {
@@ -236,7 +236,7 @@ public class TemplateController extends CaptureAbstractController{
 			if(existing == null){
 				throw new CaptureValidationException(i18n.getMessage("template.validate.update.not.exist"));
 			}
-			if (!permissionService.canEditTemplate(getUser(), project)) {
+			if (!permissionService.canEditTemplate(getUser(), getUserAccountId(), project)) {
 				throw new CaptureValidationException(i18n.getMessage("template.validate.update.permission"));
 			}
 			templateReqUI.setProjectKey(project.getKey());
@@ -267,7 +267,7 @@ public class TemplateController extends CaptureAbstractController{
         if (project == null) {
         	throw new CaptureValidationException(i18n.getMessage("template.validate.delete.cannot.browse.project"));
         } else {
-            if (!canModifyTemplate(templateReqUI.getOwnerName(), existing, project)) {
+            if (!canModifyTemplate(templateReqUI.getOwnerName(), templateReqUI.getOwnerAccountId(), existing, project)) {
             	throw new CaptureValidationException(i18n.getMessage("template.validate.delete.permission.fail"));
             }
         }
@@ -287,8 +287,8 @@ public class TemplateController extends CaptureAbstractController{
 		}
 	}
 
-	private boolean canModifyTemplate(String user, TemplateRequest existing, CaptureProject project) {
-        return user.equals(existing.getOwnerName()) || (permissionService.canEditTemplate(user, project));
+	private boolean canModifyTemplate(String user, String userAccountId, TemplateRequest existing, CaptureProject project) {
+        return user.equals(existing.getOwnerName()) || (permissionService.canEditTemplate(user, userAccountId, project));
     }
 
 	private TemplateRequest getTemplate(String user, String templateId){
@@ -297,6 +297,6 @@ public class TemplateController extends CaptureAbstractController{
 	}
 
 	private boolean canUse(TemplateRequest templateReq) throws CaptureValidationException{
-		return templateReq.getShared() || canModifyTemplate(getUser(), templateReq, projectService.getCaptureProject(templateReq.getProjectId()));
+		return templateReq.getShared() || canModifyTemplate(getUser(), getUserAccountId(), templateReq, projectService.getCaptureProject(templateReq.getProjectId()));
 	}
 }

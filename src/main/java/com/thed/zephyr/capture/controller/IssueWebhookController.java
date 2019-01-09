@@ -144,7 +144,7 @@ public class IssueWebhookController {
     }
 
     @Deprecated
-    private List<ErrorCollection.ErrorItem> validateUpdate(String updater, Session newSession) {
+    private List<ErrorCollection.ErrorItem> validateUpdate(String updater, String updaterAccountId, Session newSession) {
         ErrorCollection errorCollection = new ErrorCollection();
         Session loadedSession = null;
         // Validation
@@ -178,7 +178,7 @@ public class IssueWebhookController {
             } else {
                 // If the session status is changed, we better have been allowed to do that!
                 if (!newSession.getStatus().equals(loadedSession.getStatus())
-                        && !permissionService.canEditSessionStatus(updater, loadedSession)) {
+                        && !permissionService.canEditSessionStatus(updater, updaterAccountId, loadedSession)) {
                     errorCollection.addError(i18n.getMessage("session.status.change.permissions.violation"));
                 }
                 // If the assignee has changed, then the new session should be paused
