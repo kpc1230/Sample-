@@ -12,6 +12,8 @@ import com.thed.zephyr.capture.model.util.TemplateSearchList;
 import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.TemplateService;
 import com.thed.zephyr.capture.service.jira.ProjectService;
+import com.thed.zephyr.capture.util.CaptureUtil;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,7 +87,7 @@ public class TemplateController extends CaptureAbstractController{
 		TemplateRequest template = null;
 		if(!StringUtils.isEmpty(templateId)) {
 			try {
-				template = templateService.getTemplate(getUser(),templateId);
+				template = templateService.getTemplate(templateId);
 			} catch (Exception ex) {
 				log.error("Error during getTemplate.", ex);
 				throw new CaptureRuntimeException(ex.getMessage());
@@ -117,7 +119,7 @@ public class TemplateController extends CaptureAbstractController{
 		log.trace("getSharedTemplates start.");
 		TemplateSearchList result;
 		try {
-			result = templateService.getSharedTemplates(getUser(), offset, limit);
+			result = templateService.getSharedTemplates(offset, limit);
 		} catch (Exception ex) {
 			log.error("Error during getSharedTemplates.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
@@ -131,7 +133,7 @@ public class TemplateController extends CaptureAbstractController{
 		log.trace("getFavouriteTemplates start for the user: {}");
 		TemplateSearchList result;
 		try {
-			result = templateService.getFavouriteTemplates(getUser(), offset, limit);
+			result = templateService.getFavouriteTemplates(getUser(), getUserAccountId(), offset, limit);
 		} catch (Exception ex) {
 			log.error("Error during getFavouriteTemplates.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
@@ -148,7 +150,7 @@ public class TemplateController extends CaptureAbstractController{
 			String templateId = json.get("id").asText();
 			Boolean flag = json.get("favourite").asBoolean(false);
 			if(StringUtils.isNotEmpty(templateId)){
-                templateRequest = templateService.getTemplate(getUser(), templateId);
+                templateRequest = templateService.getTemplate(templateId);
                 templateRequest.setFavourited(flag);
                 templateRequest = templateService.updateTemplate(templateRequest);
             }
@@ -166,7 +168,7 @@ public class TemplateController extends CaptureAbstractController{
 		log.trace("getAllTemplates start.");
 		TemplateSearchList result;
 		try {
-			result = templateService.getTemplates(getUser(), offset, limit);
+			result = templateService.getTemplates(offset, limit);
 		} catch (Exception ex) {
 			log.error("Error during getAllTemplates.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
@@ -181,7 +183,7 @@ public class TemplateController extends CaptureAbstractController{
         AcHostModel acHostModel = (AcHostModel)hostUser.getHost();
 		TemplateSearchList result;
 		try {
-			result = templateService.getUserTemplates(acHostModel, hostUser.getUserKey().get(), offset, limit, mine.isPresent()? mine.get():false);
+			result = templateService.getUserTemplates(acHostModel, hostUser.getUserKey().orElse(null), getUserAccountId(), offset, limit, mine.isPresent() ? mine.get() : false);
 		} catch (Exception ex) {
 			log.error("Error during getUserTemplates.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
@@ -212,8 +214,12 @@ public class TemplateController extends CaptureAbstractController{
 		} else {
 			templateRequest = TemplateBuilder.parseUpdateJson(json);
 		}
-		templateRequest.setOwnerName(getUser());
-		templateRequest.setOwnerAccountId(getUserAccountId());
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			templateRequest.setOwnerAccountId(getUserAccountId());
+		} else {
+			templateRequest.setOwnerName(getUser());
+			templateRequest.setOwnerAccountId(getUserAccountId());
+		}
 		validateTemplate(templateRequest, create);
 		return templateRequest;
 	}
@@ -232,7 +238,7 @@ public class TemplateController extends CaptureAbstractController{
 				throw new CaptureValidationException(i18n.getMessage("template.validate.create.cannot.create.issue"));
 			}
 		}else {
-			TemplateRequest existing = getTemplate(templateReqUI.getOwnerName(), templateReqUI.getId());
+			TemplateRequest existing = getTemplate(templateReqUI.getOwnerName(), templateReqUI.getOwnerAccountId(), templateReqUI.getId());
 			if(existing == null){
 				throw new CaptureValidationException(i18n.getMessage("template.validate.update.not.exist"));
 			}
@@ -252,14 +258,18 @@ public class TemplateController extends CaptureAbstractController{
 	 */
 	private TemplateRequest validateDelete(JsonNode json) throws CaptureValidationException{
 		TemplateRequest templateReq = TemplateBuilder.parseUpdateJson(json);
-		templateReq.setOwnerName(getUser());
-		templateReq.setOwnerAccountId(getUserAccountId());
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			templateReq.setOwnerAccountId(getUserAccountId());
+		} else {
+			templateReq.setOwnerName(getUser());
+			templateReq.setOwnerAccountId(getUserAccountId());
+		}
 		validateDelete(templateReq);
 		return templateReq;
 	}
 
 	private void validateDelete(TemplateRequest templateReqUI) throws CaptureValidationException{
-		TemplateRequest existing = getTemplate(templateReqUI.getOwnerName(), templateReqUI.getId());
+		TemplateRequest existing = getTemplate(templateReqUI.getOwnerName(), templateReqUI.getOwnerAccountId(), templateReqUI.getId());
 		if(existing == null){
 			throw new CaptureValidationException(i18n.getMessage("template.validate.delete.not.exist"));
 		}
@@ -291,9 +301,9 @@ public class TemplateController extends CaptureAbstractController{
         return user.equals(existing.getOwnerName()) || (permissionService.canEditTemplate(user, userAccountId, project));
     }
 
-	private TemplateRequest getTemplate(String user, String templateId){
+	private TemplateRequest getTemplate(String user, String userAccountId, String templateId){
 		return StringUtils.isEmpty(templateId) ? null :
-			templateService.getTemplate(user, templateId);
+			templateService.getTemplate(templateId);
 	}
 
 	private boolean canUse(TemplateRequest templateReq) throws CaptureValidationException{

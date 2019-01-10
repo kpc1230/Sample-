@@ -7,6 +7,8 @@ import com.atlassian.jira.rest.client.api.domain.Project;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.jira.CaptureUser;
+import com.thed.zephyr.capture.util.CaptureUtil;
+
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -31,8 +33,12 @@ public final class TemplateBuilder {
 		template.setFavourite(templateRequest.getFavourited());
 		template.setShared(templateRequest.getShared());
 		template.setContent(templateRequest.getSource());
-		template.setCreatedBy(templateRequest.getOwnerName());
-		template.setCreatedByAccountId(templateRequest.getOwnerAccountId());
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			template.setCreatedByAccountId(templateRequest.getOwnerAccountId());
+		} else {
+			template.setCreatedBy(templateRequest.getOwnerName());
+			template.setCreatedByAccountId(templateRequest.getOwnerAccountId());
+		}
 		template.setTimeCreated(created);
 		//Populate timeUpdated
 		if(templateRequest.getFavourited()){
@@ -81,8 +87,12 @@ public final class TemplateBuilder {
 		tr.setFavourited(template.getFavourite());
 		tr.setShared(template.getShared());
 		tr.setSource(template.getContent());
-		tr.setOwnerName(template.getCreatedBy());
-		tr.setOwnerAccountId(template.getCreatedByAccountId());
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			tr.setOwnerAccountId(template.getCreatedByAccountId());
+		} else {
+			tr.setOwnerName(template.getCreatedBy());
+			tr.setOwnerAccountId(template.getCreatedByAccountId());
+		}
 		tr.setTimeCreated(template.getTimeCreated());
 		tr.setTimeUpdated(template.getTimeUpdated());
 		return tr;
@@ -156,13 +166,17 @@ public final class TemplateBuilder {
 	public static TemplateRequest createTemplateRequest(Template template, Project project, CaptureUser user) {
 		TemplateRequest request = createTemplateRequest(template);
 		if(project != null){
-			request.setProjectKey(project.getKey());		}
+			request.setProjectKey(project.getKey());		
+		}
 		if(user != null){
-			request.setOwnerName(user.getKey());
-			request.setOwnerAccountId(user.getAccountId());
+			if(CaptureUtil.isTenantGDPRComplaint()) {
+				request.setOwnerAccountId(user.getAccountId());
+			} else {
+				request.setOwnerName(user.getKey());
+				request.setOwnerAccountId(user.getAccountId());
+			}
 			request.setOwnerDisplayName(user.getDisplayName());
 		}
-
 		return request;
 	}
 
@@ -177,8 +191,12 @@ public final class TemplateBuilder {
         if(StringUtils.isNotEmpty(projectKey)){
             request.setProjectKey(projectKey);		}
         if(user != null){
-            request.setOwnerName(user.getKey());
-            request.setOwnerAccountId(user.getAccountId());
+        	if(CaptureUtil.isTenantGDPRComplaint()) {
+        		request.setOwnerAccountId(user.getAccountId());
+        	} else {
+        		 request.setOwnerName(user.getKey());
+                 request.setOwnerAccountId(user.getAccountId());
+        	}
             request.setOwnerDisplayName(user.getDisplayName());
         }
 

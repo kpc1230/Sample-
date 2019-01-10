@@ -56,6 +56,10 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	@EnableScan
 	@EnableScanCount
 	public Page<Template> findByCtIdAndSharedAndCreatedBy(String ctId,Boolean shared, String createdBy, Pageable pageable);
+	
+	@EnableScan
+	@EnableScanCount
+	public Page<Template> findByCtIdAndSharedAndCreatedByAccountId(String ctId,Boolean shared, String createdByAccountId, Pageable pageable);
 
 	/**
 	 * Find all the Template objects using owner.
@@ -66,6 +70,10 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	@EnableScan
 	@EnableScanCount
 	public Page<Template> findByCtIdAndCreatedBy(String ctId,String createdBy, Pageable pageable);
+	
+	@EnableScan
+	@EnableScanCount
+	public Page<Template> findByCtIdAndCreatedByAccountId(String ctId, String createdByAccountId, Pageable pageable);
 
 	/**
 	 * Find all the Template objects using projectId.
@@ -89,4 +97,8 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	@EnableScan
 	@EnableScanCount
 	public Page<Template> findByCtIdAndFavouriteAndCreatedBy(String ctId,Boolean favourite, String createdBy, Pageable pageable);
+	
+	@EnableScan
+	@EnableScanCount
+	public Page<Template> findByCtIdAndFavouriteAndCreatedByAccountId(String ctId,Boolean favourite, String createdByAccountId, Pageable pageable);
 }

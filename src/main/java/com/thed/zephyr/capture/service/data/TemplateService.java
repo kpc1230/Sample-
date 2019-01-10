@@ -34,13 +34,13 @@ public interface TemplateService {
      * @param templateId
      * @return
      */
-	TemplateRequest getTemplate(String user,String templateId);
+	TemplateRequest getTemplate(String templateId);
 	
 	/**
 	 * Get all the templates.
 	 * @return
 	 */
-	TemplateSearchList getTemplates(String userName, Integer offset, Integer limit);
+	TemplateSearchList getTemplates(Integer offset, Integer limit);
     
     /**
      * Get all the templates for the project projectId.
@@ -57,11 +57,11 @@ public interface TemplateService {
      * @param limit
      * @return
      */
-	TemplateSearchList getSharedTemplates(String owner, Integer offset, Integer limit) throws Exception;
+	TemplateSearchList getSharedTemplates(Integer offset, Integer limit) throws Exception;
 
-	TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit) throws Exception;
+	TemplateSearchList getFavouriteTemplates(String owner, String ownerAccountId, Integer offset, Integer limit) throws Exception;
 
-	TemplateSearchList getUserTemplates(AcHostModel acHostModel, String userKey, Integer offset, Integer limit, Boolean mine) throws Exception;
+	TemplateSearchList getUserTemplates(AcHostModel acHostModel, String userKey, String userAccountId, Integer offset, Integer limit, Boolean mine) throws Exception;
 	
 	void deleteTemplatesByCtIdAndProject(String ctId, Long projectId);
 }

@@ -32,7 +32,6 @@ import org.springframework.stereotype.Service;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.thed.zephyr.capture.util.ApplicationConstants.CREATE_ATTACHMENT_PERMISSION;
