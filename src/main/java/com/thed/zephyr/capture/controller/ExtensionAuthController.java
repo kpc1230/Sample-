@@ -63,7 +63,7 @@ public class ExtensionAuthController {
             String encryptedKey = AESEncryptionUtils.encrypt(beKey, dynamicProperty.getStringProp(ApplicationConstants.AES_ENCRYPTION_SECRET_KEY, "password").getValue());
             headers.add(ApplicationConstants.HEADER_PARAM_PACCESS_KEY, encryptedKey);
             respMap.put("userKey",beAuthToken.getUserKey());
-
+            respMap.put("userAccountId",beAuthToken.getUserAccountId());
             return new ResponseEntity(respMap, headers, HttpStatus.OK);
         }
 
