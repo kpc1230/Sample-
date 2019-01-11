@@ -24,6 +24,7 @@ import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.VariableRequest;
 import com.thed.zephyr.capture.model.util.VariableSearchList;
 import com.thed.zephyr.capture.service.data.VariableService;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.validator.VariableValidator;
 
 /**
@@ -54,8 +55,12 @@ public class VariableController extends CaptureAbstractController{
 			throws CaptureValidationException {
 		log.info("addVariableRequest start for the name:" + variableRequest.getName() + variableRequest.getValue());
 		try {
-			variableRequest.setOwnerName(getUser());
-			variableRequest.setOwnerAccountId(getUserAccountId());
+			if(CaptureUtil.isTenantGDPRComplaint()) {
+				variableRequest.setOwnerAccountId(getUserAccountId());
+			} else {
+				variableRequest.setOwnerName(getUser());
+				variableRequest.setOwnerAccountId(getUserAccountId());
+			}
 			variableService.createVariable(variableRequest);
 		} catch (CaptureValidationException e) {
 			throw e;
@@ -72,8 +77,12 @@ public class VariableController extends CaptureAbstractController{
 			throws CaptureValidationException {
 		log.info("updateVariable start for the id:{}", variableRequest.getId());
 		try {
-			variableRequest.setOwnerName(getUser());
-			variableRequest.setOwnerAccountId(getUserAccountId());
+			if(CaptureUtil.isTenantGDPRComplaint()) {
+				variableRequest.setOwnerAccountId(getUserAccountId());
+			} else {
+				variableRequest.setOwnerName(getUser());
+				variableRequest.setOwnerAccountId(getUserAccountId());
+			}
 			variableService.updateVariable(variableRequest);
 		} catch (CaptureValidationException e) {
 			throw e;
@@ -89,10 +98,11 @@ public class VariableController extends CaptureAbstractController{
 	public ResponseEntity<?> getVariables(@RequestParam(required = false) Integer offset , @RequestParam(required = false) Integer limit)
 			throws CaptureValidationException {
 		String ownerName = getUser();
-		log.info("getVariables start for ownerName:{}", ownerName);
+		String ownerAccountId = getUserAccountId();
+		log.info("getVariables start for ownerName:" + ownerName + ",ownerAccountId:"+ownerAccountId);
 		VariableSearchList response = null;
 		try {
-			response = variableService.getVariables(ownerName, getUserAccountId(), offset, limit);
+			response = variableService.getVariables(ownerName, ownerAccountId, offset, limit);
 		} catch (Exception ex) {
 			log.error("Error during getVariables.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());
