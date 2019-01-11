@@ -132,11 +132,7 @@ public class TemplateServiceImpl implements TemplateService {
 		if(CaptureUtil.isTenantGDPRComplaint()) {
 			createdBy = repository.findByCtIdAndFavouriteAndCreatedByAccountId(CaptureUtil.getCurrentCtId(), true, ownerAccountId, getPageRequest(offset, limit));
 		} else {
-			if(StringUtils.isNotEmpty(ownerAccountId)) {
-				createdBy = repository.findByCtIdAndFavouriteAndCreatedByAccountId(CaptureUtil.getCurrentCtId(), true, ownerAccountId, getPageRequest(offset, limit));
-			} else {
-				createdBy = repository.findByCtIdAndFavouriteAndCreatedBy(CaptureUtil.getCurrentCtId(), true, owner, getPageRequest(offset, limit));
-			}
+			createdBy = repository.findByCtIdAndFavouriteAndCreatedBy(CaptureUtil.getCurrentCtId(), true, owner, getPageRequest(offset, limit));
 		}
 		return mergeTemplates(createdBy, shared, offset, limit);
 	}

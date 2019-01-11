@@ -183,7 +183,7 @@ public class TemplateController extends CaptureAbstractController{
         AcHostModel acHostModel = (AcHostModel)hostUser.getHost();
 		TemplateSearchList result;
 		try {
-			result = templateService.getUserTemplates(acHostModel, hostUser.getUserKey().orElse(null), getUserAccountId(), offset, limit, mine.isPresent() ? mine.get() : false);
+			result = templateService.getUserTemplates(acHostModel, getUser(), getUserAccountId(), offset, limit, mine.isPresent() ? mine.get() : false);
 		} catch (Exception ex) {
 			log.error("Error during getUserTemplates.", ex);
 			throw new CaptureRuntimeException(ex.getMessage());

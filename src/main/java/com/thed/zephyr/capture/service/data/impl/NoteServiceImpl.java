@@ -60,7 +60,7 @@ public class NoteServiceImpl implements NoteService {
 			tags = new TreeSet<>();
 		}
 		String wikiParsedData = wikiMarkupRenderer.getWikiRender(noteRequest.getNoteData());
-		NoteSessionActivity.Resolution resolution = tags.size() > 0?NoteSessionActivity.Resolution.INITIAL:NoteSessionActivity.Resolution.NON_ACTIONABLE;
+		NoteSessionActivity.Resolution resolution = tags.size() > 0 ? NoteSessionActivity.Resolution.INITIAL : NoteSessionActivity.Resolution.NON_ACTIONABLE;
 		SessionActivity sessionActivity =
 				new NoteSessionActivity(
 						noteRequest.getSessionId(),
@@ -187,8 +187,8 @@ public class NoteServiceImpl implements NoteService {
 			notes = noteRepository.findByCtIdAndProjectIdAndResolutionState(ctId, projectId, noteFilter.getResolution(), pageable);
 		}
 		List<Note> noteList = new ArrayList<>();
-		List<Note> content = notes != null?notes.getContent():new ArrayList<>();
-		Long total = notes != null?notes.getTotalElements():0;
+		List<Note> content = notes != null ? notes.getContent() : new ArrayList<>();
+		Long total = notes != null ? notes.getTotalElements() : 0;
 		content.forEach(note->{
 			String wikiParsedData = note.getWikiParsedData();
 			if(StringUtils.isEmpty(wikiParsedData)){
@@ -279,8 +279,16 @@ public class NoteServiceImpl implements NoteService {
 		return noteReq;
 	}
 	private void populateRequiredData(final NoteRequest noteReq, final String noteData){
-
-		CaptureUser user = userService.findUserByKey(noteReq.getUser());
+		CaptureUser user = null;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			user = userService.findUserByAccountId(noteReq.getUserAccountId());
+		} else {
+			if(StringUtils.isNotEmpty(noteReq.getUserAccountId())) {
+				user = userService.findUserByAccountId(noteReq.getUserAccountId());
+			} else {
+				user = userService.findUserByKey(noteReq.getUser());
+			}
+		}
 		if(user != null) {
 			noteReq.setAuthorDisplayName(user.getDisplayName());
 			noteReq.setUserIconUrl(user.getAvatarUrls().get("48x48"));
