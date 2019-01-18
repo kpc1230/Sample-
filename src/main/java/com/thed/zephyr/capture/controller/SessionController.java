@@ -155,11 +155,18 @@ public class SessionController extends CaptureAbstractController{
 			Session createdSession = sessionService.createSession(loggedUserKey, loggedUserAccountId, sessionRequest);
 			CompletableFuture.runAsync(() -> {
 				//Save status changed information as activity.
-	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, loggedUserAccountId);
-	        	if(!loggedUserKey.equals(createdSession.getAssignee())) {
-	        		 //Save if the assigned user and logged in user are different into the session as activity.
-	    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, loggedUserAccountId, createdSession.getAssignee(), createdSession.getAssigneeAccountId(), null);
-	        	}
+				sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, loggedUserAccountId);
+	        	if(CaptureUtil.isTenantGDPRComplaint()) {
+	        		if(!loggedUserAccountId.equals(createdSession.getAssigneeAccountId())) {
+		        		 //Save if the assigned user and logged in user are different into the session as activity.
+		    			sessionActivityService.addAssignee(createdSession, new Date(), null, loggedUserAccountId, createdSession.getAssignee(), createdSession.getAssigneeAccountId(), null, null);
+		        	}
+	        	} else {
+	        		if(!loggedUserKey.equals(createdSession.getAssignee())) {
+		        		 //Save if the assigned user and logged in user are different into the session as activity.
+		    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, loggedUserAccountId, createdSession.getAssignee(), createdSession.getAssigneeAccountId(), null, null);
+		        	}
+	        	}	        	
 			});        		
 	        if(sessionRequest.getStartNow()) { //User requested to start the session.
 	        	UpdateResult updateResult = sessionService.startSession(loggedUserKey, loggedUserAccountId, createdSession);
@@ -609,8 +616,9 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of unshareSession() --> params " + sessionId);
 		try {	
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			UpdateResult updateResult = sessionService.unshareSession(loggedUserKey, loadedSession);
+			UpdateResult updateResult = sessionService.unshareSession(loggedUserKey, loggedUserAccountId, loadedSession);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
@@ -630,8 +638,9 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of shareSession() --> params " + sessionId);
 		try {		
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			UpdateResult updateResult = sessionService.shareSession(loggedUserKey, loadedSession);
+			UpdateResult updateResult = sessionService.shareSession(loggedUserKey, loggedUserAccountId, loadedSession);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
@@ -667,7 +676,7 @@ public class SessionController extends CaptureAbstractController{
 			if (captureIssue != null && !permissionService.canUnraiseIssueInSession(loggedUserKey, loggedUserAccountId, captureIssue)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.unraise.permission"));
 			}
-			UpdateResult updateResult = sessionService.removeRaisedIssue(loggedUserKey, loadedSession, issueKey);
+			UpdateResult updateResult = sessionService.removeRaisedIssue(loggedUserKey, loggedUserAccountId, loadedSession, issueKey);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
@@ -769,6 +778,7 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUserAccountId = hostUser.getUserAccountId().get();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			String oldAssignee = loadedSession.getAssignee();
+			String oldAssigneeAccountId = loadedSession.getAssigneeAccountId();
 			String assigner = hostUser.getUserKey().orElse(null);
 			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
 			if (!StringUtils.isEmpty(assignee) && !permissionService.canBeAssignedSession(assignee, assigneeAccountId, captureProject)) {
@@ -783,14 +793,14 @@ public class SessionController extends CaptureAbstractController{
 			CaptureUser user = userService.findUserByKey(assignee);
 			if(user != null) loadedSession.setUserDisplayName(user.getDisplayName());
 			loadedSession.setAssigneeAccountId(user.getAccountId());
-			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loadedSession, assignee);
+			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loggedUserAccountId, loadedSession, assignee);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult, true);
 			//Save assigned user to the session as activity.
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, loggedUserAccountId, assignee, user.getAccountId(), oldAssignee);
+				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, loggedUserAccountId, assignee, user.getAccountId(), oldAssignee, oldAssigneeAccountId);
 				sessionActivityService.setStatus(loadedSession, new Date(), loggedUserKey, loggedUserAccountId);
 			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, loadedSession, false);
@@ -887,6 +897,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			String editedAdditionalInfo = json.get("additionalInfo").asText();
 			String wikiParsedData = loadedSession.getWikiParsedData();
@@ -896,7 +907,7 @@ public class SessionController extends CaptureAbstractController{
 			}else{
 				wikiParsedData = null;
 			}
-			UpdateResult updateResult = sessionService.updateSessionAdditionalInfo(loggedUserKey, loadedSession, editedAdditionalInfo, wikiParsedData);
+			UpdateResult updateResult = sessionService.updateSessionAdditionalInfo(loggedUserKey, loggedUserAccountId, loadedSession, editedAdditionalInfo, wikiParsedData);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
@@ -947,7 +958,7 @@ public class SessionController extends CaptureAbstractController{
         		sessionActivityService.setStatus(newSession, new Date(), loggedUserKey, loggedUserAccountId);
 				if(!loggedUserKey.equals(newSession.getAssignee())) {
 					//Save if the assigned user and logged in user are different into the session as activity.
-					sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, loggedUserAccountId, newSession.getAssignee(), newSession.getAssigneeAccountId(), null);
+					sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, loggedUserAccountId, newSession.getAssignee(), newSession.getAssigneeAccountId(), null, null);
 				}
 			});
 			log.info("End of cloneSession()");
@@ -963,7 +974,7 @@ public class SessionController extends CaptureAbstractController{
 	@IgnoreJwt
 	@CrossOrigin
 	@GetMapping(value = "/user/active", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> getActiveSessionUser(@RequestParam String userKey, @RequestParam String baseUrl) {
+	public ResponseEntity<?> getActiveSessionUser(@RequestParam String userKey, @RequestParam String userAccountId, @RequestParam String baseUrl) {
 		log.info("Start of getActiveSessionUser()");
 		try {
 			if(StringUtils.isBlank(userKey)) {
@@ -972,7 +983,7 @@ public class SessionController extends CaptureAbstractController{
 			if(StringUtils.isBlank(baseUrl)) {
 				throw new CaptureValidationException(i18n.getMessage("base.url.invalid.message", new Object[]{baseUrl}));
 			}
-			SessionResult sessionResult = sessionService.getActiveSession(userKey, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
+			SessionResult sessionResult = sessionService.getActiveSession(userKey, userAccountId, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
 			if(sessionResult != null && sessionResult.getSession() != null && sessionResult.getSession().getStatus() != null
 			&& !Status.STARTED.name().equals(sessionResult.getSession().getStatus().name())) {
 				return ResponseEntity.ok().build();
@@ -988,7 +999,7 @@ public class SessionController extends CaptureAbstractController{
 	@IgnoreJwt
 	@CrossOrigin
 	@GetMapping(value = "/user/active/link", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> getActiveSessionLink(@RequestParam String userName, @RequestParam String baseUrl) {
+	public ResponseEntity<?> getActiveSessionLink(@RequestParam String userName, @RequestParam String userAccountId, @RequestParam String baseUrl) {
 		log.info("Start of getActiveSessionLink()");
 		try {
 			String userKey = userService.findActiveUserByUserName(userName, baseUrl).getKey();
@@ -998,7 +1009,7 @@ public class SessionController extends CaptureAbstractController{
 			if(StringUtils.isBlank(baseUrl)) {
 				throw new CaptureValidationException(i18n.getMessage("base.url.invalid.message", new Object[]{baseUrl}));
 			}
-			SessionResult sessionResult = sessionService.getActiveSession(userKey, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
+			SessionResult sessionResult = sessionService.getActiveSession(userKey, userAccountId, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
 			if(sessionResult != null && sessionResult.getSession() != null && sessionResult.getSession().getStatus() != null
 					&& !Status.STARTED.name().equals(sessionResult.getSession().getStatus().name())) {
 				return ResponseEntity.ok().build();

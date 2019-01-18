@@ -138,7 +138,7 @@ public interface SessionService {
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the shared session object.
 	 */
-	UpdateResult shareSession(String loggedUserKey, Session session);
+	UpdateResult shareSession(String loggedUserKey, String loggedUserAccountId, Session session);
 	
 	/**
 	 * Unshared the session. 
@@ -147,7 +147,7 @@ public interface SessionService {
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the unshared session object.
 	 */
-	UpdateResult unshareSession(String loggedUserKey, Session session);
+	UpdateResult unshareSession(String loggedUserKey, String loggedUserAccountId, Session session);
 	
 	/**
 	 * Removes the raised issue from the session.
@@ -158,7 +158,7 @@ public interface SessionService {
 	 * @return -- Returns UpdateResult object which holds the removed issue session object.
 	 * @throws CaptureValidationException -- Thrown while doing validation of the issue.
 	 */
-	UpdateResult removeRaisedIssue(String loggedUserKey, Session session, String issueKey) throws CaptureValidationException;
+	UpdateResult removeRaisedIssue(String loggedUserKey, String loggedUserAccountId, Session session, String issueKey) throws CaptureValidationException;
 	
 	/**
 	 * Completes the session.
@@ -220,7 +220,7 @@ public interface SessionService {
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the unshared session object.
 	 */
-	UpdateResult assignSession(String loggedUserKey, Session session, String assignee);
+	UpdateResult assignSession(String loggedUserKey, String loggedUserAccountId, Session session, String assignee);
 	
 	/**
 	 * Fetch private and shared sessions for user.
@@ -251,7 +251,7 @@ public interface SessionService {
 	 * @param additionalInfo -- Updated additional information.
 	 * @return -- Returns UpdateResult object which holds the updated session object.
 	 */
-	UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo, String wikiParsedData);
+	UpdateResult updateSessionAdditionalInfo(String loggedUser, String loggedUserAccountId, Session session, String additionalInfo, String wikiParsedData);
 	
 	/**
 	 * Clones the session for the requested session.
@@ -273,7 +273,7 @@ public interface SessionService {
 	 * @param baseUrl -- User base url.
 	 * @return -- Returns the SessionResult object which holds the active session and also any validation errors.
 	 */
-	SessionResult getActiveSession(String user, String baseUrl);
+	SessionResult getActiveSession(String user, String userAccountId, String baseUrl);
 
 	UserActiveSession getActiveSession(AcHostModel acHostModel, CaptureUser user);
 
@@ -300,7 +300,7 @@ public interface SessionService {
 
 	String generateJiraPropIndex(String ctId);
 
-	String getActiveSessionIdByUser(String user, AcHostModel acHostModel);
+	String getActiveSessionIdByUser(String user, String userAccountId, AcHostModel acHostModel);
 
 	void addRaisedIssueToSession(AcHostModel acHostModel, String sessionId, BasicIssue basicIssue, CaptureUser user) throws HazelcastInstanceNotDefinedException;
 }

@@ -120,8 +120,6 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public Session createSession(String loggedUserKey, String loggedUserAccountId,  SessionRequest sessionRequest) {
 		Session session = new Session();
-		session.setCreator(loggedUserKey);
-		session.setCreatorAccountId(loggedUserAccountId);
 		session.setCtId(CaptureUtil.getCurrentCtId());
 		session.setStatus(Status.CREATED);
 		session.setName(sessionRequest.getName());
@@ -134,9 +132,18 @@ public class SessionServiceImpl implements SessionService {
 		session.setProjectId(sessionRequest.getProjectId());
 		session.setProjectName(sessionRequest.getProjectName());
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
-		session.setAssignee(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
-		CaptureUser user = userService.findUserByKey(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
-		session.setAssigneeAccountId(user.getAccountId());
+		CaptureUser user;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			session.setCreatorAccountId(loggedUserAccountId);
+			user = userService.findUserByAccountId(!StringUtils.isEmpty(sessionRequest.getAssigneeAccountId()) ? sessionRequest.getAssigneeAccountId() : loggedUserAccountId);
+			session.setAssigneeAccountId(!StringUtils.isEmpty(sessionRequest.getAssigneeAccountId()) ? sessionRequest.getAssigneeAccountId() : loggedUserAccountId);
+		} else {
+			session.setCreator(loggedUserKey);
+			session.setCreatorAccountId(loggedUserAccountId);
+			user = userService.findUserByAccountId(!StringUtils.isEmpty(sessionRequest.getAssigneeAccountId()) ? sessionRequest.getAssigneeAccountId() : loggedUserAccountId);
+			session.setAssignee(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
+			session.setAssigneeAccountId(!StringUtils.isEmpty(sessionRequest.getAssigneeAccountId()) ? sessionRequest.getAssigneeAccountId() : loggedUserAccountId);
+		}
 		session.setUserDisplayName(user != null ? user.getDisplayName() : null);
 		session.setJiraPropIndex(generateJiraPropIndex(session.getCtId()));
         Session createdSession = sessionRepository.save(session);
@@ -186,7 +193,7 @@ public class SessionServiceImpl implements SessionService {
         session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
         session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
         //Generating the session object from session builder.
-        return validateUpdate(loggedUserKey, session);
+        return validateUpdate(loggedUserKey, loggedUserAccountId, session);
 	}
 
 	@Override
@@ -199,12 +206,12 @@ public class SessionServiceImpl implements SessionService {
 		sessionESRepository.delete(sessionId);
 		sessionActivityService.deleteAllSessionActivities(sessionId);
 		noteRepository.deleteBySessionId(sessionId);
-        if (session.getId().equals(getActiveSessionIdFromCache(session.getAssignee(), null))) { // Clear it as assignees active session
-            clearActiveSessionFromCache(session.getAssignee());
+        if (session.getId().equals(getActiveSessionIdFromCache(session.getAssignee(), session.getAssigneeAccountId(), null))) { // Clear it as assignees active session
+            clearActiveSessionFromCache(session.getAssignee(), session.getAssigneeAccountId());
         }
         if(!Objects.isNull(session.getParticipants())) {
         	for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) { // Clear it as all the active participants active session
-            	clearActiveSessionFromCache(p.getUser());
+            	clearActiveSessionFromCache(p.getUser(), p.getUserAccountId());
             }
         }
         if(log.isDebugEnabled()) log.debug("Deleted Session -- > Session ID - " + sessionId);
@@ -223,12 +230,12 @@ public class SessionServiceImpl implements SessionService {
 			Boolean firstTimeStarted = session.getStatus().equals(Status.CREATED);
 			session.setStatus(Status.STARTED);
 			final Session savedSession = save(session, user.getDisplayName(), null);
-			setActiveSessionIdToCache(user.getKey(), sessionId);
+			setActiveSessionIdToCache(user.getKey(), user.getAccountId(), sessionId);
 			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
 			CompletableFuture.runAsync(() -> {
 				sessionActivityService.setStatus(savedSession, new Date(), user.getKey(), user.getAccountId(), firstTimeStarted);
 			});
-			setActiveSessionIdToCache(user.getKey(), savedSession.getId());
+			setActiveSessionIdToCache(user.getKey(), user.getAccountId(), savedSession.getId());
 			return session;
 		} catch (Exception exception){
 			throw exception;
@@ -260,15 +267,15 @@ public class SessionServiceImpl implements SessionService {
 			});
 			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
 		}
-		clearActiveSessionFromCache(user.getKey());
+		clearActiveSessionFromCache(user.getKey(), user.getKey());
 	}
 	
 	@Override
-	public UpdateResult startSession(String userKey, String loggedUserAccountId, Session session) {
+	public UpdateResult startSession(String userKey, String userAccountId, Session session) {
 		DeactivateResult deactivateResult = null;
-        SessionResult activeSessionResult = getActiveSession(userKey, null); // Deactivate current active session
+        SessionResult activeSessionResult = getActiveSession(userKey, userAccountId, null); // Deactivate current active session
         if (activeSessionResult.isValid()) {
-            deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), userKey, loggedUserAccountId);
+            deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), userKey, userAccountId);
             if (!deactivateResult.isValid()) {
                 return new UpdateResult(deactivateResult.getErrorCollection(), session);
             }
@@ -277,15 +284,15 @@ public class SessionServiceImpl implements SessionService {
 				Session activeSession = activeSessionResult.getSession();
 				activeSession.setStatus(Status.PAUSED);
 				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
-				clearActiveSessionFromCache(userKey);
+				clearActiveSessionFromCache(userKey, userAccountId);
 				update(updateResult, false);
 				CompletableFuture.runAsync(() -> {
-					sessionActivityService.setStatus(activeSession, new Date(), userKey, loggedUserAccountId);
+					sessionActivityService.setStatus(activeSession, new Date(), userKey, userAccountId);
 				});
 			}
         }
         session.setStatus(Status.STARTED);
-        return new UpdateResult(validateUpdate(userKey, session), deactivateResult, userKey, true, false);
+        return new UpdateResult(validateUpdate(userKey, userAccountId, session), deactivateResult, userKey, userAccountId, true, false);
 	}
 
 
@@ -306,7 +313,7 @@ public class SessionServiceImpl implements SessionService {
             if (!Status.STARTED.equals(session.getStatus())) {
                 errorCollection.addError(captureI18NMessageSource.getMessage("session.join.not.started" , new Object[]{session.getName()}));
             }
-            SessionResult activeSessionResult = getActiveSession(loggedUserKey, null); // Deactivate current active session
+            SessionResult activeSessionResult = getActiveSession(loggedUserKey, loggedUserAccountId, null); // Deactivate current active session
             if (activeSessionResult.isValid()) {
                 deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), loggedUserKey, loggedUserAccountId);
                 if (!deactivateResult.isValid()) {
@@ -328,7 +335,7 @@ public class SessionServiceImpl implements SessionService {
             return new UpdateResult(errorCollection, session);
         }
         addParticipantToSession(loggedUserKey, loggedUserAccountId, session); //set participant info only after all validations are passed.
-        return new UpdateResult(validateUpdate(loggedUserKey, session), deactivateResult, loggedUserKey, true, false);
+        return new UpdateResult(validateUpdate(loggedUserKey, loggedUserAccountId, session), deactivateResult, loggedUserKey, loggedUserAccountId, true, false);
 	}
 	
 	@Override
@@ -358,19 +365,19 @@ public class SessionServiceImpl implements SessionService {
 	}
 	
 	@Override
-	public UpdateResult unshareSession(String loggedUserKey, Session session) {
+	public UpdateResult unshareSession(String loggedUserKey, String loggedUserAccountId, Session session) {
 		session.setShared(false);
-		return validateUpdate(loggedUserKey, session);
+		return validateUpdate(loggedUserKey, loggedUserAccountId, session);
 	}
 	
 	@Override
-	public UpdateResult shareSession(String loggedUserKey, Session session) {
+	public UpdateResult shareSession(String loggedUserKey, String loggedUserAccountId, Session session) {
 		session.setShared(true);
-		return validateUpdate(loggedUserKey, session);
+		return validateUpdate(loggedUserKey, loggedUserAccountId, session);
 	}
 	
 	@Override
-    public UpdateResult removeRaisedIssue(String loggedUserKey, Session session, String issueKey) throws CaptureValidationException {
+    public UpdateResult removeRaisedIssue(String loggedUserKey, String loggedUserAccountId, Session session, String issueKey) throws CaptureValidationException {
         ErrorCollection errorCollection = new ErrorCollection();
         CaptureIssue issue = issueService.getCaptureIssue(issueKey);
         boolean isPresent = false;
@@ -400,7 +407,7 @@ public class SessionServiceImpl implements SessionService {
 			}
 			session.setIssuesRaised(issuesRaised.size() > 0 ? issuesRaised : null);
 		};
-		return validateUpdate(loggedUserKey, session);
+		return validateUpdate(loggedUserKey, loggedUserAccountId, session);
     }
 	
 	@Override
@@ -434,7 +441,7 @@ public class SessionServiceImpl implements SessionService {
 			List<SessionDto> privateSessionsDto =  new ArrayList<>();
 			List<SessionDto> sharedSessionsDto =  new ArrayList<>();
 			SessionDto activeSessionDto = null;
-			SessionResult activeSession = getActiveSession(user,null);
+			SessionResult activeSession = getActiveSession(user, userAccountId, null);
 			if(activeSession!=null&&activeSession.getSession() !=null){
 				Session session = activeSession.getSession();
 				CaptureProject project = projectService.getCaptureProject(session.getProjectId());
@@ -457,7 +464,7 @@ public class SessionServiceImpl implements SessionService {
 			List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, userAccountId, privateSessionsList, privateSessionsList.size(), true);
 			List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, userAccountId, sharedSessionsList, sharedSessionsList.size(), true);
 			SessionDto activeSessionDto = null;
-			SessionResult activeSession = getActiveSession(user,null);
+			SessionResult activeSession = getActiveSession(user, userAccountId, null);
 			if(activeSession!=null&&activeSession.getSession() !=null){
 				Session session = activeSession.getSession();
 				CaptureProject project = projectService.getCaptureProject(session.getProjectId());
@@ -542,7 +549,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public UpdateResult assignSession(String loggedUserKey, Session session, String assignee) {
+	public UpdateResult assignSession(String loggedUserKey, String loggedUserAccountId, Session session, String assignee) {
 		if (Status.STARTED.equals(session.getStatus())) { //If the session that is to be assigned is started, then pause it.
 			DeactivateResult pauseResult = validateDeactivateSession(session, session.getAssignee(), session.getAssigneeAccountId()); //Pause for current user
 			if (!pauseResult.isValid()) {
@@ -552,13 +559,13 @@ public class SessionServiceImpl implements SessionService {
 				session.setAssignee(assignee);
 			}
 			pauseResult = new DeactivateResult(pauseResult, session);
-			UpdateResult result = new UpdateResult(validateUpdate(loggedUserKey, session), pauseResult, null, false, true);
+			UpdateResult result = new UpdateResult(validateUpdate(loggedUserKey, loggedUserAccountId, session), pauseResult, null, null, false, true);
 			return result;
 		}
 		if(!loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
 			session.setAssignee(assignee);
 		}
-		UpdateResult result = validateUpdate(loggedUserKey, session);
+		UpdateResult result = validateUpdate(loggedUserKey, loggedUserAccountId, session);
 		return result;
 	}
 
@@ -598,7 +605,7 @@ public class SessionServiceImpl implements SessionService {
 		Map<Long, CaptureProject> projectsMap = new HashMap<>();
 		SessionDto sessionDto = null;
 		CaptureProject project = null;
-		String activeSessionId = getActiveSessionIdFromCache(loggedUser, null);
+		String activeSessionId = getActiveSessionIdFromCache(loggedUser, loggedUserAccountId, null);
 		if(Objects.nonNull(sessions.getContent())) {
 			for(Session session : sessions.getContent()) {
 				if(!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
@@ -757,8 +764,8 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionResult getActiveSession(String user, String baseUrl) {
-		String activeSessionId = getActiveSessionIdFromCache(user, baseUrl);
+	public SessionResult getActiveSession(String user, String userAccountId, String baseUrl) {
+		String activeSessionId = getActiveSessionIdFromCache(user, userAccountId, baseUrl);
 		if(Objects.isNull(activeSessionId)) {
 			return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
 		}
@@ -773,7 +780,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public UserActiveSession getActiveSession(AcHostModel acHostModel, CaptureUser user){
     	UserActiveSession userActiveSession;
-		String sessionId = getActiveSessionIdByUser(user.getKey(), acHostModel);
+		String sessionId = getActiveSessionIdByUser(user.getKey(), user.getAccountId(), acHostModel);
 		if(StringUtils.isNotEmpty(sessionId)){
 			Session session = getSession(sessionId);
 			userActiveSession = new UserActiveSession(user, session);
@@ -785,10 +792,10 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo, String wikiParsedData) {
+	public UpdateResult updateSessionAdditionalInfo(String loggedUser, String loggedUserAccountId, Session session, String additionalInfo, String wikiParsedData) {
 		session.setAdditionalInfo(additionalInfo);
 		session.setWikiParsedData(wikiParsedData);
-		return validateUpdate(loggedUser, session);
+		return validateUpdate(loggedUser, loggedUserAccountId, session);
 	}
 
 	@Override
@@ -1013,7 +1020,7 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private void saveUpdatedSession(UpdateResult result) {
         if (result.isActivate()) { // Update depending on flags
-            setActiveSessionIdToCache(result.getUser(), result.getSession().getId());
+            setActiveSessionIdToCache(result.getUser(), result.getUserAccountId(), result.getSession().getId());
         }
         save(result.getSession(), result.getLeavers());
     }
@@ -1039,7 +1046,11 @@ public class SessionServiceImpl implements SessionService {
     @Deprecated
 	private void save(Session session, Map<String, String> leavers) {
     	for (Map.Entry<String, String> leaver : leavers.entrySet()) {
-            clearActiveSessionFromCache(leaver.getKey());
+            if(CaptureUtil.isTenantGDPRComplaint()) {
+            	clearActiveSessionFromCache(null, leaver.getKey());
+            } else {
+            	clearActiveSessionFromCache(leaver.getKey(), null);
+            }
             CompletableFuture.runAsync(() -> {
             	sessionActivityService.addParticipantLeft(session, new Date(), leaver.getKey(), leaver.getValue());
             });
@@ -1087,20 +1098,20 @@ public class SessionServiceImpl implements SessionService {
                 		leavingUsers.put(p.getUser(), p.getUserAccountId());
                     }
                 }
-                Session activeUserSession = getActiveSession(user, null).getSession();
+                Session activeUserSession = getActiveSession(user, userAccountId, null).getSession();
                 if (session.getId().equals(!Objects.isNull(activeUserSession) ? activeUserSession.getId() : null)) { // If this is my active session then I want to leave it
                     leavingUsers.put(user, userAccountId);
                 }
                 session.setStatus(status);
                 session.setTimeLogged(timeLogged);
-                return new DeactivateResult(validateUpdate(user, session), leavingUsers);
+                return new DeactivateResult(validateUpdate(user, userAccountId, session), leavingUsers);
             } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user, userAccountId))) { // Just leave if it isn't
                 CompletableFuture.runAsync(() -> {
                 	sessionActivityService.addParticipantLeft(session, new Date(), user, userAccountId);
                 });
             }
         }
-        return new DeactivateResult(validateUpdate(user, session), user, userAccountId);
+        return new DeactivateResult(validateUpdate(user, userAccountId, session), user, userAccountId);
     }
 	
 	/**
@@ -1121,9 +1132,12 @@ public class SessionServiceImpl implements SessionService {
 	 * 
 	 * @param user -- Logged in user key.
 	 */
-	private void clearActiveSessionFromCache(String user) {
+	private void clearActiveSessionFromCache(String user, String userAccountId) {
 		AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
 		String cacheKey = ACTIVE_USER_SESSION_ID_KEY + user;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			cacheKey = ACTIVE_USER_SESSION_ID_KEY + userAccountId;
+		}
 		if(!iTenantAwareCache.delete(acHostModel, cacheKey)) {
 			throw new CaptureRuntimeException("Not able to delete the cache for user key -> " + cacheKey);
 		} 
@@ -1135,9 +1149,12 @@ public class SessionServiceImpl implements SessionService {
 	 * @param user -- Logged in user key.
 	 * @param sessionId -- Session id to be saved into cache for the logged in user.
 	 */
-	private void setActiveSessionIdToCache(String user, String sessionId) {
+	private void setActiveSessionIdToCache(String user, String userAccountId, String sessionId) {
 		AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
 		String cacheKey = ACTIVE_USER_SESSION_ID_KEY + user;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			cacheKey = ACTIVE_USER_SESSION_ID_KEY + userAccountId;
+		}
 		iTenantAwareCache.set(acHostModel, cacheKey, sessionId);
 	}
 	
@@ -1148,16 +1165,24 @@ public class SessionServiceImpl implements SessionService {
 	 * @return -- Returns the fetched session id from the cache for the loggedin user.
 	 */
 	@Override
-	public String getActiveSessionIdByUser(String userKey, AcHostModel acHostModel) {
+	public String getActiveSessionIdByUser(String userKey, String userAccountId, AcHostModel acHostModel) {
 		try {
 			String cacheKey = ACTIVE_USER_SESSION_ID_KEY + userKey;
+			if(CaptureUtil.isTenantGDPRComplaint()) {
+				cacheKey = ACTIVE_USER_SESSION_ID_KEY + userAccountId;
+			}
 			String issueId = iTenantAwareCache.getOrElse(acHostModel, cacheKey, new Callable<String>() {
 				public String call() throws Exception {
-					List<Session> activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(acHostModel.getCtId(), Status.STARTED.name(), userKey);
+					List<Session> activeSessions = null;
+					if(CaptureUtil.isTenantGDPRComplaint()) {
+						activeSessions = sessionESRepository.findByCtIdAndStatusAndAssigneeAccountId(acHostModel.getCtId(), Status.STARTED.name(), userAccountId);
+					} else {
+						activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(acHostModel.getCtId(), Status.STARTED.name(), userKey);
+					}
 					if(Objects.nonNull(activeSessions) && activeSessions.size() > 0) {
                         return activeSessions.get(0).getId();
                     } else{
-					    return findActiveSessionByParticipateUser(acHostModel, userKey);
+					    return findActiveSessionByParticipateUser(acHostModel, userKey, userAccountId);
                     }
 				}				
 			}, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION);
@@ -1169,16 +1194,25 @@ public class SessionServiceImpl implements SessionService {
 		return null;
 	}
 
-    private String findActiveSessionByParticipateUser(AcHostModel acHostModel, String userKey){
-        Page<Session> userParticipatedSessionPage = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(acHostModel.getCtId(), Session.Status.STARTED.toString(), userKey, CaptureUtil.getPageRequest(0, 1000));
-        for(Session session:userParticipatedSessionPage.getContent()){
-            for (Participant participant:session.getParticipants()){
-                if(org.apache.commons.lang3.StringUtils.equals(participant.getUser(), userKey) && participant.getTimeLeft() == null){
-                    return session.getId();
+    private String findActiveSessionByParticipateUser(AcHostModel acHostModel, String userKey, String userAccountId) {
+    	boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+    	Page<Session> userParticipatedSessionPage = null;
+    	if(isTenantGDPRComplaint) {
+    		userParticipatedSessionPage = sessionESRepository.findByCtIdAndStatusAndParticipantsUserAccountId(acHostModel.getCtId(), Session.Status.STARTED.toString(), userAccountId, CaptureUtil.getPageRequest(0, 1000));
+    	} else {
+    		userParticipatedSessionPage = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(acHostModel.getCtId(), Session.Status.STARTED.toString(), userKey, CaptureUtil.getPageRequest(0, 1000));
+    	}    	
+        if(userParticipatedSessionPage != null) {
+        	for(Session session : userParticipatedSessionPage.getContent()){
+                for (Participant participant : session.getParticipants()){
+                	if(isTenantGDPRComplaint && org.apache.commons.lang3.StringUtils.equals(participant.getUserAccountId(), userAccountId) && participant.getTimeLeft() == null) {
+                        return session.getId();
+                    } else if(!isTenantGDPRComplaint && org.apache.commons.lang3.StringUtils.equals(participant.getUser(), userKey) && participant.getTimeLeft() == null) {
+                        return session.getId();
+                    }
                 }
             }
         }
-
         return null;
     }
 	
@@ -1189,14 +1223,14 @@ public class SessionServiceImpl implements SessionService {
 	 * @param baseUrl -- User base url.
 	 * @return -- Returns the fetched session id from the cache for the user.
 	 */
-	private String getActiveSessionIdFromCache(String user, String baseUrl) {
+	private String getActiveSessionIdFromCache(String user, String userAccountId, String baseUrl) {
 		AcHostModel acHostModel = null;
 		if(Objects.nonNull(baseUrl)) {
 			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository, baseUrl);
 		} else {
 			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
 		}
-		return acHostModel == null ? null : getActiveSessionIdByUser(user, acHostModel);
+		return acHostModel == null ? null : getActiveSessionIdByUser(user, userAccountId, acHostModel);
 	}
 	
 	/**
@@ -1206,7 +1240,7 @@ public class SessionServiceImpl implements SessionService {
 	 * @param newSession -- Session object to be validated and updated.
 	 * @return -- Returns the UpdateResult object which holds the updated session object and any validation errors.
 	 */
-	private UpdateResult validateUpdate(String updater, Session newSession) {
+	private UpdateResult validateUpdate(String updater, String updaterAccountId, Session newSession) {
         Session loadedSession = null;
         ErrorCollection errorCollection = new ErrorCollection();
         if (Objects.isNull(updater) || Objects.isNull(newSession)) {
@@ -1326,6 +1360,7 @@ public class SessionServiceImpl implements SessionService {
         private final boolean isActivate;
         private final boolean isDeactivate;
         private final String relatedUser;
+        private final String relatedUserAccountId;
         private Map<String, String> leavers;
         private List<Object> events;
 
@@ -1333,6 +1368,7 @@ public class SessionServiceImpl implements SessionService {
             super(errorCollection, session);
             this.deactivateResult = null;
             this.relatedUser = null;
+            this.relatedUserAccountId = null;
             this.isActivate = false;
             this.isDeactivate = false;
             this.leavers = new HashMap<>();
@@ -1343,6 +1379,7 @@ public class SessionServiceImpl implements SessionService {
             super(errorCollection, session);
             this.deactivateResult = null;
             this.relatedUser = null;
+            this.relatedUserAccountId = null;
             this.isActivate = false;
             this.isDeactivate = false;
             this.leavers = leavers;
@@ -1353,16 +1390,18 @@ public class SessionServiceImpl implements SessionService {
             super(errorCollection, session);
             this.deactivateResult = leaveResult;
             this.relatedUser = null;
+            this.relatedUserAccountId = null;
             this.isActivate = isActivate;
             this.isDeactivate = isDeactivate;
             this.events = new ArrayList<>();
             this.leavers = new HashMap<>();
         }
 
-        public UpdateResult(UpdateResult result, DeactivateResult leaveResult, String relatedUser, boolean isActivate, boolean isDeactivate) {
+        public UpdateResult(UpdateResult result, DeactivateResult leaveResult, String relatedUser, String relatedUserAccountId, boolean isActivate, boolean isDeactivate) {
             super(result.getErrorCollection(), result.getSession());
             this.deactivateResult = leaveResult;
             this.relatedUser = relatedUser;
+            this.relatedUserAccountId = relatedUserAccountId;
             this.isActivate = isActivate;
             this.isDeactivate = isDeactivate;
             this.events = result.getEvents();
@@ -1387,6 +1426,10 @@ public class SessionServiceImpl implements SessionService {
 
         String getUser() {
             return relatedUser;
+        }
+        
+        String getUserAccountId() {
+            return relatedUserAccountId;
         }
 
         void addEvent(Object event) {
@@ -1502,7 +1545,7 @@ public class SessionServiceImpl implements SessionService {
 	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, String loggedInUserAccountId, List<Session> sessionsList, int size, boolean isSessionFullLoad) {
 		List<SessionDto> sessionDtoList = new ArrayList<>(size);
 		SessionDto sessionDto = null;
-		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, null);
+		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, loggedInUserAccountId, null);
 		for(Session session : sessionsList) {
 			CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
 			boolean isActive = session.getId().equals(activeSessionId);

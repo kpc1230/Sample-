@@ -8,6 +8,8 @@ import com.thed.zephyr.capture.model.jira.CaptureUser;
 import com.thed.zephyr.capture.repositories.dynamodb.SessionActivityRepository;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.util.CaptureUtil;
+
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -34,17 +36,14 @@ public class SessionActivityServiceImpl implements SessionActivityService {
             boolean firstStarted = (session.getStatus()
                     == Session.Status.CREATED && session.getStatus()
                     == Session.Status.STARTED);
-            StatusSessionActivity sessionActivity =
-                    new StatusSessionActivity(
-                            session.getId(),
-                            session.getCtId(),
-                            timestamp,
-                            user,
-                            userAccountId,
-                            session.getProjectId(),
-                            session.getStatus(),
-                            firstStarted
-                    );
+            StatusSessionActivity sessionActivity = null;
+            if(CaptureUtil.isTenantGDPRComplaint()) {
+            	sessionActivity = new StatusSessionActivity(session.getId(), session.getCtId(), timestamp,
+                        null, userAccountId, session.getProjectId(), session.getStatus(), firstStarted);
+            } else {
+            	sessionActivity = new StatusSessionActivity(session.getId(), session.getCtId(), timestamp,
+                        user, userAccountId, session.getProjectId(), session.getStatus(), firstStarted);
+            }
             sessionActivityRepository.save(sessionActivity);
             return sessionActivity;
         }
@@ -54,19 +53,16 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     @Override
     public SessionActivity setStatus(Session session, Date timestamp, String user, String userAccountId, boolean firstStarted) {
         if (session.getStatus() != null) {
-           StatusSessionActivity sessionActivity =
-                    new StatusSessionActivity(
-                            session.getId(),
-                            session.getCtId(),
-                            timestamp,
-                            user,
-                            userAccountId,
-                            session.getProjectId(),
-                            session.getStatus(),
-                            firstStarted
-                    );
-            sessionActivityRepository.save(sessionActivity);
-            return sessionActivity;
+           StatusSessionActivity sessionActivity = null;
+           if(CaptureUtil.isTenantGDPRComplaint()) {
+        	   sessionActivity =  new StatusSessionActivity(session.getId(), session.getCtId(), timestamp, null,
+                       userAccountId, session.getProjectId(), session.getStatus(), firstStarted); 
+           } else {
+        	   sessionActivity =  new StatusSessionActivity(session.getId(), session.getCtId(), timestamp, user,
+                       userAccountId, session.getProjectId(), session.getStatus(), firstStarted);
+           }
+           sessionActivityRepository.save(sessionActivity);
+           return sessionActivity;
         }
         return null;
     }
@@ -159,13 +155,21 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignerAccountId, String assignee, String assigneeAccountId, String oldAssignee) {
+    public SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignerAccountId, String assignee, String assigneeAccountId, String oldAssignee,
+    		String oldAssigneeAccountId) {
         // Don't do redundant assigns
         UserAssignedSessionActivity sessionActivity = null;
-        if (oldAssignee == null || !oldAssignee.equals(assignee)) {
-            sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, assigner, assignerAccountId, session.getProjectId(), assignee, assigneeAccountId);
-            sessionActivityRepository.save(sessionActivity);
+        if(CaptureUtil.isTenantGDPRComplaint()) {
+        	if (oldAssigneeAccountId == null || !oldAssigneeAccountId.equals(assignerAccountId)) {
+                sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, null, assignerAccountId, session.getProjectId(), null, assigneeAccountId);                
+            }
+        } else {
+        	if (oldAssignee == null || !oldAssignee.equals(assignee)) {
+                sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, assigner, assignerAccountId, session.getProjectId(), assignee, assigneeAccountId);                
+            }
         }
+        if(sessionActivity != null)
+        	sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }
 

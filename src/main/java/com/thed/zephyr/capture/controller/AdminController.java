@@ -4,13 +4,19 @@ import com.atlassian.connect.spring.AtlassianHost;
 import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.IgnoreJwt;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.util.CaptureUtil;
+
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -40,5 +46,13 @@ public class AdminController {
         }
 
         return "false";
+    }
+    
+    @GetMapping(value = "/isGdpr")
+    public ResponseEntity<?> isTenantGDPRComplaint() {
+    	boolean isTenantGDRPComplaint = CaptureUtil.isTenantGDPRComplaint();
+    	Map<String, Boolean> resMap = new HashMap<>();
+    	resMap.put("isGDPR", isTenantGDRPComplaint);
+    	return ResponseEntity.ok().body(resMap);
     }
 }
