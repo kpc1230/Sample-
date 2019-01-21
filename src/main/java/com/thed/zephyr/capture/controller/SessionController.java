@@ -208,7 +208,7 @@ public class SessionController extends CaptureAbstractController{
 			List<IssueRaisedBean> listOfIssueRaised = new ArrayList<>();
 			issueKeys.addAll(listOfIssues);
 			String loggedUser = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			issueKeys.forEach(issueKey -> {
 				try {
 					CaptureIssue issue = issueService.getCaptureIssue(issueKey);

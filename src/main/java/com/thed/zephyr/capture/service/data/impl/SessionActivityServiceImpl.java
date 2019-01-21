@@ -69,8 +69,12 @@ public class SessionActivityServiceImpl implements SessionActivityService {
 
     @Override
     public SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user, String userAccountId) {
-        UserJoinedSessionActivity sessionActivity =
-                new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), user, userAccountId, session.getProjectId(), participant);
+        UserJoinedSessionActivity sessionActivity = null;
+        if(CaptureUtil.isTenantGDPRComplaint()) {
+        	sessionActivity = new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), null, userAccountId, session.getProjectId(), participant);
+        } else {
+        	sessionActivity = new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), user, userAccountId, session.getProjectId(), participant);
+        }
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }
@@ -78,10 +82,16 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     @Override
     public SessionActivity addParticipantLeft(Session session, Date timestamp, String userKey, String userAccountId) {
         UserLeftSessionActivity sessionActivity = null;
-        Participant participant = session.participantLeaveSession(userKey, timestamp);
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+        Participant participant = session.participantLeaveSession(userKey, userAccountId, timestamp, isTenantGDPRComplaint);
         if (participant != null) {
-            sessionActivity = new UserLeftSessionActivity(
-                    session.getId(), session.getCtId(), timestamp, userKey, userAccountId, session.getProjectId(), participant);
+            if(isTenantGDPRComplaint) {
+            	sessionActivity = new UserLeftSessionActivity(
+                        session.getId(), session.getCtId(), timestamp, null, userAccountId, session.getProjectId(), participant);
+            } else {
+            	sessionActivity = new UserLeftSessionActivity(
+                        session.getId(), session.getCtId(), timestamp, userKey, userAccountId, session.getProjectId(), participant);
+            }
             sessionActivityRepository.save(sessionActivity);
         }
         return sessionActivity;
@@ -89,9 +99,15 @@ public class SessionActivityServiceImpl implements SessionActivityService {
 
     public SessionActivity addParticipantLeft(Session session, Participant participant) {
         UserLeftSessionActivity sessionActivity = null;
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         if (participant != null && session != null) {
-            sessionActivity = new UserLeftSessionActivity(
-                    session.getId(), session.getCtId(), participant.getTimeLeft(), participant.getUser(), participant.getUserAccountId(), session.getProjectId(), participant);
+        	if(isTenantGDPRComplaint) {
+        		sessionActivity = new UserLeftSessionActivity(
+                        session.getId(), session.getCtId(), participant.getTimeLeft(), null, participant.getUserAccountId(), session.getProjectId(), participant);
+        	} else {
+        		sessionActivity = new UserLeftSessionActivity(
+                        session.getId(), session.getCtId(), participant.getTimeLeft(), participant.getUser(), participant.getUserAccountId(), session.getProjectId(), participant);
+        	}            
             sessionActivityRepository.save(sessionActivity);
         }
         return sessionActivity;
@@ -99,18 +115,24 @@ public class SessionActivityServiceImpl implements SessionActivityService {
 
     @Override
     public SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator, String creatorAccountId) {
-        IssueRaisedSessionActivity sessionActivity = new IssueRaisedSessionActivity(session, timeRaised, creator, creatorAccountId, issueId);
+        IssueRaisedSessionActivity sessionActivity = null;
+        if(CaptureUtil.isTenantGDPRComplaint()) {
+        	sessionActivity = new IssueRaisedSessionActivity(session, timeRaised, null, creatorAccountId, issueId);
+        } else {
+        	sessionActivity = new IssueRaisedSessionActivity(session, timeRaised, creator, creatorAccountId, issueId);
+        }
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }
 
     @Override
     public SessionActivity removeRaisedIssue(Session session, CaptureIssue captureIssue, Date timeRaised, String creator, String creatorAccountId) {
-
-        IssueUnraisedSessionActivity sessionActivity =
-                new IssueUnraisedSessionActivity(session.getId(),
-                        session.getCtId(),
-                        timeRaised, creator, creatorAccountId, session.getProjectId(), captureIssue.getId());
+    	 IssueUnraisedSessionActivity sessionActivity = null;
+    	 if(CaptureUtil.isTenantGDPRComplaint()) {
+    		 sessionActivity = new IssueUnraisedSessionActivity(session.getId(), session.getCtId(), timeRaised, null, creatorAccountId, session.getProjectId(), captureIssue.getId());
+    	 } else {
+    		 sessionActivity = new IssueUnraisedSessionActivity(session.getId(), session.getCtId(), timeRaised, creator, creatorAccountId, session.getProjectId(), captureIssue.getId());
+    	 }               
         sessionActivityRepository.save(sessionActivity);
         return sessionActivity;
     }
@@ -122,9 +144,15 @@ public class SessionActivityServiceImpl implements SessionActivityService {
 
     @Override
     public SessionActivity addAttachment(Session session, Long issueId, Attachment attachment, Date creationDate, String author, String authorAccountId) {
-        SessionActivity sessionActivity =
-                new IssueAttachmentSessionActivity(session.getId(), session.getCtId(), creationDate, author, authorAccountId, session.getProjectId(), issueId, attachment);
-        sessionActivityRepository.save(sessionActivity);
+        SessionActivity sessionActivity = null;
+        if(CaptureUtil.isTenantGDPRComplaint()) {
+        	sessionActivity = new IssueAttachmentSessionActivity(session.getId(), session.getCtId(), creationDate, null, authorAccountId, session.getProjectId(), issueId, attachment);
+            sessionActivityRepository.save(sessionActivity);
+        } else {
+        	sessionActivity = new IssueAttachmentSessionActivity(session.getId(), session.getCtId(), creationDate, author, authorAccountId, session.getProjectId(), issueId, attachment);
+            sessionActivityRepository.save(sessionActivity);
+        }
+                
         return sessionActivity;
     }
 
@@ -194,13 +222,23 @@ public class SessionActivityServiceImpl implements SessionActivityService {
 
     private void populateDisplayNames(List<SessionActivity> sessionActivities){
         sessionActivities.stream().forEach(sessionActivity -> {
-            CaptureUser user = userService.findUserByKey(sessionActivity.getUser());
+            CaptureUser user = null;
+            if(CaptureUtil.isTenantGDPRComplaint()) { 
+            	user = userService.findUserByAccountId(sessionActivity.getUserAccountId());
+            } else {
+            	user = userService.findUserByKey(sessionActivity.getUser());
+            }
             if(user != null) {
                 sessionActivity.setDisplayName(user.getDisplayName());
             }
             if (sessionActivity instanceof UserAssignedSessionActivity){
                 UserAssignedSessionActivity userAssignedSessionActivity = (UserAssignedSessionActivity)sessionActivity;
-                CaptureUser user1 = userService.findUserByKey(userAssignedSessionActivity.getAssignee());
+                CaptureUser user1 = null;
+                if(CaptureUtil.isTenantGDPRComplaint()) {
+                	user1 = userService.findUserByAccountId(userAssignedSessionActivity.getAssigneeAccountId());
+                } else {
+                	user1 = userService.findUserByKey(userAssignedSessionActivity.getAssignee());
+                }
                 if(user1 != null) {
                     userAssignedSessionActivity.setAssigneeDisplayName(user1.getDisplayName());
                 }

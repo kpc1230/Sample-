@@ -239,17 +239,18 @@ public class Session  implements Comparable<Session>, Serializable{
         this.participants = participants;
     }
 
-    public Participant participantLeaveSession(String userKey, Date leaveTime){
-        if(StringUtils.isEmpty(userKey) || this.participants == null || this.participants.size() == 0){
+    public Participant participantLeaveSession(String userKey, String userAccountId, Date leaveTime, boolean isTenantGDPRComplaint){
+        if((isTenantGDPRComplaint && StringUtils.isEmpty(userAccountId)) || (!isTenantGDPRComplaint && StringUtils.isEmpty(userKey)) || 
+        		this.participants == null || this.participants.size() == 0){
             return null;
         }
-        for(Participant participant:this.participants){
-            if(StringUtils.equals(userKey, participant.getUser()) && !participant.hasLeft()){
+        for(Participant participant : this.participants){
+            if(((isTenantGDPRComplaint && StringUtils.equals(userAccountId, participant.getUserAccountId())) || 
+            		(!isTenantGDPRComplaint && StringUtils.equals(userKey, participant.getUser()))) && !participant.hasLeft()){
                 participant.setTimeLeft(leaveTime);
                 return participant;
             }
         }
-
         return null;
     }
 

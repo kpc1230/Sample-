@@ -143,27 +143,27 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
     }
 
     @Override
-    public void addRaisedInIssueField(String userKey, List<Long> listOfIssueIds, Session session) {
+    public void addRaisedInIssueField(String user, List<Long> listOfIssueIds, Session session) {
         if(session != null) {
-            log.trace("addRaisedInIssueField request from user:{} , sessionId: {} jiraPropIndex:{}", userKey, session.getId(), session.getJiraPropIndex());
+            log.trace("addRaisedInIssueField request from user:{} , sessionId: {} jiraPropIndex:{}", user, session.getId(), session.getJiraPropIndex());
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
             AcHostModel acHostModel = (AcHostModel)host.getHost();
             listOfIssueIds.stream().forEach(issueId -> {
-                addSessionContextIntoRaisedIssue(acHostModel, userKey, issueId, session);
+                addSessionContextIntoRaisedIssue(acHostModel, user, issueId, session);
             });
         }
     }
 
     @Override
-    public void addSessionContextIntoRaisedIssue(AcHostModel acHostModel, String userKey, Long issueId, Session session) {
-        log.trace("Add Session context into raised Issue user:{} , sessionId: {} jiraPropIndex:{} issueId:{}", userKey, session.getId(), session.getJiraPropIndex(), issueId);
+    public void addSessionContextIntoRaisedIssue(AcHostModel acHostModel, String user, Long issueId, Session session) {
+        log.trace("Add Session context into raised Issue user:{} , sessionId: {} jiraPropIndex:{} issueId:{}", user, session.getId(), session.getJiraPropIndex(), issueId);
         String raisedInPath = JiraConstants.REST_API_BASE_ISSUE + "/" + issueId + "/properties" + "/" + CaptureCustomFieldsUtils.ENTITY_CAPTURE_RAISEDIN_NAME.toLowerCase().replace(" ", "_");
         try {
             StringBuilder sb = new StringBuilder(session.getJiraPropIndex());
             setEntityProperties(sb, acHostModel.getBaseUrl(), raisedInPath);
         } catch (Exception e) {
-            log.error("Error during adding Session context into RaisedIn Issie user:{} sessionId: {} jiraPropIndex:{} issueId:{}", userKey, session.getId(), session.getJiraPropIndex(), issueId);
+            log.error("Error during adding Session context into RaisedIn Issie user:{} sessionId: {} jiraPropIndex:{} issueId:{}", user, session.getId(), session.getJiraPropIndex(), issueId);
         }
     }
 

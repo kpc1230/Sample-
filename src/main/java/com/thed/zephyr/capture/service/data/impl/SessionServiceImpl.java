@@ -245,6 +245,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	private void deactivateActiveUserSession(AcHostModel acHostModel, CaptureUser user){
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		UserActiveSession userActiveSession = getActiveSession(acHostModel, user);
 		if(!userActiveSession.isUserHasActiveSession()){
 			log.debug("User:{}, doesn't have any active session or participate in any.", user.getKey());
@@ -254,7 +255,7 @@ public class SessionServiceImpl implements SessionService {
 		Session session = userActiveSession.getSession();
 		if(userActiveSession.getUserType().equals(UserActiveSession.UserType.PARTICIPANT)){
 			Date leaveTime = new Date();
-			Participant participant = session.participantLeaveSession(user.getKey(), leaveTime);
+			Participant participant = session.participantLeaveSession(user.getKey(), user.getAccountId(), leaveTime, isTenantGDPRComplaint);
 			CompletableFuture.runAsync(() -> {
 				sessionActivityService.addParticipantLeft(session, participant);
 			});
@@ -267,12 +268,13 @@ public class SessionServiceImpl implements SessionService {
 			});
 			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
 		}
-		clearActiveSessionFromCache(user.getKey(), user.getKey());
+		clearActiveSessionFromCache(user.getKey(), user.getAccountId());
 	}
 	
 	@Override
 	public UpdateResult startSession(String userKey, String userAccountId, Session session) {
 		DeactivateResult deactivateResult = null;
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         SessionResult activeSessionResult = getActiveSession(userKey, userAccountId, null); // Deactivate current active session
         if (activeSessionResult.isValid()) {
             deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), userKey, userAccountId);
@@ -280,7 +282,8 @@ public class SessionServiceImpl implements SessionService {
                 return new UpdateResult(deactivateResult.getErrorCollection(), session);
             }
 			//make active session status paused
-			if(Objects.nonNull(activeSessionResult.getSession()) && userKey.equals(activeSessionResult.getSession().getAssignee())) {
+			if(Objects.nonNull(activeSessionResult.getSession()) && ((isTenantGDPRComplaint && userAccountId.equals(activeSessionResult.getSession().getAssignee())) ||
+					(!isTenantGDPRComplaint && userKey.equals(activeSessionResult.getSession().getAssignee())))) {
 				Session activeSession = activeSessionResult.getSession();
 				activeSession.setStatus(Status.PAUSED);
 				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
@@ -676,7 +679,7 @@ public class SessionServiceImpl implements SessionService {
 					}
                 }
             }
-    		captureContextIssueFieldsService.addRaisedInIssueField(loggedUser, issueRaisedIds, session);
+    		captureContextIssueFieldsService.addRaisedInIssueField(loggedUserAccountId, issueRaisedIds, session);
         }
         return raisedIssues;
     }
@@ -1046,11 +1049,7 @@ public class SessionServiceImpl implements SessionService {
     @Deprecated
 	private void save(Session session, Map<String, String> leavers) {
     	for (Map.Entry<String, String> leaver : leavers.entrySet()) {
-            if(CaptureUtil.isTenantGDPRComplaint()) {
-            	clearActiveSessionFromCache(null, leaver.getKey());
-            } else {
-            	clearActiveSessionFromCache(leaver.getKey(), null);
-            }
+    		clearActiveSessionFromCache(leaver.getKey(), leaver.getValue());
             CompletableFuture.runAsync(() -> {
             	sessionActivityService.addParticipantLeft(session, new Date(), leaver.getKey(), leaver.getValue());
             });
@@ -1090,17 +1089,26 @@ public class SessionServiceImpl implements SessionService {
 	 * @return -- Returns the DeactivateResult object which holds the updated session object and any validation errors.
 	 */
 	private DeactivateResult validateDeactivateSession(Session session, String user, String userAccountId, Status status, Duration timeLogged) {
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         if (!Objects.isNull(session)) {
-            if (user.equals(session.getAssignee())) { // Pause if it is assigned to same user
+            if ((isTenantGDPRComplaint && userAccountId.equals(session.getAssigneeAccountId())) || (!isTenantGDPRComplaint && user.equals(session.getAssignee()))) { // Pause if it is assigned to same user
                 Map<String, String> leavingUsers = new HashMap<>();
                 if(!Objects.isNull(session.getParticipants())) {
                 	for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) {
-                		leavingUsers.put(p.getUser(), p.getUserAccountId());
+                		if(isTenantGDPRComplaint) {
+                			leavingUsers.put(p.getUserAccountId(), p.getUserAccountId());
+                		} else {
+                			leavingUsers.put(p.getUser(), p.getUserAccountId());
+                		}
                     }
                 }
                 Session activeUserSession = getActiveSession(user, userAccountId, null).getSession();
                 if (session.getId().equals(!Objects.isNull(activeUserSession) ? activeUserSession.getId() : null)) { // If this is my active session then I want to leave it
-                    leavingUsers.put(user, userAccountId);
+                    if(isTenantGDPRComplaint) {
+                    	leavingUsers.put(userAccountId, userAccountId);
+                    } else {
+                    	leavingUsers.put(user, userAccountId);
+                    }
                 }
                 session.setStatus(status);
                 session.setTimeLogged(timeLogged);
@@ -1243,23 +1251,26 @@ public class SessionServiceImpl implements SessionService {
 	private UpdateResult validateUpdate(String updater, String updaterAccountId, Session newSession) {
         Session loadedSession = null;
         ErrorCollection errorCollection = new ErrorCollection();
-        if (Objects.isNull(updater) || Objects.isNull(newSession)) {
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+        if (Objects.isNull(newSession) || (isTenantGDPRComplaint && Objects.isNull(updaterAccountId)) || (!isTenantGDPRComplaint && Objects.isNull(updater))) {
             errorCollection.addError("Session and updater are both empty");
         } else {
             loadedSession = sessionRepository.findOne(newSession.getId()); // Load in the session to check that it still exists
             if (Objects.isNull(loadedSession)) {
                 errorCollection.addError(captureI18NMessageSource.getMessage("session.invalid.id", new Object[]{newSession.getId()}));
             } else {
-                if (!Objects.isNull(newSession.getAssignee()) && !newSession.getAssignee().equals(loadedSession.getAssignee()) && Status.STARTED.equals(newSession.getStatus())) { // If the assignee has changed, then the new session should be paused
+                if (isTenantGDPRComplaint && !Objects.isNull(newSession.getAssigneeAccountId()) && !newSession.getAssigneeAccountId().equals(loadedSession.getAssigneeAccountId()) && Status.STARTED.equals(newSession.getStatus()) ||
+                		(!isTenantGDPRComplaint && !Objects.isNull(newSession.getAssignee()) && !newSession.getAssignee().equals(loadedSession.getAssignee()) && Status.STARTED.equals(newSession.getStatus()))) { // If the assignee has changed, then the new session should be paused
                     errorCollection.addError(captureI18NMessageSource.getMessage("session.assigning.active.session.violation"));
                 }
                 if (Status.COMPLETED.equals(loadedSession.getStatus()) && !Status.COMPLETED.equals(newSession.getStatus())) { // Status can't go backwards from COMPLETED
                     errorCollection.addError(captureI18NMessageSource.getMessage("session.reopen.completed.violation"));
                 }
-                if (!newSession.getCreator().equals(loadedSession.getCreator())) { // Check that certain fields haven't changed - creator + time created (paranoid check)
+                if ((isTenantGDPRComplaint && !newSession.getCreatorAccountId().equals(loadedSession.getCreatorAccountId())) || 
+                		(!isTenantGDPRComplaint && !newSession.getCreator().equals(loadedSession.getCreator()))) { // Check that certain fields haven't changed - creator + time created (paranoid check)
                     errorCollection.addError(captureI18NMessageSource.getMessage("session.change.creator.violation"));
                 }
-				if (newSession.getName() !=null&& newSession.getName().length() > CaptureConstants.SESSION_NAME_LENGTH_LIMIT) {
+				if (newSession.getName() != null&& newSession.getName().length() > CaptureConstants.SESSION_NAME_LENGTH_LIMIT) {
 					errorCollection.addError(captureI18NMessageSource.getMessage("session.name.exceed.limit", new Integer[]{newSession.getName().length(),
 							CaptureConstants.SESSION_NAME_LENGTH_LIMIT}));
 				}
@@ -1291,7 +1302,11 @@ public class SessionServiceImpl implements SessionService {
         if (!newSession.isShared()) { // If we aren't shared, we wanna kick out all the current users
         	if(!Objects.isNull(newSession.getParticipants())) {
             	for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-            		leavers.put(p.getUser(), p.getUserAccountId());
+            		if(CaptureUtil.isTenantGDPRComplaint()) {
+            			leavers.put(p.getUserAccountId(), p.getUserAccountId());
+            		} else {
+            			leavers.put(p.getUser(), p.getUserAccountId());
+            		}
                 }
             }
         }
@@ -1565,7 +1580,7 @@ public class SessionServiceImpl implements SessionService {
         boolean isJoined = Objects.nonNull(participant) ? Iterables.any(participant, new UserIsParticipantPredicate(user, userAccountId)) : false;
         boolean hasActive = Objects.nonNull(participant) ? Iterables.any(participant, new ActiveParticipantPredicate()) : false;
         boolean canCreateSession = permissionService.canCreateSession(user, userAccountId, project);
-        boolean isAssignee = session.getAssignee().equals(user);
+        boolean isAssignee = ((CaptureUtil.isTenantGDPRComplaint() && session.getAssigneeAccountId().equals(userAccountId)) || (!CaptureUtil.isTenantGDPRComplaint() && session.getAssignee().equals(user)));
         boolean showInvite = isAssignee && session.isShared();
         boolean canAssign = permissionService.canAssignSession(user, userAccountId, project);
         boolean isComplete = false;
@@ -1587,6 +1602,7 @@ public class SessionServiceImpl implements SessionService {
 		Integer activeParticipantCount = 0;
 		CaptureUser user = null;
 		String userAvatarSrc = null, userLargeAvatarSrc = null;
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		Map<String, CaptureUser> usersMap = new HashMap<>();
 		if (Status.STARTED.equals(session.getStatus()) || Status.COMPLETED.equals(session.getStatus())) {
             activeParticipantCount++; // If started then add the assignee
@@ -1595,10 +1611,20 @@ public class SessionServiceImpl implements SessionService {
 		List<ParticipantDto> activeParticipants = Lists.newArrayList();
 		if(Objects.nonNull(session.getParticipants())) {
 			for(Participant p : session.getParticipants()) {
-				if(!usersMap.containsKey(p.getUser())) {
-					user = userService.findUserByKey(session.getAssignee());
+				if((isTenantGDPRComplaint && !usersMap.containsKey(p.getUserAccountId())) || (!isTenantGDPRComplaint && !usersMap.containsKey(p.getUser()))) {
+					if(isTenantGDPRComplaint) {
+						user = userService.findUserByAccountId(p.getUserAccountId());
+						usersMap.put(p.getUserAccountId(), user);
+					} else {
+						user = userService.findUserByKey(p.getUser());
+						usersMap.put(p.getUser(), user);
+					}
 				} else {
-					user = usersMap.get(p.getUser());
+					if(isTenantGDPRComplaint) { 
+						user = usersMap.get(p.getUserAccountId());
+					} else {
+						user = usersMap.get(p.getUser());
+					}
 				}
 				if(Objects.nonNull(user)) {
 					userAvatarSrc = getDecodedUrl(user, "24x24");
@@ -1620,10 +1646,16 @@ public class SessionServiceImpl implements SessionService {
 		session.setWikiParsedData(wikiParsedData);
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getCreatorAccountId(), session.getAssignee(), session.getAssigneeAccountId(), session.getStatus(), session.isShared(),
 				project, session.getDefaultTemplateId(), additionalInfo , wikiParsedData, session.getTimeCreated(), null, session.getJiraPropIndex());
-		if(!usersMap.containsKey(session.getAssignee())) {
+		if(isTenantGDPRComplaint && !usersMap.containsKey(session.getAssigneeAccountId())) {
+			user = userService.findUserByAccountId(session.getAssigneeAccountId());
+		} else if(!isTenantGDPRComplaint && !usersMap.containsKey(session.getAssignee())) {
 			user = userService.findUserByKey(session.getAssignee());
 		} else {
-			user = usersMap.get(session.getAssignee());
+			if(isTenantGDPRComplaint) {
+				user = usersMap.get(session.getAssigneeAccountId());
+			} else {
+				user = usersMap.get(session.getAssignee());
+			}
 		}
 		if(Objects.nonNull(user)) {
 			userAvatarSrc = getDecodedUrl(user, "24x24");

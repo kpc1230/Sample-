@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thed.zephyr.capture.util.CaptureUtil;
 
 import java.util.Date;
 
@@ -95,10 +96,10 @@ public class Participant  implements Comparable<Participant>{
         if (timeLeft != null ? !timeLeft.equals(that.timeLeft) : that.timeLeft != null) {
             return false;
         }
-        if (!user.equals(that.user)) {
+        if (!CaptureUtil.isTenantGDPRComplaint() && !user.equals(that.user)) {
             return false;
         }        
-        if (!userAccountId.equals(that.userAccountId)) {
+        if (CaptureUtil.isTenantGDPRComplaint() && !userAccountId.equals(that.userAccountId)) {
             return false;
         }
 
@@ -107,8 +108,8 @@ public class Participant  implements Comparable<Participant>{
 
     @Override
     public int hashCode() {
-        int result = user.hashCode();
-        result = 31 * result + timeJoined.hashCode();
+        int result = timeJoined.hashCode();
+        result = 31 * result + (user != null ? user.hashCode() : 0);
         result = 31 * result + (timeLeft != null ? timeLeft.hashCode() : 0);
         result = 31 * result + (userAccountId != null ? userAccountId.hashCode() : 0);
         return result;
