@@ -287,7 +287,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 		    if (loadedSession != null) {
 				if (!permissionService.canEditSession(loggedUserKey, loggedUserAccountId, loadedSession)) {
@@ -392,7 +392,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			UpdateResult updateResult = sessionService.pauseSession(loggedUserKey, loggedUserAccountId, loadedSession);
 			if (!updateResult.isValid()) {
@@ -440,21 +440,32 @@ public class SessionController extends CaptureAbstractController{
 			isLocked = true;
 			Date dateTime = new Date();
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			Map<String, Object> response = new HashMap<>();
 			Session loadedSession  = validateAndGetSession(sessionId);
+			boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 			if (loadedSession != null && !permissionService.canJoinSession(loggedUserKey, loggedUserAccountId, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.join.no.permission", new Object[]{loadedSession.getName()}));
 			}
-			CaptureUser user = userService.findUserByKey(loggedUserKey);
-			Participant participant = new ParticipantBuilder(loggedUserKey).setUserAccountId(loggedUserAccountId).setTimeJoined(dateTime).build();
+			CaptureUser user = null;Participant participant = null;
+			if(isTenantGDPRComplaint) {
+				user = userService.findUserByAccountId(loggedUserAccountId);
+				participant = new ParticipantBuilder(loggedUserKey).setUser(null).setUserAccountId(loggedUserAccountId).setTimeJoined(dateTime).build();
+			} else {
+				user = userService.findUserByKey(loggedUserKey);
+				participant = new ParticipantBuilder(loggedUserKey).setUserAccountId(loggedUserAccountId).setTimeJoined(dateTime).build();
+			}
 			SessionServiceImpl.UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loggedUserAccountId, loadedSession, participant);
 			if (!updateResult.isValid()) {
 				return badRequest(updateResult.getErrorCollection());
 			}
 			sessionService.update(updateResult, true);
-			response.put("user", participant.getUser());
-			response.put("userAccountId", participant.getUserAccountId());
+			if(isTenantGDPRComplaint) {
+				response.put("userAccountId", participant.getUserAccountId());
+			} else {
+				response.put("user", participant.getUser());
+				response.put("userAccountId", participant.getUserAccountId());
+			}
 			response.put("timeJoined", participant.getTimeJoined());
 			response.put("timeLeft", participant.getTimeLeft());			
 			if(Objects.nonNull(user)) {
@@ -518,7 +529,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			// If the session status is changed, we better have been allowed to do that!
 			if (!Status.COMPLETED.equals(loadedSession.getStatus())
@@ -581,7 +592,8 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
+			boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			Participant leftParticipant = new Participant();
 			UpdateResult updateResult = sessionService.leaveSession(loggedUserKey, loggedUserAccountId, loadedSession);
@@ -589,7 +601,7 @@ public class SessionController extends CaptureAbstractController{
                 return badRequest(updateResult.getErrorCollection());
             }
 			if(Objects.nonNull(loadedSession.getParticipants())) {
-				List<Participant> listP = loadedSession.getParticipants().stream().filter(p -> p.getUser().equals(loggedUserKey)).collect(Collectors.toList());
+				List<Participant> listP = loadedSession.getParticipants().stream().filter(p -> isParticipantLeaving(isTenantGDPRComplaint, loggedUserKey, loggedUserAccountId, p)).collect(Collectors.toList());
 				if(listP.size() > 0)
 					leftParticipant = listP.get(0);
 			}
@@ -608,6 +620,14 @@ public class SessionController extends CaptureAbstractController{
 				} catch (HazelcastInstanceNotDefinedException e) {
 				}
 			}
+		}
+	}
+	
+	private boolean isParticipantLeaving(boolean isTenantGDPRComplaint, String loggedUserKey, String loggedUserAccountId, Participant p) {
+		if(isTenantGDPRComplaint) {
+			return loggedUserAccountId.equals(p.getUserAccountId());
+		} else {
+			return p.getUser().equals(loggedUserKey);
 		}
 	}
 	
@@ -670,7 +690,7 @@ public class SessionController extends CaptureAbstractController{
 			isLocked = true;
 			Date dateTime = new Date();
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			CaptureIssue captureIssue = issueService.getCaptureIssue(issueKey);
 			if (captureIssue != null && !permissionService.canUnraiseIssueInSession(loggedUserKey, loggedUserAccountId, captureIssue)) {
@@ -686,7 +706,7 @@ public class SessionController extends CaptureAbstractController{
 				sessionActivityService.removeRaisedIssue(loadedSession, captureIssue, dateTime, loggedUserKey, loggedUserAccountId);
 			});
 			//This is to removed raisedinsession from issue entity
-			sessionService.addUnRaisedInSession(loggedUserKey,issueKey,updateResult.getSession());
+			sessionService.addUnRaisedInSession(issueKey,updateResult.getSession());
 			log.info("End of unraiseIssueSessionRequest()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {
@@ -1061,8 +1081,14 @@ public class SessionController extends CaptureAbstractController{
 		log.trace("Start of startOrResumeSession() --> params " + sessionId);
 		try {
 		    AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-		    String userKey = hostUser.getUserKey().orElse(null);
-			CaptureUser user = userService.findUserByKey(acHostModel, userKey);
+		    String userKey = getUser();
+		    String userAccountId = getUserAccountId();
+		    CaptureUser user = null;
+		    if(CaptureUtil.isTenantGDPRComplaint()) {
+		    	user = userService.findUserByAccountId(acHostModel, userAccountId);
+		    } else {
+		    	user = userService.findUserByKey(acHostModel, userKey);
+		    } 
 			if(user == null){
                 throw new CaptureValidationException(i18n.getMessage("Can't find user with userKey", new Object[]{userKey}));
             }

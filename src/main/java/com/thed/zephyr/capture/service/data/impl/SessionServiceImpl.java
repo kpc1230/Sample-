@@ -176,12 +176,16 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public UpdateResult updateSession(String loggedUserKey, String loggedUserAccountId, Session session, SessionRequest sessionRequest) {
-		if(!StringUtils.isEmpty(sessionRequest.getAssignee())) {
-			session.setAssignee(sessionRequest.getAssignee());
+		CaptureUser user = null;
+		if(!CaptureUtil.isTenantGDPRComplaint() && !StringUtils.isEmpty(sessionRequest.getAssignee())) {
 			session.setAssigneeAccountId(sessionRequest.getAssigneeAccountId());
-			CaptureUser user = userService.findUserByKey(sessionRequest.getAssignee());
-			if(user != null) session.setUserDisplayName(user.getDisplayName());
-		}
+			session.setAssignee(sessionRequest.getAssignee());
+			user = userService.findUserByKey(sessionRequest.getAssignee());
+		} else {
+			session.setAssigneeAccountId(sessionRequest.getAssigneeAccountId());
+			user = userService.findUserByAccountId(sessionRequest.getAssigneeAccountId());
+		} 
+		if(user != null) session.setUserDisplayName(user.getDisplayName());
         session.setName(sessionRequest.getName());
         if(Objects.nonNull(sessionRequest.getAdditionalInfo())) {
         	session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
@@ -309,7 +313,8 @@ public class SessionServiceImpl implements SessionService {
 	public UpdateResult joinSession(String loggedUserKey, String loggedUserAccountId, Session session, Participant participant) {
         ErrorCollection errorCollection = new ErrorCollection();
         DeactivateResult deactivateResult = null;
-        if (!Objects.isNull(session) && !StringUtils.isEmpty(loggedUserKey)) {
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+        if (!Objects.isNull(session) && ((isTenantGDPRComplaint && !StringUtils.isEmpty(loggedUserAccountId)) || (!isTenantGDPRComplaint && !StringUtils.isEmpty(loggedUserKey)))) {
             if (!session.isShared()) {
                 errorCollection.addError(captureI18NMessageSource.getMessage("session.join.not.shared", new Object[]{session.getName()}));
             }
@@ -323,7 +328,7 @@ public class SessionServiceImpl implements SessionService {
                     errorCollection.addAllErrors(deactivateResult.getErrorCollection());
                 }
                 //make active session status paused
-    			if(Objects.nonNull(activeSessionResult.getSession()) && loggedUserKey.equals(activeSessionResult.getSession().getAssignee())) {
+    			if(Objects.nonNull(activeSessionResult.getSession()) && ((isTenantGDPRComplaint && loggedUserAccountId.equals(activeSessionResult.getSession().getAssigneeAccountId())) || (!isTenantGDPRComplaint && loggedUserKey.equals(activeSessionResult.getSession().getAssignee())))) {
     				Session activeSession = activeSessionResult.getSession();
     				activeSession.setStatus(Status.PAUSED);
     				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
@@ -434,7 +439,7 @@ public class SessionServiceImpl implements SessionService {
         } else {
         	updateResult = new UpdateResult(completeResult.getErrorCollection(), completeResult.getSession(), completeResult, false, true);
         }        
-        return new CompleteSessionResult(loggedUserKey, errorCollection, updateResult, millisecondsSpent, timeSpentRaw, issuesToLink, logTimeIssue);
+        return new CompleteSessionResult(loggedUserKey, loggedUserAccountId, errorCollection, updateResult, millisecondsSpent, timeSpentRaw, issuesToLink, logTimeIssue);
 	}
 
 	@Override
@@ -833,7 +838,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public void addUnRaisedInSession(String userKey, String issueKey, Session session) {
+	public void addUnRaisedInSession(String issueKey, Session session) {
 		captureContextIssueFieldsService.removeRaisedIssue(session,issueKey);
 	}
 
@@ -953,13 +958,18 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private void addParticipantToSession(String user, String userAccountId, Session session) {
 		Date currteDate = new Date();
-		Participant newParticipant = new ParticipantBuilder(user).setUserAccountId(userAccountId).setTimeJoined(currteDate).build();
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+		Participant newParticipant = null;
+		if(isTenantGDPRComplaint) {
+			newParticipant = new ParticipantBuilder(user).setUser(null).setUserAccountId(userAccountId).setTimeJoined(currteDate).build();
+		} else {
+			newParticipant = new ParticipantBuilder(user).setUserAccountId(userAccountId).setTimeJoined(currteDate).build();
+		}
 		boolean currentlyParticipating = false;
         if(!Objects.isNull(session.getParticipants())) {
         	for(Participant p : session.getParticipants()) {
-        		if(p.getUser().equals(user)) {
+        		if((isTenantGDPRComplaint && userAccountId.equals(p.getUserAccountId())) || (!isTenantGDPRComplaint && p.getUser().equals(user))) {
         			currentlyParticipating = true;
-        			p.setUserAccountId(userAccountId);
         			p.setTimeLeft(null);
         			p.setTimeJoined(new Date());
         			newParticipant = p;
@@ -1462,6 +1472,7 @@ public class SessionServiceImpl implements SessionService {
 	
 	public class CompleteSessionResult {
         private final String user;
+        private final String userAccountId;
         private final ErrorCollection errorCollection;
         private final UpdateResult sessionUpdateResult;
         private final Long millisecondsDuration;
@@ -1469,9 +1480,10 @@ public class SessionServiceImpl implements SessionService {
         private final List<CompleteSessionIssueLink> issuesToLink;
         private final Issue logTimeIssue;
 
-        public CompleteSessionResult(String user, ErrorCollection errorCollection, UpdateResult sessionUpdateResult, Long millisecondsDuration,
+        public CompleteSessionResult(String user, String userAccountId, ErrorCollection errorCollection, UpdateResult sessionUpdateResult, Long millisecondsDuration,
                                      String timeSpent, List<CompleteSessionIssueLink> issuesToLink, Issue logTimeIssue) {
             this.user = user;
+            this.userAccountId = userAccountId;
             this.errorCollection = errorCollection;
             this.sessionUpdateResult = sessionUpdateResult;
             this.millisecondsDuration = millisecondsDuration;
@@ -1506,6 +1518,10 @@ public class SessionServiceImpl implements SessionService {
 
         public String getUser() {
             return user;
+        }
+        
+        public String getUserAccountId() {
+            return userAccountId;
         }
 
         public Issue getLogTimeIssue() {

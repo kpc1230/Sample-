@@ -285,7 +285,7 @@ public interface SessionService {
 	 */
 	void addRaisedInSession(String userKey, Long issueRaisedId, Session session);
 
-	void addUnRaisedInSession(String userKey, String issueKey, Session session);
+	void addUnRaisedInSession(String issueKey, Session session);
 	
 	/*
 	 * Webhook call to update project name for the project id.
