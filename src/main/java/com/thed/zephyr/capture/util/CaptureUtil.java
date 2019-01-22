@@ -272,8 +272,12 @@ public class CaptureUtil {
 	public static String createSessionLink(String sessionId,String addonKey){
 		return String.format(ApplicationConstants.SESSION_URL_TEMPLATE, addonKey, sessionId);
 	}
-    public  static String createADGFlagCacheKey(String userKey){
-        return String.valueOf(ApplicationConstants.ADG3_FLAG_CACHE_PREFIX + "_" + userKey);
+    public  static String createADGFlagCacheKey(String userKey, String userAccountId){
+        if(isTenantGDPRComplaint()) {
+        	return String.valueOf(ApplicationConstants.ADG3_FLAG_CACHE_PREFIX + "_" + userAccountId);
+        } else {
+        	return String.valueOf(ApplicationConstants.ADG3_FLAG_CACHE_PREFIX + "_" + userKey);
+        }
     }
 
     /**

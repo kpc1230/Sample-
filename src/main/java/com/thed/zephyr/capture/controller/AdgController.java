@@ -29,16 +29,20 @@ public class AdgController {
     @LicenseCheck
     @GetMapping(value = "/adg-config")
     public String getAdgConfig(@AuthenticationPrincipal AtlassianHostUser hostUser, Model model){
-        model.addAttribute("userKey",hostUser.getUserKey().get());
+        if(CaptureUtil.isTenantGDPRComplaint()) {
+        	model.addAttribute("userAccountId",hostUser.getUserAccountId().get());
+        } else {
+        	model.addAttribute("userKey",hostUser.getUserKey().orElse(null));
+        }
         return "adgConfig";
     }
 
     @DeleteMapping(value = "/private/admin/adg/cache")
     public ResponseEntity<?> deleteAdgFlag(@AuthenticationPrincipal AtlassianHostUser hostUser){
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-        String key = CaptureUtil.createADGFlagCacheKey(hostUser.getUserKey().get());
+        String key = CaptureUtil.createADGFlagCacheKey(hostUser.getUserKey().orElse(null), hostUser.getUserAccountId().get());
         tenantAwareCache.remove(acHostModel, key);
-        log.info("ADG3 flag cache was deleted for user:{}", hostUser.getUserKey().get());
+        log.info("ADG3 flag cache was deleted for user:{}", hostUser.getUserAccountId().get());
         return ResponseEntity.ok(true);
     }
 }
