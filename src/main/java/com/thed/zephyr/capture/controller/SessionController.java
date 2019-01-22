@@ -727,6 +727,7 @@ public class SessionController extends CaptureAbstractController{
 	@GetMapping(value = "/filtered", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> searchSession(@RequestParam("projectFilter") Optional<Long> projectId,
 										   @RequestParam("assigneeFilter") Optional<String> assignee,
+										   @RequestParam("assigneeAccountIdFilter") Optional<String> assigneeAccountId,
 										   @RequestParam("statusFilter") Optional<List<String>> status,
 										   @RequestParam("searchTerm") Optional<String> searchTerm,
 										   @RequestParam("sortOrder") Optional<String> sortOrder,
@@ -740,7 +741,7 @@ public class SessionController extends CaptureAbstractController{
 			String loggedUserAccountId = getUserAccountId();
 			validateInputParameters(projectId, status);
 			boolean sortAscending = sortOrder.orElse(ApplicationConstants.SORT_ASCENDING).equalsIgnoreCase(ApplicationConstants.SORT_ASCENDING);
-			SessionDtoSearchList sessionDtoSearchList = sessionService.searchSession(loggedUser, loggedUserAccountId, projectId, assignee, translateStatuses(status), searchTerm, sortField, sortAscending, startAt, size);
+			SessionDtoSearchList sessionDtoSearchList = sessionService.searchSession(loggedUser, loggedUserAccountId, projectId, assignee, assigneeAccountId, translateStatuses(status), searchTerm, sortField, sortAscending, startAt, size);
 			log.info("End of searchSession()");
 			return ResponseEntity.ok(sessionDtoSearchList);
 		} catch(CaptureValidationException ex) {
@@ -795,32 +796,41 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			String oldAssignee = loadedSession.getAssignee();
 			String oldAssigneeAccountId = loadedSession.getAssigneeAccountId();
-			String assigner = hostUser.getUserKey().orElse(null);
+			String assigner = loggedUserKey;
+			boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
 			if (!StringUtils.isEmpty(assignee) && !permissionService.canBeAssignedSession(assignee, assigneeAccountId, captureProject)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{assignee}));
 			}
-			if (StringUtils.isEmpty(assignee)) {
+			if (!isTenantGDPRComplaint && StringUtils.isEmpty(assignee)) {
 				throw new CaptureValidationException(i18n.getMessage("session.cud.field.assignee.empty"));
+			} else if(isTenantGDPRComplaint && StringUtils.isEmpty(assigneeAccountId)) {
+				throw new CaptureValidationException(i18n.getMessage("session.cud.field.assigneeAccountId.empty"));
 			}
-			loadedSession.setAssignee(assignee);//set assignee to session
+			CaptureUser user = null;
+			if(isTenantGDPRComplaint) {
+				loadedSession.setAssigneeAccountId(assigneeAccountId);//set assignee account id to session
+				user = userService.findUserByAccountId(assigneeAccountId);
+			} else  {
+				loadedSession.setAssignee(assignee);//set assignee to session
+				loadedSession.setAssigneeAccountId(assigneeAccountId); //set assignee account id to session
+				user = userService.findUserByKey(assignee);
+			}
 			//this is current capture production server behavior
 			loadedSession.setStatus(Status.PAUSED);//set session status to pause
-			CaptureUser user = userService.findUserByKey(assignee);
 			if(user != null) loadedSession.setUserDisplayName(user.getDisplayName());
-			loadedSession.setAssigneeAccountId(user.getAccountId());
-			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loggedUserAccountId, loadedSession, assignee);
+			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loggedUserAccountId, loadedSession, assignee, assigneeAccountId);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult, true);
 			//Save assigned user to the session as activity.
-			CompletableFuture.runAsync(() -> {
-				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, loggedUserAccountId, assignee, user.getAccountId(), oldAssignee, oldAssigneeAccountId);
+			CompletableFuture.runAsync(() -> {				
+				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, loggedUserAccountId, assignee, assigneeAccountId, oldAssignee, oldAssigneeAccountId);
 				sessionActivityService.setStatus(loadedSession, new Date(), loggedUserKey, loggedUserAccountId);
 			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, loadedSession, false);
@@ -997,8 +1007,11 @@ public class SessionController extends CaptureAbstractController{
 	public ResponseEntity<?> getActiveSessionUser(@RequestParam String userKey, @RequestParam String userAccountId, @RequestParam String baseUrl) {
 		log.info("Start of getActiveSessionUser()");
 		try {
-			if(StringUtils.isBlank(userKey)) {
+			if(!CaptureUtil.isTenantGDPRComplaint() && StringUtils.isBlank(userKey)) {
 				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userKey}));
+			}
+			if(CaptureUtil.isTenantGDPRComplaint() && StringUtils.isBlank(userAccountId)) {
+				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userAccountId}));
 			}
 			if(StringUtils.isBlank(baseUrl)) {
 				throw new CaptureValidationException(i18n.getMessage("base.url.invalid.message", new Object[]{baseUrl}));
@@ -1023,8 +1036,11 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of getActiveSessionLink()");
 		try {
 			String userKey = userService.findActiveUserByUserName(userName, baseUrl).getKey();
-			if(StringUtils.isBlank(userKey)) {
+			if(!CaptureUtil.isTenantGDPRComplaint() && StringUtils.isBlank(userKey)) {
 				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userKey}));
+			}
+			if(CaptureUtil.isTenantGDPRComplaint() && StringUtils.isBlank(userAccountId)) {
+				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userAccountId}));
 			}
 			if(StringUtils.isBlank(baseUrl)) {
 				throw new CaptureValidationException(i18n.getMessage("base.url.invalid.message", new Object[]{baseUrl}));

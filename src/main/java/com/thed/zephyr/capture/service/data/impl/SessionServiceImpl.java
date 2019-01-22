@@ -445,6 +445,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public SessionExtensionResponse getSessionsForExtension(String user, String userAccountId, Boolean onlyActiveSession) {
 		String ctId = CaptureUtil.getCurrentCtId();
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		if(onlyActiveSession){
 			List<SessionDto> privateSessionsDto =  new ArrayList<>();
 			List<SessionDto> sharedSessionsDto =  new ArrayList<>();
@@ -454,9 +455,11 @@ public class SessionServiceImpl implements SessionService {
 				Session session = activeSession.getSession();
 				CaptureProject project = projectService.getCaptureProject(session.getProjectId());
 				activeSessionDto = createSessionDto(user, userAccountId, session, true, project, true);
-				if(session.getAssignee() != null && session.getAssignee().equals(user)){
+				if(!isTenantGDPRComplaint && session.getAssignee() != null && session.getAssignee().equals(user)){
 					privateSessionsDto.add(0,activeSessionDto);
-				}else{
+				}else if(isTenantGDPRComplaint && session.getAssigneeAccountId() != null && session.getAssigneeAccountId().equals(userAccountId)){
+					privateSessionsDto.add(0,activeSessionDto);
+				} else{
 					sharedSessionsDto.add(0,activeSessionDto);
 				}
 			}
@@ -464,8 +467,8 @@ public class SessionServiceImpl implements SessionService {
 		}else{
 			List<Session> privateSessionsList = new ArrayList<>(0), sharedSessionsList = new ArrayList<>(0);
 			try {
-				privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user).getContent();
-				sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user).getContent();
+				privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user, userAccountId).getContent();
+				sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user, userAccountId).getContent();
 			} catch(SearchPhaseExecutionException se) {
 				log.warn("Error in get sessions for user as no data in ES ->" + se.getMessage());
 			}
@@ -477,10 +480,13 @@ public class SessionServiceImpl implements SessionService {
 				Session session = activeSession.getSession();
 				CaptureProject project = projectService.getCaptureProject(session.getProjectId());
 				activeSessionDto = createSessionDto(user, userAccountId, session, true, project, true);
-				if(session.getAssignee() != null && session.getAssignee().equals(user)){
+				if(!isTenantGDPRComplaint && session.getAssignee() != null && session.getAssignee().equals(user)){
 					privateSessionsDto.removeIf(sessionDto -> sessionDto.getId().equals(session.getId()));
 					privateSessionsDto.add(0,activeSessionDto);
-				}else{
+				} else if(isTenantGDPRComplaint && session.getAssigneeAccountId() != null && session.getAssigneeAccountId().equals(userAccountId)){
+					privateSessionsDto.removeIf(sessionDto -> sessionDto.getId().equals(session.getId()));
+					privateSessionsDto.add(0,activeSessionDto);
+				} else{
 					sharedSessionsDto.removeIf(sessionDto -> sessionDto.getId().equals(session.getId()));
 					sharedSessionsDto.add(0,activeSessionDto);
 				}
@@ -495,8 +501,13 @@ public class SessionServiceImpl implements SessionService {
 		List<CaptureUser> userList = new ArrayList<>();
 		Set<String> users= sessionESRepository.fetchAllAssigneesForCtId(ctId);
 		if(users!=null&&users.size()>0){
-			users.forEach(usekey->{
-				CaptureUser cUser= userService.findUserByKey(usekey);
+			users.forEach(user ->{
+				CaptureUser cUser = null;
+				if(CaptureUtil.isTenantGDPRComplaint()) {
+					cUser = userService.findUserByAccountId(user);
+				} else {
+					cUser = userService.findUserByKey(user);
+				}
 				if (cUser != null) {
 					userList.add(cUser);
 				}
@@ -507,10 +518,10 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionDtoSearchList searchSession(String loggedUser, String loggedUserAccountId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField,
-												boolean sortAscending, int startAt, int size) {
+	public SessionDtoSearchList searchSession(String loggedUser, String loggedUserAccountId, Optional<Long> projectId, Optional<String> assignee, Optional<String> assigneeAccountId,
+			Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size) {
 		String ctId = CaptureUtil.getCurrentCtId();
-		Map<String,Object> sessionMap = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
+		Map<String,Object> sessionMap = sessionESRepository.searchSessions(ctId, projectId, assignee, assigneeAccountId, status, searchTerm, sortField, sortAscending, startAt, size);
 		List<Session>  sessionsList = new ArrayList<>();
 		Long totalElement = 0l;
 		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
@@ -557,21 +568,28 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public UpdateResult assignSession(String loggedUserKey, String loggedUserAccountId, Session session, String assignee) {
+	public UpdateResult assignSession(String loggedUserKey, String loggedUserAccountId, Session session, String assignee, String assigneeAccountId) {
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		if (Status.STARTED.equals(session.getStatus())) { //If the session that is to be assigned is started, then pause it.
 			DeactivateResult pauseResult = validateDeactivateSession(session, session.getAssignee(), session.getAssigneeAccountId()); //Pause for current user
 			if (!pauseResult.isValid()) {
 				return new UpdateResult(pauseResult.getErrorCollection(), pauseResult.getSession());
 			}
-			if(!loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
+			if(isTenantGDPRComplaint && !loggedUserAccountId.equals(assigneeAccountId)) { //Assignee and the assigner should be different then only session should be assigned.
+				session.setAssigneeAccountId(assigneeAccountId);
+			} else if(!isTenantGDPRComplaint && !loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
 				session.setAssignee(assignee);
+				session.setAssigneeAccountId(assigneeAccountId);
 			}
 			pauseResult = new DeactivateResult(pauseResult, session);
 			UpdateResult result = new UpdateResult(validateUpdate(loggedUserKey, loggedUserAccountId, session), pauseResult, null, null, false, true);
 			return result;
 		}
-		if(!loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
+		if(isTenantGDPRComplaint && !loggedUserAccountId.equals(assigneeAccountId)) { //Assignee and the assigner should be different then only session should be assigned.
+			session.setAssigneeAccountId(assigneeAccountId);
+		}else if(!isTenantGDPRComplaint && !loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
 			session.setAssignee(assignee);
+			session.setAssigneeAccountId(assigneeAccountId);
 		}
 		UpdateResult result = validateUpdate(loggedUserKey, loggedUserAccountId, session);
 		return result;
@@ -809,8 +827,12 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public Session cloneSession(String loggedUser, String loggedUserAccountId, Session cloneSession, String cloneName) {
 		Session session = new Session();
-		session.setCreator(loggedUser);
-		session.setCreatorAccountId(loggedUserAccountId);
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			session.setCreatorAccountId(loggedUserAccountId);
+		} else {
+			session.setCreator(loggedUser);
+			session.setCreatorAccountId(loggedUserAccountId);
+		}
 		session.setCtId(cloneSession.getCtId());
 		session.setStatus(Status.CREATED);
 		session.setName(cloneName);
@@ -878,11 +900,11 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public void updateUserDisplayNamesForSessions(String ctId, String userKey, String userDisplayName) {
+	public void updateUserDisplayNamesForSessions(String ctId, String userKey, String userAccountId, String userDisplayName) {
 		CompletableFuture.runAsync(() -> {
 			int index = 0;
 			int maxResults = 20;
-			Map<String, Object> sessionMap = updateUserDisplayNameIntoES(ctId, userKey, userDisplayName, index, maxResults);
+			Map<String, Object> sessionMap = updateUserDisplayNameIntoES(ctId, userKey, userAccountId, userDisplayName, index, maxResults);
 			index = index  + maxResults;
 			Long total = 0l;
 			for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
@@ -892,7 +914,7 @@ public class SessionServiceImpl implements SessionService {
 				}
 			}
 			while(index < total.intValue()) {
-				updateUserDisplayNameIntoES(ctId, userKey, userDisplayName, index, maxResults);
+				updateUserDisplayNameIntoES(ctId, userKey, userAccountId, userDisplayName, index, maxResults);
 				index = index + maxResults;
 			}
 		});
@@ -1773,7 +1795,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 	
 	private Map<String, Object> updateProjectNameIntoES(String ctId, Long projectId, String projectName, int index, int maxResults) {
-		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctId, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
+		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctId, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
 				Optional.empty(), true, index, maxResults);
 		List<Session> sessionList = new ArrayList<>();
 		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
@@ -1830,9 +1852,15 @@ public class SessionServiceImpl implements SessionService {
 		return pageResponse;
 	}
 	
-	private Map<String, Object> updateUserDisplayNameIntoES(String ctid, String userKey, String userDisplayName, int index, int maxResults) {
-		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(),
-				Optional.empty(), true, index, maxResults);
+	private Map<String, Object> updateUserDisplayNameIntoES(String ctid, String userKey, String userAccountId, String userDisplayName, int index, int maxResults) {
+		Map<String, Object> sessionMap = null;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.empty(), Optional.of(userAccountId), Optional.empty(), Optional.empty(),
+					Optional.empty(), true, index, maxResults);
+		} else {
+			sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(), Optional.empty(),
+					Optional.empty(), true, index, maxResults);
+		}
 		List<Session> sessionList = new ArrayList<>();
 		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
 			String key = entry.getKey();

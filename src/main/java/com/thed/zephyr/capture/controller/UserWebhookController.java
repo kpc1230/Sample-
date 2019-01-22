@@ -31,7 +31,7 @@ public class UserWebhookController {
 
 
     @RequestMapping(value = "/created", method = RequestMethod.POST)
-    public ResponseEntity userCreated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode createProjectJson) {
+    public ResponseEntity<?> userCreated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode createProjectJson) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         String ctid = acHostModel.getCtId();
         log.debug("Invoked projectCreated event");
@@ -42,11 +42,11 @@ public class UserWebhookController {
             log.warn("Unable to handle the project creation webhook: ", e);
             throw new CaptureRuntimeException("Unable to handle the project creation webhook");
         }
-        return new ResponseEntity(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @RequestMapping(value = "/updated", method = RequestMethod.POST)
-    public ResponseEntity usertUpdated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode updateUserJson) {
+    public ResponseEntity<?> userUpdated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode updateUserJson) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         String ctid = acHostModel.getCtId();
         log.debug("Invoked userUpdated event");
@@ -55,30 +55,34 @@ public class UserWebhookController {
             JsonNode userNode = null != updateUserJson ? updateUserJson.get("user") : null;
             if (userNode == null) {
                 log.warn("User Update event triggered with no Project details.");
-                return new ResponseEntity(HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             String username = userNode.get("name").asText();
             String userKey = userNode.get("key").asText();
             String displayName = userNode.get("displayName").asText();
+            String userAccountId = userNode.get("accountId").asText();
             if (null != username) {
                 tenantAwareCache.delete(acHostModel, ApplicationConstants.USER_CACHE_KEY_PREFIX + username);
             }
             if (null != userKey) {
                 tenantAwareCache.delete(acHostModel, ApplicationConstants.USER_CACHE_KEY_PREFIX + userKey);
             }
+            if(null != userAccountId) {
+            	tenantAwareCache.delete(acHostModel, ApplicationConstants.USER_CACHE_KEY_PREFIX + userAccountId);
+            }
             if(displayName != null) {
-            	sessionService.updateUserDisplayNamesForSessions(ctid, userKey, displayName);
+            	sessionService.updateUserDisplayNamesForSessions(ctid, userKey, userAccountId, displayName);
             }
         } catch (Exception e) {
             log.warn("Unable to handle the user updating webhook: ", e);
             throw new CaptureRuntimeException("Unable to handle the user updating webhook");
         }
-        return new ResponseEntity(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 
     @RequestMapping(value = "/deleted", method = RequestMethod.POST)
-    public ResponseEntity userDeleted(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode deleteUserJson) {
+    public ResponseEntity<?> userDeleted(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode deleteUserJson) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         log.debug("Invoked user Deleted event");
         log.debug("JSON from webhook invoker : " + deleteUserJson);
@@ -86,21 +90,25 @@ public class UserWebhookController {
             JsonNode userNode = null != deleteUserJson ? deleteUserJson.get("user") : null;
             if (userNode == null) {
                 log.warn("User Update event triggered with no Project details.");
-                return new ResponseEntity(HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             String username = userNode.get("name").asText();
             String userKey = userNode.get("key").asText();
+            String userAccountId = userNode.get("accountId").asText();
             if (null != username) {
                 tenantAwareCache.delete(acHostModel, ApplicationConstants.USER_CACHE_KEY_PREFIX + username);
             }
             if (null != userKey) {
                 tenantAwareCache.delete(acHostModel, ApplicationConstants.USER_CACHE_KEY_PREFIX + userKey);
             }
+            if (null != userAccountId) {
+                tenantAwareCache.delete(acHostModel, ApplicationConstants.USER_CACHE_KEY_PREFIX + userAccountId);
+            }
         } catch (Exception e) {
             log.warn("Unable to handle the user deleting webhook: ", e);
             throw new CaptureRuntimeException("Unable to handle the user deleting webhook");
         }
-        return new ResponseEntity(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 

@@ -78,7 +78,7 @@ public class SessionESRepositoryImpl {
 		escapeCharactersMap.put('\\', '\\');
 	}
 	
-	public Map<String, Object> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm,
+	public Map<String, Object> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<String> assigneeAccountId, Optional<List<String>> status, Optional<String> searchTerm,
 			Optional<String> sortField, boolean sortAscending, int startAt, int size) {
 		Map<String,Object> results = new HashMap<>();
 		List<Session> sessionList = new ArrayList<>();
@@ -91,9 +91,15 @@ public class SessionESRepositoryImpl {
 			boolQueryBuilder.must(projectQueryBuilder);
     	}
     	
-    	if(assignee.isPresent() && !StringUtils.isEmpty(assignee.get())) { //Check if assignee is selected then add to query.
+    	if(!CaptureUtil.isTenantGDPRComplaint() && assignee.isPresent() && !StringUtils.isEmpty(assignee.get())) { //Check if assignee is selected then add to query.
     		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_FIELD, assignee.get());
 			boolQueryBuilder.must(assigneeQueryBuilder);
+
+    	}
+    	
+    	if(CaptureUtil.isTenantGDPRComplaint() && assigneeAccountId.isPresent() && !StringUtils.isEmpty(assigneeAccountId.get())) { //Check if assigneeAccountId is selected then add to query.
+    		MatchQueryBuilder assigneeAccountIdQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_ACCOUNT_ID_FIELD, assigneeAccountId.get());
+			boolQueryBuilder.must(assigneeAccountIdQueryBuilder);
 
     	}
     	if(status.isPresent() && status.get().size() > 0) { //Check if status is selected then add to query.
@@ -187,18 +193,22 @@ public class SessionESRepositoryImpl {
 		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
 		boolQueryBuilder.must(ctidQueryBuilder);
 		SearchQuery query = new NativeSearchQueryBuilder().withTypes("session").withFilter(boolQueryBuilder).withPageable(CaptureUtil.getPageRequest(0, 1000))
-				.withSourceFilter(new FetchSourceFilter(new String[]{"assignee"}, null)).build();
+				.withSourceFilter(new FetchSourceFilter(new String[]{"assignee", "assigneeAccountId"}, null)).build();
     	return elasticsearchTemplate.query(query, response -> {
     		Set<String> assigneesList = new HashSet<>();
     		final SearchHits hits = response.getHits();
             for (final SearchHit hit : hits) {
-            	assigneesList.add((String)hit.getSource().get("assignee"));
+            	if(CaptureUtil.isTenantGDPRComplaint()) {
+            		assigneesList.add((String)hit.getSource().get("assigneeAccountId"));
+            	} else {
+            		assigneesList.add((String)hit.getSource().get("assignee"));
+            	}
             }
             return assigneesList;
     	});
     }
 	
-	public AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user) {
+	public AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user, String userAccountId) {
 		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
 		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
 		boolQueryBuilder.must(ctidQueryBuilder);
@@ -206,10 +216,14 @@ public class SessionESRepositoryImpl {
 		MatchQueryBuilder statusQueryBuilder = (QueryBuilders.matchQuery(ApplicationConstants.STATUS_FIELD, Status.COMPLETED.name()));
 		boolQueryBuilder.mustNot(statusQueryBuilder);
 		
-    	if(!StringUtils.isEmpty(user)) {
+    	if(!CaptureUtil.isTenantGDPRComplaint() && !StringUtils.isEmpty(user)) {
     		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.ASSIGNEE_FIELD, user);
 			boolQueryBuilder.must(assigneeQueryBuilder);
-
+    	}
+    	
+    	if(CaptureUtil.isTenantGDPRComplaint() && !StringUtils.isEmpty(userAccountId)) {
+    		MatchQueryBuilder assigneeAccountIdQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.ASSIGNEE_ACCOUNT_ID_FIELD, userAccountId);
+			boolQueryBuilder.must(assigneeAccountIdQueryBuilder);
     	}
 
     	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort(ApplicationConstants.SORTFIELD_ES_CREATED).order(SortOrder.DESC);
@@ -218,7 +232,7 @@ public class SessionESRepositoryImpl {
 		return elasticsearchTemplate.queryForPage(query, Session.class);
 	}
 	
-	public AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user) {
+	public AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user, String userAccountId) {
 		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
 		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
 		boolQueryBuilder.must(ctidQueryBuilder);
@@ -229,10 +243,13 @@ public class SessionESRepositoryImpl {
 		MatchQueryBuilder statusQueryBuilder = (QueryBuilders.matchQuery(ApplicationConstants.STATUS_FIELD, Status.STARTED.name()));
 		boolQueryBuilder.must(statusQueryBuilder);
 		
-    	if(!StringUtils.isEmpty(user)) {
+    	if(!CaptureUtil.isTenantGDPRComplaint() && !StringUtils.isEmpty(user)) {
     		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_FIELD, user);
 			boolQueryBuilder.mustNot(assigneeQueryBuilder);
-
+    	}
+    	if(CaptureUtil.isTenantGDPRComplaint() && !StringUtils.isEmpty(userAccountId)) {
+    		MatchQueryBuilder assigneeAccountIdQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_ACCOUNT_ID_FIELD, userAccountId);
+			boolQueryBuilder.mustNot(assigneeAccountIdQueryBuilder);
     	}
     	FieldSortBuilder sortFieldBuilder =  SortBuilders.fieldSort(ApplicationConstants.SORTFIELD_ES_CREATED).order(SortOrder.DESC);
     	Pageable pageable = CaptureUtil.getPageRequest(0, 50);

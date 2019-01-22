@@ -178,6 +178,7 @@ public interface SessionService {
 	 * @param loggedUser - Logged in user.
 	 * @param projectId -- Session Project ID.
 	 * @param assignee -- Session Assignee.
+	 * @param assigneeAccountId - Session Assignee Account Id
 	 * @param status -- Session Status.
 	 * @param seachTerm -- User input search term to filter on session name.
 	 * @param sortField -- Field to sort.
@@ -186,7 +187,7 @@ public interface SessionService {
 	 * @param size -- Number of sessions to fetch.
 	 * @return
 	 */
-	SessionDtoSearchList searchSession(String loggedUser, String loggedUserAccountId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
+	SessionDtoSearchList searchSession(String loggedUser, String loggedUserAccountId, Optional<Long> projectId, Optional<String> assignee, Optional<String> assigneeAccountId, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
 
 	/**
 	 * @return -- Returns all the session statuses which are required to render in ui.
@@ -220,7 +221,7 @@ public interface SessionService {
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the unshared session object.
 	 */
-	UpdateResult assignSession(String loggedUserKey, String loggedUserAccountId, Session session, String assignee);
+	UpdateResult assignSession(String loggedUserKey, String loggedUserAccountId, Session session, String assignee, String assigneeAccountId);
 	
 	/**
 	 * Fetch private and shared sessions for user.
@@ -296,7 +297,7 @@ public interface SessionService {
 	
 	void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctid) throws HazelcastInstanceNotDefinedException;
 	
-	void updateUserDisplayNamesForSessions(String ctid, String userKey, String userDisplayName);
+	void updateUserDisplayNamesForSessions(String ctid, String userKey, String userAccountId, String userDisplayName);
 
 	String generateJiraPropIndex(String ctId);
 

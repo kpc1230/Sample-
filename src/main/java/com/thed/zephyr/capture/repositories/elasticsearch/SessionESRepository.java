@@ -37,16 +37,16 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
 
     long countByCtId(String ctId);
     
-    Map<String, Object> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm,
+    Map<String, Object> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<String> assigneeAccountId, Optional<List<String>> status, Optional<String> searchTerm,
                                        Optional<String> sortField, boolean sortAscending, int startAt, int size);
     
     Set<String> fetchAllAssigneesForCtId(String ctId);
     
     void deleteSessionsByCtId(String ctId);
     
-    AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user);
+    AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user, String userAccountId);
 	
-    AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user);
+    AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user, String userAccountId);
 
     Session findByCtIdAndJiraPropIndex(String ctId, String jiraPropIndex);
 
