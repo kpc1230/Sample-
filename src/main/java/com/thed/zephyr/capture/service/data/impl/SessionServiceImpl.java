@@ -829,9 +829,12 @@ public class SessionServiceImpl implements SessionService {
 		Session session = new Session();
 		if(CaptureUtil.isTenantGDPRComplaint()) {
 			session.setCreatorAccountId(loggedUserAccountId);
+			session.setAssigneeAccountId(cloneSession.getAssigneeAccountId());
 		} else {
 			session.setCreator(loggedUser);
 			session.setCreatorAccountId(loggedUserAccountId);
+			session.setAssignee(cloneSession.getAssignee());
+			session.setAssigneeAccountId(cloneSession.getAssigneeAccountId());
 		}
 		session.setCtId(cloneSession.getCtId());
 		session.setStatus(Status.CREATED);
@@ -843,8 +846,6 @@ public class SessionServiceImpl implements SessionService {
 		session.setRelatedIssueIds(cloneSession.getRelatedIssueIds());
 		session.setProjectId(cloneSession.getProjectId());
 		session.setDefaultTemplateId(cloneSession.getDefaultTemplateId());
-		session.setAssignee(cloneSession.getAssignee());
-		session.setAssigneeAccountId(cloneSession.getAssigneeAccountId());
 		Session createdSession = sessionRepository.save(session);
 		if(log.isDebugEnabled()) log.debug("Cloned Session -- > Session ID - " + createdSession.getId());
 		sessionESRepository.save(createdSession);
@@ -1842,9 +1843,13 @@ public class SessionServiceImpl implements SessionService {
 		for(Session session : pageResponse.getContent()) {
 			project = projectService.getCaptureProjectViaAddon(acHostModel, String.valueOf(session.getProjectId()));
 			if(project != null){
-				user = userService.findUserByKey(acHostModel, session.getAssignee());
+				if(CaptureUtil.isTenantGDPRComplaint()) {
+					user = userService.findUserByAccountId(acHostModel, session.getAssigneeAccountId());
+				} else {
+					user = userService.findUserByKey(acHostModel, session.getAssignee());
+				}
 				session.setProjectName(project.getName());
-				session.setUserDisplayName(user != null ? user.getDisplayName() : session.getAssignee());
+				session.setUserDisplayName(user != null ? user.getDisplayName() : "");
 				session.setStatusOrder(session.getStatus().getOrder());
 				sessionESRepository.save(session);
 			}
