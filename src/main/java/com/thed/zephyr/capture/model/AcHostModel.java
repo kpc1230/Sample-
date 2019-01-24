@@ -219,7 +219,8 @@ public class AcHostModel extends AtlassianHost implements Serializable{
 	public enum GDPRMigrationStatus {
 		MIGRATED("migrated"),
 		FAILED("failed"),
-		GDPR("gdpr");
+		GDPR("gdpr"),
+		BLANK("");
 		
 		GDPRMigrationStatus(String status) {
 			this.status = status;

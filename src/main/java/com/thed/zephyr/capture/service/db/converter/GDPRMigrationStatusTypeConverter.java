@@ -13,12 +13,12 @@ public class GDPRMigrationStatusTypeConverter implements DynamoDBTypeConverter<S
 
 	@Override
 	public String convert(GDPRMigrationStatus status) {
-		 return status != null ? status.toString() : null;
+		 return status != null ? status.toString() : GDPRMigrationStatus.BLANK.toString();
 	}
 
 	@Override
 	public GDPRMigrationStatus unconvert(String statusStr) {
-		return (statusStr != null && statusStr.length() > 0) ? AcHostModel.GDPRMigrationStatus.valueOf(statusStr.toUpperCase()) : null;
+		return (statusStr != null && statusStr.length() > 0) ? AcHostModel.GDPRMigrationStatus.valueOf(statusStr.toUpperCase()) : GDPRMigrationStatus.BLANK;
 	}
 
 }
