@@ -3,6 +3,8 @@ package com.thed.zephyr.capture.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.model.jira.FieldOption;
 import com.thed.zephyr.capture.service.jira.UserService;
+import com.thed.zephyr.capture.util.CaptureUtil;
+
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,10 +31,17 @@ public class UserController {
         JsonNode userNode = userService.getAssignableUserByProjectKey(projectKey, term);
         List<FieldOption> userBeans = new ArrayList<>();
         userNode.forEach(jsonNode1 -> {
-            userBeans.add(new FieldOption(
-                    jsonNode1.get("displayName").asText(),
-                    jsonNode1.get("key").asText()
-            ));
+            if(CaptureUtil.isTenantGDPRComplaint()) {
+            	userBeans.add(new FieldOption(
+                        jsonNode1.get("displayName").asText(),
+                        jsonNode1.get("accountId").asText()
+                ));
+            } else {
+            	userBeans.add(new FieldOption(
+                        jsonNode1.get("displayName").asText(),
+                        jsonNode1.get("key").asText()
+                ));
+            }
 
         });
         log.info("End of getAssignableUsersByProject()");

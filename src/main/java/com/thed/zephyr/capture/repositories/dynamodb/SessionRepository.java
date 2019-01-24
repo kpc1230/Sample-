@@ -20,11 +20,11 @@ public interface SessionRepository extends CrudRepository<Session, String> {
 	
 	Page<Session> findByCtId(String ctId, Pageable pageable);
 	
-	List<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm);
+	List<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<String> assigneeAccountId, Optional<List<String>> status, Optional<String> searchTerm);
 	
-	List<Session> fetchPrivateSessionsForUser(String ctId, String user);
+	List<Session> fetchPrivateSessionsForUser(String ctId, String user, String userAccountId);
 	
-	List<Session> fetchSharedSessionsForUser(String ctId, String user);
+	List<Session> fetchSharedSessionsForUser(String ctId, String user, String userAccountId);
 	
 	Set<String> fetchAllAssigneesForCtId(String ctId);
 }

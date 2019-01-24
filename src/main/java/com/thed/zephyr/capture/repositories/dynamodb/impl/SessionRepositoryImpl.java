@@ -30,6 +30,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.thed.zephyr.capture.model.Session;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
 
 /**
  * Class implementation for session repository methods.
@@ -58,7 +59,7 @@ public class SessionRepositoryImpl {
      * @param searchTerm -- Typed input value for the session name.
      * @return -- Returns the list of sessions.
      */
-    public List<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm) {
+    public List<Session> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<String> assigneeAccountId, Optional<List<String>> status, Optional<String> searchTerm) {
     	List<QueryFilter> queryFilters = new LinkedList<>();
     	setStringFieldNamesIntoMap();
     	QuerySpec querySpec = new QuerySpec();
@@ -68,11 +69,18 @@ public class SessionRepositoryImpl {
     		querySpec.withRangeKeyCondition(range.eq(projectId.get()));
     	}
     	
-    	if(assignee.isPresent() && !StringUtils.isBlank(assignee.get())) { //Check if assignee is selected then add to query.
+    	if(!CaptureUtil.isTenantGDPRComplaint() && assignee.isPresent() && !StringUtils.isBlank(assignee.get())) { //Check if assignee is selected then add to query.
     		QueryFilter assigneeQueryFilter = new QueryFilter(ApplicationConstants.ASSIGNEE_FIELD);
     		assigneeQueryFilter.eq(assignee.get());
     		queryFilters.add(assigneeQueryFilter);
     	}
+    	
+    	if(CaptureUtil.isTenantGDPRComplaint() && assigneeAccountId.isPresent() && !StringUtils.isBlank(assigneeAccountId.get())) { //Check if assignee account id is selected then add to query.
+    		QueryFilter assigneeAccountIdQueryFilter = new QueryFilter(ApplicationConstants.ASSIGNEE_ACCOUNT_ID_FIELD);
+    		assigneeAccountIdQueryFilter.eq(assigneeAccountId.get());
+    		queryFilters.add(assigneeAccountIdQueryFilter);
+    	}
+    	
     	if(status.isPresent() && status.get().size() > 0) { //Check if status is selected then add to query.
     		QueryFilter statusQueryFilter = new QueryFilter(ApplicationConstants.STATUS_FIELD);
     		statusQueryFilter.in(status.get().toArray());
@@ -105,7 +113,7 @@ public class SessionRepositoryImpl {
      * @param user -- Logged in User key
      * @return -- Returns the list of sessions.
      */
-    public List<Session> fetchPrivateSessionsForUser(String ctId, String user) {
+    public List<Session> fetchPrivateSessionsForUser(String ctId, String user, String userAccountId) {
     	List<QueryFilter> queryFilters = new LinkedList<>();
     	setStringFieldNamesIntoMap();
     	QuerySpec querySpec = new QuerySpec();
@@ -113,9 +121,17 @@ public class SessionRepositoryImpl {
     	querySpec.withMaxResultSize(50);//fetch only 50 sessions for the user.
 		
 		//check if the session is assigned to same user
-    	QueryFilter assigneeQueryFilter = new QueryFilter(ApplicationConstants.ASSIGNEE_FIELD);
-    	assigneeQueryFilter.eq(user);
-		queryFilters.add(assigneeQueryFilter);
+    	if(!CaptureUtil.isTenantGDPRComplaint() && StringUtils.isNotEmpty(user)) {
+    		QueryFilter assigneeQueryFilter = new QueryFilter(ApplicationConstants.ASSIGNEE_FIELD);
+        	assigneeQueryFilter.eq(user);
+    		queryFilters.add(assigneeQueryFilter);
+    	}
+    	
+    	if(CaptureUtil.isTenantGDPRComplaint() && StringUtils.isNotEmpty(userAccountId)) {
+    		QueryFilter assigneeAccountIdQueryFilter = new QueryFilter(ApplicationConstants.ASSIGNEE_FIELD);
+    		assigneeAccountIdQueryFilter.eq(userAccountId);
+    		queryFilters.add(assigneeAccountIdQueryFilter);
+    	}
 		
 		//check if the status is not equal to completed
     	QueryFilter statusQueryFilter = new QueryFilter(ApplicationConstants.STATUS_FIELD);
@@ -144,7 +160,7 @@ public class SessionRepositoryImpl {
      * @param user -- Logged in User key
      * @return -- Returns the list of sessions.
      */
-    public List<Session> fetchSharedSessionsForUser(String ctId, String user) {
+    public List<Session> fetchSharedSessionsForUser(String ctId, String user, String userAccountId) {
     	List<QueryFilter> queryFilters = new LinkedList<>();
     	setStringFieldNamesIntoMap();
     	QuerySpec querySpec = new QuerySpec();
@@ -157,9 +173,18 @@ public class SessionRepositoryImpl {
 		queryFilters.add(sharedQueryFilter);
 		
 		//check if the session is assigned to same user
-    	QueryFilter assigneeQueryFilter = new QueryFilter(ApplicationConstants.ASSIGNEE_FIELD);
-    	assigneeQueryFilter.ne(user);
-		queryFilters.add(assigneeQueryFilter);
+    	if(!CaptureUtil.isTenantGDPRComplaint() && StringUtils.isNotEmpty(user)) {
+    		QueryFilter assigneeQueryFilter = new QueryFilter(ApplicationConstants.ASSIGNEE_FIELD);
+        	assigneeQueryFilter.ne(user);
+    		queryFilters.add(assigneeQueryFilter);
+    	}
+    	
+    	//check if the session is assigned to same user account id
+    	if(CaptureUtil.isTenantGDPRComplaint() && StringUtils.isNotEmpty(userAccountId)) {
+    		QueryFilter assigneeAccountIdQueryFilter = new QueryFilter(ApplicationConstants.ASSIGNEE_FIELD);
+    		assigneeAccountIdQueryFilter.ne(userAccountId);
+    		queryFilters.add(assigneeAccountIdQueryFilter);
+    	}
 		
 		//check if the status is not equal to completed
     	QueryFilter statusQueryFilter = new QueryFilter(ApplicationConstants.STATUS_FIELD);
@@ -188,7 +213,12 @@ public class SessionRepositoryImpl {
     	ItemCollection<QueryOutcome> activityItemList = fetchData(querySpec);
     	Set<String> assigneesList = new HashSet<>(activityItemList.getAccumulatedItemCount());
     	activityItemList.forEach(item -> {
-    		String assignee = item.getString("assignee");
+    		String assignee;
+    		if(CaptureUtil.isTenantGDPRComplaint()) {
+    			assignee = item.getString("assigneeAccountId");
+    		} else {
+    			assignee = item.getString("assignee");
+    		}
     		assigneesList.add(assignee);
     	});
     	return assigneesList;
