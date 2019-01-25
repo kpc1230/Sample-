@@ -44,10 +44,17 @@ public class JiraAuthServiceImpl implements JiraAuthService {
             JsonNode sessionNode = response.getBody().get(ApplicationConstants.SESSION);
             String jiraToken = sessionNode.get(NAME).asText() + "=" + sessionNode.get(VALUE).asText();
 
-            return createBEAuthTokenWithCookies(host.getCtId(), captureUser.getKey(), captureUser.getAccountId(), System.currentTimeMillis(), jiraToken, userAgent);
+            if(CaptureUtil.isTenantGDPRComplaint()) {
+            	return createBEAuthTokenWithCookies(host.getCtId(), null, captureUser.getAccountId(), System.currentTimeMillis(), jiraToken, userAgent);
+            } else {
+            	return createBEAuthTokenWithCookies(host.getCtId(), captureUser.getKey(), captureUser.getAccountId(), System.currentTimeMillis(), jiraToken, userAgent);
+            }
         } else if(captureUser != null) {
-
-            return createBEAuthTokenWithApiToken(host.getCtId(), captureUser.getKey(), captureUser.getAccountId(), System.currentTimeMillis(), password, userAgent);
+            if(CaptureUtil.isTenantGDPRComplaint()) {
+            	return createBEAuthTokenWithApiToken(host.getCtId(), null, captureUser.getAccountId(), System.currentTimeMillis(), password, userAgent);
+            } else {
+            	return createBEAuthTokenWithApiToken(host.getCtId(), captureUser.getKey(), captureUser.getAccountId(), System.currentTimeMillis(), password, userAgent);
+            }
         }
 
         return null;
@@ -81,25 +88,37 @@ public class JiraAuthServiceImpl implements JiraAuthService {
     public BEAuthToken createBEAuthTokenFromString(String token){
         String[] tokenParts = token.split("__");
         String clientKey = tokenParts[0];
-        String userKey = tokenParts[1];
-        String userAccountId = tokenParts[2];
-        long timestamp = Long.valueOf(tokenParts[3]);
-        String jiraToken = !StringUtils.equals(tokenParts[4], "null")?tokenParts[4]:null;
-        String userAgent = tokenParts[5];
-        String apiToken = null;
-        if(tokenParts.length > 6){
-            apiToken = !StringUtils.equals(tokenParts[6], "null")?tokenParts[6]:null;
+        String userAccountId = tokenParts[1];
+        if(CaptureUtil.isTenantGDPRComplaint()) {            
+            long timestamp = Long.valueOf(tokenParts[2]);
+            String jiraToken = !StringUtils.equals(tokenParts[3], "null")?tokenParts[3]:null;
+            String userAgent = tokenParts[4];
+            String apiToken = null;
+            if(tokenParts.length > 5){
+                apiToken = !StringUtils.equals(tokenParts[5], "null")?tokenParts[5]:null;
+            }
+            return new BEAuthToken(clientKey, null, userAccountId, timestamp, jiraToken, userAgent, apiToken);
+        } else {
+        	String userKey = tokenParts[2];
+            long timestamp = Long.valueOf(tokenParts[3]);
+            String jiraToken = !StringUtils.equals(tokenParts[4], "null")?tokenParts[4]:null;
+            String userAgent = tokenParts[5];
+            String apiToken = null;
+            if(tokenParts.length > 6){
+                apiToken = !StringUtils.equals(tokenParts[6], "null")?tokenParts[6]:null;
+            }
+            return new BEAuthToken(clientKey, userKey, userAccountId, timestamp, jiraToken, userAgent, apiToken);
         }
-
-        return new BEAuthToken(clientKey, userKey, userAccountId, timestamp, jiraToken, userAgent, apiToken);
     }
 
     @Override
     public String createStringTokenFromBEAuthToken(BEAuthToken beAuthToken){
         StringBuffer sb = new StringBuffer();
         sb.append(beAuthToken.getCtId() + "__");
-        sb.append(beAuthToken.getUserKey() + "__");
         sb.append(beAuthToken.getUserAccountId() + "__");
+        if(!CaptureUtil.isTenantGDPRComplaint()) {
+        	sb.append(beAuthToken.getUserKey() + "__");
+        }
         sb.append(beAuthToken.getTimestamp() + "__");
         sb.append((beAuthToken.getJiraToken() != null?beAuthToken.getJiraToken():"null") + "__");
         sb.append(beAuthToken.getUserAgent() + "__");

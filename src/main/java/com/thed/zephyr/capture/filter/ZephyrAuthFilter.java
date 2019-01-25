@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.filter;
 import com.atlassian.connect.spring.AtlassianHost;
 import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.connect.spring.AtlassianHostUser.AtlassianHostUserBuilder;
 import com.atlassian.connect.spring.internal.AtlassianConnectProperties;
 import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthenticationFilter;
 import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
@@ -88,8 +89,12 @@ public class ZephyrAuthFilter extends JwtAuthenticationFilter {
                     }
                     AtlassianHost atlassianHost = ((DynamoDBAcHostRepositoryImpl)atlassianHostRepository).findByCtId(beAuthToken.getCtId());
                     if(null != atlassianHost) {
-                        AtlassianHostUser atlassianHostUser = AtlassianHostUser.builder(atlassianHost).
-                        		withUserKey(beAuthToken.getUserKey()).withUserAccountId(beAuthToken.getUserAccountId()).build();
+                        AtlassianHostUserBuilder atlassianHostUserBuilder = AtlassianHostUser.builder(atlassianHost).
+                        		withUserAccountId(beAuthToken.getUserAccountId());
+                        if(StringUtils.isNotEmpty(beAuthToken.getUserKey())) {
+                        	atlassianHostUserBuilder.withUserKey(beAuthToken.getUserKey());
+                        }
+                        AtlassianHostUser atlassianHostUser = atlassianHostUserBuilder.build();
                         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder().build();
                         BEContextAuthentication beContextAuthentication = new BEContextAuthentication(atlassianHostUser, jwtClaimsSet, beAuthToken);
                         //Put JwtAuthentication into SecurityContext to mock JwtAuthenticationFilter behavior and allow RequireAuthenticationHandlerInterceptor pass request
