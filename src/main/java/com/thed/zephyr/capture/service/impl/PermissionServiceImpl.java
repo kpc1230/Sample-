@@ -183,7 +183,7 @@ public class PermissionServiceImpl implements PermissionService {
 
         if (null != projectId) {
             perMap = getPermissionMapForProject(projectId, user, userAccountId);
-        } else if (StringUtils.isNotBlank(issueKey) || null != issueId) {
+        } else if (StringUtils.isNotEmpty(issueKey) || null != issueId) {
             perMap = getPermissionMapForIssue(issueId, issueKey);
         } else {
             perMap = getAllUserPermissionsMap();
@@ -313,8 +313,8 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public boolean canCreateNote(String user, String userAccountId, Session session) {
         boolean isParticipant = session.getParticipants() != null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user, userAccountId)) : false;
-        boolean isAssignee = StringUtils.isNotEmpty(userAccountId) ? userAccountId.equals(session.getAssigneeAccountId()) :session.getAssignee().equals(user);
-        boolean isCreator = StringUtils.isNotEmpty(userAccountId) ?  userAccountId.equals(session.getCreatorAccountId()) : session.getCreator().equals(user);
+        boolean isAssignee = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getAssigneeAccountId()) :session.getAssignee().equals(user);
+        boolean isCreator = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ?  userAccountId.equals(session.getCreatorAccountId()) : session.getCreator().equals(user);
         return isParticipant || isAssignee || isCreator;
     }
 
@@ -322,8 +322,8 @@ public class PermissionServiceImpl implements PermissionService {
     public boolean canCreateNote(String user, String userAccountId, String sessionId) {
         Session session = sessionService.getSession(sessionId);
         boolean isParticipant = session.getParticipants() != null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user, userAccountId)) : false;
-        boolean isAssignee =  StringUtils.isNotEmpty(userAccountId) ? userAccountId.equals(session.getAssigneeAccountId()) : session.getAssignee().equals(user);
-        boolean isCreator = StringUtils.isNotEmpty(userAccountId) ?  userAccountId.equals(session.getCreatorAccountId()) : session.getCreator().equals(user);
+        boolean isAssignee =  StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getAssigneeAccountId()) : session.getAssignee().equals(user);
+        boolean isCreator = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ?  userAccountId.equals(session.getCreatorAccountId()) : session.getCreator().equals(user);
         return isParticipant || isAssignee || isCreator;
     }
 
@@ -331,8 +331,8 @@ public class PermissionServiceImpl implements PermissionService {
     public boolean canCreateNote(String user, String userAccountId,  LightSession session) {
         Collection<Participant> participants = sessionService.getSession(session.getId()).getParticipants();
         boolean isParticipant = participants != null ? Iterables.any(participants, new UserIsParticipantPredicate(user, userAccountId)) : false;
-        boolean isAssignee = StringUtils.isNotEmpty(userAccountId) ? userAccountId.equals(session.getAssigneeAccountId()) : session.getAssignee().equals(user);
-        boolean isCreator = StringUtils.isNotEmpty(userAccountId) ? userAccountId.equals(session.getCreatorAccountId())  : session.getCreator().equals(user);
+        boolean isAssignee = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getAssigneeAccountId()) : session.getAssignee().equals(user);
+        boolean isCreator = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getCreatorAccountId())  : session.getCreator().equals(user);
         return isParticipant || isAssignee || isCreator;
     }
 
@@ -357,7 +357,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (note == null) {
             return false;
         }
-        if(StringUtils.isNotEmpty(userAccountId)) {
+        if(StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint()) {
         	return userAccountId.equals(assigneeAccountId) || userAccountId.equals(note.getUserAccountId());
         }
         if(user == null || assignee == null) {
@@ -371,7 +371,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (note == null) {
             return false;
         }
-        if(StringUtils.isNotEmpty(userAccountId)) {
+        if(StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint()) {
         	return userAccountId.equals(assigneeAccountId) || userAccountId.equals(note.getAuthorAccountId());
         }
         if(user == null) {
@@ -383,7 +383,7 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public boolean canEditSession(String user, String userAccountId, Session session) {
         boolean permissionFlag = checkPermissionForType(session.getProjectId(), null, null, ApplicationConstants.PROJECT_ADMIN, user, userAccountId);
-        if(StringUtils.isNotEmpty(userAccountId)) {
+        if(StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint()) {
         	return permissionFlag || userAccountId.equals(session.getAssigneeAccountId()) || userAccountId.equals(session.getCreatorAccountId());
         }
         if(user == null) {
@@ -395,7 +395,7 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public boolean canEditLightSession(String user, String userAccountId, LightSession session) {
         boolean permissionFlag = checkPermissionForType(session.getProject().getId(), null, null, ApplicationConstants.PROJECT_ADMIN, user, userAccountId);
-        if(StringUtils.isNotEmpty(userAccountId)) {
+        if(StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint()) {
         	return permissionFlag || userAccountId.equals(session.getAssigneeAccountId()) || userAccountId.equals(session.getCreatorAccountId());
         }
         if(user == null) {
@@ -406,7 +406,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canEditSessionStatus(String user, String userAccountId, Session session) {
-    	if(StringUtils.isNotEmpty(userAccountId)) {
+    	if(StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint()) {
     		return userAccountId.equals(session.getAssigneeAccountId()) && !session.getStatus().equals(Session.Status.COMPLETED);
     	}
     	if(user == null) {
@@ -417,7 +417,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public boolean canEditSessionStatus(String user, String userAccountId, LightSession session) {
-    	if(StringUtils.isNotEmpty(userAccountId)) {
+    	if(StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint()) {
     		return userAccountId.equals(session.getAssigneeAccountId()) && !session.getStatus().equals(Session.Status.COMPLETED);
     	}
     	if(user == null) {
@@ -518,7 +518,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     private boolean isReporter(CaptureIssue issue, String user, String userAccountId) {
-    	if(StringUtils.isNotBlank(userAccountId)) {
+    	if(StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint()) {
     		return userAccountId.equals(issue.getReporterAccountId());
     	} 
         return user.equals(issue.getReporter());
