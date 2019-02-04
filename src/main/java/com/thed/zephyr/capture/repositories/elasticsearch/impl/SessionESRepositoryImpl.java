@@ -91,10 +91,14 @@ public class SessionESRepositoryImpl {
 			boolQueryBuilder.must(projectQueryBuilder);
     	}
     	
-    	if(!CaptureUtil.isTenantGDPRComplaint() && assignee.isPresent() && !StringUtils.isEmpty(assignee.get())) { //Check if assignee is selected then add to query.
-    		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_FIELD, assignee.get());
-			boolQueryBuilder.must(assigneeQueryBuilder);
-
+    	if(assignee.isPresent() && !StringUtils.isEmpty(assignee.get())) { //Check if assignee is selected then add to query.
+    		if(!CaptureUtil.isTenantGDPRComplaint()) {
+    			MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_FIELD, assignee.get());
+    			boolQueryBuilder.must(assigneeQueryBuilder);
+    		} else {
+    			MatchQueryBuilder userDisplayNameQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.USER_DISPLAY_NAME, assignee.get());
+    			boolQueryBuilder.must(userDisplayNameQueryBuilder);
+    		}
     	}
     	
     	if(CaptureUtil.isTenantGDPRComplaint() && assigneeAccountId.isPresent() && !StringUtils.isEmpty(assigneeAccountId.get())) { //Check if assigneeAccountId is selected then add to query.

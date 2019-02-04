@@ -134,6 +134,7 @@ public class ApplicationConstants {
     public static final String TENANT_ID_FIELD = "ctId";
     public static final String PROJECT_ID = "projectId";
     public static final String ASSIGNEE_FIELD = "assignee";
+    public static final String USER_DISPLAY_NAME = "userDisplayName";
     public static final String ASSIGNEE_ACCOUNT_ID_FIELD = "assigneeAccountId";
     public static final String STATUS_FIELD = "status";
     public static final String SESSION_NAME_FIELD = "name";
