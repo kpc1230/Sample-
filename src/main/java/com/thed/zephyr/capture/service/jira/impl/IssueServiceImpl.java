@@ -25,6 +25,7 @@ import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.service.jira.IssueLinkTypeService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.MetadataService;
+import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.service.jira.http.CJiraRestClientFactory;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.service.jira.issue.IssueFields;
@@ -51,6 +52,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -94,6 +96,8 @@ public class IssueServiceImpl implements IssueService {
     private CJiraRestClientFactory cJiraRestClientFactory;
     @Autowired
     private MetadataService metadataService;
+    @Autowired
+    private UserService userService;
 
     @Override
     public Issue getIssueObject(String issueIdOrKey) {
@@ -566,8 +570,18 @@ public class IssueServiceImpl implements IssueService {
     private IssueInput createIssueInput(IssueFields issueFields, HttpServletRequest request) throws CaptureValidationException {
         IssueInputBuilder issueInputBuilder = new IssueInputBuilder();
         issueInputBuilder.setIssueTypeId(Long.valueOf(issueFields.issueType().id()));
-        if (issueFields.assignee() != null) {
+        if (!CaptureUtil.isTenantGDPRComplaint() && issueFields.assignee() != null) {
             issueInputBuilder.setAssigneeName(issueFields.assignee().id());
+        }
+        if (CaptureUtil.isTenantGDPRComplaint() && issueFields.assigneeAccountId() != null) {
+        	CaptureUser user = userService.findUserByAccountId(issueFields.assigneeAccountId().id());
+        	if(user != null) {
+        		try {
+					issueInputBuilder.setAssignee(new BasicUser(new URI(user.getSelf()), user.getName(), user.getDisplayName()));
+				} catch (URISyntaxException e) {
+					e.printStackTrace();
+				}
+        	}            
         }
         Project project = getJiraRestClient.getProjectClient().getProject(issueFields.project().id()).claim();
         issueInputBuilder.setProject(project);
