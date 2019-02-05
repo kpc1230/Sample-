@@ -298,6 +298,8 @@ public class TemplateController extends CaptureAbstractController{
 	}
 
 	private boolean canModifyTemplate(String user, String userAccountId, TemplateRequest existing, CaptureProject project) {
+		if(CaptureUtil.isTenantGDPRComplaint()) 
+			return userAccountId.equals(existing.getOwnerAccountId()) || (permissionService.canEditTemplate(user, userAccountId, project));
         return user.equals(existing.getOwnerName()) || (permissionService.canEditTemplate(user, userAccountId, project));
     }
 
