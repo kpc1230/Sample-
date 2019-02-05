@@ -77,22 +77,21 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ArrayList<BasicProject> getProjects() throws Exception {
         AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
-        String userKey = hostUser.getUserKey().isPresent()?hostUser.getUserKey().get():"undefined";
         String userAccountId = hostUser.getUserAccountId().isPresent()?hostUser.getUserAccountId().get():"undefined";
         Integer expiration = dynamicProperty.getIntProp("user.projects.cache.expiration.sec", 30).get();
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-        log.debug("Getting projects by user:{} from cache", userKey);
-        String lockKey = ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + (CaptureUtil.isTenantGDPRComplaint() ? userAccountId : userKey) + "-" + acHostModel.getCtId();
+        log.debug("Getting projects by user:{} from cache", userAccountId);
+        String lockKey = ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + userAccountId + "-" + acHostModel.getCtId();
         if(!lockService.tryLock(hostUser.getHost().getClientKey(), lockKey, 5)) {
             log.error("Not able to get the lock during getting Projects by user:{}", userAccountId);
             throw new CaptureRuntimeException("Not able to get the lock during getting Projects by user:{}" + userAccountId);
         }
         try{
-            String projectString =  tenantAwareCache.getOrElse(acHostModel, createUserProjectsKey(userKey, userAccountId), new Callable<String>() {
+            String projectString =  tenantAwareCache.getOrElse(acHostModel, createUserProjectsKey(userAccountId), new Callable<String>() {
                 @Override
                 public String call() throws Exception {
                     JsonNode jsonProjectsStr = atlassianHostRestClients.authenticatedAs(hostUser).getForObject(REST_API_PROJECT, JsonNode.class);
-                    log.debug("Getting projects from Jira by user:{} jsonProjectsStr:{}", userKey, jsonProjectsStr.toString());
+                    log.debug("Getting projects from Jira by user:{} jsonProjectsStr:{}", userAccountId, jsonProjectsStr.toString());
 
                     return jsonProjectsStr.toString();
                 }
@@ -209,9 +208,7 @@ public class ProjectServiceImpl implements ProjectService {
         return basicProjects;
     }
 
-    private String createUserProjectsKey(String userKey, String userAccountId){
-    	if(CaptureUtil.isTenantGDPRComplaint()) 
-    		return String.valueOf(ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + userAccountId);
-        return String.valueOf(ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + userKey);
+    private String createUserProjectsKey(String userAccountId){
+    	return String.valueOf(ApplicationConstants.PROJECT_CACHE_KEY_PREFIX + userAccountId);
     }
 }
