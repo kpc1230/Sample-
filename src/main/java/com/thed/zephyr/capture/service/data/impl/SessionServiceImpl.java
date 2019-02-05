@@ -1619,7 +1619,7 @@ public class SessionServiceImpl implements SessionService {
         boolean isJoined = Objects.nonNull(participant) ? Iterables.any(participant, new UserIsParticipantPredicate(user, userAccountId)) : false;
         boolean hasActive = Objects.nonNull(participant) ? Iterables.any(participant, new ActiveParticipantPredicate()) : false;
         boolean canCreateSession = permissionService.canCreateSession(user, userAccountId, project);
-        boolean isAssignee = ((CaptureUtil.isTenantGDPRComplaint() && session.getAssigneeAccountId().equals(userAccountId)) || (!CaptureUtil.isTenantGDPRComplaint() && session.getAssignee().equals(user)));
+        boolean isAssignee = ((CaptureUtil.isTenantGDPRComplaint() && session.getAssigneeAccountId() != null && session.getAssigneeAccountId().equals(userAccountId)) || (!CaptureUtil.isTenantGDPRComplaint() && session.getAssignee() != null && session.getAssignee().equals(user)));
         boolean showInvite = isAssignee && session.isShared();
         boolean canAssign = permissionService.canAssignSession(user, userAccountId, project);
         boolean isComplete = false;

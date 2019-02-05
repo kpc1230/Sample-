@@ -299,7 +299,7 @@ public class PermissionServiceImpl implements PermissionService {
     		return session.getAssigneeAccountId() != null && !session.getAssigneeAccountId().equals(userAccountId) && session.isShared()
                     && (checkPermissionForType(session.getProjectId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user, userAccountId))
                     && session.getStatus().equals(Session.Status.STARTED);
-        return !session.getAssignee().equals(user) && session.isShared()
+        return session.getAssignee() != null && !session.getAssignee().equals(user) && session.isShared()
                 && (checkPermissionForType(session.getProjectId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user, userAccountId))
                 && session.getStatus().equals(Session.Status.STARTED);
     }
