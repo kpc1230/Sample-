@@ -181,7 +181,7 @@ public class SessionServiceImpl implements SessionService {
 			session.setAssigneeAccountId(sessionRequest.getAssigneeAccountId());
 			session.setAssignee(sessionRequest.getAssignee());
 			user = userService.findUserByKey(sessionRequest.getAssignee());
-		} else {
+		} else if(CaptureUtil.isTenantGDPRComplaint() && !StringUtils.isEmpty(sessionRequest.getAssigneeAccountId())) {
 			session.setAssigneeAccountId(sessionRequest.getAssigneeAccountId());
 			user = userService.findUserByAccountId(sessionRequest.getAssigneeAccountId());
 		} 
