@@ -296,7 +296,7 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public boolean canJoinSession(String user, String userAccountId, Session session) {
     	if(CaptureUtil.isTenantGDPRComplaint()) 
-    		return !session.getAssigneeAccountId().equals(userAccountId) && session.isShared()
+    		return session.getAssigneeAccountId() != null && !session.getAssigneeAccountId().equals(userAccountId) && session.isShared()
                     && (checkPermissionForType(session.getProjectId(), null, null, ApplicationConstants.ASSIGNABLE_USER, user, userAccountId))
                     && session.getStatus().equals(Session.Status.STARTED);
         return !session.getAssignee().equals(user) && session.isShared()
