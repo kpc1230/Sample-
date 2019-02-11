@@ -115,6 +115,7 @@ public class IssueServiceImpl implements IssueService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         AcHostModel acHostModel = (AcHostModel) host.getHost();
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         CaptureIssue captureIssue = null;
         try {
             captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKey(issueIdOrKey), new Callable<CaptureIssue>() {
@@ -138,10 +139,18 @@ public class IssueServiceImpl implements IssueService {
                         	}
                     	}
                     }
-                    return new CaptureIssue(issue.getSelf(),
-                            issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(),
-                            CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution, null, parentId, parentKey);
+                    if(isTenantGDPRComplaint) {
+                    	return new CaptureIssue(issue.getSelf(),
+                                issue.getKey(), issue.getId(),
+                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), null,
+                                CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution, null, parentId, parentKey);
+                    } else {
+                    	return new CaptureIssue(issue.getSelf(),
+                                issue.getKey(), issue.getId(),
+                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(),
+                                CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution, null, parentId, parentKey);
+                    }
+                    
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
         } catch(RestClientException restClientException){
@@ -192,6 +201,7 @@ public class IssueServiceImpl implements IssueService {
     	List<CaptureIssue> captureIssues = new ArrayList<>();
     	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         SearchResult searchResultPromise =
                 jiraRestClient.getSearchClient().searchJql(jql).claim();
         searchResultPromise.getIssues()
@@ -213,10 +223,17 @@ public class IssueServiceImpl implements IssueService {
                         	}
                     	}
                     }
-                    captureIssues.add(new CaptureIssue(issue.getSelf(),
-                            issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(),
-                            issue.getReporter().getName(), CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution,null, parentId, parentKey));
+                    if(isTenantGDPRComplaint) {
+                    	captureIssues.add(new CaptureIssue(issue.getSelf(),
+                                issue.getKey(), issue.getId(),
+                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(),
+                                null, CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution,null, parentId, parentKey));
+                    } else {
+                    	captureIssues.add(new CaptureIssue(issue.getSelf(),
+                                issue.getKey(), issue.getId(),
+                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(),
+                                issue.getReporter().getName(), CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution,null, parentId, parentKey));
+                    }                    
                 });
         return captureIssues;
     }
