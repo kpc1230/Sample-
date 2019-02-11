@@ -27,7 +27,7 @@ public class UserIsParticipantPredicate implements Predicate<Participant> {
     public boolean apply(Participant input) {
     	boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
     	if(isTenantGDPRComplaint) {
-    		return !input.hasLeft() && userAccountId.equals(input.getUser());
+    		return !input.hasLeft() && userAccountId.equals(input.getUserAccountId());
     	}
         return !input.hasLeft() && user.equals(input.getUser());
     }
