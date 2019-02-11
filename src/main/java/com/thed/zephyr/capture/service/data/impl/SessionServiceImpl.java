@@ -1645,7 +1645,7 @@ public class SessionServiceImpl implements SessionService {
 		SessionDisplayDto permissions = getDisplayHelper(loggedUser, loggedUserAccountId, session, project);
 		Integer activeParticipantCount = 0;
 		CaptureUser user = null;
-		String userAvatarSrc = null, userLargeAvatarSrc = null;
+		String userAvatarSrc = null, userLargeAvatarSrc = null, displayName = null;
 		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		Map<String, CaptureUser> usersMap = new HashMap<>();
 		if (Status.STARTED.equals(session.getStatus()) || Status.COMPLETED.equals(session.getStatus())) {
@@ -1673,8 +1673,9 @@ public class SessionServiceImpl implements SessionService {
 				if(Objects.nonNull(user)) {
 					userAvatarSrc = getDecodedUrl(user, "24x24");
 					userLargeAvatarSrc = getDecodedUrl(user, "48x48");
+					displayName = user.getDisplayName();
 				}
-				activeParticipants.add(new ParticipantDto(p, userAvatarSrc, userLargeAvatarSrc));
+				activeParticipants.add(new ParticipantDto(p, displayName, userAvatarSrc, userLargeAvatarSrc));
 				activeParticipantCount++;
 			}
 		}

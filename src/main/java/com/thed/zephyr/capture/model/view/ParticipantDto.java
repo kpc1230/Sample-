@@ -22,11 +22,11 @@ public class ParticipantDto {
 
     private String userLargeAvatarSrc;
 
-    public ParticipantDto(final Participant participant, String userAvatarSrc, String userLargeAvatarSrc) {
+    public ParticipantDto(final Participant participant, String displayName, String userAvatarSrc, String userLargeAvatarSrc) {
     	SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
         this.user = participant.getUser();
         this.userAccountId = participant.getUserAccountId();
-        this.userDisplayName = participant.getUser();
+        this.userDisplayName = displayName;
         this.timeJoined = format.format(participant.getTimeJoined());
         this.hasLeft = participant.hasLeft();
         if (participant.hasLeft()) {
