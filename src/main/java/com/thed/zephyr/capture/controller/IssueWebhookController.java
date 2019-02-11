@@ -223,7 +223,7 @@ public class IssueWebhookController {
         // If we aren't shared, we wanna kick out all the current users
         if (!newSession.isShared()) {
             for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-                sessionActivityService.addParticipantLeft(newSession, new Date(), p.getUser(), p.getUserAccountId());
+                sessionActivityService.addParticipantLeft(isTenantGDPRComplaint, newSession, new Date(), p.getUser(), p.getUserAccountId());
             }
         }
         return errorCollection.getErrors();

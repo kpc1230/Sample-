@@ -152,19 +152,20 @@ public class SessionController extends CaptureAbstractController{
 					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
 				}
 			}
+			boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
 			Session createdSession = sessionService.createSession(loggedUserKey, loggedUserAccountId, sessionRequest);
 			CompletableFuture.runAsync(() -> {
 				//Save status changed information as activity.
-				sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, loggedUserAccountId);
-	        	if(CaptureUtil.isTenantGDPRComplaint()) {
+				sessionActivityService.setStatus(isTenantisTenantGDPRFlag, createdSession, new Date(), loggedUserKey, loggedUserAccountId);
+	        	if(isTenantisTenantGDPRFlag) {
 	        		if(!loggedUserAccountId.equals(createdSession.getAssigneeAccountId())) {
 		        		 //Save if the assigned user and logged in user are different into the session as activity.
-		    			sessionActivityService.addAssignee(createdSession, new Date(), null, loggedUserAccountId, createdSession.getAssignee(), createdSession.getAssigneeAccountId(), null, null);
+		    			sessionActivityService.addAssignee(isTenantisTenantGDPRFlag, createdSession, new Date(), null, loggedUserAccountId, createdSession.getAssignee(), createdSession.getAssigneeAccountId(), null, null);
 		        	}
 	        	} else {
 	        		if(!loggedUserKey.equals(createdSession.getAssignee())) {
 		        		 //Save if the assigned user and logged in user are different into the session as activity.
-		    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, loggedUserAccountId, createdSession.getAssignee(), createdSession.getAssigneeAccountId(), null, null);
+		    			sessionActivityService.addAssignee(isTenantisTenantGDPRFlag, createdSession, new Date(), loggedUserKey, loggedUserAccountId, createdSession.getAssignee(), createdSession.getAssigneeAccountId(), null, null);
 		        	}
 	        	}	        	
 			});        		
@@ -176,7 +177,7 @@ public class SessionController extends CaptureAbstractController{
 	        	sessionService.update(updateResult, false); //Updating the session object into database.
 	        	//Save status changed information as activity.
 	        	CompletableFuture.runAsync(() -> {
-	        		sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, loggedUserAccountId, true);
+	        		sessionActivityService.setStatus(isTenantisTenantGDPRFlag, createdSession, new Date(), loggedUserKey, loggedUserAccountId, true);
 	        	});
 	        }
 			log.info("End of createSession()");
@@ -406,8 +407,9 @@ public class SessionController extends CaptureAbstractController{
         	sessionService.update(updateResult, false);
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
+        	boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
         	CompletableFuture.runAsync(() -> {
-        		sessionActivityService.setStatus(session, new Date(), loggedUserKey, loggedUserAccountId);
+        		sessionActivityService.setStatus(isTenantisTenantGDPRFlag, session, new Date(), loggedUserKey, loggedUserAccountId);
         	});
         	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, session, false);
 			log.info("End of pauseSession()");
@@ -541,9 +543,10 @@ public class SessionController extends CaptureAbstractController{
                 return badRequest(completeSessionResult.getErrorCollection());
             }
 			Session session = completeSessionResult.getSessionUpdateResult().getSession();
+			boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
 			//Save status changed information as activity.
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.setStatus(session, new Date(), loggedUserKey, loggedUserAccountId);
+				sessionActivityService.setStatus(isTenantisTenantGDPRFlag, session, new Date(), loggedUserKey, loggedUserAccountId);
 			});
 			sessionService.update(completeSessionResult.getSessionUpdateResult(), false);
 			List<SessionServiceImpl.CompleteSessionIssueLink> issueLinks = completeSessionResult.getIssuesToLink();
@@ -702,8 +705,9 @@ public class SessionController extends CaptureAbstractController{
             }
 			sessionService.update(updateResult, false);
 			//Save removed raised issue information as activity.
+			boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.removeRaisedIssue(loadedSession, captureIssue, dateTime, loggedUserKey, loggedUserAccountId);
+				sessionActivityService.removeRaisedIssue(isTenantisTenantGDPRFlag, loadedSession, captureIssue, dateTime, loggedUserKey, loggedUserAccountId);
 			});
 			//This is to removed raisedinsession from issue entity
 			sessionService.addUnRaisedInSession(issueKey,updateResult.getSession());
@@ -830,8 +834,8 @@ public class SessionController extends CaptureAbstractController{
 			sessionService.update(updateResult, true);
 			//Save assigned user to the session as activity.
 			CompletableFuture.runAsync(() -> {				
-				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, loggedUserAccountId, assignee, assigneeAccountId, oldAssignee, oldAssigneeAccountId);
-				sessionActivityService.setStatus(loadedSession, new Date(), loggedUserKey, loggedUserAccountId);
+				sessionActivityService.addAssignee(isTenantGDPRComplaint, loadedSession, new Date(), assigner, loggedUserAccountId, assignee, assigneeAccountId, oldAssignee, oldAssigneeAccountId);
+				sessionActivityService.setStatus(isTenantGDPRComplaint, loadedSession, new Date(), loggedUserKey, loggedUserAccountId);
 			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, loadedSession, false);
 			log.info("End of assignSession()");
@@ -983,12 +987,13 @@ public class SessionController extends CaptureAbstractController{
 				}
 			}
 			Session newSession = sessionService.cloneSession(loggedUserKey, loggedUserAccountId,  loadedSession, name);
+			boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
 			//Save status changed information as activity.
         	CompletableFuture.runAsync(() -> {
-        		sessionActivityService.setStatus(newSession, new Date(), loggedUserKey, loggedUserAccountId);
+        		sessionActivityService.setStatus(isTenantisTenantGDPRFlag, newSession, new Date(), loggedUserKey, loggedUserAccountId);
 				if(!loggedUserKey.equals(newSession.getAssignee())) {
 					//Save if the assigned user and logged in user are different into the session as activity.
-					sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, loggedUserAccountId, newSession.getAssignee(), newSession.getAssigneeAccountId(), null, null);
+					sessionActivityService.addAssignee(isTenantisTenantGDPRFlag, newSession, new Date(), loggedUserKey, loggedUserAccountId, newSession.getAssignee(), newSession.getAssigneeAccountId(), null, null);
 				}
 			});
 			log.info("End of cloneSession()");

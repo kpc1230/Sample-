@@ -236,8 +236,9 @@ public class SessionServiceImpl implements SessionService {
 			final Session savedSession = save(session, user.getDisplayName(), null);
 			setActiveSessionIdToCache(user.getKey(), user.getAccountId(), sessionId);
 			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
+			boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.setStatus(savedSession, new Date(), user.getKey(), user.getAccountId(), firstTimeStarted);
+				sessionActivityService.setStatus(isTenantisTenantGDPRFlag, savedSession, new Date(), user.getKey(), user.getAccountId(), firstTimeStarted);
 			});
 			setActiveSessionIdToCache(user.getKey(), user.getAccountId(), savedSession.getId());
 			return session;
@@ -261,14 +262,14 @@ public class SessionServiceImpl implements SessionService {
 			Date leaveTime = new Date();
 			Participant participant = session.participantLeaveSession(user.getKey(), user.getAccountId(), leaveTime, isTenantGDPRComplaint);
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.addParticipantLeft(session, participant);
+				sessionActivityService.addParticipantLeft(isTenantGDPRComplaint, session, participant);
 			});
 			save(session, user.getDisplayName(), null);
 		} else {
 			session.setStatus(Status.PAUSED);
 			Session savedSession = save(session, user.getDisplayName(), null);
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.setStatus(savedSession, new Date(), user.getKey(), user.getAccountId(), false);
+				sessionActivityService.setStatus(isTenantGDPRComplaint, savedSession, new Date(), user.getKey(), user.getAccountId(), false);
 			});
 			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
 		}
@@ -294,7 +295,7 @@ public class SessionServiceImpl implements SessionService {
 				clearActiveSessionFromCache(userKey, userAccountId);
 				update(updateResult, false);
 				CompletableFuture.runAsync(() -> {
-					sessionActivityService.setStatus(activeSession, new Date(), userKey, userAccountId);
+					sessionActivityService.setStatus(isTenantGDPRComplaint, activeSession, new Date(), userKey, userAccountId);
 				});
 			}
         }
@@ -334,7 +335,7 @@ public class SessionServiceImpl implements SessionService {
     				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
     				update(updateResult,true);
     				CompletableFuture.runAsync(() -> {
-    					sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey, loggedUserAccountId);
+    					sessionActivityService.setStatus(isTenantGDPRComplaint, activeSession, new Date(), loggedUserKey, loggedUserAccountId);
     				});
     			}
             }
@@ -667,6 +668,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public List<CaptureIssue> updateSessionWithIssues(String loggedUser, String loggedUserAccountId, String sessionId, List<IssueRaisedBean> issues) {
         List<CaptureIssue> raisedIssues = Lists.newArrayList();
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         Date dateTime = new Date();
         Session session = getSession(sessionId);
         if(session != null){
@@ -676,7 +678,7 @@ public class SessionServiceImpl implements SessionService {
                 for(IssueRaisedBean issueRaisedBean : issues) {
                 	if(!issuesRaisedMap.containsKey(issueRaisedBean.getIssueId())) {
                 		session.getIssuesRaised().add(issueRaisedBean);
-                		sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser, loggedUserAccountId); //Save removed raised issue information as activity.
+                		sessionActivityService.addRaisedIssue(isTenantGDPRComplaint, session, issueRaisedBean.getIssueId(), dateTime, loggedUser, loggedUserAccountId); //Save removed raised issue information as activity.
             			issueRaisedIds.add(issueRaisedBean.getIssueId());
                 	}
                 }
@@ -686,7 +688,7 @@ public class SessionServiceImpl implements SessionService {
                 session.setIssuesRaised(issuesRaised);
                 if(issues != null && issues.size() > 0) {
                 	issues.stream().forEach(issueRaisedBean -> {
-                		sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser, loggedUserAccountId); //Save removed raised issue information as activity.
+                		sessionActivityService.addRaisedIssue(isTenantGDPRComplaint, session, issueRaisedBean.getIssueId(), dateTime, loggedUser, loggedUserAccountId); //Save removed raised issue information as activity.
                 		issueRaisedIds.add(issueRaisedBean.getIssueId());
                 	});
                 }
@@ -924,6 +926,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public void addRaisedIssueToSession(AcHostModel acHostModel, String sessionId, BasicIssue basicIssue, CaptureUser user) throws HazelcastInstanceNotDefinedException {
 		Date issueCreatedTime = new Date();
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
 		if (!lockService.tryLock(acHostModel.getClientKey(), lockKey, 5)) {
 			log.error("Not able to get the lock on session:{}", sessionId);
@@ -937,7 +940,7 @@ public class SessionServiceImpl implements SessionService {
 			IssueRaisedBean issueRaisedBean = new IssueRaisedBean(basicIssue.getId(), issueCreatedTime);
 			session.addRaisedIssue(issueRaisedBean);
 			session = save(session, user.getDisplayName(), basicIssue.getProject().getName());
-			sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), issueCreatedTime, user.getKey(), user.getAccountId());
+			sessionActivityService.addRaisedIssue(isTenantGDPRComplaint, session, issueRaisedBean.getIssueId(), issueCreatedTime, user.getKey(), user.getAccountId());
 			captureContextIssueFieldsService.addSessionContextIntoRaisedIssue(acHostModel, user.getKey(), basicIssue.getId(), session);
 			setIssueTestStatusAndTestSession(acHostModel, basicIssue.getId(), basicIssue.getProject().getId());
 		} catch (Exception exception){
@@ -949,6 +952,7 @@ public class SessionServiceImpl implements SessionService {
 
 	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser, String userAccountId) throws HazelcastInstanceNotDefinedException {
 		Date dateTime = new Date();
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
 		String sessionId = sessions.getContent().get(0).getId();
@@ -963,7 +967,7 @@ public class SessionServiceImpl implements SessionService {
 				IssueRaisedBean issueRaisedBean = new IssueRaisedBean(issueId, dateTime);
 				sessionLatest.addRaisedIssue(issueRaisedBean);
 				save(sessionLatest, new HashMap<>());
-				sessionActivityService.addRaisedIssue(sessionLatest, issueRaisedBean.getIssueId(), dateTime, loggedUser, userAccountId);
+				sessionActivityService.addRaisedIssue(isTenantGDPRComplaint, sessionLatest, issueRaisedBean.getIssueId(), dateTime, loggedUser, userAccountId);
 			}
 		} catch (Exception ex) {
 			log.error("Error in updateSessionWithIssueId() -> ", ex);
@@ -1009,7 +1013,7 @@ public class SessionServiceImpl implements SessionService {
         }        
         //Store participant info in sessionActivity
 		if(Objects.nonNull(newParticipant))
-			sessionActivityService.addParticipantJoined(session, currteDate, newParticipant,user,userAccountId);
+			sessionActivityService.addParticipantJoined(isTenantGDPRComplaint, session, currteDate, newParticipant,user,userAccountId);
     }
 	
 	/**
@@ -1081,10 +1085,11 @@ public class SessionServiceImpl implements SessionService {
      */
     @Deprecated
 	private void save(Session session, Map<String, String> leavers) {
+    	boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
     	for (Map.Entry<String, String> leaver : leavers.entrySet()) {
     		clearActiveSessionFromCache(leaver.getKey(), leaver.getValue());
             CompletableFuture.runAsync(() -> {
-            	sessionActivityService.addParticipantLeft(session, new Date(), leaver.getKey(), leaver.getValue());
+            	sessionActivityService.addParticipantLeft(isTenantGDPRComplaint, session, new Date(), leaver.getKey(), leaver.getValue());
             });
         }
 		Session savedSession = sessionRepository.save(session);
@@ -1148,7 +1153,7 @@ public class SessionServiceImpl implements SessionService {
                 return new DeactivateResult(validateUpdate(user, userAccountId, session), leavingUsers);
             } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user, userAccountId))) { // Just leave if it isn't
                 CompletableFuture.runAsync(() -> {
-                	sessionActivityService.addParticipantLeft(session, new Date(), user, userAccountId);
+                	sessionActivityService.addParticipantLeft(isTenantGDPRComplaint, session, new Date(), user, userAccountId);
                 });
             }
         }

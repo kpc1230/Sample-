@@ -31,13 +31,13 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     private UserService userService;
 
     @Override
-    public SessionActivity setStatus(Session session, Date timestamp, String user, String userAccountId) {
+    public SessionActivity setStatus(boolean isTenantGDPRFlag, Session session, Date timestamp, String user, String userAccountId) {
         if (session.getStatus() != null) {
             boolean firstStarted = (session.getStatus()
                     == Session.Status.CREATED && session.getStatus()
                     == Session.Status.STARTED);
             StatusSessionActivity sessionActivity = null;
-            if(CaptureUtil.isTenantGDPRComplaint()) {
+            if(isTenantGDPRFlag) {
             	sessionActivity = new StatusSessionActivity(session.getId(), session.getCtId(), timestamp,
                         null, userAccountId, session.getProjectId(), session.getStatus(), firstStarted);
             } else {
@@ -51,10 +51,10 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity setStatus(Session session, Date timestamp, String user, String userAccountId, boolean firstStarted) {
+    public SessionActivity setStatus(boolean isTenantGDPRFlag, Session session, Date timestamp, String user, String userAccountId, boolean firstStarted) {
         if (session.getStatus() != null) {
            StatusSessionActivity sessionActivity = null;
-           if(CaptureUtil.isTenantGDPRComplaint()) {
+           if(isTenantGDPRFlag) {
         	   sessionActivity =  new StatusSessionActivity(session.getId(), session.getCtId(), timestamp, null,
                        userAccountId, session.getProjectId(), session.getStatus(), firstStarted); 
            } else {
@@ -68,9 +68,9 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user, String userAccountId) {
+    public SessionActivity addParticipantJoined(boolean isTenantGDPRFlag, Session session, Date timestamp, Participant participant, String user, String userAccountId) {
         UserJoinedSessionActivity sessionActivity = null;
-        if(CaptureUtil.isTenantGDPRComplaint()) {
+        if(isTenantGDPRFlag) {
         	sessionActivity = new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), null, userAccountId, session.getProjectId(), participant);
         } else {
         	sessionActivity = new UserJoinedSessionActivity(session.getId(), session.getCtId(), participant.getTimeJoined(), user, userAccountId, session.getProjectId(), participant);
@@ -80,12 +80,11 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity addParticipantLeft(Session session, Date timestamp, String userKey, String userAccountId) {
+    public SessionActivity addParticipantLeft(boolean isTenantGDPRFlag, Session session, Date timestamp, String userKey, String userAccountId) {
         UserLeftSessionActivity sessionActivity = null;
-        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
-        Participant participant = session.participantLeaveSession(userKey, userAccountId, timestamp, isTenantGDPRComplaint);
+        Participant participant = session.participantLeaveSession(userKey, userAccountId, timestamp, isTenantGDPRFlag);
         if (participant != null) {
-            if(isTenantGDPRComplaint) {
+            if(isTenantGDPRFlag) {
             	sessionActivity = new UserLeftSessionActivity(
                         session.getId(), session.getCtId(), timestamp, null, userAccountId, session.getProjectId(), participant);
             } else {
@@ -97,11 +96,10 @@ public class SessionActivityServiceImpl implements SessionActivityService {
         return sessionActivity;
     }
 
-    public SessionActivity addParticipantLeft(Session session, Participant participant) {
+    public SessionActivity addParticipantLeft(boolean isTenantGDPRFlag, Session session, Participant participant) {
         UserLeftSessionActivity sessionActivity = null;
-        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         if (participant != null && session != null) {
-        	if(isTenantGDPRComplaint) {
+        	if(isTenantGDPRFlag) {
         		sessionActivity = new UserLeftSessionActivity(
                         session.getId(), session.getCtId(), participant.getTimeLeft(), null, participant.getUserAccountId(), session.getProjectId(), participant);
         	} else {
@@ -114,9 +112,9 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator, String creatorAccountId) {
+    public SessionActivity addRaisedIssue(boolean isTenantGDPRFlag, Session session, Long issueId, Date timeRaised, String creator, String creatorAccountId) {
         IssueRaisedSessionActivity sessionActivity = null;
-        if(CaptureUtil.isTenantGDPRComplaint()) {
+        if(isTenantGDPRFlag) {
         	sessionActivity = new IssueRaisedSessionActivity(session, timeRaised, null, creatorAccountId, issueId);
         } else {
         	sessionActivity = new IssueRaisedSessionActivity(session, timeRaised, creator, creatorAccountId, issueId);
@@ -126,9 +124,9 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity removeRaisedIssue(Session session, CaptureIssue captureIssue, Date timeRaised, String creator, String creatorAccountId) {
+    public SessionActivity removeRaisedIssue(boolean isTenantGDPRFlag, Session session, CaptureIssue captureIssue, Date timeRaised, String creator, String creatorAccountId) {
     	 IssueUnraisedSessionActivity sessionActivity = null;
-    	 if(CaptureUtil.isTenantGDPRComplaint()) {
+    	 if(isTenantGDPRFlag) {
     		 sessionActivity = new IssueUnraisedSessionActivity(session.getId(), session.getCtId(), timeRaised, null, creatorAccountId, session.getProjectId(), captureIssue.getId());
     	 } else {
     		 sessionActivity = new IssueUnraisedSessionActivity(session.getId(), session.getCtId(), timeRaised, creator, creatorAccountId, session.getProjectId(), captureIssue.getId());
@@ -183,11 +181,11 @@ public class SessionActivityServiceImpl implements SessionActivityService {
     }
 
     @Override
-    public SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignerAccountId, String assignee, String assigneeAccountId, String oldAssignee,
+    public SessionActivity addAssignee(boolean isTenantGDPRFlag, Session session, Date assignedTime, String assigner, String assignerAccountId, String assignee, String assigneeAccountId, String oldAssignee,
     		String oldAssigneeAccountId) {
         // Don't do redundant assigns
         UserAssignedSessionActivity sessionActivity = null;
-        if(CaptureUtil.isTenantGDPRComplaint()) {
+        if(isTenantGDPRFlag) {
         	if (oldAssigneeAccountId == null || !oldAssigneeAccountId.equals(assignerAccountId)) {
                 sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, null, assignerAccountId, session.getProjectId(), null, assigneeAccountId);                
             }
