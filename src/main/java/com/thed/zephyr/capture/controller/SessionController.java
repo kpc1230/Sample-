@@ -825,7 +825,7 @@ public class SessionController extends CaptureAbstractController{
 				user = userService.findUserByKey(assignee);
 			}
 			//this is current capture production server behavior
-			loadedSession.setStatus(Status.PAUSED);//set session status to pause
+			//loadedSession.setStatus(Status.PAUSED);//set session status to pause
 			if(user != null) loadedSession.setUserDisplayName(user.getDisplayName());
 			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loggedUserAccountId, loadedSession, assignee, assigneeAccountId);
 			if (!updateResult.isValid()) {
