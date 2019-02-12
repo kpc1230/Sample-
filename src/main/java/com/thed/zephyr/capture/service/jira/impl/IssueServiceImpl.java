@@ -358,7 +358,11 @@ public class IssueServiceImpl implements IssueService {
         	}
         }
         CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(),
-        		issue.getReporter().getName(), CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution ,null, parentId, parentKey);
+        		null, CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution ,null, parentId, parentKey);
+        if(!CaptureUtil.isTenantGDPRComplaint()) {
+        	captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(),
+            		issue.getReporter().getName(), CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution ,null, parentId, parentKey);
+        }
         if (StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {
