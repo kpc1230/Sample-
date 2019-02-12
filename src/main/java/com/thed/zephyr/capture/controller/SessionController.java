@@ -835,7 +835,7 @@ public class SessionController extends CaptureAbstractController{
 			//Save assigned user to the session as activity.
 			CompletableFuture.runAsync(() -> {				
 				sessionActivityService.addAssignee(isTenantGDPRComplaint, loadedSession, new Date(), assigner, loggedUserAccountId, assignee, assigneeAccountId, oldAssignee, oldAssigneeAccountId);
-				sessionActivityService.setStatus(isTenantGDPRComplaint, loadedSession, new Date(), loggedUserKey, loggedUserAccountId);
+				//sessionActivityService.setStatus(isTenantGDPRComplaint, loadedSession, new Date(), loggedUserKey, loggedUserAccountId);
 			});
 			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, loadedSession, false);
 			log.info("End of assignSession()");
