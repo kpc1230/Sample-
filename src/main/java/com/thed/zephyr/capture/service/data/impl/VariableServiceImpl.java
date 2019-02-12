@@ -87,8 +87,12 @@ public class VariableServiceImpl implements VariableService {
 	private List<Variable> createDefaultVariables(String ownerName, String ownerAccountId) {
 		List<Variable> variableList = new ArrayList<>();
         for (String name : DefaultVariables.DEFAULT_VARIABLES.keySet()) {
-            Variable var = new Variable(CaptureUtil.getCurrentCtId(), ownerName, ownerAccountId, name,
+            Variable var = new Variable(CaptureUtil.getCurrentCtId(), null, ownerAccountId, name,
             		DefaultVariables.DEFAULT_VARIABLES.get(name));
+            if(!CaptureUtil.isTenantGDPRComplaint()) {
+            	var = new Variable(CaptureUtil.getCurrentCtId(), ownerName, ownerAccountId, name,
+                		DefaultVariables.DEFAULT_VARIABLES.get(name));
+            }
             repository.save(var);
             variableList.add(var);
         }
