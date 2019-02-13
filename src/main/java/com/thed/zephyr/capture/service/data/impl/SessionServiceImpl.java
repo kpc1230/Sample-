@@ -851,6 +851,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setRelatedIssueIds(cloneSession.getRelatedIssueIds());
 		session.setProjectId(cloneSession.getProjectId());
 		session.setDefaultTemplateId(cloneSession.getDefaultTemplateId());
+		session.setJiraPropIndex(generateJiraPropIndex(session.getCtId()));
 		Session createdSession = sessionRepository.save(session);
 		if(log.isDebugEnabled()) log.debug("Cloned Session -- > Session ID - " + createdSession.getId());
 		sessionESRepository.save(createdSession);
