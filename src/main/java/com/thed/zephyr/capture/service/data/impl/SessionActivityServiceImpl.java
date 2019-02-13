@@ -186,7 +186,7 @@ public class SessionActivityServiceImpl implements SessionActivityService {
         // Don't do redundant assigns
         UserAssignedSessionActivity sessionActivity = null;
         if(isTenantGDPRFlag) {
-        	if (oldAssigneeAccountId == null || !oldAssigneeAccountId.equals(assignerAccountId)) {
+        	if (oldAssigneeAccountId == null || !oldAssigneeAccountId.equals(assigneeAccountId)) {
                 sessionActivity = new UserAssignedSessionActivity(session.getId(), session.getCtId(), assignedTime, null, assignerAccountId, session.getProjectId(), null, assigneeAccountId);                
             }
         } else {

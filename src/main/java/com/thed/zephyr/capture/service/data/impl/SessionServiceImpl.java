@@ -258,7 +258,7 @@ public class SessionServiceImpl implements SessionService {
 		}
 		log.trace("Deactivate active user session or leave participated");
 		Session session = userActiveSession.getSession();
-		if(userActiveSession.getUserType().equals(UserActiveSession.UserType.PARTICIPANT)){
+		if(userActiveSession.getUserType() != null && userActiveSession.getUserType().equals(UserActiveSession.UserType.PARTICIPANT)){
 			Date leaveTime = new Date();
 			Participant participant = session.participantLeaveSession(user.getKey(), user.getAccountId(), leaveTime, isTenantGDPRComplaint);
 			CompletableFuture.runAsync(() -> {
@@ -584,6 +584,9 @@ public class SessionServiceImpl implements SessionService {
 			}
 			pauseResult = new DeactivateResult(pauseResult, session);
 			UpdateResult result = new UpdateResult(validateUpdate(loggedUserKey, loggedUserAccountId, session), pauseResult, null, null, false, true);
+			CompletableFuture.runAsync(() -> {			
+				sessionActivityService.setStatus(isTenantGDPRComplaint, session, new Date(), loggedUserKey, loggedUserAccountId);
+			});
 			return result;
 		}
 		if(isTenantGDPRComplaint && !loggedUserAccountId.equals(assigneeAccountId)) { //Assignee and the assigner should be different then only session should be assigned.
