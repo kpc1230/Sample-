@@ -96,16 +96,11 @@ public class SessionESRepositoryImpl {
     			MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_FIELD, assignee.get());
     			boolQueryBuilder.must(assigneeQueryBuilder);
     		} else {
-    			MatchQueryBuilder userDisplayNameQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.USER_DISPLAY_NAME, assignee.get());
-    			boolQueryBuilder.must(userDisplayNameQueryBuilder);
+    			MatchQueryBuilder assigneeAccountIdQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_ACCOUNT_ID_FIELD, assignee.get());
+    			boolQueryBuilder.must(assigneeAccountIdQueryBuilder);
     		}
     	}
-    	
-    	if(CaptureUtil.isTenantGDPRComplaint() && assigneeAccountId.isPresent() && !StringUtils.isEmpty(assigneeAccountId.get())) { //Check if assigneeAccountId is selected then add to query.
-    		MatchQueryBuilder assigneeAccountIdQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_ACCOUNT_ID_FIELD, assigneeAccountId.get());
-			boolQueryBuilder.must(assigneeAccountIdQueryBuilder);
 
-    	}
     	if(status.isPresent() && status.get().size() > 0) { //Check if status is selected then add to query.
     		BoolQueryBuilder statusQueryBuilder = QueryBuilders.boolQuery();
     		status.get().stream().forEach(status1 -> {

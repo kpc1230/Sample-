@@ -498,19 +498,20 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public List<CaptureUser> fetchAllAssignees() {
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		String ctId = CaptureUtil.getCurrentCtId();
 		List<CaptureUser> userList = new ArrayList<>();
 		Set<String> users= sessionESRepository.fetchAllAssigneesForCtId(ctId);
-		if(users!=null&&users.size()>0){
+		if(users != null && users.size() > 0){
 			users.forEach(user ->{
 				CaptureUser cUser = null;
-				if(CaptureUtil.isTenantGDPRComplaint()) {
+				if(isTenantGDPRComplaint) {
 					cUser = userService.findUserByAccountId(user);
 				} else {
 					cUser = userService.findUserByKey(user);
 				}
 				if (cUser != null) {
-					userList.add(cUser);
+					userList.add(isTenantGDPRComplaint ? cUser.cloneWithOutNameAndKey() : cUser);
 				}
 			});
 		}
