@@ -360,10 +360,10 @@ public class PermissionServiceImpl implements PermissionService {
         if(StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint()) {
         	return userAccountId.equals(assigneeAccountId) || userAccountId.equals(note.getUserAccountId());
         }
-        if(user == null || assignee == null) {
+        if(user == null) {
         	return false;
         }
-        return user.equals(assignee) || user.equals(note.getUser());
+        return user.equals(assignee) || user.equals(note.getUser()) || user.equals(assigneeAccountId) || user.equals(note.getUserAccountId());
     }
 
     @Override
