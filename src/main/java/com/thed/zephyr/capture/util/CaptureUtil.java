@@ -314,7 +314,6 @@ public class CaptureUtil {
                 try {
                     AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
                     AcHostModel acHostModel = (AcHostModel) atlassianHostUser.getHost();
-                    log.info("url->" + acHostModel.getBaseUrl() + ",migration status->" + acHostModel.getMigrated().toString());
                     return acHostModel.getMigrated() != null ? acHostModel.getMigrated() == AcHostModel.GDPRMigrationStatus.GDPR : false;
                 } catch (Exception ex){
                     log.error("Error during getting gpdr flag from tenant {}", ex.getMessage());
