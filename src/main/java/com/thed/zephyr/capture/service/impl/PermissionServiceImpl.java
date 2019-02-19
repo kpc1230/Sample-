@@ -313,8 +313,8 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public boolean canCreateNote(String user, String userAccountId, Session session) {
         boolean isParticipant = session.getParticipants() != null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user, userAccountId)) : false;
-        boolean isAssignee = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getAssigneeAccountId()) :session.getAssignee().equals(user);
-        boolean isCreator = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ?  userAccountId.equals(session.getCreatorAccountId()) : session.getCreator().equals(user);
+        boolean isAssignee = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getAssigneeAccountId()) : session.getAssignee() != null ? session.getAssignee().equals(user) : false;
+        boolean isCreator = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ?  userAccountId.equals(session.getCreatorAccountId()) : session.getCreator() != null ? session.getCreator().equals(user) : false;
         return isParticipant || isAssignee || isCreator;
     }
 
@@ -322,8 +322,8 @@ public class PermissionServiceImpl implements PermissionService {
     public boolean canCreateNote(String user, String userAccountId, String sessionId) {
         Session session = sessionService.getSession(sessionId);
         boolean isParticipant = session.getParticipants() != null ? Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user, userAccountId)) : false;
-        boolean isAssignee =  StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getAssigneeAccountId()) : session.getAssignee().equals(user);
-        boolean isCreator = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ?  userAccountId.equals(session.getCreatorAccountId()) : session.getCreator().equals(user);
+        boolean isAssignee =  StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getAssigneeAccountId()) : session.getAssignee() != null ? session.getAssignee().equals(user) : false;
+        boolean isCreator = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ?  userAccountId.equals(session.getCreatorAccountId()) : session.getCreator() != null ? session.getCreator().equals(user) : false;
         return isParticipant || isAssignee || isCreator;
     }
 
@@ -331,8 +331,8 @@ public class PermissionServiceImpl implements PermissionService {
     public boolean canCreateNote(String user, String userAccountId,  LightSession session) {
         Collection<Participant> participants = sessionService.getSession(session.getId()).getParticipants();
         boolean isParticipant = participants != null ? Iterables.any(participants, new UserIsParticipantPredicate(user, userAccountId)) : false;
-        boolean isAssignee = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getAssigneeAccountId()) : session.getAssignee().equals(user);
-        boolean isCreator = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getCreatorAccountId())  : session.getCreator().equals(user);
+        boolean isAssignee = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getAssigneeAccountId()) : session.getAssignee() != null ? session.getAssignee().equals(user) : false;
+        boolean isCreator = StringUtils.isNotEmpty(userAccountId) && CaptureUtil.isTenantGDPRComplaint() ? userAccountId.equals(session.getCreatorAccountId())  : session.getCreator() != null ? session.getCreator().equals(user) : false;
         return isParticipant || isAssignee || isCreator;
     }
 
