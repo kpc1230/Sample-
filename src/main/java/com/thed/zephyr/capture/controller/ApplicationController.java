@@ -179,7 +179,8 @@ public class ApplicationController {
         Map<String, String> messages = getI18NMessagesBasedOnSessionLocale();
         return ResponseEntity.ok(messages);
     }
-
+    
+    @IgnoreJwt
     @RequestMapping(value = "/clearCache")
     @ResponseBody
     public ResponseEntity<?> clearCache(@AuthenticationPrincipal AtlassianHostUser hostUser) {
@@ -202,7 +203,8 @@ public class ApplicationController {
         log.info("The AcHost was deleted from cache clientKey:{}", clientKey);
         return ResponseEntity.ok(map);
     }
-
+    
+    @IgnoreJwt
     @PostMapping(value = "/reindex")
     public ResponseEntity<?> reindex(@AuthenticationPrincipal AtlassianHostUser hostUser) {
     	try {
