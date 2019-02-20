@@ -1037,20 +1037,25 @@ public class SessionController extends CaptureAbstractController{
 	@IgnoreJwt
 	@CrossOrigin
 	@GetMapping(value = "/user/active/link", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> getActiveSessionLink(@RequestParam String userName, @RequestParam String userAccountId, @RequestParam String baseUrl) {
+	public ResponseEntity<?> getActiveSessionLink(@RequestParam Optional<String> userName, @RequestParam Optional<String> userAccountId, @RequestParam String baseUrl) {
 		log.info("Start of getActiveSessionLink()");
 		try {
-			String userKey = userService.findActiveUserByUserName(userName, baseUrl).getKey();
-			if(!CaptureUtil.isTenantGDPRComplaint() && StringUtils.isBlank(userKey)) {
-				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userKey}));
-			}
-			if(CaptureUtil.isTenantGDPRComplaint() && StringUtils.isBlank(userAccountId)) {
-				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userAccountId}));
+			boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+			String userKey = null;
+			if(userName.isPresent()) {
+				userKey = userService.findActiveUserByUserName(userName.get(), baseUrl).getKey();
+				if(!isTenantGDPRComplaint && StringUtils.isEmpty(userKey)) {
+					throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userKey}));
+				}
+			}			
+			
+			if(isTenantGDPRComplaint && userAccountId.isPresent() && StringUtils.isEmpty(userAccountId.get())) {
+				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userAccountId.get()}));
 			}
 			if(StringUtils.isBlank(baseUrl)) {
 				throw new CaptureValidationException(i18n.getMessage("base.url.invalid.message", new Object[]{baseUrl}));
 			}
-			SessionResult sessionResult = sessionService.getActiveSession(userKey, userAccountId, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
+			SessionResult sessionResult = sessionService.getActiveSession(userKey, userAccountId.isPresent() ? userAccountId.get() : null, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
 			if(sessionResult != null && sessionResult.getSession() != null && sessionResult.getSession().getStatus() != null
 					&& !Status.STARTED.name().equals(sessionResult.getSession().getStatus().name())) {
 				return ResponseEntity.ok().build();
