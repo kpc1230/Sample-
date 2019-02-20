@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by snurulla on 8/16/2017.
@@ -189,8 +190,15 @@ public class ApplicationController {
     @IgnoreJwt
     @RequestMapping(value = "/clearCache")
     @ResponseBody
-    public ResponseEntity<?> clearCache() {
-    	AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
+    public ResponseEntity<?> clearCache(@RequestParam Optional<String> baseURL) {
+    	AcHostModel acHostModel = null;
+		if(baseURL.isPresent()) {
+			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository, baseURL.get());
+		} else {
+			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
+            acHostModel = (AcHostModel) atlassianHostUser.getHost();
+		} 
         tenantAwareCache.clearTenantCache(acHostModel);
         Map<String,String> map = new HashedMap();
         map.put("status","success");
@@ -212,10 +220,17 @@ public class ApplicationController {
     
     @IgnoreJwt
     @PostMapping(value = "/reindex")
-    public ResponseEntity<?> reindex() {
+    public ResponseEntity<?> reindex(@RequestParam Optional<String> baseURL) {
     	try {
     		log.info("Start of reindex()");
-    		AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
+    		AcHostModel acHostModel = null;
+    		if(baseURL.isPresent()) {
+    			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository, baseURL.get());
+    		} else {
+    			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    			AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
+                acHostModel = (AcHostModel) atlassianHostUser.getHost();
+    		}    		
             String jobProgressId = new UniqueIdGenerator().getStringId();
             sessionService.reindexSessionDataIntoES(acHostModel, jobProgressId, acHostModel.getCtId());
             log.info("End of reindex()");
