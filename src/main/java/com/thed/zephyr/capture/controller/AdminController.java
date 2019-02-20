@@ -38,14 +38,15 @@ public class AdminController {
 
     @IgnoreJwt
     @RequestMapping(value = "/admin/is/migrated", method = RequestMethod.GET)
-    public String isMigrated(@RequestParam String jira_url){
+    public ResponseEntity<?> isMigrated(@RequestParam String jira_url){
         Optional<AtlassianHost> atlassianHost = atlassianHostRepository.findFirstByBaseUrl(jira_url);
+        Map<String, Boolean> resMap = new HashMap<>();
         if(atlassianHost.isPresent()){
             AcHostModel acHostModel = (AcHostModel)atlassianHost.get();
-            return acHostModel.getStatus() != AcHostModel.TenantStatus.TEMPORARY?"true":"false";
+        	resMap.put("isGDPR", acHostModel.getMigrated() != null ? acHostModel.getMigrated() == AcHostModel.GDPRMigrationStatus.GDPR : false);
+        	resMap.put("migrated", acHostModel.getStatus() != AcHostModel.TenantStatus.TEMPORARY? true : false);
         }
-
-        return "false";
+        return ResponseEntity.ok().body(resMap);
     }
     
     @GetMapping(value = "/isGdpr")
