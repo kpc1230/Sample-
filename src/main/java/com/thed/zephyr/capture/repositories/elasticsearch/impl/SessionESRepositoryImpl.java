@@ -216,12 +216,12 @@ public class SessionESRepositoryImpl {
 		boolQueryBuilder.mustNot(statusQueryBuilder);
 		
     	if(!CaptureUtil.isTenantGDPRComplaint() && !StringUtils.isEmpty(user)) {
-    		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.ASSIGNEE_FIELD, user);
+    		MatchQueryBuilder assigneeQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_FIELD, user);
 			boolQueryBuilder.must(assigneeQueryBuilder);
     	}
     	
     	if(CaptureUtil.isTenantGDPRComplaint() && !StringUtils.isEmpty(userAccountId)) {
-    		MatchQueryBuilder assigneeAccountIdQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.ASSIGNEE_ACCOUNT_ID_FIELD, userAccountId);
+    		MatchQueryBuilder assigneeAccountIdQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.ASSIGNEE_ACCOUNT_ID_FIELD, userAccountId);
 			boolQueryBuilder.must(assigneeAccountIdQueryBuilder);
     	}
 
