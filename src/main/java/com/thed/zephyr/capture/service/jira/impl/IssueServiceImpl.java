@@ -508,7 +508,7 @@ public class IssueServiceImpl implements IssueService {
         AcHostModel acHostModel = (AcHostModel) host.getHost();
         CaptureIssue captureIssue = null;
         try {
-            captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKey(issueKey), new Callable<CaptureIssue>() {
+            captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKeyWithProperties(issueKey), new Callable<CaptureIssue>() {
 				@Override
                 public CaptureIssue call() throws Exception {
                     CaptureIssue finalCaptureIssue = null;
@@ -874,6 +874,10 @@ public class IssueServiceImpl implements IssueService {
 
     private String buildIssueCacheKey(String issueIdOrKey) {
         return ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + issueIdOrKey;
+    }
+    
+    private String buildIssueCacheKeyWithProperties(String issueIdOrKey) {
+        return ApplicationConstants.ISSUE_CACHE_KEY_PROPERTIES_PREFIX + issueIdOrKey;
     }
 
     public JiraRestClient createPostJiraRestClient(AtlassianHostUser hostUser) {

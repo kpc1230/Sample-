@@ -168,6 +168,7 @@ public class ApplicationConstants {
 
     /** Issue cache const **/
     public static final String ISSUE_CACHE_KEY_PREFIX = "issue-";
+    public static final String ISSUE_CACHE_KEY_PROPERTIES_PREFIX = "issue-properties-";
     public static final String ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP = "issue.cache.expiration";
 
     /** Permission cache const **/
