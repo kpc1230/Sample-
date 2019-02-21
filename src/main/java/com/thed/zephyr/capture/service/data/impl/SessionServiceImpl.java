@@ -1218,6 +1218,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public String getActiveSessionIdByUser(String userKey, String userAccountId, AcHostModel acHostModel) {
 		try {
+			boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 			String cacheKey = ACTIVE_USER_SESSION_ID_KEY + userKey;
 			if(CaptureUtil.isTenantGDPRComplaint()) {
 				cacheKey = ACTIVE_USER_SESSION_ID_KEY + userAccountId;
@@ -1225,7 +1226,7 @@ public class SessionServiceImpl implements SessionService {
 			String issueId = iTenantAwareCache.getOrElse(acHostModel, cacheKey, new Callable<String>() {
 				public String call() throws Exception {
 					List<Session> activeSessions = null;
-					if(CaptureUtil.isTenantGDPRComplaint()) {
+					if(isTenantGDPRComplaint) {
 						activeSessions = sessionESRepository.findByCtIdAndStatusAndAssigneeAccountId(acHostModel.getCtId(), Status.STARTED.name(), userAccountId);
 					} else {
 						activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(acHostModel.getCtId(), Status.STARTED.name(), userKey);

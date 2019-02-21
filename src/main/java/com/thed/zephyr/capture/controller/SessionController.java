@@ -827,6 +827,8 @@ public class SessionController extends CaptureAbstractController{
 			//this is current capture production server behavior
 			//loadedSession.setStatus(Status.PAUSED);//set session status to pause
 			if(user != null) loadedSession.setUserDisplayName(user.getDisplayName());
+			List<Participant> listP = loadedSession.getParticipants().stream().filter(p -> !isParticipantLeaving(isTenantGDPRComplaint, assignee, assigneeAccountId, p)).collect(Collectors.toList());
+			loadedSession.setParticipants(listP.size() > 0 ? listP : null);
 			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loggedUserAccountId, loadedSession, assignee, assigneeAccountId);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());

@@ -27,10 +27,12 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
 
     Page<Session> findByCtIdAndStatusAndParticipantsUser(String ctId, String status, String participants,Pageable pageable);
     
+    @Query("{\"query\":{\"bool\":{\"must\":[{\"match_phrase\":{\"ctId\":\"?0\"}},{\"match\":{\"status\":\"?1\"}}, {\"match_phrase\":{\"participants.userAccountId\":\"?2\"}}]}}}")
     Page<Session> findByCtIdAndStatusAndParticipantsUserAccountId(String ctId, String status, String participants,Pageable pageable);
 
     List<Session> findByCtIdAndStatusAndAssignee(String ctId, String status, String assignee);
     
+    @Query("{\"query\":{\"bool\":{\"must\":[{\"match_phrase\":{\"ctId\":\"?0\"}},{\"match\":{\"status\":\"?1\"}}, {\"match_phrase\":{\"assigneeAccountId\":\"?2\"}}]}}}")
     List<Session> findByCtIdAndStatusAndAssigneeAccountId(String ctId, String status, String assigneeAccountId);
 
     Session findById(String id);
