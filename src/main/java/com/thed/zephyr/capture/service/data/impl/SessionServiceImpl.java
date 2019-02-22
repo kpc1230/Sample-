@@ -12,6 +12,7 @@ import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.exception.HazelcastInstanceNotDefinedException;
 import com.thed.zephyr.capture.model.*;
+import com.thed.zephyr.capture.model.AcHostModel.GDPRMigrationStatus;
 import com.thed.zephyr.capture.model.CompleteSessionRequest.CompleteSessionIssueLinkRequest;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.jira.*;
@@ -1218,9 +1219,9 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public String getActiveSessionIdByUser(String userKey, String userAccountId, AcHostModel acHostModel) {
 		try {
-			boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+			boolean isTenantGDPRComplaint = acHostModel.getMigrated() == GDPRMigrationStatus.GDPR;
 			String cacheKey = ACTIVE_USER_SESSION_ID_KEY + userKey;
-			if(CaptureUtil.isTenantGDPRComplaint()) {
+			if(isTenantGDPRComplaint) {
 				cacheKey = ACTIVE_USER_SESSION_ID_KEY + userAccountId;
 			}
 			String issueId = iTenantAwareCache.getOrElse(acHostModel, cacheKey, new Callable<String>() {
