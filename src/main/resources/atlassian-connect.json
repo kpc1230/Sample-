@@ -674,5 +674,8 @@
       "ja-JP": "/i18n/descriptor/ja_JP.json",
       "ko-KR": "/i18n/descriptor/ko_KR.json"
     }
+  },
+  "apiMigrations": {
+    "gdpr": false
   }
 }
