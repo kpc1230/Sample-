@@ -325,7 +325,7 @@ public class IssueServiceImpl implements IssueService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         IssueFields issueFields = createRequest.fields();
-        IssueInput issueInput = createIssueInput(issueFields, request);
+        IssueInput issueInput = createIssueInput(host, issueFields, request);
         BasicIssue basicIssue = null;
         try {
             basicIssue = postJiraRestClient.getIssueClient().createIssue(issueInput).claim();
@@ -588,13 +588,15 @@ public class IssueServiceImpl implements IssueService {
         return captureIssue;
     }
 
-    private IssueInput createIssueInput(IssueFields issueFields, HttpServletRequest request) throws CaptureValidationException {
+    private IssueInput createIssueInput(AtlassianHostUser host, IssueFields issueFields, HttpServletRequest request) throws CaptureValidationException {
         IssueInputBuilder issueInputBuilder = new IssueInputBuilder();
         issueInputBuilder.setIssueTypeId(Long.valueOf(issueFields.issueType().id()));
-        if (!CaptureUtil.isTenantGDPRComplaint() && issueFields.assignee() != null) {
+        if (!CaptureUtil.isTenantGDPRComplaint() && issueFields.assignee() != null &&
+        !issueFields.assigneeAccountId().id().equalsIgnoreCase("-1")) {
             issueInputBuilder.setAssigneeName(issueFields.assignee().id());
         }
-        if (CaptureUtil.isTenantGDPRComplaint() && issueFields.assigneeAccountId() != null) {
+        if (CaptureUtil.isTenantGDPRComplaint() && issueFields.assigneeAccountId() != null &&
+                !issueFields.assigneeAccountId().id().equalsIgnoreCase("-1")) {
         	CaptureUser user = userService.findUserByAccountId(issueFields.assigneeAccountId().id());
         	if(user != null) {
         		try {
@@ -717,13 +719,14 @@ public class IssueServiceImpl implements IssueService {
             issueInputBuilder.setFieldInput(parentField);
         }
         if (issueFields.getFields() != null && !issueFields.getFields().isEmpty()){
-            configCustomFields(issueInputBuilder, issueFields, project);
+            configCustomFields(host, issueInputBuilder, issueFields, project);
         }
 
         return issueInputBuilder.build();
     }
 
-    private void configCustomFields(IssueInputBuilder issueInputBuilder, IssueFields issueFields, Project issueProject){
+    private void configCustomFields(AtlassianHostUser host, IssueInputBuilder issueInputBuilder, IssueFields issueFields, Project issueProject){
+        AcHostModel acHostModel = (AcHostModel) host.getHost();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
         String metadata =  metadataService.getMetaDataCacheOrFresh(hostUser,
@@ -850,7 +853,12 @@ public class IssueServiceImpl implements IssueService {
                     }
                 } else if(StringUtils.equals(fieldType, "user") || StringUtils.equals(fieldType, "group")){
                     Map<String, Object> complexValue = new TreeMap<>();
-                    complexValue.put("name", fieldValue[0]);
+                    if(StringUtils.equals(fieldType, "user") && (acHostModel.getMigrated() != null && acHostModel.getMigrated().equals(AcHostModel.GDPRMigrationStatus.GDPR)))
+                    {
+                        complexValue.put("id", fieldValue[0]);
+                    }else{
+                        complexValue.put("name", fieldValue[0]);
+                    }
                     issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
                 } else if (StringUtils.equals(fieldType, "option-with-child") && StringUtils.isNotBlank(fieldValue[0]) && StringUtils.isNotBlank(fieldValue[1])){
                     Map<String, Object> complexValue = new TreeMap<>();

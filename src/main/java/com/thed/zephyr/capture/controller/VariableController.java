@@ -1,31 +1,23 @@
 package com.thed.zephyr.capture.controller;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
-import javax.validation.Valid;
-
-import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.model.VariableRequest;
 import com.thed.zephyr.capture.model.util.VariableSearchList;
 import com.thed.zephyr.capture.service.data.VariableService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.validator.VariableValidator;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 /**
  * Controller class for implementing variables. 
@@ -102,6 +94,8 @@ public class VariableController extends CaptureAbstractController{
 		log.info("getVariables start for ownerName:" + ownerName + ",ownerAccountId:"+ownerAccountId);
 		VariableSearchList response = null;
 		try {
+			offset = (offset == null ? 0 : offset);
+			limit = (limit == null || limit.intValue() == 0 ? ApplicationConstants.DEFAULT_RESULT_SIZE : limit);
 			response = variableService.getVariables(ownerName, ownerAccountId, offset, limit);
 		} catch (Exception ex) {
 			log.error("Error during getVariables.", ex);
