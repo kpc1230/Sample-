@@ -215,5 +215,8 @@
       }
     ]
   },
-  "scopes": ["READ", "WRITE","ADMIN"]
+  "scopes": ["READ", "WRITE","ADMIN"],
+  "apiMigrations": {
+    "gdpr": false
+  }
 }
