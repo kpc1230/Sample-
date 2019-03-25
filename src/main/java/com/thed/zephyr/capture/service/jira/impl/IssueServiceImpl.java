@@ -804,17 +804,20 @@ public class IssueServiceImpl implements IssueService {
                     List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
                     List<String> values = Arrays.asList(fieldValue);
                     values.stream().forEach((value) -> {
-                    	for(String name :  value.trim().split(",")) {
-                    		if(!StringUtils.isEmpty(name)) {
-                    			Map<String, Object> complexValue = new TreeMap<>();
-                    			if(StringUtils.equals(items, "user") && acHostModel.getMigrated() != null && acHostModel.getMigrated().equals(AcHostModel.GDPRMigrationStatus.GDPR)) {
-                                    complexValue.put("id", name.trim());
-                                }else {
-                                    complexValue.put("name", name);
+                        String[] arrs = value.trim().split(",");
+                        if(arrs != null && arrs.length > 0) {
+                            for (String name : value.trim().split(",")) {
+                                if (!StringUtils.isEmpty(name)) {
+                                    Map<String, Object> complexValue = new TreeMap<>();
+                                    if (StringUtils.equals(items, "user") && acHostModel.getMigrated() != null && acHostModel.getMigrated().equals(AcHostModel.GDPRMigrationStatus.GDPR)) {
+                                        complexValue.put("id", name.trim());
+                                    } else {
+                                        complexValue.put("name", name);
+                                    }
+                                    checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
                                 }
-                                checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
-                    		}
-                    	}                        
+                            }
+                        }
                     });
                     issueInputBuilder.setFieldValue(fieldId, checkboxValues);
                 } else if(StringUtils.equals(fieldType, "date") && StringUtils.isNotBlank(fieldValue[0])){
@@ -859,11 +862,14 @@ public class IssueServiceImpl implements IssueService {
                     Map<String, Object> complexValue = new TreeMap<>();
                     if(acHostModel.getMigrated() != null && acHostModel.getMigrated().equals(AcHostModel.GDPRMigrationStatus.GDPR))
                     {
-                        complexValue.put("id", fieldValue[0]);
+                        if(!"".equals(fieldValue[0].trim())) {
+                            complexValue.put("id", fieldValue[0]);
+                            issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                        }
                     }else{
                         complexValue.put("name", fieldValue[0]);
+                        issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
                     }
-                    issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
                 } else if (StringUtils.equals(fieldType, "option-with-child") && StringUtils.isNotBlank(fieldValue[0]) && StringUtils.isNotBlank(fieldValue[1])){
                     Map<String, Object> complexValue = new TreeMap<>();
                     complexValue.put("id",fieldValue[0]);
