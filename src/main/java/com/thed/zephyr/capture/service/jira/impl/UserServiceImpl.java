@@ -104,7 +104,7 @@ public class UserServiceImpl implements UserService{
         URI targetUrl= UriComponentsBuilder.fromUriString(uri)
                 .path(JiraConstants.REST_API_ASSIGNABLE_USER)
                 .queryParam("project", projectKey)
-                .queryParam(CaptureUtil.isTenantGDPRComplaint() ? "accountId" : "username", StringUtils.isNotEmpty(user)?user:"")
+                .queryParam("query", StringUtils.isNotEmpty(user)?user:"")
                 .build()
                 .encode()
                 .toUri();

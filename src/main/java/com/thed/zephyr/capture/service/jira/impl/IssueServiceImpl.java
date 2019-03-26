@@ -867,8 +867,10 @@ public class IssueServiceImpl implements IssueService {
                             issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
                         }
                     }else{
-                        complexValue.put("name", fieldValue[0]);
-                        issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                        if(!"".equals(fieldValue[0].trim())) {
+                            complexValue.put("name", fieldValue[0]);
+                            issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                        }
                     }
                 } else if (StringUtils.equals(fieldType, "option-with-child") && StringUtils.isNotBlank(fieldValue[0]) && StringUtils.isNotBlank(fieldValue[1])){
                     Map<String, Object> complexValue = new TreeMap<>();
