@@ -440,9 +440,32 @@ public class IssueServiceImpl implements IssueService {
 
     @Override
     public void addComment(String issueKey, String comment) throws JSONException {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
+        String userAccountId = hostUser.getUserAccountId().get();
+        AtlassianHostUser.AtlassianHostUserBuilder atlassianHostUserBuilder = AtlassianHostUser.builder(hostUser.getHost());
+        if(null != userAccountId && StringUtils.isNotEmpty(userAccountId)){
+            hostUser = atlassianHostUserBuilder.withUserAccountId(userAccountId).build();
+        }
         Issue issue = getIssueObject(issueKey);
-        JSONObject jsonObject = new JSONObject(comment);
-        postJiraRestClient.getIssueClient().addComment(issue.getCommentsUri(),Comment.valueOf(jsonObject.get("comment").toString())).claim();
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            URI addCommentUrl = new URI(host.getHost().getBaseUrl()+JiraConstants.REST_API_COMMENT
+            .replace("{issueId}",String.valueOf(issue.getId())));
+            String commentStr = new ObjectMapper().readTree(comment).get("comment").asText();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            JsonNode jsonNode = mapper.convertValue(Comment.valueOf(commentStr), JsonNode.class);
+            HttpEntity<String> commentEntity = new HttpEntity<String>(jsonNode.toString(), headers);
+            JsonNode responseNode = atlassianHostRestClients
+                    .authenticatedAs(hostUser)
+                    .postForObject(addCommentUrl, commentEntity, JsonNode.class);
+            log.debug("Response for addComment from JIRA {} , {}", issueKey, responseNode);
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Error during adding comment to issue {}", issueKey);
+        }
     }
 
     @Override
