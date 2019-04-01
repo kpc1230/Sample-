@@ -591,8 +591,8 @@ public class IssueServiceImpl implements IssueService {
     private IssueInput createIssueInput(AtlassianHostUser host, IssueFields issueFields, HttpServletRequest request) throws CaptureValidationException {
         IssueInputBuilder issueInputBuilder = new IssueInputBuilder();
         issueInputBuilder.setIssueTypeId(Long.valueOf(issueFields.issueType().id()));
-        if (!CaptureUtil.isTenantGDPRComplaint() && issueFields.assignee() != null &&
-        !issueFields.assigneeAccountId().id().equalsIgnoreCase("-1")) {
+        if (!CaptureUtil.isTenantGDPRComplaint() && issueFields.assignee() != null
+                && issueFields.assigneeAccountId() != null && !issueFields.assigneeAccountId().id().equalsIgnoreCase("-1")) {
             issueInputBuilder.setAssigneeName(issueFields.assignee().id());
         }
         if (CaptureUtil.isTenantGDPRComplaint() && issueFields.assigneeAccountId() != null &&
