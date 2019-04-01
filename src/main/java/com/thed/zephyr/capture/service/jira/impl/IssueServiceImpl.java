@@ -769,122 +769,123 @@ public class IssueServiceImpl implements IssueService {
             try {
                 String fieldId = entry.getKey();
                 String[] fieldValue = entry.getValue();
-                String fieldType = fields.get(fieldId).get("schema").get("type").asText();
-                String items = fields.get(fieldId).get("schema").get("items") != null?fields.get(fieldId).get("schema").get("items").asText():"";
-                String custom = fields.get(fieldId).get("schema").has("custom") ? fields.get(fieldId).get("schema").get("custom").asText() : "";
-                if (StringUtils.equals(fieldType, "string")){
-                    issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
-                } else if(StringUtils.equals(fieldType, "option") || StringUtils.equals(fieldType, "version")){
-                   if(fieldValue[0] != null && fieldValue[0].length() > 0) {
-                	   Map<String, Object> optionValue = new HashMap<>();
-                       optionValue.put("id", fieldValue[0]);
-                       issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(optionValue));
-                   }
-                } else if(StringUtils.equals(fieldType, "any") && StringUtils.isNotBlank(fieldValue[0])){
-                    issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
-                } else if(StringUtils.equals(fieldType, "array") && (StringUtils.equals(items, "option") || StringUtils.equals(items, "version"))){
-                    List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
-                    List<String> values = Arrays.asList(fieldValue);
-                    values.stream().forEach((value) -> {
-                        Map<String, Object> complexValue = new TreeMap<>();
-                        complexValue.put("id", value);
-                        checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
-                    });
-                    issueInputBuilder.setFieldValue(fieldId, checkboxValues);
-                } else if(StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "group")){
-                    List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
-                    List<String> values = Arrays.asList(fieldValue);
-                    values.stream().forEach((value) -> {
-                        Map<String, Object> complexValue = new TreeMap<>();
-                        complexValue.put("name", value);
-                        checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
-                    });
-                    issueInputBuilder.setFieldValue(fieldId, checkboxValues);
-                } else if(StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "user")){
-                    List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
-                    List<String> values = Arrays.asList(fieldValue);
-                    values.stream().forEach((value) -> {
-                        String[] arrs = value.trim().split(",");
-                        if(arrs != null && arrs.length > 0) {
-                            for (String name : value.trim().split(",")) {
-                                if (!StringUtils.isEmpty(name)) {
-                                    Map<String, Object> complexValue = new TreeMap<>();
-                                    if (StringUtils.equals(items, "user") && acHostModel.getMigrated() != null && acHostModel.getMigrated().equals(AcHostModel.GDPRMigrationStatus.GDPR)) {
-                                        complexValue.put("id", name.trim());
-                                    } else {
-                                        complexValue.put("name", name);
+                if(fieldValue instanceof String[] && fieldValue.length > 0) {
+                    String fieldType = fields.get(fieldId).get("schema").get("type").asText();
+                    String items = fields.get(fieldId).get("schema").get("items") != null ? fields.get(fieldId).get("schema").get("items").asText() : "";
+                    String custom = fields.get(fieldId).get("schema").has("custom") ? fields.get(fieldId).get("schema").get("custom").asText() : "";
+                    if (StringUtils.equals(fieldType, "string")) {
+                        issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
+                    } else if (StringUtils.equals(fieldType, "option") || StringUtils.equals(fieldType, "version")) {
+                        if (fieldValue[0] != null && fieldValue[0].length() > 0) {
+                            Map<String, Object> optionValue = new HashMap<>();
+                            optionValue.put("id", fieldValue[0]);
+                            issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(optionValue));
+                        }
+                    } else if (StringUtils.equals(fieldType, "any") && StringUtils.isNotBlank(fieldValue[0])) {
+                        issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
+                    } else if (StringUtils.equals(fieldType, "array") && (StringUtils.equals(items, "option") || StringUtils.equals(items, "version"))) {
+                        List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
+                        List<String> values = Arrays.asList(fieldValue);
+                        values.stream().forEach((value) -> {
+                            Map<String, Object> complexValue = new TreeMap<>();
+                            complexValue.put("id", value);
+                            checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
+                        });
+                        issueInputBuilder.setFieldValue(fieldId, checkboxValues);
+                    } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "group")) {
+                        List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
+                        List<String> values = Arrays.asList(fieldValue);
+                        values.stream().forEach((value) -> {
+                            Map<String, Object> complexValue = new TreeMap<>();
+                            complexValue.put("name", value);
+                            checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
+                        });
+                        issueInputBuilder.setFieldValue(fieldId, checkboxValues);
+                    } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "user")) {
+                        List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
+                        List<String> values = Arrays.asList(fieldValue);
+                        values.stream().forEach((value) -> {
+                            String[] arrs = value.trim().split(",");
+                            if (arrs != null && arrs.length > 0) {
+                                for (String name : value.trim().split(",")) {
+                                    if (!StringUtils.isEmpty(name)) {
+                                        Map<String, Object> complexValue = new TreeMap<>();
+                                        if (StringUtils.equals(items, "user") && acHostModel.getMigrated() != null && acHostModel.getMigrated().equals(AcHostModel.GDPRMigrationStatus.GDPR)) {
+                                            complexValue.put("id", name.trim());
+                                        } else {
+                                            complexValue.put("name", name);
+                                        }
+                                        checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
                                     }
-                                    checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
                                 }
                             }
+                        });
+                        issueInputBuilder.setFieldValue(fieldId, checkboxValues);
+                    } else if (StringUtils.equals(fieldType, "date") && StringUtils.isNotBlank(fieldValue[0])) {
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy");
+                        Date date = sdf.parse(fieldValue[0]);
+                        sdf = new SimpleDateFormat("yyyy-MM-dd");
+                        String dateStr = sdf.format(date);
+                        issueInputBuilder.setFieldValue(fieldId, dateStr);
+                    } else if (StringUtils.equals(fieldType, "datetime")) {
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy hh:mm a");
+                        //sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                        Date date = sdf.parse(fieldValue[0]);
+                        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+                        String dateStr = sdf.format(date);
+                        issueInputBuilder.setFieldValue(fieldId, dateStr);
+                    } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "string")) {
+                        List<String> values = Arrays.asList(fieldValue);
+                        //Added check to see is this field is sprint then dont sent amy empty value
+                        if (custom.equals("com.pyxis.greenhopper.jira:gh-sprint")) {
+                            try {
+                                //for sprint fieldType array and items is string
+                                //but sprint value is long so just check if we
+                                //can convert into long to get sprintId
+                                if (StringUtils.isNotBlank(values.get(0))) {
+                                    Long sprintId = Long.valueOf(values.get(0));
+                                    issueInputBuilder.setFieldValue(fieldId, sprintId);
+                                }
+                            } catch (Exception e) {
+                                // issueInputBuilder.setFieldValue(fieldId, values);
+                            }
+                        } else {
+                            issueInputBuilder.setFieldValue(fieldId, values);
                         }
-                    });
-                    issueInputBuilder.setFieldValue(fieldId, checkboxValues);
-                } else if(StringUtils.equals(fieldType, "date") && StringUtils.isNotBlank(fieldValue[0])){
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy");
-                    Date date = sdf.parse(fieldValue[0]);
-                    sdf = new SimpleDateFormat("yyyy-MM-dd");
-                    String dateStr = sdf.format(date);
-                    issueInputBuilder.setFieldValue(fieldId, dateStr);
-                } else if(StringUtils.equals(fieldType, "datetime")){
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy hh:mm a");
-                    //sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    Date date = sdf.parse(fieldValue[0]);
-                    sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-                    String dateStr = sdf.format(date);
-                    issueInputBuilder.setFieldValue(fieldId, dateStr);
-                } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "string")){
-                    List<String> values = Arrays.asList(fieldValue);
-                    //Added check to see is this field is sprint then dont sent amy empty value
-                    if(custom.equals("com.pyxis.greenhopper.jira:gh-sprint")){
-                        try {
-                            //for sprint fieldType array and items is string
-                            //but sprint value is long so just check if we
-                            //can convert into long to get sprintId
-                           if(StringUtils.isNotBlank(values.get(0))){
-                               Long sprintId = Long.valueOf(values.get(0));
-                               issueInputBuilder.setFieldValue(fieldId, sprintId);
-                           }
-                        }catch (Exception e){
-                           // issueInputBuilder.setFieldValue(fieldId, values);
-                        }
-                    }else{
-                        issueInputBuilder.setFieldValue(fieldId, values);
-                    }
 
-                } else if (StringUtils.equals(fieldType, "number")){
-                    String numberStr = fieldValue[0];
-                    if(StringUtils.isNotBlank(numberStr)){
-                        Double number = Double.valueOf(numberStr);
-                        issueInputBuilder.setFieldValue(fieldId, number);
-                    }
-                } else if(StringUtils.equals(fieldType, "user") || StringUtils.equals(fieldType, "group")){
-                    Map<String, Object> complexValue = new TreeMap<>();
-                    if(acHostModel.getMigrated() != null && acHostModel.getMigrated().equals(AcHostModel.GDPRMigrationStatus.GDPR))
-                    {
-                        if(!"".equals(fieldValue[0].trim())) {
-                            complexValue.put("id", fieldValue[0]);
-                            issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                    } else if (StringUtils.equals(fieldType, "number")) {
+                        String numberStr = fieldValue[0];
+                        if (StringUtils.isNotBlank(numberStr)) {
+                            Double number = Double.valueOf(numberStr);
+                            issueInputBuilder.setFieldValue(fieldId, number);
                         }
-                    }else{
-                        if(!"".equals(fieldValue[0].trim())) {
-                            complexValue.put("name", fieldValue[0]);
-                            issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                    } else if (StringUtils.equals(fieldType, "user") || StringUtils.equals(fieldType, "group")) {
+                        Map<String, Object> complexValue = new TreeMap<>();
+                        if (acHostModel.getMigrated() != null && acHostModel.getMigrated().equals(AcHostModel.GDPRMigrationStatus.GDPR)) {
+                            if (!"".equals(fieldValue[0].trim())) {
+                                complexValue.put("id", fieldValue[0]);
+                                issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                            }
+                        } else {
+                            if (!"".equals(fieldValue[0].trim())) {
+                                complexValue.put("name", fieldValue[0]);
+                                issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                            }
                         }
+                    } else if (StringUtils.equals(fieldType, "option-with-child") && StringUtils.isNotBlank(fieldValue[0]) && StringUtils.isNotBlank(fieldValue[1])) {
+                        Map<String, Object> complexValue = new TreeMap<>();
+                        complexValue.put("id", fieldValue[0]);
+                        Map<String, Object> childValue = new TreeMap<>();
+                        childValue.put("id", fieldValue[1]);
+                        complexValue.put("child", new ComplexIssueInputFieldValue(childValue));
+                        issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                    } else if (StringUtils.equals(fieldType, "project")) {
+                        Map<String, Object> complexValue = new TreeMap<>();
+                        complexValue.put("id", fieldValue[0]);
+                        issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                    } else {
+                        log.warn("This custom field type not supporting so skied field id : {} ,  field type:  {}", fieldId, fieldType);
                     }
-                } else if (StringUtils.equals(fieldType, "option-with-child") && StringUtils.isNotBlank(fieldValue[0]) && StringUtils.isNotBlank(fieldValue[1])){
-                    Map<String, Object> complexValue = new TreeMap<>();
-                    complexValue.put("id",fieldValue[0]);
-                    Map<String, Object> childValue = new TreeMap<>();
-                    childValue.put("id",fieldValue[1]);
-                    complexValue.put("child", new ComplexIssueInputFieldValue(childValue));
-                    issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
-                }else if (StringUtils.equals(fieldType, "project")){
-                    Map<String, Object> complexValue = new TreeMap<>();
-                    complexValue.put("id",fieldValue[0]);
-                    issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
-                }else{
-                    log.warn("This custom field type not supporting so skied field id : {} ,  field type:  {}",fieldId,fieldType);
                 }
             } catch (Exception exception) {
                 log.error("Error during config custom field for Jira issue create request customFieldId:{} issueType:{}", entry.getKey(), issueFields.issueType().id(), exception);
