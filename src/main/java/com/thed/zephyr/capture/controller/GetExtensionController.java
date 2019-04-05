@@ -4,6 +4,7 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.annotation.LicenseCheck;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.service.gdpr.GDPRUserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.UserAgentSniffer;
@@ -29,6 +30,8 @@ public class GetExtensionController {
     private DynamicProperty dynamicProperty;
     @Autowired
     private AddonInfoService addonInfoService;
+    @Autowired
+    private GDPRUserService gdprUserService;
 
     @LicenseCheck
     @RequestMapping(value = "/get-browser-extension", method = RequestMethod.GET)
@@ -79,7 +82,7 @@ public class GetExtensionController {
             log.warn("Error during getting addon info.", exception);
             model.addAttribute("captureVersion", "n/a");
         }
-
+        gdprUserService.getAndPushUserToMigration(hostUser);
         return "get-browser-extension";
     }
 }

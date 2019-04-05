@@ -36,6 +36,7 @@ public class AcHostModel extends AtlassianHost implements Serializable{
     private String lastModifiedBy;
     private String createdByAccountId;
     private String lastModifiedByAccountId;
+    private Boolean capturedAccountId;
   //  @DynamoDBIndexHashKey(globalSecondaryIndexName = ApplicationConstants.GSI_STATUS)
     @DynamoDBTypeConverted(converter = TenantStatusTypeConverter.class)
     private TenantStatus status;
@@ -206,7 +207,15 @@ public class AcHostModel extends AtlassianHost implements Serializable{
 		this.migrated = migrated;
 	}
 
-	public enum TenantStatus {
+    public Boolean getCapturedAccountId() {
+        return capturedAccountId;
+    }
+
+    public void setCapturedAccountId(Boolean capturedAccountId) {
+        this.capturedAccountId = capturedAccountId;
+    }
+
+    public enum TenantStatus {
         ACTIVE,
         LIC_EXPIRED,
         HOST_UNREACHABLE,

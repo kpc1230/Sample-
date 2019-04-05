@@ -103,6 +103,12 @@ public class ApplicationConstants {
     public static final String METADATA_EXPAND_KEY = "projects.issuetypes.fields";
     public static final String ENTRANCE_CHECKING = "entrance.checking";
     public static final String ENTRANCE_CHECKING_LIST = "entrance.checking.tenant.list";
+    public static final String AUDITING_SERVER_URL = "auditing.server.url";
+    public static final String PROJECT = "product";
+    public static final String PROJECT_TYPE = "Capture" ;
+    public static final String USERS = "users" ;
+    public static final String TENANTID = "tenantId" ;
+    public static final String STORE_ACCOUNT_INFO = "gdpr.store.account.info";
 
     /*** for MetadataField ***/
     public static String PROJECTS = "projects";
@@ -251,4 +257,8 @@ public class ApplicationConstants {
     public static final String EMO_ICON_PATH = "/images/icons/emoticons/";
 
     public static final String ISSUE_ATTACH_METADATA_CACHE_KEY_PREFIX = "issue-attach-meta-data";
+
+    public static final String USERDETAILS_EVENTS_QUEUE = "userdetails_events_queue";
+    public static final String JEDIS_POOL_CONFIG_MAX_TOTAL = "jedis.pool.config.max.total";
+    public static final String JEDIS_POOL_CONFIG_MAX_IDLE = "jedis.pool.config.max.idle";
 }

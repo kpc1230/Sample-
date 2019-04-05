@@ -12,6 +12,7 @@ import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.gdpr.GDPRUserService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
@@ -63,6 +64,8 @@ public class ApplicationController {
     private HazelcastInstance hazelcastInstance;
     @Autowired
 	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+    @Autowired
+    private GDPRUserService gdprUserService;
 
     @LicenseCheck
     @RequestMapping(value = "/adminGenConf")
@@ -84,6 +87,7 @@ public class ApplicationController {
 
 
         log.debug("Ending Requesting the general configuration page with resp : " + jsonNode);
+        gdprUserService.getAndPushUserToMigration(hostUser);
         return "generalConfigPage";
     }
 
