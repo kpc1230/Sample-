@@ -19,7 +19,7 @@ module.exports = function(grunt) {
         'mkdir -p '+home+'dist/build/deploy',
         'rm -rf '+home+'dist/build/deploy/*.war',
         'cd ..',
-        'atlas-mvn clean package',
+        'atlas-mvn clean package -U',
         'cp -r target/*.war dist/build/deploy/capture.war'
         ].join('&&')
       },
