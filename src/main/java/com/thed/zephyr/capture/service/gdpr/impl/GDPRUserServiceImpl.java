@@ -62,7 +62,9 @@ public class GDPRUserServiceImpl implements GDPRUserService {
                 ObjectMapper mapper = new ObjectMapper();
                 try {
                     AcHostModel acHostModel = acHostModelRepository.findByClientKey(hostUser.getHost().getClientKey()).get(0);
-                    if (!acHostModel.getCapturedAccountId()) {
+                    if (acHostModel.getCapturedAccountId() != null && acHostModel.getCapturedAccountId().equals(true)) {
+                        log.info("Skipped storing account info since {} is already stored", acHostModel.getClientKey());
+                    }else{
                         int start = 0;
                         int maxResult = 500;
                         boolean continueWhile = true;
@@ -117,7 +119,7 @@ public class GDPRUserServiceImpl implements GDPRUserService {
                             acHostModel.setCapturedAccountId(true);
                             acHostModelRepository.save(acHostModel);
                         }
-                    }//if not is captured account id
+                    }
                 } catch (Exception ex) {
                     log.error("error during retrive user {}", ex.getMessage());
                 }
