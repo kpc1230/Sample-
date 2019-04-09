@@ -140,7 +140,8 @@ public class GDPRUserServiceImpl implements GDPRUserService {
      * @param userList
      * @param tenantId
      */
-    void processToPushMigration(List<UserDTO> userList, String tenantId, String ctId){
+    @Override
+    public void processToPushMigration(List<UserDTO> userList, String tenantId, String ctId){
 
         Map<String, Object> requestMap = new HashMap<>();
         requestMap.put(ApplicationConstants.TENANTID, tenantId);

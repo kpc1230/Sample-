@@ -10,4 +10,5 @@ import java.util.List;
  */
 public interface GDPRUserService {
     List<UserDTO> getAndPushUserToMigration(AtlassianHostUser hostUser);
+    void processToPushMigration(List<UserDTO> userList, String tenantId, String ctId);
 }
