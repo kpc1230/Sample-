@@ -55,13 +55,14 @@ public class GDPRUserServiceImpl implements GDPRUserService {
     public List<UserDTO> getAndPushUserToMigration(AtlassianHostUser hostUser) {
         List<UserDTO> userDTOS = new ArrayList<>();
         try {
+            AcHostModel acHostModel = null;
             Boolean proceedStoring = dynamicProperty.getBoolProp(ApplicationConstants.STORE_ACCOUNT_INFO, false).getValue();
             if(!proceedStoring) {
                 log.info("Skipped storing account info since {} is not define/active", ApplicationConstants.STORE_ACCOUNT_INFO);
             }else{
                 ObjectMapper mapper = new ObjectMapper();
                 try {
-                    AcHostModel acHostModel = acHostModelRepository.findByClientKey(hostUser.getHost().getClientKey()).get(0);
+                    acHostModel = acHostModelRepository.findByClientKey(hostUser.getHost().getClientKey()).get(0);
                     if (acHostModel.getCapturedAccountId() != null && acHostModel.getCapturedAccountId().equals(true)) {
                         log.info("Skipped storing account info since {} is already stored", acHostModel.getClientKey());
                     }else{
@@ -124,7 +125,7 @@ public class GDPRUserServiceImpl implements GDPRUserService {
                     log.error("error during retrive user {}", ex.getMessage());
                 }
                 if (userDTOS != null && userDTOS.size() > 0) {
-                    processToPushMigration(userDTOS, hostUser.getHost().getClientKey());
+                    processToPushMigration(userDTOS, hostUser.getHost().getClientKey(), acHostModel.getCtId());
                 }
             }
         }catch (Exception e){
@@ -139,10 +140,11 @@ public class GDPRUserServiceImpl implements GDPRUserService {
      * @param userList
      * @param tenantId
      */
-    void processToPushMigration(List<UserDTO> userList, String tenantId){
+    void processToPushMigration(List<UserDTO> userList, String tenantId, String ctId){
 
         Map<String, Object> requestMap = new HashMap<>();
         requestMap.put(ApplicationConstants.TENANTID, tenantId);
+        requestMap.put(ApplicationConstants.TENANT_ID_FIELD, ctId);
         requestMap.put(ApplicationConstants.PROJECT, ApplicationConstants.PROJECT_TYPE);
         requestMap.put(ApplicationConstants.USERS, userList);
         ObjectMapper objectMapper = new ObjectMapper();
