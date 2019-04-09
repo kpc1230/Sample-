@@ -153,6 +153,7 @@ public class IssueServiceImpl implements IssueService {
                     
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+            log.debug("ISSUE: --> {}", captureIssue.getSummary());
         } catch(RestClientException restClientException){
             if (restClientException.getStatusCode().get().equals(404)){
                 log.warn("Issue wasn't found in Jira issueId:{} ctId:{}", issueIdOrKey, acHostModel.getCtId());
@@ -162,7 +163,6 @@ public class IssueServiceImpl implements IssueService {
         } catch (Exception exception) {
             log.error("Exception while getting the issue from JIRA, the null value will be returned", exception);
         }
-        log.debug("ISSUE: --> {}", captureIssue.getSummary());
         return captureIssue;
     }
 
