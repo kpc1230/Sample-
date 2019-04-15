@@ -34,7 +34,7 @@ public class VariableServiceImpl implements VariableService {
 
 	@Override
 	public void createVariable(VariableRequest input) throws CaptureValidationException {
-		List<Variable> list = getVariableObjects(input.getOwnerName(), null, null).getContent();
+		List<Variable> list = getVariableObjects(input.getOwnerName(), input.getOwnerAccountId(), null, null).getContent();
 		Variable existing = list.stream().filter(var -> var.getName().equals(input.getName())).findFirst().orElse(null);
 		if (existing != null) {
 			throw new CaptureValidationException(i18n.getMessage("variable.already.present"));
@@ -52,7 +52,7 @@ public class VariableServiceImpl implements VariableService {
 	@Override
 	public VariableSearchList getVariables(String ownerName, String ownerAccountId, Integer offset, Integer limit) {
 		PageRequest page = getPageRequest(offset, limit);
-		Page<Variable> variablePage = getVariableObjects(ownerName, offset, limit);
+		Page<Variable> variablePage = getVariableObjects(ownerName, ownerAccountId, offset, limit);
 		List<Variable> list = variablePage.getContent();
 		if(list == null || list.size() == 0){
 			list = createDefaultVariables(ownerName, ownerAccountId);
@@ -69,9 +69,14 @@ public class VariableServiceImpl implements VariableService {
 	 * @param limit
 	 * @return
 	 */
-	protected Page<Variable> getVariableObjects(String ownerName, Integer offset, Integer limit){
-		return repository.findByCtIdAndOwnerName(CaptureUtil.getCurrentCtId(),
-				ownerName, getPageRequest(offset, limit));
+	protected Page<Variable> getVariableObjects(String ownerName, String ownerAccountId, Integer offset, Integer limit){
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			return repository.findByCtIdAndOwnerAccountId(CaptureUtil.getCurrentCtId(),
+					ownerAccountId, getPageRequest(offset, limit));
+		} else {
+			return repository.findByCtIdAndOwnerName(CaptureUtil.getCurrentCtId(),
+					ownerName, getPageRequest(offset, limit));
+		}
 	}
 
 	/**
@@ -82,8 +87,12 @@ public class VariableServiceImpl implements VariableService {
 	private List<Variable> createDefaultVariables(String ownerName, String ownerAccountId) {
 		List<Variable> variableList = new ArrayList<>();
         for (String name : DefaultVariables.DEFAULT_VARIABLES.keySet()) {
-            Variable var = new Variable(CaptureUtil.getCurrentCtId(), ownerName, ownerAccountId, name,
+            Variable var = new Variable(CaptureUtil.getCurrentCtId(), null, ownerAccountId, name,
             		DefaultVariables.DEFAULT_VARIABLES.get(name));
+            if(!CaptureUtil.isTenantGDPRComplaint()) {
+            	var = new Variable(CaptureUtil.getCurrentCtId(), ownerName, ownerAccountId, name,
+                		DefaultVariables.DEFAULT_VARIABLES.get(name));
+            }
             repository.save(var);
             variableList.add(var);
         }
@@ -92,7 +101,7 @@ public class VariableServiceImpl implements VariableService {
 
 	@Override
 	public void updateVariable(VariableRequest input) throws CaptureValidationException {
-		List<Variable> list = getVariableObjects(input.getOwnerName(), null, null).getContent();
+		List<Variable> list = getVariableObjects(input.getOwnerName(), input.getOwnerAccountId(), null, null).getContent();
 		Variable existing = list.stream().filter(var -> var.getId().equals(input.getId())).findFirst().orElse(null);
 		if (existing == null) {
 			throw new CaptureValidationException(i18n.getMessage("variable.not.present"));

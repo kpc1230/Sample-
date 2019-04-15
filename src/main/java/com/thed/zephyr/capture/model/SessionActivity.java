@@ -3,6 +3,8 @@ package com.thed.zephyr.capture.model;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.thed.zephyr.capture.service.db.converter.DateTypeConverter;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
+
 import org.springframework.data.annotation.Id;
 
 import java.util.Date;
@@ -142,11 +144,11 @@ abstract public class SessionActivity {
         if (timestamp != null ? !timestamp.equals(that.timestamp) : that.timestamp != null) {
             return false;
         }
-        if (user != null ? !user.equals(that.user) : that.user != null) {
+        if (!CaptureUtil.isTenantGDPRComplaint() && user != null ? !user.equals(that.user) : that.user != null) {
             return false;
         }
         
-        if (userAccountId != null ? !userAccountId.equals(that.userAccountId) : that.userAccountId != null) {
+        if (CaptureUtil.isTenantGDPRComplaint() && userAccountId != null ? !userAccountId.equals(that.userAccountId) : that.userAccountId != null) {
             return false;
         }
 

@@ -529,6 +529,10 @@
         "url": "/rest/event/project/updated"
       },
       {
+        "event": "user_created",
+        "url": "/rest/event/user/created"
+      },
+      {
         "event": "user_updated",
         "url": "/rest/event/user/updated"
       },
@@ -677,5 +681,8 @@
       "ja-JP": "/i18n/descriptor/ja_JP.json",
       "ko-KR": "/i18n/descriptor/ko_KR.json"
     }
+  },
+  "apiMigrations": {
+    "gdpr": false
   }
 }

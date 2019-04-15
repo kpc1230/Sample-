@@ -22,12 +22,14 @@ public class JiraConstants {
     public static final String REST_API_ISSUE_LINK_TYPE = "/rest/api/latest/issueLinkType";
     public static final String REST_API_AUTOCOMPLETE = "/rest/api/latest/jql/autocompletedata/suggestions";
     public static final String REST_API_BASE_ISSUE = "/rest/api/2/issue";
+    public static final String REST_API_SEARCH_USER = "/rest/api/latest/user/search?username=%25&startAt={start}&maxResults={limit}&includeInactive=true";
     public static final String REST_API_PROJECT_VERSIONS = "/rest/api/2/issue";
     public static final String REST_API_BASE_USER_PROPERTIES = REST_API_BASE+"/user/properties";
     public static final String REST_API_ASSIGNABLE_USER = "/rest/api/2/user/assignable/search";
     public static String REST_AUTH_CHECK_URL = "/rest/auth/1/session";
     public static String REST_USER_MYSELF = "/rest/api/2/myself";
     public static String REST_API_CUSTOM_FIELD = "/rest/api/2/field";
+    public static String REST_API_COMMENT = "/rest/api/latest/issue/{issueId}/comment";
     public static String REST_API_CREATE_ISSUE_SCHEMA = "/rest/api/2/issue/createmeta";
     public static String REST_API_ISSUE_ATTACHEMENT_META_DATE = "/rest/api/2/attachment/meta";
     public static final String REST_API_USER_SEARCH = "/rest/api/2/user/search";

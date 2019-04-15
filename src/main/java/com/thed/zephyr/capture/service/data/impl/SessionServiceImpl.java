@@ -12,6 +12,7 @@ import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.exception.CaptureValidationException;
 import com.thed.zephyr.capture.exception.HazelcastInstanceNotDefinedException;
 import com.thed.zephyr.capture.model.*;
+import com.thed.zephyr.capture.model.AcHostModel.GDPRMigrationStatus;
 import com.thed.zephyr.capture.model.CompleteSessionRequest.CompleteSessionIssueLinkRequest;
 import com.thed.zephyr.capture.model.Session.Status;
 import com.thed.zephyr.capture.model.jira.*;
@@ -120,8 +121,6 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public Session createSession(String loggedUserKey, String loggedUserAccountId,  SessionRequest sessionRequest) {
 		Session session = new Session();
-		session.setCreator(loggedUserKey);
-		session.setCreatorAccountId(loggedUserAccountId);
 		session.setCtId(CaptureUtil.getCurrentCtId());
 		session.setStatus(Status.CREATED);
 		session.setName(sessionRequest.getName());
@@ -134,9 +133,18 @@ public class SessionServiceImpl implements SessionService {
 		session.setProjectId(sessionRequest.getProjectId());
 		session.setProjectName(sessionRequest.getProjectName());
 		session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
-		session.setAssignee(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
-		CaptureUser user = userService.findUserByKey(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
-		session.setAssigneeAccountId(user.getAccountId());
+		CaptureUser user;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			session.setCreatorAccountId(loggedUserAccountId);
+			user = userService.findUserByAccountId(!StringUtils.isEmpty(sessionRequest.getAssigneeAccountId()) ? sessionRequest.getAssigneeAccountId() : loggedUserAccountId);
+			session.setAssigneeAccountId(!StringUtils.isEmpty(sessionRequest.getAssigneeAccountId()) ? sessionRequest.getAssigneeAccountId() : loggedUserAccountId);
+		} else {
+			session.setCreator(loggedUserKey);
+			session.setCreatorAccountId(loggedUserAccountId);
+			user = userService.findUserByKey(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
+			session.setAssignee(!StringUtils.isEmpty(sessionRequest.getAssignee()) ? sessionRequest.getAssignee() : loggedUserKey);
+			session.setAssigneeAccountId(user != null ? user.getAccountId() : sessionRequest.getAssigneeAccountId());
+		}
 		session.setUserDisplayName(user != null ? user.getDisplayName() : null);
 		session.setJiraPropIndex(generateJiraPropIndex(session.getCtId()));
         Session createdSession = sessionRepository.save(session);
@@ -169,12 +177,16 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public UpdateResult updateSession(String loggedUserKey, String loggedUserAccountId, Session session, SessionRequest sessionRequest) {
-		if(!StringUtils.isEmpty(sessionRequest.getAssignee())) {
-			session.setAssignee(sessionRequest.getAssignee());
+		CaptureUser user = null;
+		if(!CaptureUtil.isTenantGDPRComplaint() && !StringUtils.isEmpty(sessionRequest.getAssignee())) {
 			session.setAssigneeAccountId(sessionRequest.getAssigneeAccountId());
-			CaptureUser user = userService.findUserByKey(sessionRequest.getAssignee());
-			if(user != null) session.setUserDisplayName(user.getDisplayName());
-		}
+			session.setAssignee(sessionRequest.getAssignee());
+			user = userService.findUserByKey(sessionRequest.getAssignee());
+		} else if(CaptureUtil.isTenantGDPRComplaint() && !StringUtils.isEmpty(sessionRequest.getAssigneeAccountId())) {
+			session.setAssigneeAccountId(sessionRequest.getAssigneeAccountId());
+			user = userService.findUserByAccountId(sessionRequest.getAssigneeAccountId());
+		} 
+		if(user != null) session.setUserDisplayName(user.getDisplayName());
         session.setName(sessionRequest.getName());
         if(Objects.nonNull(sessionRequest.getAdditionalInfo())) {
         	session.setAdditionalInfo(sessionRequest.getAdditionalInfo());
@@ -186,7 +198,7 @@ public class SessionServiceImpl implements SessionService {
         session.setRelatedIssueIds(sessionRequest.getRelatedIssueIds());
         session.setDefaultTemplateId(sessionRequest.getDefaultTemplateId());
         //Generating the session object from session builder.
-        return validateUpdate(loggedUserKey, session);
+        return validateUpdate(loggedUserKey, loggedUserAccountId, session);
 	}
 
 	@Override
@@ -199,12 +211,12 @@ public class SessionServiceImpl implements SessionService {
 		sessionESRepository.delete(sessionId);
 		sessionActivityService.deleteAllSessionActivities(sessionId);
 		noteRepository.deleteBySessionId(sessionId);
-        if (session.getId().equals(getActiveSessionIdFromCache(session.getAssignee(), null))) { // Clear it as assignees active session
-            clearActiveSessionFromCache(session.getAssignee());
+        if (session.getId().equals(getActiveSessionIdFromCache(session.getAssignee(), session.getAssigneeAccountId(), null))) { // Clear it as assignees active session
+            clearActiveSessionFromCache(session.getAssignee(), session.getAssigneeAccountId());
         }
         if(!Objects.isNull(session.getParticipants())) {
         	for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) { // Clear it as all the active participants active session
-            	clearActiveSessionFromCache(p.getUser());
+            	clearActiveSessionFromCache(p.getUser(), p.getUserAccountId());
             }
         }
         if(log.isDebugEnabled()) log.debug("Deleted Session -- > Session ID - " + sessionId);
@@ -223,12 +235,13 @@ public class SessionServiceImpl implements SessionService {
 			Boolean firstTimeStarted = session.getStatus().equals(Status.CREATED);
 			session.setStatus(Status.STARTED);
 			final Session savedSession = save(session, user.getDisplayName(), null);
-			setActiveSessionIdToCache(user.getKey(), sessionId);
+			setActiveSessionIdToCache(user.getKey(), user.getAccountId(), sessionId);
 			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
+			boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.setStatus(savedSession, new Date(), user.getKey(), user.getAccountId(), firstTimeStarted);
+				sessionActivityService.setStatus(isTenantisTenantGDPRFlag, savedSession, new Date(), user.getKey(), user.getAccountId(), firstTimeStarted);
 			});
-			setActiveSessionIdToCache(user.getKey(), savedSession.getId());
+			setActiveSessionIdToCache(user.getKey(), user.getAccountId(), savedSession.getId());
 			return session;
 		} catch (Exception exception){
 			throw exception;
@@ -238,6 +251,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	private void deactivateActiveUserSession(AcHostModel acHostModel, CaptureUser user){
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		UserActiveSession userActiveSession = getActiveSession(acHostModel, user);
 		if(!userActiveSession.isUserHasActiveSession()){
 			log.debug("User:{}, doesn't have any active session or participate in any.", user.getKey());
@@ -245,47 +259,49 @@ public class SessionServiceImpl implements SessionService {
 		}
 		log.trace("Deactivate active user session or leave participated");
 		Session session = userActiveSession.getSession();
-		if(userActiveSession.getUserType().equals(UserActiveSession.UserType.PARTICIPANT)){
+		if(userActiveSession.getUserType() != null && userActiveSession.getUserType().equals(UserActiveSession.UserType.PARTICIPANT)){
 			Date leaveTime = new Date();
-			Participant participant = session.participantLeaveSession(user.getKey(), leaveTime);
+			Participant participant = session.participantLeaveSession(user.getKey(), user.getAccountId(), leaveTime, isTenantGDPRComplaint);
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.addParticipantLeft(session, participant);
+				sessionActivityService.addParticipantLeft(isTenantGDPRComplaint, session, participant);
 			});
 			save(session, user.getDisplayName(), null);
 		} else {
 			session.setStatus(Status.PAUSED);
 			Session savedSession = save(session, user.getDisplayName(), null);
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.setStatus(savedSession, new Date(), user.getKey(), user.getAccountId(), false);
+				sessionActivityService.setStatus(isTenantGDPRComplaint, savedSession, new Date(), user.getKey(), user.getAccountId(), false);
 			});
 			setIssueTestStatusAndTestSession(session.getRelatedIssueIds(), session.getCtId(), session.getProjectId(), getBaseUrl());
 		}
-		clearActiveSessionFromCache(user.getKey());
+		clearActiveSessionFromCache(user.getKey(), user.getAccountId());
 	}
 	
 	@Override
-	public UpdateResult startSession(String userKey, String loggedUserAccountId, Session session) {
+	public UpdateResult startSession(String userKey, String userAccountId, Session session) {
 		DeactivateResult deactivateResult = null;
-        SessionResult activeSessionResult = getActiveSession(userKey, null); // Deactivate current active session
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+        SessionResult activeSessionResult = getActiveSession(userKey, userAccountId, null); // Deactivate current active session
         if (activeSessionResult.isValid()) {
-            deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), userKey, loggedUserAccountId);
+            deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), userKey, userAccountId);
             if (!deactivateResult.isValid()) {
                 return new UpdateResult(deactivateResult.getErrorCollection(), session);
             }
 			//make active session status paused
-			if(Objects.nonNull(activeSessionResult.getSession()) && userKey.equals(activeSessionResult.getSession().getAssignee())) {
+			if(Objects.nonNull(activeSessionResult.getSession()) && ((isTenantGDPRComplaint && userAccountId.equals(activeSessionResult.getSession().getAssignee())) ||
+					(!isTenantGDPRComplaint && userKey.equals(activeSessionResult.getSession().getAssignee())))) {
 				Session activeSession = activeSessionResult.getSession();
 				activeSession.setStatus(Status.PAUSED);
 				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
-				clearActiveSessionFromCache(userKey);
+				clearActiveSessionFromCache(userKey, userAccountId);
 				update(updateResult, false);
 				CompletableFuture.runAsync(() -> {
-					sessionActivityService.setStatus(activeSession, new Date(), userKey, loggedUserAccountId);
+					sessionActivityService.setStatus(isTenantGDPRComplaint, activeSession, new Date(), userKey, userAccountId);
 				});
 			}
         }
         session.setStatus(Status.STARTED);
-        return new UpdateResult(validateUpdate(userKey, session), deactivateResult, userKey, true, false);
+        return new UpdateResult(validateUpdate(userKey, userAccountId, session), deactivateResult, userKey, userAccountId, true, false);
 	}
 
 
@@ -299,27 +315,28 @@ public class SessionServiceImpl implements SessionService {
 	public UpdateResult joinSession(String loggedUserKey, String loggedUserAccountId, Session session, Participant participant) {
         ErrorCollection errorCollection = new ErrorCollection();
         DeactivateResult deactivateResult = null;
-        if (!Objects.isNull(session) && !StringUtils.isEmpty(loggedUserKey)) {
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+        if (!Objects.isNull(session) && ((isTenantGDPRComplaint && !StringUtils.isEmpty(loggedUserAccountId)) || (!isTenantGDPRComplaint && !StringUtils.isEmpty(loggedUserKey)))) {
             if (!session.isShared()) {
                 errorCollection.addError(captureI18NMessageSource.getMessage("session.join.not.shared", new Object[]{session.getName()}));
             }
             if (!Status.STARTED.equals(session.getStatus())) {
                 errorCollection.addError(captureI18NMessageSource.getMessage("session.join.not.started" , new Object[]{session.getName()}));
             }
-            SessionResult activeSessionResult = getActiveSession(loggedUserKey, null); // Deactivate current active session
+            SessionResult activeSessionResult = getActiveSession(loggedUserKey, loggedUserAccountId, null); // Deactivate current active session
             if (activeSessionResult.isValid()) {
                 deactivateResult = validateDeactivateSession(activeSessionResult.getSession(), loggedUserKey, loggedUserAccountId);
                 if (!deactivateResult.isValid()) {
                     errorCollection.addAllErrors(deactivateResult.getErrorCollection());
                 }
                 //make active session status paused
-    			if(Objects.nonNull(activeSessionResult.getSession()) && loggedUserKey.equals(activeSessionResult.getSession().getAssignee())) {
+    			if(Objects.nonNull(activeSessionResult.getSession()) && ((isTenantGDPRComplaint && loggedUserAccountId.equals(activeSessionResult.getSession().getAssigneeAccountId())) || (!isTenantGDPRComplaint && loggedUserKey.equals(activeSessionResult.getSession().getAssignee())))) {
     				Session activeSession = activeSessionResult.getSession();
     				activeSession.setStatus(Status.PAUSED);
     				UpdateResult updateResult = new UpdateResult(new ErrorCollection(),activeSession);
     				update(updateResult,true);
     				CompletableFuture.runAsync(() -> {
-    					sessionActivityService.setStatus(activeSession, new Date(), loggedUserKey, loggedUserAccountId);
+    					sessionActivityService.setStatus(isTenantGDPRComplaint, activeSession, new Date(), loggedUserKey, loggedUserAccountId);
     				});
     			}
             }
@@ -328,7 +345,7 @@ public class SessionServiceImpl implements SessionService {
             return new UpdateResult(errorCollection, session);
         }
         addParticipantToSession(loggedUserKey, loggedUserAccountId, session); //set participant info only after all validations are passed.
-        return new UpdateResult(validateUpdate(loggedUserKey, session), deactivateResult, loggedUserKey, true, false);
+        return new UpdateResult(validateUpdate(loggedUserKey, loggedUserAccountId, session), deactivateResult, loggedUserKey, loggedUserAccountId, true, false);
 	}
 	
 	@Override
@@ -358,19 +375,19 @@ public class SessionServiceImpl implements SessionService {
 	}
 	
 	@Override
-	public UpdateResult unshareSession(String loggedUserKey, Session session) {
+	public UpdateResult unshareSession(String loggedUserKey, String loggedUserAccountId, Session session) {
 		session.setShared(false);
-		return validateUpdate(loggedUserKey, session);
+		return validateUpdate(loggedUserKey, loggedUserAccountId, session);
 	}
 	
 	@Override
-	public UpdateResult shareSession(String loggedUserKey, Session session) {
+	public UpdateResult shareSession(String loggedUserKey, String loggedUserAccountId, Session session) {
 		session.setShared(true);
-		return validateUpdate(loggedUserKey, session);
+		return validateUpdate(loggedUserKey, loggedUserAccountId, session);
 	}
 	
 	@Override
-    public UpdateResult removeRaisedIssue(String loggedUserKey, Session session, String issueKey) throws CaptureValidationException {
+    public UpdateResult removeRaisedIssue(String loggedUserKey, String loggedUserAccountId, Session session, String issueKey) throws CaptureValidationException {
         ErrorCollection errorCollection = new ErrorCollection();
         CaptureIssue issue = issueService.getCaptureIssue(issueKey);
         boolean isPresent = false;
@@ -400,7 +417,7 @@ public class SessionServiceImpl implements SessionService {
 			}
 			session.setIssuesRaised(issuesRaised.size() > 0 ? issuesRaised : null);
 		};
-		return validateUpdate(loggedUserKey, session);
+		return validateUpdate(loggedUserKey, loggedUserAccountId, session);
     }
 	
 	@Override
@@ -424,24 +441,27 @@ public class SessionServiceImpl implements SessionService {
         } else {
         	updateResult = new UpdateResult(completeResult.getErrorCollection(), completeResult.getSession(), completeResult, false, true);
         }        
-        return new CompleteSessionResult(loggedUserKey, errorCollection, updateResult, millisecondsSpent, timeSpentRaw, issuesToLink, logTimeIssue);
+        return new CompleteSessionResult(loggedUserKey, loggedUserAccountId, errorCollection, updateResult, millisecondsSpent, timeSpentRaw, issuesToLink, logTimeIssue);
 	}
 
 	@Override
-	public SessionExtensionResponse getSessionsForExtension(String user,Boolean onlyActiveSession) {
+	public SessionExtensionResponse getSessionsForExtension(String user, String userAccountId, Boolean onlyActiveSession) {
 		String ctId = CaptureUtil.getCurrentCtId();
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		if(onlyActiveSession){
 			List<SessionDto> privateSessionsDto =  new ArrayList<>();
 			List<SessionDto> sharedSessionsDto =  new ArrayList<>();
 			SessionDto activeSessionDto = null;
-			SessionResult activeSession = getActiveSession(user,null);
+			SessionResult activeSession = getActiveSession(user, userAccountId, null);
 			if(activeSession!=null&&activeSession.getSession() !=null){
 				Session session = activeSession.getSession();
 				CaptureProject project = projectService.getCaptureProject(session.getProjectId());
-				activeSessionDto = createSessionDto(user, session, true, project, true);
-				if(session.getAssignee() != null && session.getAssignee().equals(user)){
+				activeSessionDto = createSessionDto(user, userAccountId, session, true, project, true);
+				if(!isTenantGDPRComplaint && session.getAssignee() != null && session.getAssignee().equals(user)){
 					privateSessionsDto.add(0,activeSessionDto);
-				}else{
+				}else if(isTenantGDPRComplaint && session.getAssigneeAccountId() != null && session.getAssigneeAccountId().equals(userAccountId)){
+					privateSessionsDto.add(0,activeSessionDto);
+				} else{
 					sharedSessionsDto.add(0,activeSessionDto);
 				}
 			}
@@ -449,23 +469,26 @@ public class SessionServiceImpl implements SessionService {
 		}else{
 			List<Session> privateSessionsList = new ArrayList<>(0), sharedSessionsList = new ArrayList<>(0);
 			try {
-				privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user).getContent();
-				sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user).getContent();
+				privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user, userAccountId).getContent();
+				sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user, userAccountId).getContent();
 			} catch(SearchPhaseExecutionException se) {
 				log.warn("Error in get sessions for user as no data in ES ->" + se.getMessage());
 			}
-			List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, privateSessionsList, privateSessionsList.size(), true);
-			List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, sharedSessionsList, sharedSessionsList.size(), true);
+			List<SessionDto> privateSessionsDto = sortAndFetchSessionDto(user, userAccountId, privateSessionsList, privateSessionsList.size(), true);
+			List<SessionDto> sharedSessionsDto = sortAndFetchSessionDto(user, userAccountId, sharedSessionsList, sharedSessionsList.size(), true);
 			SessionDto activeSessionDto = null;
-			SessionResult activeSession = getActiveSession(user,null);
+			SessionResult activeSession = getActiveSession(user, userAccountId, null);
 			if(activeSession!=null&&activeSession.getSession() !=null){
 				Session session = activeSession.getSession();
 				CaptureProject project = projectService.getCaptureProject(session.getProjectId());
-				activeSessionDto = createSessionDto(user, session, true, project, true);
-				if(session.getAssignee() != null && session.getAssignee().equals(user)){
+				activeSessionDto = createSessionDto(user, userAccountId, session, true, project, true);
+				if(!isTenantGDPRComplaint && session.getAssignee() != null && session.getAssignee().equals(user)){
 					privateSessionsDto.removeIf(sessionDto -> sessionDto.getId().equals(session.getId()));
 					privateSessionsDto.add(0,activeSessionDto);
-				}else{
+				} else if(isTenantGDPRComplaint && session.getAssigneeAccountId() != null && session.getAssigneeAccountId().equals(userAccountId)){
+					privateSessionsDto.removeIf(sessionDto -> sessionDto.getId().equals(session.getId()));
+					privateSessionsDto.add(0,activeSessionDto);
+				} else{
 					sharedSessionsDto.removeIf(sessionDto -> sessionDto.getId().equals(session.getId()));
 					sharedSessionsDto.add(0,activeSessionDto);
 				}
@@ -476,14 +499,20 @@ public class SessionServiceImpl implements SessionService {
 
 	@Override
 	public List<CaptureUser> fetchAllAssignees() {
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		String ctId = CaptureUtil.getCurrentCtId();
 		List<CaptureUser> userList = new ArrayList<>();
 		Set<String> users= sessionESRepository.fetchAllAssigneesForCtId(ctId);
-		if(users!=null&&users.size()>0){
-			users.forEach(usekey->{
-				CaptureUser cUser= userService.findUserByKey(usekey);
+		if(users != null && users.size() > 0){
+			users.forEach(user ->{
+				CaptureUser cUser = null;
+				if(isTenantGDPRComplaint) {
+					cUser = userService.findUserByAccountId(user);
+				} else {
+					cUser = userService.findUserByKey(user);
+				}
 				if (cUser != null) {
-					userList.add(cUser);
+					userList.add(isTenantGDPRComplaint ? cUser.cloneWithOutNameAndKey() : cUser);
 				}
 			});
 		}
@@ -492,10 +521,10 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField,
-												boolean sortAscending, int startAt, int size) {
+	public SessionDtoSearchList searchSession(String loggedUser, String loggedUserAccountId, Optional<Long> projectId, Optional<String> assignee, Optional<String> assigneeAccountId,
+			Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size) {
 		String ctId = CaptureUtil.getCurrentCtId();
-		Map<String,Object> sessionMap = sessionESRepository.searchSessions(ctId, projectId, assignee, status, searchTerm, sortField, sortAscending, startAt, size);
+		Map<String,Object> sessionMap = sessionESRepository.searchSessions(ctId, projectId, assignee, assigneeAccountId, status, searchTerm, sortField, sortAscending, startAt, size);
 		List<Session>  sessionsList = new ArrayList<>();
 		Long totalElement = 0l;
 		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
@@ -507,7 +536,7 @@ public class SessionServiceImpl implements SessionService {
 				totalElement  = (Long)entry.getValue();
 			}
 		}
-		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, sessionsList, size, false);
+		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, loggedUserAccountId, sessionsList, size, false);
 		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, totalElement);
 		return sessionDtoSearchList;
 	}
@@ -518,16 +547,16 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull) {
+	public SessionDto constructSessionDto(String loggedInUser, String loggedInUserAccountId, Session session, boolean isSendFull) {
 		CaptureProject project = projectService.getCaptureProject(session.getProjectId());
 		boolean isActive = Status.STARTED.equals(session.getStatus());
-		return createSessionDto(loggedInUser, session, isActive, project, isSendFull);
+		return createSessionDto(loggedInUser, loggedInUserAccountId, session, isActive, project, isSendFull);
 	}
 
 	@Override
-	public Map<String, Object> getCompleteSessionView(String loggedUser, Session session) {
+	public Map<String, Object> getCompleteSessionView(String loggedUser, String loggedUserAccountId, Session session) {
 		Map<String, Object> map = new HashMap<>();
-		map.put(ApplicationConstants.SESSION, constructSessionDto(loggedUser, session, false));
+		map.put(ApplicationConstants.SESSION, constructSessionDto(loggedUser, loggedUserAccountId, session, false));
 		List<IssueRaisedBean> raisedIssues = Objects.nonNull(session.getIssuesRaised()) ? session.getIssuesRaised().stream().collect(Collectors.toList()) : new ArrayList<>(0);
 		map.put(ApplicationConstants.RAISED_ISSUE,
 				issueService.getCaptureIssuesByIssueRaiseBean(raisedIssues));
@@ -542,28 +571,38 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public UpdateResult assignSession(String loggedUserKey, Session session, String assignee) {
+	public UpdateResult assignSession(String loggedUserKey, String loggedUserAccountId, Session session, String assignee, String assigneeAccountId) {
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		if (Status.STARTED.equals(session.getStatus())) { //If the session that is to be assigned is started, then pause it.
 			DeactivateResult pauseResult = validateDeactivateSession(session, session.getAssignee(), session.getAssigneeAccountId()); //Pause for current user
 			if (!pauseResult.isValid()) {
 				return new UpdateResult(pauseResult.getErrorCollection(), pauseResult.getSession());
 			}
-			if(!loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
+			if(isTenantGDPRComplaint && !loggedUserAccountId.equals(assigneeAccountId)) { //Assignee and the assigner should be different then only session should be assigned.
+				session.setAssigneeAccountId(assigneeAccountId);
+			} else if(!isTenantGDPRComplaint && !loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
 				session.setAssignee(assignee);
+				session.setAssigneeAccountId(assigneeAccountId);
 			}
 			pauseResult = new DeactivateResult(pauseResult, session);
-			UpdateResult result = new UpdateResult(validateUpdate(loggedUserKey, session), pauseResult, null, false, true);
+			UpdateResult result = new UpdateResult(validateUpdate(loggedUserKey, loggedUserAccountId, session), pauseResult, null, null, false, true);
+			CompletableFuture.runAsync(() -> {			
+				sessionActivityService.setStatus(isTenantGDPRComplaint, session, new Date(), loggedUserKey, loggedUserAccountId);
+			});
 			return result;
 		}
-		if(!loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
+		if(isTenantGDPRComplaint && !loggedUserAccountId.equals(assigneeAccountId)) { //Assignee and the assigner should be different then only session should be assigned.
+			session.setAssigneeAccountId(assigneeAccountId);
+		}else if(!isTenantGDPRComplaint && !loggedUserKey.equals(assignee)) { //Assignee and the assigner should be different then only session should be assigned.
 			session.setAssignee(assignee);
+			session.setAssigneeAccountId(assigneeAccountId);
 		}
-		UpdateResult result = validateUpdate(loggedUserKey, session);
+		UpdateResult result = validateUpdate(loggedUserKey, loggedUserAccountId, session);
 		return result;
 	}
 
 	@Override
-	public SessionDto getSessionRaisedDuring(String loggedUserKey, String ctId, Long raisedIssueId) {
+	public SessionDto getSessionRaisedDuring(String loggedUserKey, String loggedUserAccountId, String ctId, Long raisedIssueId) {
 		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndIssueId(ctId, raisedIssueId, CaptureUtil.getPageRequest(0, 1000));
 		List<Session> content = sessions != null?sessions.getContent():new ArrayList<>();
 		SessionSearchList result = new SessionSearchList();
@@ -588,17 +627,17 @@ public class SessionServiceImpl implements SessionService {
 		if(Objects.isNull(raisedDuring)) {
 			return null;
 		}
-		return constructSessionDto(loggedUserKey, raisedDuring, false);
+		return constructSessionDto(loggedUserKey, loggedUserAccountId, raisedDuring, false);
 	}
 
 	@Override
-	public SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String ctId, Long projectId, Long relatedIssueId) {
+	public SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String loggedUserAccountId, String ctId, Long projectId, Long relatedIssueId) {
 		Page<Session> sessions = sessionESRepository.findByCtIdAndProjectIdAndRelatedIssueIds(ctId, projectId, relatedIssueId, CaptureUtil.getPageRequest(0, 1000));
 		List<SessionDto> sessionDtoList = Lists.newArrayList();
 		Map<Long, CaptureProject> projectsMap = new HashMap<>();
 		SessionDto sessionDto = null;
 		CaptureProject project = null;
-		String activeSessionId = getActiveSessionIdFromCache(loggedUser, null);
+		String activeSessionId = getActiveSessionIdFromCache(loggedUser, loggedUserAccountId, null);
 		if(Objects.nonNull(sessions.getContent())) {
 			for(Session session : sessions.getContent()) {
 				if(!projectsMap.containsKey(session.getProjectId())) { //To avoid multiple calls to same project.
@@ -608,7 +647,7 @@ public class SessionServiceImpl implements SessionService {
 					project = projectsMap.get(session.getProjectId());
 				}
 				boolean isActive = session.getId().equals(activeSessionId);
-				sessionDto = createSessionDto(loggedUser, session, isActive, project, false);
+				sessionDto = createSessionDto(loggedUser, loggedUserAccountId, session, isActive, project, false);
 				sessionDtoList.add(sessionDto);
 			}
 		}
@@ -634,6 +673,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public List<CaptureIssue> updateSessionWithIssues(String loggedUser, String loggedUserAccountId, String sessionId, List<IssueRaisedBean> issues) {
         List<CaptureIssue> raisedIssues = Lists.newArrayList();
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         Date dateTime = new Date();
         Session session = getSession(sessionId);
         if(session != null){
@@ -643,7 +683,7 @@ public class SessionServiceImpl implements SessionService {
                 for(IssueRaisedBean issueRaisedBean : issues) {
                 	if(!issuesRaisedMap.containsKey(issueRaisedBean.getIssueId())) {
                 		session.getIssuesRaised().add(issueRaisedBean);
-                		sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser, loggedUserAccountId); //Save removed raised issue information as activity.
+                		sessionActivityService.addRaisedIssue(isTenantGDPRComplaint, session, issueRaisedBean.getIssueId(), dateTime, loggedUser, loggedUserAccountId); //Save removed raised issue information as activity.
             			issueRaisedIds.add(issueRaisedBean.getIssueId());
                 	}
                 }
@@ -653,7 +693,7 @@ public class SessionServiceImpl implements SessionService {
                 session.setIssuesRaised(issuesRaised);
                 if(issues != null && issues.size() > 0) {
                 	issues.stream().forEach(issueRaisedBean -> {
-                		sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), dateTime, loggedUser, loggedUserAccountId); //Save removed raised issue information as activity.
+                		sessionActivityService.addRaisedIssue(isTenantGDPRComplaint, session, issueRaisedBean.getIssueId(), dateTime, loggedUser, loggedUserAccountId); //Save removed raised issue information as activity.
                 		issueRaisedIds.add(issueRaisedBean.getIssueId());
                 	});
                 }
@@ -669,7 +709,7 @@ public class SessionServiceImpl implements SessionService {
 					}
                 }
             }
-    		captureContextIssueFieldsService.addRaisedInIssueField(loggedUser, issueRaisedIds, session);
+    		captureContextIssueFieldsService.addRaisedInIssueField(loggedUserAccountId, issueRaisedIds, session);
         }
         return raisedIssues;
     }
@@ -757,8 +797,8 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public SessionResult getActiveSession(String user, String baseUrl) {
-		String activeSessionId = getActiveSessionIdFromCache(user, baseUrl);
+	public SessionResult getActiveSession(String user, String userAccountId, String baseUrl) {
+		String activeSessionId = getActiveSessionIdFromCache(user, userAccountId, baseUrl);
 		if(Objects.isNull(activeSessionId)) {
 			return new SessionResult(new ErrorCollection("No Active Session for user -> " + user), null);
 		}
@@ -773,7 +813,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public UserActiveSession getActiveSession(AcHostModel acHostModel, CaptureUser user){
     	UserActiveSession userActiveSession;
-		String sessionId = getActiveSessionIdByUser(user.getKey(), acHostModel);
+		String sessionId = getActiveSessionIdByUser(user.getKey(), user.getAccountId(), acHostModel);
 		if(StringUtils.isNotEmpty(sessionId)){
 			Session session = getSession(sessionId);
 			userActiveSession = new UserActiveSession(user, session);
@@ -785,17 +825,24 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo, String wikiParsedData) {
+	public UpdateResult updateSessionAdditionalInfo(String loggedUser, String loggedUserAccountId, Session session, String additionalInfo, String wikiParsedData) {
 		session.setAdditionalInfo(additionalInfo);
 		session.setWikiParsedData(wikiParsedData);
-		return validateUpdate(loggedUser, session);
+		return validateUpdate(loggedUser, loggedUserAccountId, session);
 	}
 
 	@Override
 	public Session cloneSession(String loggedUser, String loggedUserAccountId, Session cloneSession, String cloneName) {
 		Session session = new Session();
-		session.setCreator(loggedUser);
-		session.setCreatorAccountId(loggedUserAccountId);
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			session.setCreatorAccountId(loggedUserAccountId);
+			session.setAssigneeAccountId(cloneSession.getAssigneeAccountId());
+		} else {
+			session.setCreator(loggedUser);
+			session.setCreatorAccountId(loggedUserAccountId);
+			session.setAssignee(cloneSession.getAssignee());
+			session.setAssigneeAccountId(cloneSession.getAssigneeAccountId());
+		}
 		session.setCtId(cloneSession.getCtId());
 		session.setStatus(Status.CREATED);
 		session.setName(cloneName);
@@ -806,8 +853,7 @@ public class SessionServiceImpl implements SessionService {
 		session.setRelatedIssueIds(cloneSession.getRelatedIssueIds());
 		session.setProjectId(cloneSession.getProjectId());
 		session.setDefaultTemplateId(cloneSession.getDefaultTemplateId());
-		session.setAssignee(cloneSession.getAssignee());
-		session.setAssigneeAccountId(cloneSession.getAssigneeAccountId());
+		session.setJiraPropIndex(generateJiraPropIndex(session.getCtId()));
 		Session createdSession = sessionRepository.save(session);
 		if(log.isDebugEnabled()) log.debug("Cloned Session -- > Session ID - " + createdSession.getId());
 		sessionESRepository.save(createdSession);
@@ -823,7 +869,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public void addUnRaisedInSession(String userKey, String issueKey, Session session) {
+	public void addUnRaisedInSession(String issueKey, Session session) {
 		captureContextIssueFieldsService.removeRaisedIssue(session,issueKey);
 	}
 
@@ -863,11 +909,11 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	@Override
-	public void updateUserDisplayNamesForSessions(String ctId, String userKey, String userDisplayName) {
+	public void updateUserDisplayNamesForSessions(String ctId, String userKey, String userAccountId, String userDisplayName) {
 		CompletableFuture.runAsync(() -> {
 			int index = 0;
 			int maxResults = 20;
-			Map<String, Object> sessionMap = updateUserDisplayNameIntoES(ctId, userKey, userDisplayName, index, maxResults);
+			Map<String, Object> sessionMap = updateUserDisplayNameIntoES(ctId, userKey, userAccountId, userDisplayName, index, maxResults);
 			index = index  + maxResults;
 			Long total = 0l;
 			for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
@@ -877,7 +923,7 @@ public class SessionServiceImpl implements SessionService {
 				}
 			}
 			while(index < total.intValue()) {
-				updateUserDisplayNameIntoES(ctId, userKey, userDisplayName, index, maxResults);
+				updateUserDisplayNameIntoES(ctId, userKey, userAccountId, userDisplayName, index, maxResults);
 				index = index + maxResults;
 			}
 		});
@@ -886,6 +932,7 @@ public class SessionServiceImpl implements SessionService {
 	@Override
 	public void addRaisedIssueToSession(AcHostModel acHostModel, String sessionId, BasicIssue basicIssue, CaptureUser user) throws HazelcastInstanceNotDefinedException {
 		Date issueCreatedTime = new Date();
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
 		if (!lockService.tryLock(acHostModel.getClientKey(), lockKey, 5)) {
 			log.error("Not able to get the lock on session:{}", sessionId);
@@ -899,7 +946,7 @@ public class SessionServiceImpl implements SessionService {
 			IssueRaisedBean issueRaisedBean = new IssueRaisedBean(basicIssue.getId(), issueCreatedTime);
 			session.addRaisedIssue(issueRaisedBean);
 			session = save(session, user.getDisplayName(), basicIssue.getProject().getName());
-			sessionActivityService.addRaisedIssue(session, issueRaisedBean.getIssueId(), issueCreatedTime, user.getKey(), user.getAccountId());
+			sessionActivityService.addRaisedIssue(isTenantGDPRComplaint, session, issueRaisedBean.getIssueId(), issueCreatedTime, user.getKey(), user.getAccountId());
 			captureContextIssueFieldsService.addSessionContextIntoRaisedIssue(acHostModel, user.getKey(), basicIssue.getId(), session);
 			setIssueTestStatusAndTestSession(acHostModel, basicIssue.getId(), basicIssue.getProject().getId());
 		} catch (Exception exception){
@@ -911,6 +958,7 @@ public class SessionServiceImpl implements SessionService {
 
 	private void updateSessionWithIssueId(Page<Session> sessions, Long issueId, String loggedUser, String userAccountId) throws HazelcastInstanceNotDefinedException {
 		Date dateTime = new Date();
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
 		String sessionId = sessions.getContent().get(0).getId();
@@ -925,7 +973,7 @@ public class SessionServiceImpl implements SessionService {
 				IssueRaisedBean issueRaisedBean = new IssueRaisedBean(issueId, dateTime);
 				sessionLatest.addRaisedIssue(issueRaisedBean);
 				save(sessionLatest, new HashMap<>());
-				sessionActivityService.addRaisedIssue(sessionLatest, issueRaisedBean.getIssueId(), dateTime, loggedUser, userAccountId);
+				sessionActivityService.addRaisedIssue(isTenantGDPRComplaint, sessionLatest, issueRaisedBean.getIssueId(), dateTime, loggedUser, userAccountId);
 			}
 		} catch (Exception ex) {
 			log.error("Error in updateSessionWithIssueId() -> ", ex);
@@ -943,13 +991,18 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private void addParticipantToSession(String user, String userAccountId, Session session) {
 		Date currteDate = new Date();
-		Participant newParticipant = new ParticipantBuilder(user).setUserAccountId(userAccountId).setTimeJoined(currteDate).build();
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+		Participant newParticipant = null;
+		if(isTenantGDPRComplaint) {
+			newParticipant = new ParticipantBuilder(user).setUser(null).setUserAccountId(userAccountId).setTimeJoined(currteDate).build();
+		} else {
+			newParticipant = new ParticipantBuilder(user).setUserAccountId(userAccountId).setTimeJoined(currteDate).build();
+		}
 		boolean currentlyParticipating = false;
         if(!Objects.isNull(session.getParticipants())) {
         	for(Participant p : session.getParticipants()) {
-        		if(p.getUser().equals(user)) {
+        		if((isTenantGDPRComplaint && userAccountId.equals(p.getUserAccountId())) || (!isTenantGDPRComplaint && p.getUser().equals(user))) {
         			currentlyParticipating = true;
-        			p.setUserAccountId(userAccountId);
         			p.setTimeLeft(null);
         			p.setTimeJoined(new Date());
         			newParticipant = p;
@@ -966,7 +1019,7 @@ public class SessionServiceImpl implements SessionService {
         }        
         //Store participant info in sessionActivity
 		if(Objects.nonNull(newParticipant))
-			sessionActivityService.addParticipantJoined(session, currteDate, newParticipant,user,userAccountId);
+			sessionActivityService.addParticipantJoined(isTenantGDPRComplaint, session, currteDate, newParticipant,user,userAccountId);
     }
 	
 	/**
@@ -1013,7 +1066,7 @@ public class SessionServiceImpl implements SessionService {
 	 */
 	private void saveUpdatedSession(UpdateResult result) {
         if (result.isActivate()) { // Update depending on flags
-            setActiveSessionIdToCache(result.getUser(), result.getSession().getId());
+            setActiveSessionIdToCache(result.getUser(), result.getUserAccountId(), result.getSession().getId());
         }
         save(result.getSession(), result.getLeavers());
     }
@@ -1038,10 +1091,11 @@ public class SessionServiceImpl implements SessionService {
      */
     @Deprecated
 	private void save(Session session, Map<String, String> leavers) {
+    	boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
     	for (Map.Entry<String, String> leaver : leavers.entrySet()) {
-            clearActiveSessionFromCache(leaver.getKey());
+    		clearActiveSessionFromCache(leaver.getKey(), leaver.getValue());
             CompletableFuture.runAsync(() -> {
-            	sessionActivityService.addParticipantLeft(session, new Date(), leaver.getKey(), leaver.getValue());
+            	sessionActivityService.addParticipantLeft(isTenantGDPRComplaint, session, new Date(), leaver.getKey(), leaver.getValue());
             });
         }
 		Session savedSession = sessionRepository.save(session);
@@ -1079,28 +1133,37 @@ public class SessionServiceImpl implements SessionService {
 	 * @return -- Returns the DeactivateResult object which holds the updated session object and any validation errors.
 	 */
 	private DeactivateResult validateDeactivateSession(Session session, String user, String userAccountId, Status status, Duration timeLogged) {
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         if (!Objects.isNull(session)) {
-            if (user.equals(session.getAssignee())) { // Pause if it is assigned to same user
+            if ((isTenantGDPRComplaint && userAccountId.equals(session.getAssigneeAccountId())) || (!isTenantGDPRComplaint && user.equals(session.getAssignee()))) { // Pause if it is assigned to same user
                 Map<String, String> leavingUsers = new HashMap<>();
                 if(!Objects.isNull(session.getParticipants())) {
                 	for (Participant p : Iterables.filter(session.getParticipants(), new ActiveParticipantPredicate())) {
-                		leavingUsers.put(p.getUser(), p.getUserAccountId());
+                		if(isTenantGDPRComplaint) {
+                			leavingUsers.put(p.getUserAccountId(), p.getUserAccountId());
+                		} else {
+                			leavingUsers.put(p.getUser(), p.getUserAccountId());
+                		}
                     }
                 }
-                Session activeUserSession = getActiveSession(user, null).getSession();
+                Session activeUserSession = getActiveSession(user, userAccountId, null).getSession();
                 if (session.getId().equals(!Objects.isNull(activeUserSession) ? activeUserSession.getId() : null)) { // If this is my active session then I want to leave it
-                    leavingUsers.put(user, userAccountId);
+                    if(isTenantGDPRComplaint) {
+                    	leavingUsers.put(userAccountId, userAccountId);
+                    } else {
+                    	leavingUsers.put(user, userAccountId);
+                    }
                 }
                 session.setStatus(status);
                 session.setTimeLogged(timeLogged);
-                return new DeactivateResult(validateUpdate(user, session), leavingUsers);
-            } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user))) { // Just leave if it isn't
+                return new DeactivateResult(validateUpdate(user, userAccountId, session), leavingUsers);
+            } else if (!Objects.isNull(session.getParticipants()) && Iterables.any(session.getParticipants(), new UserIsParticipantPredicate(user, userAccountId))) { // Just leave if it isn't
                 CompletableFuture.runAsync(() -> {
-                	sessionActivityService.addParticipantLeft(session, new Date(), user, userAccountId);
+                	sessionActivityService.addParticipantLeft(isTenantGDPRComplaint, session, new Date(), user, userAccountId);
                 });
             }
         }
-        return new DeactivateResult(validateUpdate(user, session), user, userAccountId);
+        return new DeactivateResult(validateUpdate(user, userAccountId, session), user, userAccountId);
     }
 	
 	/**
@@ -1121,9 +1184,12 @@ public class SessionServiceImpl implements SessionService {
 	 * 
 	 * @param user -- Logged in user key.
 	 */
-	private void clearActiveSessionFromCache(String user) {
+	private void clearActiveSessionFromCache(String user, String userAccountId) {
 		AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
 		String cacheKey = ACTIVE_USER_SESSION_ID_KEY + user;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			cacheKey = ACTIVE_USER_SESSION_ID_KEY + userAccountId;
+		}
 		if(!iTenantAwareCache.delete(acHostModel, cacheKey)) {
 			throw new CaptureRuntimeException("Not able to delete the cache for user key -> " + cacheKey);
 		} 
@@ -1135,9 +1201,12 @@ public class SessionServiceImpl implements SessionService {
 	 * @param user -- Logged in user key.
 	 * @param sessionId -- Session id to be saved into cache for the logged in user.
 	 */
-	private void setActiveSessionIdToCache(String user, String sessionId) {
+	private void setActiveSessionIdToCache(String user, String userAccountId, String sessionId) {
 		AcHostModel acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
 		String cacheKey = ACTIVE_USER_SESSION_ID_KEY + user;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			cacheKey = ACTIVE_USER_SESSION_ID_KEY + userAccountId;
+		}
 		iTenantAwareCache.set(acHostModel, cacheKey, sessionId);
 	}
 	
@@ -1148,16 +1217,25 @@ public class SessionServiceImpl implements SessionService {
 	 * @return -- Returns the fetched session id from the cache for the loggedin user.
 	 */
 	@Override
-	public String getActiveSessionIdByUser(String userKey, AcHostModel acHostModel) {
+	public String getActiveSessionIdByUser(String userKey, String userAccountId, AcHostModel acHostModel) {
 		try {
+			boolean isTenantGDPRComplaint = acHostModel.getMigrated() == GDPRMigrationStatus.GDPR;
 			String cacheKey = ACTIVE_USER_SESSION_ID_KEY + userKey;
+			if(isTenantGDPRComplaint) {
+				cacheKey = ACTIVE_USER_SESSION_ID_KEY + userAccountId;
+			}
 			String issueId = iTenantAwareCache.getOrElse(acHostModel, cacheKey, new Callable<String>() {
 				public String call() throws Exception {
-					List<Session> activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(acHostModel.getCtId(), Status.STARTED.name(), userKey);
+					List<Session> activeSessions = null;
+					if(isTenantGDPRComplaint) {
+						activeSessions = sessionESRepository.findByCtIdAndStatusAndAssigneeAccountId(acHostModel.getCtId(), Status.STARTED.name(), userAccountId);
+					} else {
+						activeSessions = sessionESRepository.findByCtIdAndStatusAndAssignee(acHostModel.getCtId(), Status.STARTED.name(), userKey);
+					}
 					if(Objects.nonNull(activeSessions) && activeSessions.size() > 0) {
                         return activeSessions.get(0).getId();
                     } else{
-					    return findActiveSessionByParticipateUser(acHostModel, userKey);
+					    return findActiveSessionByParticipateUser(acHostModel, userKey, userAccountId);
                     }
 				}				
 			}, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION);
@@ -1169,16 +1247,25 @@ public class SessionServiceImpl implements SessionService {
 		return null;
 	}
 
-    private String findActiveSessionByParticipateUser(AcHostModel acHostModel, String userKey){
-        Page<Session> userParticipatedSessionPage = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(acHostModel.getCtId(), Session.Status.STARTED.toString(), userKey, CaptureUtil.getPageRequest(0, 1000));
-        for(Session session:userParticipatedSessionPage.getContent()){
-            for (Participant participant:session.getParticipants()){
-                if(org.apache.commons.lang3.StringUtils.equals(participant.getUser(), userKey) && participant.getTimeLeft() == null){
-                    return session.getId();
+    private String findActiveSessionByParticipateUser(AcHostModel acHostModel, String userKey, String userAccountId) {
+    	boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+    	Page<Session> userParticipatedSessionPage = null;
+    	if(isTenantGDPRComplaint) {
+    		userParticipatedSessionPage = sessionESRepository.findByCtIdAndStatusAndParticipantsUserAccountId(acHostModel.getCtId(), Session.Status.STARTED.toString(), userAccountId, CaptureUtil.getPageRequest(0, 1000));
+    	} else {
+    		userParticipatedSessionPage = sessionESRepository.findByCtIdAndStatusAndParticipantsUser(acHostModel.getCtId(), Session.Status.STARTED.toString(), userKey, CaptureUtil.getPageRequest(0, 1000));
+    	}    	
+        if(userParticipatedSessionPage != null) {
+        	for(Session session : userParticipatedSessionPage.getContent()){
+                for (Participant participant : session.getParticipants()){
+                	if(isTenantGDPRComplaint && org.apache.commons.lang3.StringUtils.equals(participant.getUserAccountId(), userAccountId) && participant.getTimeLeft() == null) {
+                        return session.getId();
+                    } else if(!isTenantGDPRComplaint && org.apache.commons.lang3.StringUtils.equals(participant.getUser(), userKey) && participant.getTimeLeft() == null) {
+                        return session.getId();
+                    }
                 }
             }
         }
-
         return null;
     }
 	
@@ -1189,14 +1276,14 @@ public class SessionServiceImpl implements SessionService {
 	 * @param baseUrl -- User base url.
 	 * @return -- Returns the fetched session id from the cache for the user.
 	 */
-	private String getActiveSessionIdFromCache(String user, String baseUrl) {
+	private String getActiveSessionIdFromCache(String user, String userAccountId, String baseUrl) {
 		AcHostModel acHostModel = null;
 		if(Objects.nonNull(baseUrl)) {
 			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository, baseUrl);
 		} else {
 			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository);
 		}
-		return acHostModel == null ? null : getActiveSessionIdByUser(user, acHostModel);
+		return acHostModel == null ? null : getActiveSessionIdByUser(user, userAccountId, acHostModel);
 	}
 	
 	/**
@@ -1206,26 +1293,29 @@ public class SessionServiceImpl implements SessionService {
 	 * @param newSession -- Session object to be validated and updated.
 	 * @return -- Returns the UpdateResult object which holds the updated session object and any validation errors.
 	 */
-	private UpdateResult validateUpdate(String updater, Session newSession) {
+	private UpdateResult validateUpdate(String updater, String updaterAccountId, Session newSession) {
         Session loadedSession = null;
         ErrorCollection errorCollection = new ErrorCollection();
-        if (Objects.isNull(updater) || Objects.isNull(newSession)) {
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+        if (Objects.isNull(newSession) || (isTenantGDPRComplaint && Objects.isNull(updaterAccountId)) || (!isTenantGDPRComplaint && Objects.isNull(updater))) {
             errorCollection.addError("Session and updater are both empty");
         } else {
             loadedSession = sessionRepository.findOne(newSession.getId()); // Load in the session to check that it still exists
             if (Objects.isNull(loadedSession)) {
                 errorCollection.addError(captureI18NMessageSource.getMessage("session.invalid.id", new Object[]{newSession.getId()}));
             } else {
-                if (!Objects.isNull(newSession.getAssignee()) && !newSession.getAssignee().equals(loadedSession.getAssignee()) && Status.STARTED.equals(newSession.getStatus())) { // If the assignee has changed, then the new session should be paused
+                if (isTenantGDPRComplaint && !Objects.isNull(newSession.getAssigneeAccountId()) && !newSession.getAssigneeAccountId().equals(loadedSession.getAssigneeAccountId()) && Status.STARTED.equals(newSession.getStatus()) ||
+                		(!isTenantGDPRComplaint && !Objects.isNull(newSession.getAssignee()) && !newSession.getAssignee().equals(loadedSession.getAssignee()) && Status.STARTED.equals(newSession.getStatus()))) { // If the assignee has changed, then the new session should be paused
                     errorCollection.addError(captureI18NMessageSource.getMessage("session.assigning.active.session.violation"));
                 }
                 if (Status.COMPLETED.equals(loadedSession.getStatus()) && !Status.COMPLETED.equals(newSession.getStatus())) { // Status can't go backwards from COMPLETED
                     errorCollection.addError(captureI18NMessageSource.getMessage("session.reopen.completed.violation"));
                 }
-                if (!newSession.getCreator().equals(loadedSession.getCreator())) { // Check that certain fields haven't changed - creator + time created (paranoid check)
+                if ((isTenantGDPRComplaint && !newSession.getCreatorAccountId().equals(loadedSession.getCreatorAccountId())) || 
+                		(!isTenantGDPRComplaint && !newSession.getCreator().equals(loadedSession.getCreator()))) { // Check that certain fields haven't changed - creator + time created (paranoid check)
                     errorCollection.addError(captureI18NMessageSource.getMessage("session.change.creator.violation"));
                 }
-				if (newSession.getName() !=null&& newSession.getName().length() > CaptureConstants.SESSION_NAME_LENGTH_LIMIT) {
+				if (newSession.getName() != null&& newSession.getName().length() > CaptureConstants.SESSION_NAME_LENGTH_LIMIT) {
 					errorCollection.addError(captureI18NMessageSource.getMessage("session.name.exceed.limit", new Integer[]{newSession.getName().length(),
 							CaptureConstants.SESSION_NAME_LENGTH_LIMIT}));
 				}
@@ -1257,7 +1347,11 @@ public class SessionServiceImpl implements SessionService {
         if (!newSession.isShared()) { // If we aren't shared, we wanna kick out all the current users
         	if(!Objects.isNull(newSession.getParticipants())) {
             	for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-            		leavers.put(p.getUser(), p.getUserAccountId());
+            		if(CaptureUtil.isTenantGDPRComplaint()) {
+            			leavers.put(p.getUserAccountId(), p.getUserAccountId());
+            		} else {
+            			leavers.put(p.getUser(), p.getUserAccountId());
+            		}
                 }
             }
         }
@@ -1326,6 +1420,7 @@ public class SessionServiceImpl implements SessionService {
         private final boolean isActivate;
         private final boolean isDeactivate;
         private final String relatedUser;
+        private final String relatedUserAccountId;
         private Map<String, String> leavers;
         private List<Object> events;
 
@@ -1333,6 +1428,7 @@ public class SessionServiceImpl implements SessionService {
             super(errorCollection, session);
             this.deactivateResult = null;
             this.relatedUser = null;
+            this.relatedUserAccountId = null;
             this.isActivate = false;
             this.isDeactivate = false;
             this.leavers = new HashMap<>();
@@ -1343,6 +1439,7 @@ public class SessionServiceImpl implements SessionService {
             super(errorCollection, session);
             this.deactivateResult = null;
             this.relatedUser = null;
+            this.relatedUserAccountId = null;
             this.isActivate = false;
             this.isDeactivate = false;
             this.leavers = leavers;
@@ -1353,16 +1450,18 @@ public class SessionServiceImpl implements SessionService {
             super(errorCollection, session);
             this.deactivateResult = leaveResult;
             this.relatedUser = null;
+            this.relatedUserAccountId = null;
             this.isActivate = isActivate;
             this.isDeactivate = isDeactivate;
             this.events = new ArrayList<>();
             this.leavers = new HashMap<>();
         }
 
-        public UpdateResult(UpdateResult result, DeactivateResult leaveResult, String relatedUser, boolean isActivate, boolean isDeactivate) {
+        public UpdateResult(UpdateResult result, DeactivateResult leaveResult, String relatedUser, String relatedUserAccountId, boolean isActivate, boolean isDeactivate) {
             super(result.getErrorCollection(), result.getSession());
             this.deactivateResult = leaveResult;
             this.relatedUser = relatedUser;
+            this.relatedUserAccountId = relatedUserAccountId;
             this.isActivate = isActivate;
             this.isDeactivate = isDeactivate;
             this.events = result.getEvents();
@@ -1388,6 +1487,10 @@ public class SessionServiceImpl implements SessionService {
         String getUser() {
             return relatedUser;
         }
+        
+        String getUserAccountId() {
+            return relatedUserAccountId;
+        }
 
         void addEvent(Object event) {
             events.add(event);
@@ -1404,6 +1507,7 @@ public class SessionServiceImpl implements SessionService {
 	
 	public class CompleteSessionResult {
         private final String user;
+        private final String userAccountId;
         private final ErrorCollection errorCollection;
         private final UpdateResult sessionUpdateResult;
         private final Long millisecondsDuration;
@@ -1411,9 +1515,10 @@ public class SessionServiceImpl implements SessionService {
         private final List<CompleteSessionIssueLink> issuesToLink;
         private final Issue logTimeIssue;
 
-        public CompleteSessionResult(String user, ErrorCollection errorCollection, UpdateResult sessionUpdateResult, Long millisecondsDuration,
+        public CompleteSessionResult(String user, String userAccountId, ErrorCollection errorCollection, UpdateResult sessionUpdateResult, Long millisecondsDuration,
                                      String timeSpent, List<CompleteSessionIssueLink> issuesToLink, Issue logTimeIssue) {
             this.user = user;
+            this.userAccountId = userAccountId;
             this.errorCollection = errorCollection;
             this.sessionUpdateResult = sessionUpdateResult;
             this.millisecondsDuration = millisecondsDuration;
@@ -1448,6 +1553,10 @@ public class SessionServiceImpl implements SessionService {
 
         public String getUser() {
             return user;
+        }
+        
+        public String getUserAccountId() {
+            return userAccountId;
         }
 
         public Issue getLogTimeIssue() {
@@ -1499,32 +1608,32 @@ public class SessionServiceImpl implements SessionService {
 	 * @param size -- Number of elements to fetch.
 	 * @return -- Returns the list of light session object based on startAt and size parameters.
 	 */
-	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, List<Session> sessionsList, int size, boolean isSessionFullLoad) {
+	private List<SessionDto> sortAndFetchSessionDto(String loggedInUser, String loggedInUserAccountId, List<Session> sessionsList, int size, boolean isSessionFullLoad) {
 		List<SessionDto> sessionDtoList = new ArrayList<>(size);
 		SessionDto sessionDto = null;
-		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, null);
+		String activeSessionId = getActiveSessionIdFromCache(loggedInUser, loggedInUserAccountId, null);
 		for(Session session : sessionsList) {
 			CaptureProject project = projectService.getCaptureProject(session.getProjectId()); //Since we have project id only, need to fetch project information.
 			boolean isActive = session.getId().equals(activeSessionId);
-			sessionDto = createSessionDto(loggedInUser, session, isActive, project, isSessionFullLoad);
+			sessionDto = createSessionDto(loggedInUser, loggedInUserAccountId, session, isActive, project, isSessionFullLoad);
 			sessionDtoList.add(sessionDto);
 
 		}
 		return sessionDtoList;
 	}
 	
-	private SessionDisplayDto getDisplayHelper(String user, Session session, CaptureProject project) {
-        boolean isSessionEditable = permissionService.canEditSession(user, session);
-        boolean isStatusEditable = permissionService.canEditSessionStatus(user, session);
-        boolean canCreateNote = permissionService.canCreateNote(user, session);
-        boolean canJoin = permissionService.canJoinSession(user, session);
+	private SessionDisplayDto getDisplayHelper(String user, String userAccountId, Session session, CaptureProject project) {
+        boolean isSessionEditable = permissionService.canEditSession(user, userAccountId, session);
+        boolean isStatusEditable = permissionService.canEditSessionStatus(user, userAccountId, session);
+        boolean canCreateNote = permissionService.canCreateNote(user, userAccountId, session);
+        boolean canJoin = permissionService.canJoinSession(user, userAccountId, session);
         Collection<Participant> participant = session.getParticipants();
-        boolean isJoined = Objects.nonNull(participant) ? Iterables.any(participant, new UserIsParticipantPredicate(user)) : false;
+        boolean isJoined = Objects.nonNull(participant) ? Iterables.any(participant, new UserIsParticipantPredicate(user, userAccountId)) : false;
         boolean hasActive = Objects.nonNull(participant) ? Iterables.any(participant, new ActiveParticipantPredicate()) : false;
-        boolean canCreateSession = permissionService.canCreateSession(user, project);
-        boolean isAssignee = session.getAssignee().equals(user);
+        boolean canCreateSession = permissionService.canCreateSession(user, userAccountId, project);
+        boolean isAssignee = ((CaptureUtil.isTenantGDPRComplaint() && session.getAssigneeAccountId() != null && session.getAssigneeAccountId().equals(userAccountId)) || (!CaptureUtil.isTenantGDPRComplaint() && session.getAssignee() != null && session.getAssignee().equals(user)));
         boolean showInvite = isAssignee && session.isShared();
-        boolean canAssign = permissionService.canAssignSession(user, project);
+        boolean canAssign = permissionService.canAssignSession(user, userAccountId, project);
         boolean isComplete = false;
         boolean isCreated = false;
         boolean isStarted = false;
@@ -1539,11 +1648,12 @@ public class SessionServiceImpl implements SessionService {
                 isStarted, canCreateSession, isAssignee, isComplete, isCreated, showInvite, canAssign);
     }
 	
-	private SessionDto createSessionDto(String loggedUser, Session session, boolean isActive, CaptureProject project, boolean isSendFull) {
-		SessionDisplayDto permissions = getDisplayHelper(loggedUser, session, project);
+	private SessionDto createSessionDto(String loggedUser, String loggedUserAccountId, Session session, boolean isActive, CaptureProject project, boolean isSendFull) {
+		SessionDisplayDto permissions = getDisplayHelper(loggedUser, loggedUserAccountId, session, project);
 		Integer activeParticipantCount = 0;
 		CaptureUser user = null;
-		String userAvatarSrc = null, userLargeAvatarSrc = null;
+		String userAvatarSrc = null, userLargeAvatarSrc = null, displayName = null;
+		boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 		Map<String, CaptureUser> usersMap = new HashMap<>();
 		if (Status.STARTED.equals(session.getStatus()) || Status.COMPLETED.equals(session.getStatus())) {
             activeParticipantCount++; // If started then add the assignee
@@ -1552,16 +1662,27 @@ public class SessionServiceImpl implements SessionService {
 		List<ParticipantDto> activeParticipants = Lists.newArrayList();
 		if(Objects.nonNull(session.getParticipants())) {
 			for(Participant p : session.getParticipants()) {
-				if(!usersMap.containsKey(p.getUser())) {
-					user = userService.findUserByKey(session.getAssignee());
+				if((isTenantGDPRComplaint && !usersMap.containsKey(p.getUserAccountId())) || (!isTenantGDPRComplaint && !usersMap.containsKey(p.getUser()))) {
+					if(isTenantGDPRComplaint) {
+						user = userService.findUserByAccountId(p.getUserAccountId());
+						usersMap.put(p.getUserAccountId(), user);
+					} else {
+						user = userService.findUserByKey(p.getUser());
+						usersMap.put(p.getUser(), user);
+					}
 				} else {
-					user = usersMap.get(p.getUser());
+					if(isTenantGDPRComplaint) { 
+						user = usersMap.get(p.getUserAccountId());
+					} else {
+						user = usersMap.get(p.getUser());
+					}
 				}
 				if(Objects.nonNull(user)) {
 					userAvatarSrc = getDecodedUrl(user, "24x24");
 					userLargeAvatarSrc = getDecodedUrl(user, "48x48");
+					displayName = user.getDisplayName();
 				}
-				activeParticipants.add(new ParticipantDto(p, userAvatarSrc, userLargeAvatarSrc));
+				activeParticipants.add(new ParticipantDto(p, displayName, userAvatarSrc, userLargeAvatarSrc));
 				activeParticipantCount++;
 			}
 		}
@@ -1577,10 +1698,16 @@ public class SessionServiceImpl implements SessionService {
 		session.setWikiParsedData(wikiParsedData);
 		LightSession lightSession = new LightSession(session.getId(), session.getName(), session.getCreator(), session.getCreatorAccountId(), session.getAssignee(), session.getAssigneeAccountId(), session.getStatus(), session.isShared(),
 				project, session.getDefaultTemplateId(), additionalInfo , wikiParsedData, session.getTimeCreated(), null, session.getJiraPropIndex());
-		if(!usersMap.containsKey(session.getAssignee())) {
+		if(isTenantGDPRComplaint && !usersMap.containsKey(session.getAssigneeAccountId())) {
+			user = userService.findUserByAccountId(session.getAssigneeAccountId());
+		} else if(!isTenantGDPRComplaint && !usersMap.containsKey(session.getAssignee())) {
 			user = userService.findUserByKey(session.getAssignee());
 		} else {
-			user = usersMap.get(session.getAssignee());
+			if(isTenantGDPRComplaint) {
+				user = usersMap.get(session.getAssigneeAccountId());
+			} else {
+				user = usersMap.get(session.getAssignee());
+			}
 		}
 		if(Objects.nonNull(user)) {
 			userAvatarSrc = getDecodedUrl(user, "24x24");
@@ -1682,7 +1809,7 @@ public class SessionServiceImpl implements SessionService {
 	}
 	
 	private Map<String, Object> updateProjectNameIntoES(String ctId, Long projectId, String projectName, int index, int maxResults) {
-		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctId, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(),
+		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctId, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
 				Optional.empty(), true, index, maxResults);
 		List<Session> sessionList = new ArrayList<>();
 		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
@@ -1729,9 +1856,13 @@ public class SessionServiceImpl implements SessionService {
 		for(Session session : pageResponse.getContent()) {
 			project = projectService.getCaptureProjectViaAddon(acHostModel, String.valueOf(session.getProjectId()));
 			if(project != null){
-				user = userService.findUserByKey(acHostModel, session.getAssignee());
+				if(CaptureUtil.isTenantGDPRComplaint()) {
+					user = userService.findUserByAccountId(acHostModel, session.getAssigneeAccountId());
+				} else {
+					user = userService.findUserByKey(acHostModel, session.getAssignee());
+				}
 				session.setProjectName(project.getName());
-				session.setUserDisplayName(user != null ? user.getDisplayName() : session.getAssignee());
+				session.setUserDisplayName(user != null ? user.getDisplayName() : "");
 				session.setStatusOrder(session.getStatus().getOrder());
 				sessionESRepository.save(session);
 			}
@@ -1739,9 +1870,15 @@ public class SessionServiceImpl implements SessionService {
 		return pageResponse;
 	}
 	
-	private Map<String, Object> updateUserDisplayNameIntoES(String ctid, String userKey, String userDisplayName, int index, int maxResults) {
-		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(),
-				Optional.empty(), true, index, maxResults);
+	private Map<String, Object> updateUserDisplayNameIntoES(String ctid, String userKey, String userAccountId, String userDisplayName, int index, int maxResults) {
+		Map<String, Object> sessionMap = null;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.empty(), Optional.of(userAccountId), Optional.empty(), Optional.empty(),
+					Optional.empty(), true, index, maxResults);
+		} else {
+			sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(), Optional.empty(),
+					Optional.empty(), true, index, maxResults);
+		}
 		List<Session> sessionList = new ArrayList<>();
 		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
 			String key = entry.getKey();

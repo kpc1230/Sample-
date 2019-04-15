@@ -25,6 +25,7 @@ import com.thed.zephyr.capture.service.jira.CaptureContextIssueFieldsService;
 import com.thed.zephyr.capture.service.jira.IssueLinkTypeService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.MetadataService;
+import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.service.jira.http.CJiraRestClientFactory;
 import com.thed.zephyr.capture.service.jira.issue.IssueCreateRequest;
 import com.thed.zephyr.capture.service.jira.issue.IssueFields;
@@ -51,6 +52,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -94,6 +96,8 @@ public class IssueServiceImpl implements IssueService {
     private CJiraRestClientFactory cJiraRestClientFactory;
     @Autowired
     private MetadataService metadataService;
+    @Autowired
+    private UserService userService;
 
     @Override
     public Issue getIssueObject(String issueIdOrKey) {
@@ -111,6 +115,7 @@ public class IssueServiceImpl implements IssueService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         AcHostModel acHostModel = (AcHostModel) host.getHost();
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         CaptureIssue captureIssue = null;
         try {
             captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKey(issueIdOrKey), new Callable<CaptureIssue>() {
@@ -134,11 +139,21 @@ public class IssueServiceImpl implements IssueService {
                         	}
                     	}
                     }
-                    return new CaptureIssue(issue.getSelf(),
-                            issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution, null, parentId, parentKey);
+                    if(isTenantGDPRComplaint) {
+                    	return new CaptureIssue(issue.getSelf(),
+                                issue.getKey(), issue.getId(),
+                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), null,
+                                CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution, null, parentId, parentKey);
+                    } else {
+                    	return new CaptureIssue(issue.getSelf(),
+                                issue.getKey(), issue.getId(),
+                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(),
+                                CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution, null, parentId, parentKey);
+                    }
+                    
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.ISSUE_CACHE_EXPIRATION_DYNAMIC_PROP, ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
+            log.debug("ISSUE: --> {}", captureIssue.getSummary());
         } catch(RestClientException restClientException){
             if (restClientException.getStatusCode().get().equals(404)){
                 log.warn("Issue wasn't found in Jira issueId:{} ctId:{}", issueIdOrKey, acHostModel.getCtId());
@@ -148,7 +163,6 @@ public class IssueServiceImpl implements IssueService {
         } catch (Exception exception) {
             log.error("Exception while getting the issue from JIRA, the null value will be returned", exception);
         }
-        log.debug("ISSUE: --> {}", captureIssue.getSummary());
         return captureIssue;
     }
 
@@ -187,6 +201,7 @@ public class IssueServiceImpl implements IssueService {
     	List<CaptureIssue> captureIssues = new ArrayList<>();
     	Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         SearchResult searchResultPromise =
                 jiraRestClient.getSearchClient().searchJql(jql).claim();
         searchResultPromise.getIssues()
@@ -208,9 +223,17 @@ public class IssueServiceImpl implements IssueService {
                         	}
                     	}
                     }
-                    captureIssues.add(new CaptureIssue(issue.getSelf(),
-                            issue.getKey(), issue.getId(),
-                            CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution,null, parentId, parentKey));
+                    if(isTenantGDPRComplaint) {
+                    	captureIssues.add(new CaptureIssue(issue.getSelf(),
+                                issue.getKey(), issue.getId(),
+                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(),
+                                null, CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution,null, parentId, parentKey));
+                    } else {
+                    	captureIssues.add(new CaptureIssue(issue.getSelf(),
+                                issue.getKey(), issue.getId(),
+                                CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(),
+                                issue.getReporter().getName(), CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution,null, parentId, parentKey));
+                    }                    
                 });
         return captureIssues;
     }
@@ -220,8 +243,8 @@ public class IssueServiceImpl implements IssueService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         String ctdId = CaptureUtil.getCurrentCtId();
-        SessionDto raisedDuringSessionDto = sessionService.getSessionRaisedDuring(host.getUserKey().get(), ctdId, issue.getId());
-        SessionDtoSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(host.getUserKey().get(), ctdId, issue.getProjectId(), issue.getId());
+        SessionDto raisedDuringSessionDto = sessionService.getSessionRaisedDuring(host.getUserKey().orElse(null), host.getUserAccountId().get(), ctdId, issue.getId());
+        SessionDtoSearchList sessionByRelatedIssueId = sessionService.getSessionByRelatedIssueId(host.getUserKey().orElse(null), host.getUserAccountId().get(), ctdId, issue.getProjectId(), issue.getId());
         TestSectionResponse testSectionResponse = new TestSectionResponse();
         testSectionResponse.setSessions(sessionByRelatedIssueId.getContent());
         testSectionResponse.setRaisedDuring(raisedDuringSessionDto);
@@ -302,7 +325,7 @@ public class IssueServiceImpl implements IssueService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         IssueFields issueFields = createRequest.fields();
-        IssueInput issueInput = createIssueInput(issueFields, request);
+        IssueInput issueInput = createIssueInput(host, issueFields, request);
         BasicIssue basicIssue = null;
         try {
             basicIssue = postJiraRestClient.getIssueClient().createIssue(issueInput).claim();
@@ -334,7 +357,12 @@ public class IssueServiceImpl implements IssueService {
             	}
         	}
         }
-        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(), issue.getReporter().getName(), resolution ,null, parentId, parentKey);
+        CaptureIssue captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(),
+        		null, CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution ,null, parentId, parentKey);
+        if(!CaptureUtil.isTenantGDPRComplaint()) {
+        	captureIssue = new CaptureIssue(basicIssue.getSelf(), basicIssue.getKey(), basicIssue.getId(), CaptureUtil.getFullIconUrl(issue, host), issue.getSummary(), issue.getProject().getId(), issue.getProject().getKey(),
+            		issue.getReporter().getName(), CaptureUtil.getAccountIdFromQueryString(issue.getReporter().getSelf().getQuery()), resolution ,null, parentId, parentKey);
+        }
         if (StringUtils.isNotBlank(testSessionId)) {
             Session session = sessionService.getSession(testSessionId);
             if (session != null) {
@@ -412,9 +440,32 @@ public class IssueServiceImpl implements IssueService {
 
     @Override
     public void addComment(String issueKey, String comment) throws JSONException {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+        AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
+        String userAccountId = hostUser.getUserAccountId().get();
+        AtlassianHostUser.AtlassianHostUserBuilder atlassianHostUserBuilder = AtlassianHostUser.builder(hostUser.getHost());
+        if(null != userAccountId && StringUtils.isNotEmpty(userAccountId)){
+            hostUser = atlassianHostUserBuilder.withUserAccountId(userAccountId).build();
+        }
         Issue issue = getIssueObject(issueKey);
-        JSONObject jsonObject = new JSONObject(comment);
-        postJiraRestClient.getIssueClient().addComment(issue.getCommentsUri(),Comment.valueOf(jsonObject.get("comment").toString())).claim();
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            URI addCommentUrl = new URI(host.getHost().getBaseUrl()+JiraConstants.REST_API_COMMENT
+            .replace("{issueId}",String.valueOf(issue.getId())));
+            String commentStr = new ObjectMapper().readTree(comment).get("comment").asText();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            JsonNode jsonNode = mapper.convertValue(Comment.valueOf(commentStr), JsonNode.class);
+            HttpEntity<String> commentEntity = new HttpEntity<String>(jsonNode.toString(), headers);
+            JsonNode responseNode = atlassianHostRestClients
+                    .authenticatedAs(hostUser)
+                    .postForObject(addCommentUrl, commentEntity, JsonNode.class);
+            log.debug("Response for addComment from JIRA {} , {}", issueKey, responseNode);
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Error during adding comment to issue {}", issueKey);
+        }
     }
 
     @Override
@@ -480,7 +531,7 @@ public class IssueServiceImpl implements IssueService {
         AcHostModel acHostModel = (AcHostModel) host.getHost();
         CaptureIssue captureIssue = null;
         try {
-            captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKey(issueKey), new Callable<CaptureIssue>() {
+            captureIssue = tenantAwareCache.getOrElse(acHostModel, buildIssueCacheKeyWithProperties(issueKey), new Callable<CaptureIssue>() {
 				@Override
                 public CaptureIssue call() throws Exception {
                     CaptureIssue finalCaptureIssue = null;
@@ -546,6 +597,7 @@ public class IssueServiceImpl implements IssueService {
                             finalCaptureIssue = new CaptureIssue(new URI(issue.getString("self")), issue.getString("key"), issue.getLong("id"),
                                     issuetype != null ? issuetype.getString("iconUrl") : "", fields.getString("summary"), fields.getJSONObject("project").getLong("id"),
                                     fields.getJSONObject("project").getString("key"), fields.getJSONObject("reporter") != null ? fields.getJSONObject("reporter").getString("name") : "",
+                                    		 fields.getJSONObject("reporter") != null ? fields.getJSONObject("reporter").getString("accountId") : "",
                                     captureResolution, propertiesMap, parentId, parentKey);
                         }
                     }
@@ -559,11 +611,23 @@ public class IssueServiceImpl implements IssueService {
         return captureIssue;
     }
 
-    private IssueInput createIssueInput(IssueFields issueFields, HttpServletRequest request) throws CaptureValidationException {
+    private IssueInput createIssueInput(AtlassianHostUser host, IssueFields issueFields, HttpServletRequest request) throws CaptureValidationException {
         IssueInputBuilder issueInputBuilder = new IssueInputBuilder();
         issueInputBuilder.setIssueTypeId(Long.valueOf(issueFields.issueType().id()));
-        if (issueFields.assignee() != null) {
+        if (!CaptureUtil.isTenantGDPRComplaint() && issueFields.assignee() != null
+                && issueFields.assigneeAccountId() != null && !issueFields.assigneeAccountId().id().equalsIgnoreCase("-1")) {
             issueInputBuilder.setAssigneeName(issueFields.assignee().id());
+        }
+        if (CaptureUtil.isTenantGDPRComplaint() && issueFields.assigneeAccountId() != null &&
+                !issueFields.assigneeAccountId().id().equalsIgnoreCase("-1")) {
+        	CaptureUser user = userService.findUserByAccountId(issueFields.assigneeAccountId().id());
+        	if(user != null) {
+        		try {
+					issueInputBuilder.setAssignee(new BasicUser(new URI(user.getSelf()), user.getName(), user.getDisplayName()));
+				} catch (URISyntaxException e) {
+					e.printStackTrace();
+				}
+        	}            
         }
         Project project = getJiraRestClient.getProjectClient().getProject(issueFields.project().id()).claim();
         issueInputBuilder.setProject(project);
@@ -678,13 +742,14 @@ public class IssueServiceImpl implements IssueService {
             issueInputBuilder.setFieldInput(parentField);
         }
         if (issueFields.getFields() != null && !issueFields.getFields().isEmpty()){
-            configCustomFields(issueInputBuilder, issueFields, project);
+            configCustomFields(host, issueInputBuilder, issueFields, project);
         }
 
         return issueInputBuilder.build();
     }
 
-    private void configCustomFields(IssueInputBuilder issueInputBuilder, IssueFields issueFields, Project issueProject){
+    private void configCustomFields(AtlassianHostUser host, IssueInputBuilder issueInputBuilder, IssueFields issueFields, Project issueProject){
+        AcHostModel acHostModel = (AcHostModel) host.getHost();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
         String metadata =  metadataService.getMetaDataCacheOrFresh(hostUser,
@@ -727,105 +792,123 @@ public class IssueServiceImpl implements IssueService {
             try {
                 String fieldId = entry.getKey();
                 String[] fieldValue = entry.getValue();
-                String fieldType = fields.get(fieldId).get("schema").get("type").asText();
-                String items = fields.get(fieldId).get("schema").get("items") != null?fields.get(fieldId).get("schema").get("items").asText():"";
-                String custom = fields.get(fieldId).get("schema").has("custom") ? fields.get(fieldId).get("schema").get("custom").asText() : "";
-                if (StringUtils.equals(fieldType, "string")){
-                    issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
-                } else if(StringUtils.equals(fieldType, "option") || StringUtils.equals(fieldType, "version")){
-                   if(fieldValue[0] != null && fieldValue[0].length() > 0) {
-                	   Map<String, Object> optionValue = new HashMap<>();
-                       optionValue.put("id", fieldValue[0]);
-                       issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(optionValue));
-                   }
-                } else if(StringUtils.equals(fieldType, "any") && StringUtils.isNotBlank(fieldValue[0])){
-                    issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
-                } else if(StringUtils.equals(fieldType, "array") && (StringUtils.equals(items, "option") || StringUtils.equals(items, "version"))){
-                    List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
-                    List<String> values = Arrays.asList(fieldValue);
-                    values.stream().forEach((value) -> {
-                        Map<String, Object> complexValue = new TreeMap<>();
-                        complexValue.put("id", value);
-                        checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
-                    });
-                    issueInputBuilder.setFieldValue(fieldId, checkboxValues);
-                } else if(StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "group")){
-                    List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
-                    List<String> values = Arrays.asList(fieldValue);
-                    values.stream().forEach((value) -> {
-                        Map<String, Object> complexValue = new TreeMap<>();
-                        complexValue.put("name", value);
-                        checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
-                    });
-                    issueInputBuilder.setFieldValue(fieldId, checkboxValues);
-                } else if(StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "user")){
-                    List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
-                    List<String> values = Arrays.asList(fieldValue);
-                    values.stream().forEach((value) -> {
-                    	for(String name :  value.trim().split(",")) {
-                    		if(!StringUtils.isEmpty(name)) {
-                    			Map<String, Object> complexValue = new TreeMap<>();
-                                complexValue.put("name", name);
-                                checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
-                    		}
-                    	}                        
-                    });
-                    issueInputBuilder.setFieldValue(fieldId, checkboxValues);
-                } else if(StringUtils.equals(fieldType, "date") && StringUtils.isNotBlank(fieldValue[0])){
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy");
-                    Date date = sdf.parse(fieldValue[0]);
-                    sdf = new SimpleDateFormat("yyyy-MM-dd");
-                    String dateStr = sdf.format(date);
-                    issueInputBuilder.setFieldValue(fieldId, dateStr);
-                } else if(StringUtils.equals(fieldType, "datetime")){
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy hh:mm a");
-                    //sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    Date date = sdf.parse(fieldValue[0]);
-                    sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-                    String dateStr = sdf.format(date);
-                    issueInputBuilder.setFieldValue(fieldId, dateStr);
-                } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "string")){
-                    List<String> values = Arrays.asList(fieldValue);
-                    //Added check to see is this field is sprint then dont sent amy empty value
-                    if(custom.equals("com.pyxis.greenhopper.jira:gh-sprint")){
-                        try {
-                            //for sprint fieldType array and items is string
-                            //but sprint value is long so just check if we
-                            //can convert into long to get sprintId
-                           if(StringUtils.isNotBlank(values.get(0))){
-                               Long sprintId = Long.valueOf(values.get(0));
-                               issueInputBuilder.setFieldValue(fieldId, sprintId);
-                           }
-                        }catch (Exception e){
-                           // issueInputBuilder.setFieldValue(fieldId, values);
+                if(fieldValue instanceof String[] && fieldValue.length > 0) {
+                    String fieldType = fields.get(fieldId).get("schema").get("type").asText();
+                    String items = fields.get(fieldId).get("schema").get("items") != null ? fields.get(fieldId).get("schema").get("items").asText() : "";
+                    String custom = fields.get(fieldId).get("schema").has("custom") ? fields.get(fieldId).get("schema").get("custom").asText() : "";
+                    if (StringUtils.equals(fieldType, "string")) {
+                        issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
+                    } else if (StringUtils.equals(fieldType, "option") || StringUtils.equals(fieldType, "version")) {
+                        if (fieldValue[0] != null && fieldValue[0].length() > 0) {
+                            Map<String, Object> optionValue = new HashMap<>();
+                            optionValue.put("id", fieldValue[0]);
+                            issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(optionValue));
                         }
-                    }else{
-                        issueInputBuilder.setFieldValue(fieldId, values);
-                    }
+                    } else if (StringUtils.equals(fieldType, "any") && StringUtils.isNotBlank(fieldValue[0])) {
+                        issueInputBuilder.setFieldValue(fieldId, fieldValue[0]);
+                    } else if (StringUtils.equals(fieldType, "array") && (StringUtils.equals(items, "option") || StringUtils.equals(items, "version"))) {
+                        List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
+                        List<String> values = Arrays.asList(fieldValue);
+                        values.stream().forEach((value) -> {
+                            Map<String, Object> complexValue = new TreeMap<>();
+                            complexValue.put("id", value);
+                            checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
+                        });
+                        issueInputBuilder.setFieldValue(fieldId, checkboxValues);
+                    } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "group")) {
+                        List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
+                        List<String> values = Arrays.asList(fieldValue);
+                        values.stream().forEach((value) -> {
+                            Map<String, Object> complexValue = new TreeMap<>();
+                            complexValue.put("name", value);
+                            checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
+                        });
+                        issueInputBuilder.setFieldValue(fieldId, checkboxValues);
+                    } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "user")) {
+                        List<ComplexIssueInputFieldValue> checkboxValues = new ArrayList<>();
+                        List<String> values = Arrays.asList(fieldValue);
+                        values.stream().forEach((value) -> {
+                            String[] arrs = value.trim().split(",");
+                            if (arrs != null && arrs.length > 0) {
+                                for (String name : value.trim().split(",")) {
+                                    if (!StringUtils.isEmpty(name)) {
+                                        Map<String, Object> complexValue = new TreeMap<>();
+                                        if (StringUtils.equals(items, "user") && acHostModel.getMigrated() != null && acHostModel.getMigrated().equals(AcHostModel.GDPRMigrationStatus.GDPR)) {
+                                            complexValue.put("id", name.trim());
+                                        } else {
+                                            complexValue.put("name", name);
+                                        }
+                                        checkboxValues.add(new ComplexIssueInputFieldValue(complexValue));
+                                    }
+                                }
+                            }
+                        });
+                        issueInputBuilder.setFieldValue(fieldId, checkboxValues);
+                    } else if (StringUtils.equals(fieldType, "date") && StringUtils.isNotBlank(fieldValue[0])) {
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy");
+                        Date date = sdf.parse(fieldValue[0]);
+                        sdf = new SimpleDateFormat("yyyy-MM-dd");
+                        String dateStr = sdf.format(date);
+                        issueInputBuilder.setFieldValue(fieldId, dateStr);
+                    } else if (StringUtils.equals(fieldType, "datetime")) {
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yy hh:mm a");
+                        //sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                        Date date = sdf.parse(fieldValue[0]);
+                        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+                        String dateStr = sdf.format(date);
+                        issueInputBuilder.setFieldValue(fieldId, dateStr);
+                    } else if (StringUtils.equals(fieldType, "array") && StringUtils.equals(items, "string")) {
+                        List<String> values = Arrays.asList(fieldValue);
+                        //Added check to see is this field is sprint then dont sent amy empty value
+                        if (custom.equals("com.pyxis.greenhopper.jira:gh-sprint")) {
+                            try {
+                                //for sprint fieldType array and items is string
+                                //but sprint value is long so just check if we
+                                //can convert into long to get sprintId
+                                if (StringUtils.isNotBlank(values.get(0))) {
+                                    Long sprintId = Long.valueOf(values.get(0));
+                                    issueInputBuilder.setFieldValue(fieldId, sprintId);
+                                }
+                            } catch (Exception e) {
+                                // issueInputBuilder.setFieldValue(fieldId, values);
+                            }
+                        } else {
+                            issueInputBuilder.setFieldValue(fieldId, values);
+                        }
 
-                } else if (StringUtils.equals(fieldType, "number")){
-                    String numberStr = fieldValue[0];
-                    if(StringUtils.isNotBlank(numberStr)){
-                        Double number = Double.valueOf(numberStr);
-                        issueInputBuilder.setFieldValue(fieldId, number);
+                    } else if (StringUtils.equals(fieldType, "number")) {
+                        String numberStr = fieldValue[0];
+                        if (StringUtils.isNotBlank(numberStr)) {
+                            Double number = Double.valueOf(numberStr);
+                            issueInputBuilder.setFieldValue(fieldId, number);
+                        }
+                    } else if (StringUtils.equals(fieldType, "user") || StringUtils.equals(fieldType, "group")) {
+                        Map<String, Object> complexValue = new TreeMap<>();
+                        if (acHostModel.getMigrated() != null && acHostModel.getMigrated().equals(AcHostModel.GDPRMigrationStatus.GDPR)) {
+                            if (!"".equals(fieldValue[0].trim())) {
+                                complexValue.put("id", fieldValue[0]);
+                                issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                            }
+                        } else {
+                            if (!"".equals(fieldValue[0].trim())) {
+                                complexValue.put("name", fieldValue[0]);
+                                issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                            }
+                        }
+                    } else if (StringUtils.equals(fieldType, "option-with-child") && StringUtils.isNotBlank(fieldValue[0]) && StringUtils.isNotBlank(fieldValue[1])) {
+                        Map<String, Object> complexValue = new TreeMap<>();
+                        complexValue.put("id", fieldValue[0]);
+                        Map<String, Object> childValue = new TreeMap<>();
+                        childValue.put("id", fieldValue[1]);
+                        complexValue.put("child", new ComplexIssueInputFieldValue(childValue));
+                        issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                    } else if (StringUtils.equals(fieldType, "project")) {
+                        Map<String, Object> complexValue = new TreeMap<>();
+                        complexValue.put("id", fieldValue[0]);
+                        issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
+                    } else {
+                        log.warn("This custom field type not supporting so skied field id : {} ,  field type:  {}", fieldId, fieldType);
                     }
-                } else if(StringUtils.equals(fieldType, "user") || StringUtils.equals(fieldType, "group")){
-                    Map<String, Object> complexValue = new TreeMap<>();
-                    complexValue.put("name", fieldValue[0]);
-                    issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
-                } else if (StringUtils.equals(fieldType, "option-with-child") && StringUtils.isNotBlank(fieldValue[0]) && StringUtils.isNotBlank(fieldValue[1])){
-                    Map<String, Object> complexValue = new TreeMap<>();
-                    complexValue.put("id",fieldValue[0]);
-                    Map<String, Object> childValue = new TreeMap<>();
-                    childValue.put("id",fieldValue[1]);
-                    complexValue.put("child", new ComplexIssueInputFieldValue(childValue));
-                    issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
-                }else if (StringUtils.equals(fieldType, "project")){
-                    Map<String, Object> complexValue = new TreeMap<>();
-                    complexValue.put("id",fieldValue[0]);
-                    issueInputBuilder.setFieldValue(fieldId, new ComplexIssueInputFieldValue(complexValue));
-                }else{
-                    log.warn("This custom field type not supporting so skied field id : {} ,  field type:  {}",fieldId,fieldType);
                 }
             } catch (Exception exception) {
                 log.error("Error during config custom field for Jira issue create request customFieldId:{} issueType:{}", entry.getKey(), issueFields.issueType().id(), exception);
@@ -835,6 +918,10 @@ public class IssueServiceImpl implements IssueService {
 
     private String buildIssueCacheKey(String issueIdOrKey) {
         return ApplicationConstants.ISSUE_CACHE_KEY_PREFIX + issueIdOrKey;
+    }
+    
+    private String buildIssueCacheKeyWithProperties(String issueIdOrKey) {
+        return ApplicationConstants.ISSUE_CACHE_KEY_PROPERTIES_PREFIX + issueIdOrKey;
     }
 
     public JiraRestClient createPostJiraRestClient(AtlassianHostUser hostUser) {

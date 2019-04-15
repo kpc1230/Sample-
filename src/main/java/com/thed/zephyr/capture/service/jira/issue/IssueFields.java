@@ -35,9 +35,15 @@ public class IssueFields implements Serializable {
 
     @JsonProperty
     public ResourceId assignee;
+    
+    @JsonProperty
+    public ResourceId assigneeAccountId;
 
     @JsonProperty
     public ResourceId reporter;
+    
+    @JsonProperty
+    public ResourceId reporterAccountId;
 
     @JsonProperty
     public ResourceId priority;
@@ -450,4 +456,39 @@ public class IssueFields implements Serializable {
 
         fields.put(fieldId, value);
     }
+
+    public ResourceId assigneeAccountId() {
+        return this.assigneeAccountId;
+    }
+
+    public IssueFields assigneeAccountId(ResourceId assigneeAccountId) {
+        this.assigneeAccountId = assigneeAccountId;
+        return this;
+    }
+
+    public ResourceId reporterAccountId() {
+        return this.reporterAccountId;
+    }
+
+    public IssueFields reporterAccountId(ResourceId reporterAccountId) {
+        this.reporterAccountId = reporterAccountId;
+        return this;
+    }
+
+	public ResourceId getAssigneeAccountId() {
+		return assigneeAccountId;
+	}
+
+	public void setAssigneeAccountId(ResourceId assigneeAccountId) {
+		this.assigneeAccountId = assigneeAccountId;
+	}
+
+	public ResourceId getReporterAccountId() {
+		return reporterAccountId;
+	}
+
+	public void setReporterAccountId(ResourceId reporterAccountId) {
+		this.reporterAccountId = reporterAccountId;
+	}
+    
 }

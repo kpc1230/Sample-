@@ -9,11 +9,14 @@ import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.annotation.LicenseCheck;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.gdpr.GDPRUserService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.UniqueIdGenerator;
 
@@ -23,7 +26,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +36,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by snurulla on 8/16/2017.
@@ -56,6 +62,10 @@ public class ApplicationController {
     private SessionService sessionService;
     @Autowired
     private HazelcastInstance hazelcastInstance;
+    @Autowired
+	private DynamoDBAcHostRepository dynamoDBAcHostRepository;
+    @Autowired
+    private GDPRUserService gdprUserService;
 
     @LicenseCheck
     @RequestMapping(value = "/adminGenConf")
@@ -77,6 +87,7 @@ public class ApplicationController {
 
 
         log.debug("Ending Requesting the general configuration page with resp : " + jsonNode);
+        gdprUserService.getAndPushUserToMigration(hostUser);
         return "generalConfigPage";
     }
 
@@ -179,11 +190,19 @@ public class ApplicationController {
         Map<String, String> messages = getI18NMessagesBasedOnSessionLocale();
         return ResponseEntity.ok(messages);
     }
-
+    
+    @IgnoreJwt
     @RequestMapping(value = "/clearCache")
     @ResponseBody
-    public ResponseEntity<?> clearCache(@AuthenticationPrincipal AtlassianHostUser hostUser) {
-        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+    public ResponseEntity<?> clearCache(@RequestParam Optional<String> baseURL) {
+    	AcHostModel acHostModel = null;
+		if(baseURL.isPresent()) {
+			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository, baseURL.get());
+		} else {
+			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
+            acHostModel = (AcHostModel) atlassianHostUser.getHost();
+		} 
         tenantAwareCache.clearTenantCache(acHostModel);
         Map<String,String> map = new HashedMap();
         map.put("status","success");
@@ -202,12 +221,20 @@ public class ApplicationController {
         log.info("The AcHost was deleted from cache clientKey:{}", clientKey);
         return ResponseEntity.ok(map);
     }
-
+    
+    @IgnoreJwt
     @PostMapping(value = "/reindex")
-    public ResponseEntity<?> reindex(@AuthenticationPrincipal AtlassianHostUser hostUser) {
+    public ResponseEntity<?> reindex(@RequestParam Optional<String> baseURL) {
     	try {
     		log.info("Start of reindex()");
-            AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+    		AcHostModel acHostModel = null;
+    		if(baseURL.isPresent()) {
+    			acHostModel = CaptureUtil.getAcHostModel(dynamoDBAcHostRepository, baseURL.get());
+    		} else {
+    			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    			AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
+                acHostModel = (AcHostModel) atlassianHostUser.getHost();
+    		}    		
             String jobProgressId = new UniqueIdGenerator().getStringId();
             sessionService.reindexSessionDataIntoES(acHostModel, jobProgressId, acHostModel.getCtId());
             log.info("End of reindex()");

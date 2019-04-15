@@ -143,23 +143,31 @@ public class SessionController extends CaptureAbstractController{
 			CaptureProject captureProject = projectService.getCaptureProject(sessionRequest.getProjectId());
 			if (captureProject != null) {
 				// Check that the creator and assignee have assign issue permissions in the project
-				if (!permissionService.canCreateSession(loggedUserKey, captureProject)) {
+				if (!permissionService.canCreateSession(loggedUserKey, loggedUserAccountId, captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.creator.fail.permissions"));
 				}
-				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), captureProject)) {
+				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), sessionRequest.getAssigneeAccountId(), captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{sessionRequest.getAssignee()}));
-				} else if(!permissionService.canBeAssignedSession(loggedUserKey, captureProject)) {
+				} else if(!permissionService.canBeAssignedSession(loggedUserKey, loggedUserAccountId, captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
 				}
 			}
+			boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
 			Session createdSession = sessionService.createSession(loggedUserKey, loggedUserAccountId, sessionRequest);
 			CompletableFuture.runAsync(() -> {
 				//Save status changed information as activity.
-	        	sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, loggedUserAccountId);
-	        	if(!loggedUserKey.equals(createdSession.getAssignee())) {
-	        		 //Save if the assigned user and logged in user are different into the session as activity.
-	    			sessionActivityService.addAssignee(createdSession, new Date(), loggedUserKey, loggedUserAccountId, createdSession.getAssignee(), createdSession.getAssigneeAccountId(), null);
-	        	}
+				sessionActivityService.setStatus(isTenantisTenantGDPRFlag, createdSession, new Date(), loggedUserKey, loggedUserAccountId);
+	        	if(isTenantisTenantGDPRFlag) {
+	        		if(!loggedUserAccountId.equals(createdSession.getAssigneeAccountId())) {
+		        		 //Save if the assigned user and logged in user are different into the session as activity.
+		    			sessionActivityService.addAssignee(isTenantisTenantGDPRFlag, createdSession, new Date(), null, loggedUserAccountId, createdSession.getAssignee(), createdSession.getAssigneeAccountId(), null, null);
+		        	}
+	        	} else {
+	        		if(!loggedUserKey.equals(createdSession.getAssignee())) {
+		        		 //Save if the assigned user and logged in user are different into the session as activity.
+		    			sessionActivityService.addAssignee(isTenantisTenantGDPRFlag, createdSession, new Date(), loggedUserKey, loggedUserAccountId, createdSession.getAssignee(), createdSession.getAssigneeAccountId(), null, null);
+		        	}
+	        	}	        	
 			});        		
 	        if(sessionRequest.getStartNow()) { //User requested to start the session.
 	        	UpdateResult updateResult = sessionService.startSession(loggedUserKey, loggedUserAccountId, createdSession);
@@ -169,11 +177,11 @@ public class SessionController extends CaptureAbstractController{
 	        	sessionService.update(updateResult, false); //Updating the session object into database.
 	        	//Save status changed information as activity.
 	        	CompletableFuture.runAsync(() -> {
-	        		sessionActivityService.setStatus(createdSession, new Date(), loggedUserKey, loggedUserAccountId, true);
+	        		sessionActivityService.setStatus(isTenantisTenantGDPRFlag, createdSession, new Date(), loggedUserKey, loggedUserAccountId, true);
 	        	});
 	        }
 			log.info("End of createSession()");
-			return ResponseEntity.ok(sessionService.constructSessionDto(loggedUserKey, createdSession, false));
+			return ResponseEntity.ok(sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, createdSession, false));
 		} catch(CaptureValidationException ex) {
 			throw ex;
 		} catch(Exception ex) {
@@ -201,7 +209,7 @@ public class SessionController extends CaptureAbstractController{
 			List<IssueRaisedBean> listOfIssueRaised = new ArrayList<>();
 			issueKeys.addAll(listOfIssues);
 			String loggedUser = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			issueKeys.forEach(issueKey -> {
 				try {
 					CaptureIssue issue = issueService.getCaptureIssue(issueKey);
@@ -250,13 +258,14 @@ public class SessionController extends CaptureAbstractController{
 		}
 		try {
 			String user = getUser();
+			String userAccountId = getUserAccountId();
 			Session session = validateAndGetSession(sessionId);
-			if (session != null && !permissionService.canSeeSession(user, session)) {
+			if (session != null && !permissionService.canSeeSession(user, userAccountId, session)) {
 				throw new CaptureValidationException(i18n.getMessage("session.update.not.editable"));
 			} else if(Objects.isNull(session)) {
 				throw new CaptureValidationException(i18n.getMessage("session.not.exist.message"));
 			}
-			SessionDto sessionDto = sessionService.constructSessionDto(user, session, true);
+			SessionDto sessionDto = sessionService.constructSessionDto(user, userAccountId, session, true);
 			log.info("End of getSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(Exception ex) {
@@ -279,14 +288,14 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 		    if (loadedSession != null) {
-				if (!permissionService.canEditSession(loggedUserKey, loadedSession)) {
+				if (!permissionService.canEditSession(loggedUserKey, loggedUserAccountId, loadedSession)) {
 					throw new CaptureValidationException(i18n.getMessage("session.update.not.editable"));
 				}
 				CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
-				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), captureProject)) {
+				if (sessionRequest.getAssignee() != null && !permissionService.canBeAssignedSession(sessionRequest.getAssignee(), sessionRequest.getAssigneeAccountId(), captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{sessionRequest.getAssignee()}));
 				}
 			}
@@ -313,7 +322,7 @@ public class SessionController extends CaptureAbstractController{
 			wikiParsedData = CaptureUtil.replaceIconPath(wikiParsedData);
 			loadedSession.setWikiParsedData(wikiParsedData);
 			sessionRequest.setWikiParsedData(wikiParsedData);
-			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, updateResult.getSession(), true);
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, updateResult.getSession(), true);
             sessionService.setIssueTestStatusAndTestSession(updatedRelatedIssues, loadedSession.getCtId(), loadedSession.getProjectId(), hostUser.getHost().getBaseUrl());
 			log.info("End of updateSession()");
 			return ResponseEntity.ok(sessionDto);
@@ -340,8 +349,9 @@ public class SessionController extends CaptureAbstractController{
 		}
 		try {
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			if (loadedSession != null && !permissionService.canEditSession(loggedUserKey, loadedSession)) {
+			if (loadedSession != null && !permissionService.canEditSession(loggedUserKey, loggedUserAccountId, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.delete.permission.fail"));
 			}
 			sessionService.deleteSession(sessionId);
@@ -383,7 +393,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			UpdateResult updateResult = sessionService.pauseSession(loggedUserKey, loggedUserAccountId, loadedSession);
 			if (!updateResult.isValid()) {
@@ -391,16 +401,17 @@ public class SessionController extends CaptureAbstractController{
             }
 			// If the session status is changed, we better have been allowed to do that!
 			if (!Status.PAUSED.equals(loadedSession.getStatus())
-					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
+					&& !permissionService.canEditSessionStatus(loggedUserKey, loggedUserAccountId, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.status.change.permissions.violation"));
 			}
         	sessionService.update(updateResult, false);
         	Session session = updateResult.getSession();
         	//Save status changed information as activity.
+        	boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
         	CompletableFuture.runAsync(() -> {
-        		sessionActivityService.setStatus(session, new Date(), loggedUserKey, loggedUserAccountId);
+        		sessionActivityService.setStatus(isTenantisTenantGDPRFlag, session, new Date(), loggedUserKey, loggedUserAccountId);
         	});
-        	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
+        	SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, session, false);
 			log.info("End of pauseSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {
@@ -430,22 +441,33 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			Date dateTime = new Date();
-			String loggedUserKey = hostUser.getUserKey().get();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			Map<String, Object> response = new HashMap<>();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			if (loadedSession != null && !permissionService.canJoinSession(loggedUserKey, loadedSession)) {
+			boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+			if (loadedSession != null && !permissionService.canJoinSession(loggedUserKey, loggedUserAccountId, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.join.no.permission", new Object[]{loadedSession.getName()}));
 			}
-			CaptureUser user = userService.findUserByKey(loggedUserKey);
-			Participant participant = new ParticipantBuilder(loggedUserKey).setUserAccountId(loggedUserAccountId).setTimeJoined(dateTime).build();
+			CaptureUser user = null;Participant participant = null;
+			if(isTenantGDPRComplaint) {
+				user = userService.findUserByAccountId(loggedUserAccountId);
+				participant = new ParticipantBuilder(loggedUserKey).setUser(null).setUserAccountId(loggedUserAccountId).setTimeJoined(dateTime).build();
+			} else {
+				user = userService.findUserByKey(loggedUserKey);
+				participant = new ParticipantBuilder(loggedUserKey).setUserAccountId(loggedUserAccountId).setTimeJoined(dateTime).build();
+			}
 			SessionServiceImpl.UpdateResult updateResult = sessionService.joinSession(loggedUserKey, loggedUserAccountId, loadedSession, participant);
 			if (!updateResult.isValid()) {
 				return badRequest(updateResult.getErrorCollection());
 			}
 			sessionService.update(updateResult, true);
-			response.put("user", participant.getUser());
-			response.put("userAccountId", participant.getUserAccountId());
+			if(isTenantGDPRComplaint) {
+				response.put("userAccountId", participant.getUserAccountId());
+			} else {
+				response.put("user", participant.getUser());
+				response.put("userAccountId", participant.getUserAccountId());
+			}
 			response.put("timeJoined", participant.getTimeJoined());
 			response.put("timeLeft", participant.getTimeLeft());			
 			if(Objects.nonNull(user)) {
@@ -483,7 +505,8 @@ public class SessionController extends CaptureAbstractController{
 		try {
 			Session loadedSession  = validateAndGetSession(sessionId);
 			String loggedUser = getUser();
-			Map<String, Object> map = sessionService.getCompleteSessionView(loggedUser, loadedSession);
+			String loggedUserAccountId = getUserAccountId();
+			Map<String, Object> map = sessionService.getCompleteSessionView(loggedUser, loggedUserAccountId, loadedSession);
 			log.info("End of completeSessionView()");
 			return ResponseEntity.ok(map);
 		} catch(CaptureValidationException ex) {
@@ -508,11 +531,11 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			// If the session status is changed, we better have been allowed to do that!
 			if (!Status.COMPLETED.equals(loadedSession.getStatus())
-					&& !permissionService.canEditSessionStatus(loggedUserKey, loadedSession)) {
+					&& !permissionService.canEditSessionStatus(loggedUserKey, loggedUserAccountId, loadedSession)) {
 				throw new CaptureValidationException(i18n.getMessage("session.status.change.permissions.violation"));
 			}
 			CompleteSessionResult completeSessionResult = sessionService.completeSession(loggedUserKey, loggedUserAccountId, loadedSession, completeSessionRequest);
@@ -520,9 +543,10 @@ public class SessionController extends CaptureAbstractController{
                 return badRequest(completeSessionResult.getErrorCollection());
             }
 			Session session = completeSessionResult.getSessionUpdateResult().getSession();
+			boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
 			//Save status changed information as activity.
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.setStatus(session, new Date(), loggedUserKey, loggedUserAccountId);
+				sessionActivityService.setStatus(isTenantisTenantGDPRFlag, session, new Date(), loggedUserKey, loggedUserAccountId);
 			});
 			sessionService.update(completeSessionResult.getSessionUpdateResult(), false);
 			List<SessionServiceImpl.CompleteSessionIssueLink> issueLinks = completeSessionResult.getIssuesToLink();
@@ -538,7 +562,7 @@ public class SessionController extends CaptureAbstractController{
 				String comment=i18n.getMessage("issue.service.logwork.comment.prefix", new Object[]{completeSessionResult.getSessionUpdateResult().getSession().getName()});
 				issueService.addTimeTrakingToIssue(completeSessionResult.getLogTimeIssue(), timestamp, completeSessionResult.getMillisecondsDuration(),comment,hostUser);
 			}
-			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, session, false);
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, session, false);
 
 			log.info("End of completeSession()");
 			return ResponseEntity.ok(sessionDto);
@@ -571,7 +595,8 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
+			boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			Participant leftParticipant = new Participant();
 			UpdateResult updateResult = sessionService.leaveSession(loggedUserKey, loggedUserAccountId, loadedSession);
@@ -579,7 +604,7 @@ public class SessionController extends CaptureAbstractController{
                 return badRequest(updateResult.getErrorCollection());
             }
 			if(Objects.nonNull(loadedSession.getParticipants())) {
-				List<Participant> listP = loadedSession.getParticipants().stream().filter(p -> p.getUser().equals(loggedUserKey)).collect(Collectors.toList());
+				List<Participant> listP = loadedSession.getParticipants().stream().filter(p -> isParticipantLeaving(isTenantGDPRComplaint, loggedUserKey, loggedUserAccountId, p)).collect(Collectors.toList());
 				if(listP.size() > 0)
 					leftParticipant = listP.get(0);
 			}
@@ -601,13 +626,22 @@ public class SessionController extends CaptureAbstractController{
 		}
 	}
 	
+	private boolean isParticipantLeaving(boolean isTenantGDPRComplaint, String loggedUserKey, String loggedUserAccountId, Participant p) {
+		if(isTenantGDPRComplaint) {
+			return loggedUserAccountId.equals(p.getUserAccountId());
+		} else {
+			return p.getUser().equals(loggedUserKey);
+		}
+	}
+	
 	@PutMapping(value = "/{sessionId}/unshared", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> unshareSession(@PathVariable("sessionId") String sessionId) throws CaptureValidationException {
 		log.info("Start of unshareSession() --> params " + sessionId);
 		try {	
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			UpdateResult updateResult = sessionService.unshareSession(loggedUserKey, loadedSession);
+			UpdateResult updateResult = sessionService.unshareSession(loggedUserKey, loggedUserAccountId, loadedSession);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
@@ -627,8 +661,9 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of shareSession() --> params " + sessionId);
 		try {		
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
-			UpdateResult updateResult = sessionService.shareSession(loggedUserKey, loadedSession);
+			UpdateResult updateResult = sessionService.shareSession(loggedUserKey, loggedUserAccountId, loadedSession);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
@@ -658,23 +693,24 @@ public class SessionController extends CaptureAbstractController{
 			isLocked = true;
 			Date dateTime = new Date();
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			CaptureIssue captureIssue = issueService.getCaptureIssue(issueKey);
-			if (captureIssue != null && !permissionService.canUnraiseIssueInSession(loggedUserKey, captureIssue)) {
+			if (captureIssue != null && !permissionService.canUnraiseIssueInSession(loggedUserKey, loggedUserAccountId, captureIssue)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.unraise.permission"));
 			}
-			UpdateResult updateResult = sessionService.removeRaisedIssue(loggedUserKey, loadedSession, issueKey);
+			UpdateResult updateResult = sessionService.removeRaisedIssue(loggedUserKey, loggedUserAccountId, loadedSession, issueKey);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult, false);
 			//Save removed raised issue information as activity.
+			boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
 			CompletableFuture.runAsync(() -> {
-				sessionActivityService.removeRaisedIssue(loadedSession, captureIssue, dateTime, loggedUserKey, loggedUserAccountId);
+				sessionActivityService.removeRaisedIssue(isTenantisTenantGDPRFlag, loadedSession, captureIssue, dateTime, loggedUserKey, loggedUserAccountId);
 			});
 			//This is to removed raisedinsession from issue entity
-			sessionService.addUnRaisedInSession(loggedUserKey,issueKey,updateResult.getSession());
+			sessionService.addUnRaisedInSession(issueKey,updateResult.getSession());
 			log.info("End of unraiseIssueSessionRequest()");
 			return ResponseEntity.ok().build();
 		} catch(CaptureValidationException ex) {
@@ -695,6 +731,7 @@ public class SessionController extends CaptureAbstractController{
 	@GetMapping(value = "/filtered", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> searchSession(@RequestParam("projectFilter") Optional<Long> projectId,
 										   @RequestParam("assigneeFilter") Optional<String> assignee,
+										   @RequestParam("assigneeAccountIdFilter") Optional<String> assigneeAccountId,
 										   @RequestParam("statusFilter") Optional<List<String>> status,
 										   @RequestParam("searchTerm") Optional<String> searchTerm,
 										   @RequestParam("sortOrder") Optional<String> sortOrder,
@@ -705,9 +742,10 @@ public class SessionController extends CaptureAbstractController{
 			+ searchTerm.orElse(null) + " sortOrder " + sortOrder.orElse("ASC") + " sortField " + " startAt " + startAt + " size " + size);
 		try {	
 			String loggedUser = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			validateInputParameters(projectId, status);
 			boolean sortAscending = sortOrder.orElse(ApplicationConstants.SORT_ASCENDING).equalsIgnoreCase(ApplicationConstants.SORT_ASCENDING);
-			SessionDtoSearchList sessionDtoSearchList = sessionService.searchSession(loggedUser, projectId, assignee, translateStatuses(status), searchTerm, sortField, sortAscending, startAt, size);
+			SessionDtoSearchList sessionDtoSearchList = sessionService.searchSession(loggedUser, loggedUserAccountId, projectId, assignee, assigneeAccountId, translateStatuses(status), searchTerm, sortField, sortAscending, startAt, size);
 			log.info("End of searchSession()");
 			return ResponseEntity.ok(sessionDtoSearchList);
 		} catch(CaptureValidationException ex) {
@@ -736,7 +774,7 @@ public class SessionController extends CaptureAbstractController{
 			} else {
 				NotesFilterStateUI notesFilterStateUI = new NotesFilterStateUI(request);
 				ActivityStreamFilterUI activityStreamFilterUI = new ActivityStreamFilterUI(notesFilterStateUI);
-				sessionActivities =  getSessionActivityItems(sessionActivities, activityStreamFilterUI, getUser());
+				sessionActivities =  getSessionActivityItems(sessionActivities, activityStreamFilterUI, getUser(), getUserAccountId());
 			}
 			List<?> finalSessionActivities = sessionActivities.stream().map(new SessionActivityFunction(issueService, wikiMarkupRenderer, sessionActivityRepository)).collect(Collectors.toList());
 			log.info("End of sessionActivities()");
@@ -750,7 +788,8 @@ public class SessionController extends CaptureAbstractController{
 	@PutMapping(value = "/{sessionId}/assign", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<?> assignSession(@AuthenticationPrincipal AtlassianHostUser hostUser,
 										   @PathVariable("sessionId") String sessionId,
-										   @QueryParam("assignee") String assignee) throws CaptureValidationException {
+										   @QueryParam("assignee") String assignee,
+										   @QueryParam("assigneeAccountId") String assigneeAccountId) throws CaptureValidationException {
 		log.info("Start of assignSession() --> params " + sessionId + " assignee " + assignee);
 		String lockKey = ApplicationConstants.SESSION_LOCK_KEY + sessionId;
 		boolean isLocked = false;
@@ -761,34 +800,48 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
-			String loggedUserAccountId = hostUser.getUserAccountId().get();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			String oldAssignee = loadedSession.getAssignee();
-			String assigner = hostUser.getUserKey().get();
+			String oldAssigneeAccountId = loadedSession.getAssigneeAccountId();
+			String assigner = loggedUserKey;
+			boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
 			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
-			if (!StringUtils.isEmpty(assignee) && !permissionService.canBeAssignedSession(assignee, captureProject)) {
+			if (!StringUtils.isEmpty(assignee) && !permissionService.canBeAssignedSession(assignee, assigneeAccountId, captureProject)) {
 				throw new CaptureValidationException(i18n.getMessage("validation.service.user.not.assignable", new Object[]{assignee}));
 			}
-			if (StringUtils.isEmpty(assignee)) {
+			if (!isTenantGDPRComplaint && StringUtils.isEmpty(assignee)) {
 				throw new CaptureValidationException(i18n.getMessage("session.cud.field.assignee.empty"));
+			} else if(isTenantGDPRComplaint && StringUtils.isEmpty(assigneeAccountId)) {
+				throw new CaptureValidationException(i18n.getMessage("session.cud.field.assigneeAccountId.empty"));
 			}
-			loadedSession.setAssignee(assignee);//set assignee to session
+			CaptureUser user = null;
+			if(isTenantGDPRComplaint) {
+				loadedSession.setAssigneeAccountId(assigneeAccountId);//set assignee account id to session
+				user = userService.findUserByAccountId(assigneeAccountId);
+			} else  {
+				loadedSession.setAssignee(assignee);//set assignee to session
+				loadedSession.setAssigneeAccountId(assigneeAccountId); //set assignee account id to session
+				user = userService.findUserByKey(assignee);
+			}
 			//this is current capture production server behavior
-			loadedSession.setStatus(Status.PAUSED);//set session status to pause
-			CaptureUser user = userService.findUserByKey(assignee);
+			//loadedSession.setStatus(Status.PAUSED);//set session status to pause
 			if(user != null) loadedSession.setUserDisplayName(user.getDisplayName());
-			loadedSession.setAssigneeAccountId(user.getAccountId());
-			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loadedSession, assignee);
+			if(Objects.nonNull(loadedSession.getParticipants())) {
+				List<Participant> listP = loadedSession.getParticipants().stream().filter(p -> !isParticipantLeaving(isTenantGDPRComplaint, assignee, assigneeAccountId, p)).collect(Collectors.toList());
+				loadedSession.setParticipants(listP.size() > 0 ? listP : null);
+			}
+			UpdateResult updateResult = sessionService.assignSession(loggedUserKey, loggedUserAccountId, loadedSession, assignee, assigneeAccountId);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
 			sessionService.update(updateResult, true);
 			//Save assigned user to the session as activity.
-			CompletableFuture.runAsync(() -> {
-				sessionActivityService.addAssignee(loadedSession, new Date(), assigner, loggedUserAccountId, assignee, user.getAccountId(), oldAssignee);
-				sessionActivityService.setStatus(loadedSession, new Date(), loggedUserKey, loggedUserAccountId);
+			CompletableFuture.runAsync(() -> {				
+				sessionActivityService.addAssignee(isTenantGDPRComplaint, loadedSession, new Date(), assigner, loggedUserAccountId, assignee, assigneeAccountId, oldAssignee, oldAssigneeAccountId);
+				//sessionActivityService.setStatus(isTenantGDPRComplaint, loadedSession, new Date(), loggedUserKey, loggedUserAccountId);
 			});
-			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loadedSession, false);
+			SessionDto sessionDto = sessionService.constructSessionDto(loggedUserKey, loggedUserAccountId, loadedSession, false);
 			log.info("End of assignSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(Exception ex) {
@@ -823,7 +876,8 @@ public class SessionController extends CaptureAbstractController{
 		log.info("Start of getSessionsForExtension()");
 		try {
 			String loggedUserKey = getUser();
-			SessionExtensionResponse response = sessionService.getSessionsForExtension(loggedUserKey, onlyActiveSession.isPresent()? onlyActiveSession.get():false);
+			String loggedUserAccountId = getUserAccountId();
+			SessionExtensionResponse response = sessionService.getSessionsForExtension(loggedUserKey, loggedUserAccountId, onlyActiveSession.isPresent()? onlyActiveSession.get():false);
 			log.info("End of getSessionsForExtension()");
 			return ResponseEntity.ok(response);
 		} catch(CaptureValidationException ex) {
@@ -881,6 +935,7 @@ public class SessionController extends CaptureAbstractController{
 			}
 			isLocked = true;
 			String loggedUserKey = getUser();
+			String loggedUserAccountId = getUserAccountId();
 			Session loadedSession  = validateAndGetSession(sessionId);
 			String editedAdditionalInfo = json.get("additionalInfo").asText();
 			String wikiParsedData = loadedSession.getWikiParsedData();
@@ -890,7 +945,7 @@ public class SessionController extends CaptureAbstractController{
 			}else{
 				wikiParsedData = null;
 			}
-			UpdateResult updateResult = sessionService.updateSessionAdditionalInfo(loggedUserKey, loadedSession, editedAdditionalInfo, wikiParsedData);
+			UpdateResult updateResult = sessionService.updateSessionAdditionalInfo(loggedUserKey, loggedUserAccountId, loadedSession, editedAdditionalInfo, wikiParsedData);
 			if (!updateResult.isValid()) {
                 return badRequest(updateResult.getErrorCollection());
             }
@@ -926,22 +981,23 @@ public class SessionController extends CaptureAbstractController{
 			CaptureProject captureProject = projectService.getCaptureProject(loadedSession.getProjectId());
 			if (Objects.nonNull(captureProject)) {
 				// Check that the creator and assignee have assign issue permissions in the project
-				if (!permissionService.canCreateSession(loggedUserKey, captureProject)) {
+				if (!permissionService.canCreateSession(loggedUserKey, loggedUserAccountId, captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.creator.fail.permissions"));
 				}
-				if (loadedSession.getAssignee() != null && !permissionService.canBeAssignedSession(loadedSession.getAssignee(), captureProject)) {
+				if (loadedSession.getAssignee() != null && !permissionService.canBeAssignedSession(loadedSession.getAssignee(), loadedSession.getAssigneeAccountId(), captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loadedSession.getAssignee()}));
-				} else if(!permissionService.canBeAssignedSession(loggedUserKey, captureProject)) {
+				} else if(!permissionService.canBeAssignedSession(loggedUserKey, loggedUserAccountId, captureProject)) {
 					throw new CaptureValidationException(i18n.getMessage("session.assignee.fail.permissions", new Object[]{loggedUserKey}));
 				}
 			}
 			Session newSession = sessionService.cloneSession(loggedUserKey, loggedUserAccountId,  loadedSession, name);
+			boolean isTenantisTenantGDPRFlag = CaptureUtil.isTenantGDPRComplaint();
 			//Save status changed information as activity.
         	CompletableFuture.runAsync(() -> {
-        		sessionActivityService.setStatus(newSession, new Date(), loggedUserKey, loggedUserAccountId);
+        		sessionActivityService.setStatus(isTenantisTenantGDPRFlag, newSession, new Date(), loggedUserKey, loggedUserAccountId);
 				if(!loggedUserKey.equals(newSession.getAssignee())) {
 					//Save if the assigned user and logged in user are different into the session as activity.
-					sessionActivityService.addAssignee(newSession, new Date(), loggedUserKey, loggedUserAccountId, newSession.getAssignee(), newSession.getAssigneeAccountId(), null);
+					sessionActivityService.addAssignee(isTenantisTenantGDPRFlag, newSession, new Date(), loggedUserKey, loggedUserAccountId, newSession.getAssignee(), newSession.getAssigneeAccountId(), null, null);
 				}
 			});
 			log.info("End of cloneSession()");
@@ -957,16 +1013,19 @@ public class SessionController extends CaptureAbstractController{
 	@IgnoreJwt
 	@CrossOrigin
 	@GetMapping(value = "/user/active", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> getActiveSessionUser(@RequestParam String userKey, @RequestParam String baseUrl) {
+	public ResponseEntity<?> getActiveSessionUser(@RequestParam String userKey, @RequestParam String userAccountId, @RequestParam String baseUrl) {
 		log.info("Start of getActiveSessionUser()");
 		try {
-			if(StringUtils.isBlank(userKey)) {
+			if(!CaptureUtil.isTenantGDPRComplaint() && StringUtils.isBlank(userKey)) {
 				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userKey}));
+			}
+			if(CaptureUtil.isTenantGDPRComplaint() && StringUtils.isBlank(userAccountId)) {
+				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userAccountId}));
 			}
 			if(StringUtils.isBlank(baseUrl)) {
 				throw new CaptureValidationException(i18n.getMessage("base.url.invalid.message", new Object[]{baseUrl}));
 			}
-			SessionResult sessionResult = sessionService.getActiveSession(userKey, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
+			SessionResult sessionResult = sessionService.getActiveSession(userKey, userAccountId, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
 			if(sessionResult != null && sessionResult.getSession() != null && sessionResult.getSession().getStatus() != null
 			&& !Status.STARTED.name().equals(sessionResult.getSession().getStatus().name())) {
 				return ResponseEntity.ok().build();
@@ -982,17 +1041,25 @@ public class SessionController extends CaptureAbstractController{
 	@IgnoreJwt
 	@CrossOrigin
 	@GetMapping(value = "/user/active/link", produces = {MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<?> getActiveSessionLink(@RequestParam String userName, @RequestParam String baseUrl) {
+	public ResponseEntity<?> getActiveSessionLink(@RequestParam Optional<String> userName, @RequestParam Optional<String> userAccountId, @RequestParam String baseUrl) {
 		log.info("Start of getActiveSessionLink()");
 		try {
-			String userKey = userService.findActiveUserByUserName(userName, baseUrl).getKey();
-			if(StringUtils.isBlank(userKey)) {
-				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userKey}));
+			boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
+			String userKey = null;
+			if(userName.isPresent()) {
+				userKey = userService.findActiveUserByUserName(userName.get(), baseUrl).getKey();
+				if(!isTenantGDPRComplaint && StringUtils.isEmpty(userKey)) {
+					throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userKey}));
+				}
+			}			
+			
+			if(isTenantGDPRComplaint && userAccountId.isPresent() && StringUtils.isEmpty(userAccountId.get())) {
+				throw new CaptureValidationException(i18n.getMessage("user.key.invalid.message", new Object[]{userAccountId.get()}));
 			}
 			if(StringUtils.isBlank(baseUrl)) {
 				throw new CaptureValidationException(i18n.getMessage("base.url.invalid.message", new Object[]{baseUrl}));
 			}
-			SessionResult sessionResult = sessionService.getActiveSession(userKey, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
+			SessionResult sessionResult = sessionService.getActiveSession(userKey, userAccountId.isPresent() ? userAccountId.get() : null, URLDecoder.decode(baseUrl, Charset.defaultCharset().name()));
 			if(sessionResult != null && sessionResult.getSession() != null && sessionResult.getSession().getStatus() != null
 					&& !Status.STARTED.name().equals(sessionResult.getSession().getStatus().name())) {
 				return ResponseEntity.ok().build();
@@ -1028,11 +1095,11 @@ public class SessionController extends CaptureAbstractController{
 	}
 
 	private List<SessionActivity> getSessionActivityItems(final List<SessionActivity> activities, final ActivityStreamFilterUI activityStreamFilter,
-														  final String user) {
+														  final String user, final String userAccountId) {
 		Collection<SessionActivity> sessionActivityItems = Collections2.filter(activities, new Predicate<SessionActivity>() {
 			public boolean apply(SessionActivity sessionActivityItem) {
 				boolean passFilter = activityStreamFilter.showItem(sessionActivityItem);
-				boolean hasPermission = permissionService.showActivityItem(user, sessionActivityItem);
+				boolean hasPermission = permissionService.showActivityItem(user, userAccountId, sessionActivityItem);
 				return passFilter && hasPermission;
 			}
 		});
@@ -1044,20 +1111,26 @@ public class SessionController extends CaptureAbstractController{
 		log.trace("Start of startOrResumeSession() --> params " + sessionId);
 		try {
 		    AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-		    String userKey = hostUser.getUserKey().orElse(null);
-			CaptureUser user = userService.findUserByKey(acHostModel, userKey);
+		    String userKey = getUser();
+		    String userAccountId = getUserAccountId();
+		    CaptureUser user = null;
+		    if(CaptureUtil.isTenantGDPRComplaint()) {
+		    	user = userService.findUserByAccountId(acHostModel, userAccountId);
+		    } else {
+		    	user = userService.findUserByKey(acHostModel, userKey);
+		    } 
 			if(user == null){
                 throw new CaptureValidationException(i18n.getMessage("Can't find user with userKey", new Object[]{userKey}));
             }
 			Session session  = validateAndGetSession(sessionId);
-            if (!permissionService.canEditSessionStatus(user.getKey(), session)) {
+            if (!permissionService.canEditSessionStatus(user.getKey(), user.getAccountId(), session)) {
                 throw new CaptureValidationException(i18n.getMessage("session.status.change.permissions.violation"));
             }
             if(Status.STARTED.equals(session.getStatus())){
                 throw new CaptureValidationException(i18n.getMessage("The Session:" + session.getName() + " already started", new Object[]{}));
             }
 			session = sessionService.startSession(acHostModel, sessionId, user);
-			SessionDto sessionDto = sessionService.constructSessionDto(user.getKey(), session, false);
+			SessionDto sessionDto = sessionService.constructSessionDto(user.getKey(), user.getAccountId(), session, false);
 			log.trace("End of startOrResumeSession()");
 			return ResponseEntity.ok(sessionDto);
 		} catch(CaptureValidationException ex) {

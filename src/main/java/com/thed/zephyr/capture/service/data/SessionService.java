@@ -138,7 +138,7 @@ public interface SessionService {
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the shared session object.
 	 */
-	UpdateResult shareSession(String loggedUserKey, Session session);
+	UpdateResult shareSession(String loggedUserKey, String loggedUserAccountId, Session session);
 	
 	/**
 	 * Unshared the session. 
@@ -147,7 +147,7 @@ public interface SessionService {
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the unshared session object.
 	 */
-	UpdateResult unshareSession(String loggedUserKey, Session session);
+	UpdateResult unshareSession(String loggedUserKey, String loggedUserAccountId, Session session);
 	
 	/**
 	 * Removes the raised issue from the session.
@@ -158,7 +158,7 @@ public interface SessionService {
 	 * @return -- Returns UpdateResult object which holds the removed issue session object.
 	 * @throws CaptureValidationException -- Thrown while doing validation of the issue.
 	 */
-	UpdateResult removeRaisedIssue(String loggedUserKey, Session session, String issueKey) throws CaptureValidationException;
+	UpdateResult removeRaisedIssue(String loggedUserKey, String loggedUserAccountId, Session session, String issueKey) throws CaptureValidationException;
 	
 	/**
 	 * Completes the session.
@@ -178,6 +178,7 @@ public interface SessionService {
 	 * @param loggedUser - Logged in user.
 	 * @param projectId -- Session Project ID.
 	 * @param assignee -- Session Assignee.
+	 * @param assigneeAccountId - Session Assignee Account Id
 	 * @param status -- Session Status.
 	 * @param seachTerm -- User input search term to filter on session name.
 	 * @param sortField -- Field to sort.
@@ -186,7 +187,7 @@ public interface SessionService {
 	 * @param size -- Number of sessions to fetch.
 	 * @return
 	 */
-	SessionDtoSearchList searchSession(String loggedUser, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
+	SessionDtoSearchList searchSession(String loggedUser, String loggedUserAccountId, Optional<Long> projectId, Optional<String> assignee, Optional<String> assigneeAccountId, Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size);
 
 	/**
 	 * @return -- Returns all the session statuses which are required to render in ui.
@@ -202,7 +203,7 @@ public interface SessionService {
 	 * @param isSendFull -- Flag to send whole session related or not.
 	 * @return -- Returns the constructed session dto object.
 	 */
-	SessionDto constructSessionDto(String loggedInUser, Session session, boolean isSendFull);
+	SessionDto constructSessionDto(String loggedInUser, String loggedInUserAccountId, Session session, boolean isSendFull);
 
 	/**
 	 * Get Complete session view details
@@ -211,7 +212,7 @@ public interface SessionService {
 	 * @param session -- Session object
 	 * @return Map of related issues, raised issues and activities
 	 */
-	Map<String, Object> getCompleteSessionView(String loggedUser, Session session);
+	Map<String, Object> getCompleteSessionView(String loggedUser, String loggedUserAccountId, Session session);
 	
 	/**
 	 * Assign session to the assignee. 
@@ -220,7 +221,7 @@ public interface SessionService {
 	 * @param session -- Session object.
 	 * @return -- Returns UpdateResult object which holds the unshared session object.
 	 */
-	UpdateResult assignSession(String loggedUserKey, Session session, String assignee);
+	UpdateResult assignSession(String loggedUserKey, String loggedUserAccountId, Session session, String assignee, String assigneeAccountId);
 	
 	/**
 	 * Fetch private and shared sessions for user.
@@ -228,16 +229,16 @@ public interface SessionService {
 	 * @param user -- Logged in user
 	 * @return -- Returns the Session Extension Response object which holds the private and shared sessions for the user.
 	 */
-	SessionExtensionResponse getSessionsForExtension(String user,Boolean onlyActiveSession);
+	SessionExtensionResponse getSessionsForExtension(String user, String userAccountId, Boolean onlyActiveSession);
 	
 	/**
 	 * @return -- Returns the List of unique assignees for the logged in user tenant id.
 	 */
 	List<CaptureUser> fetchAllAssignees();
 
-	SessionDto getSessionRaisedDuring(String loggedUserKey, String ctId, Long raisedIssueId);
+	SessionDto getSessionRaisedDuring(String loggedUserKey, String loggedUserAccountId, String ctId, Long raisedIssueId);
 
-	SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String ctId, Long projectId, Long relatedIssueId);
+	SessionDtoSearchList getSessionByRelatedIssueId(String loggedUser, String loggedUserAccountId, String ctId, Long projectId, Long relatedIssueId);
 
 	void updateSessionWithIssue(String ctId, Long projectId, String user, String userAccountId, Long issueId);
 
@@ -251,7 +252,7 @@ public interface SessionService {
 	 * @param additionalInfo -- Updated additional information.
 	 * @return -- Returns UpdateResult object which holds the updated session object.
 	 */
-	UpdateResult updateSessionAdditionalInfo(String loggedUser, Session session, String additionalInfo, String wikiParsedData);
+	UpdateResult updateSessionAdditionalInfo(String loggedUser, String loggedUserAccountId, Session session, String additionalInfo, String wikiParsedData);
 	
 	/**
 	 * Clones the session for the requested session.
@@ -273,7 +274,7 @@ public interface SessionService {
 	 * @param baseUrl -- User base url.
 	 * @return -- Returns the SessionResult object which holds the active session and also any validation errors.
 	 */
-	SessionResult getActiveSession(String user, String baseUrl);
+	SessionResult getActiveSession(String user, String userAccountId, String baseUrl);
 
 	UserActiveSession getActiveSession(AcHostModel acHostModel, CaptureUser user);
 
@@ -285,7 +286,7 @@ public interface SessionService {
 	 */
 	void addRaisedInSession(String userKey, Long issueRaisedId, Session session);
 
-	void addUnRaisedInSession(String userKey, String issueKey, Session session);
+	void addUnRaisedInSession(String issueKey, Session session);
 	
 	/*
 	 * Webhook call to update project name for the project id.
@@ -296,11 +297,11 @@ public interface SessionService {
 	
 	void reindexSessionDataIntoES(AcHostModel acHostModel, String jobProgressId, String ctid) throws HazelcastInstanceNotDefinedException;
 	
-	void updateUserDisplayNamesForSessions(String ctid, String userKey, String userDisplayName);
+	void updateUserDisplayNamesForSessions(String ctid, String userKey, String userAccountId, String userDisplayName);
 
 	String generateJiraPropIndex(String ctId);
 
-	String getActiveSessionIdByUser(String user, AcHostModel acHostModel);
+	String getActiveSessionIdByUser(String user, String userAccountId, AcHostModel acHostModel);
 
 	void addRaisedIssueToSession(AcHostModel acHostModel, String sessionId, BasicIssue basicIssue, CaptureUser user) throws HazelcastInstanceNotDefinedException;
 }

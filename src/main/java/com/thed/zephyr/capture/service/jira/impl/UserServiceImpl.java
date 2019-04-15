@@ -98,13 +98,13 @@ public class UserServiceImpl implements UserService{
      * @return
      */
     @Override
-    public JsonNode getAssignableUserByProjectKey(String projectKey,String username){
+    public JsonNode getAssignableUserByProjectKey(String projectKey,String user){
         AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
         String uri = hostUser.getHost().getBaseUrl();
         URI targetUrl= UriComponentsBuilder.fromUriString(uri)
                 .path(JiraConstants.REST_API_ASSIGNABLE_USER)
                 .queryParam("project", projectKey)
-                .queryParam("username", StringUtils.isNotEmpty(username)?username:"")
+                .queryParam("query", StringUtils.isNotEmpty(user)?user:"")
                 .build()
                 .encode()
                 .toUri();

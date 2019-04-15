@@ -72,25 +72,34 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	@Override
-	public TemplateRequest getTemplate(String user,String templateId) {
+	public TemplateRequest getTemplate(String templateId) {
 		Template one = repository.findOne(templateId);
 		return one == null ? null : createTemplateRequest(one);
 	}
 
 	@Override
-	public TemplateSearchList getTemplates(String userName, Integer offset, Integer limit) {
+	public TemplateSearchList getTemplates(Integer offset, Integer limit) {
 		//TODO, check condition on user who should be admin to execute this operation.
 		Page<Template> templatePage = repository.findByCtId(CaptureUtil.getCurrentCtId(),getPageRequest(offset, limit));
 		return convert(templatePage, offset, limit);
 	}
 
 	@Override
-	public TemplateSearchList getUserTemplates(AcHostModel acHostModel, String userKey, Integer offset, Integer limit, Boolean mine) throws Exception {
+	public TemplateSearchList getUserTemplates(AcHostModel acHostModel, String userKey, String userAccountId, Integer offset, Integer limit, Boolean mine) throws Exception {
 		//Since this Crud repository doesn't support OR query we had to make 2 calls
-		Page<Template> createdBy = repository.findByCtIdAndCreatedBy(CaptureUtil.getCurrentCtId(), userKey, getPageRequest(offset, limit));
+		Page<Template> createdBy;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			createdBy = repository.findByCtIdAndCreatedByAccountId(CaptureUtil.getCurrentCtId(), userAccountId, getPageRequest(offset, limit));
+		} else {
+			createdBy = repository.findByCtIdAndCreatedBy(CaptureUtil.getCurrentCtId(), userKey, getPageRequest(offset, limit));
+		}
 		Page<Template> shared;
 		if(mine){
-			shared = repository.findByCtIdAndSharedAndCreatedBy(CaptureUtil.getCurrentCtId(),true, userKey, getPageRequest(offset, limit));
+			if(CaptureUtil.isTenantGDPRComplaint()) {
+				shared = repository.findByCtIdAndSharedAndCreatedByAccountId(CaptureUtil.getCurrentCtId(),true, userAccountId, getPageRequest(offset, limit));
+			} else {
+				shared = repository.findByCtIdAndSharedAndCreatedBy(CaptureUtil.getCurrentCtId(),true, userKey, getPageRequest(offset, limit));
+			}
 		}else{
 			shared = repository.findByCtIdAndShared(CaptureUtil.getCurrentCtId(),true, getPageRequest(offset, limit));
 		}
@@ -105,7 +114,7 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	@Override
-	public TemplateSearchList getSharedTemplates(String userName, Integer offset, Integer limit) throws Exception {
+	public TemplateSearchList getSharedTemplates(Integer offset, Integer limit) throws Exception {
 		Page<Template> templatePage = repository.findByCtIdAndShared(CaptureUtil.getCurrentCtId(),true, getPageRequest(offset, limit));
         ArrayList<BasicProject> projects = projectService.getProjects();
         Map<Long, BasicProject> projectsMap = new TreeMap<>();
@@ -117,9 +126,14 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	@Override
-	public TemplateSearchList getFavouriteTemplates(String owner, Integer offset, Integer limit) throws Exception {
+	public TemplateSearchList getFavouriteTemplates(String owner, String ownerAccountId, Integer offset, Integer limit) throws Exception {
 		Page<Template> shared = repository.findByCtIdAndFavouriteAndShared(CaptureUtil.getCurrentCtId(),true, true, getPageRequest(offset, limit));
-		Page<Template> createdBy = repository.findByCtIdAndFavouriteAndCreatedBy(CaptureUtil.getCurrentCtId(),true, owner, getPageRequest(offset, limit));
+		Page<Template> createdBy = null;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			createdBy = repository.findByCtIdAndFavouriteAndCreatedByAccountId(CaptureUtil.getCurrentCtId(), true, ownerAccountId, getPageRequest(offset, limit));
+		} else {
+			createdBy = repository.findByCtIdAndFavouriteAndCreatedBy(CaptureUtil.getCurrentCtId(), true, owner, getPageRequest(offset, limit));
+		}
 		return mergeTemplates(createdBy, shared, offset, limit);
 	}
 	
@@ -157,8 +171,18 @@ public class TemplateServiceImpl implements TemplateService {
            return new TemplateSearchList(templateRequestList, offset, limit, 0);
         }
         templates.forEach(template -> {
-            if(template != null && template.getCreatedBy() != null && template.getProjectId() != null) {
-                CaptureUser user = userService.findUserByKey(template.getCreatedBy());
+            if(template != null && template.getProjectId() != null) {
+            	CaptureUser user = null;
+            	if(CaptureUtil.isTenantGDPRComplaint()) {
+            		user = userService.findUserByAccountId(template.getCreatedByAccountId());
+            	} else {
+            		if(StringUtils.isNotEmpty(template.getCreatedByAccountId())) {
+            			user = userService.findUserByAccountId(template.getCreatedByAccountId());
+            		} else {
+            			user = userService.findUserByKey(template.getCreatedBy());
+            		}
+            	}
+                
                 BasicProject basicProject = projectsMap.get(template.getProjectId());
                 String key;
                 if(basicProject == null){
@@ -209,8 +233,17 @@ public class TemplateServiceImpl implements TemplateService {
 			Map<String, CaptureUser> userMap = getUserMap(templatePage.getContent());
 			templatePage.getContent().forEach(template -> {
 				Project project = getProject(template.getProjectId());
-				CaptureUser user = userMap.get(template.getCreatedBy());
-				if(permissionService.canUseTemplate(user.getKey(), template.getProjectId())){
+				CaptureUser user = null;
+				if(CaptureUtil.isTenantGDPRComplaint()) {
+					user =  userMap.get(template.getCreatedByAccountId());
+				}
+				else {
+					if(StringUtils.isNotEmpty(template.getCreatedByAccountId()))
+						user = userMap.get(template.getCreatedByAccountId());
+					else
+						user = userMap.get(template.getCreatedBy());
+				}
+				if(permissionService.canUseTemplate(user.getKey(), user.getAccountId(), template.getProjectId())){
 					returnList.add(TemplateBuilder.createTemplateRequest(template, project, user));
 				}
 			});
@@ -222,10 +255,22 @@ public class TemplateServiceImpl implements TemplateService {
 	private Map<String, CaptureUser> getUserMap(List<Template> templateList) {
 		Map<String, CaptureUser> userMap = new HashMap<>();
 		templateList.forEach(t -> {
-				CaptureUser user = userService.findUserByKey(t.getCreatedBy());
-						if(user != null) {
+					CaptureUser user = null;
+				    if(CaptureUtil.isTenantGDPRComplaint()) {
+				    	user = userService.findUserByAccountId(t.getCreatedByAccountId());
+				    } else {
+				    	if(StringUtils.isNotEmpty(t.getCreatedByAccountId())) {
+				    		user = userService.findUserByAccountId(t.getCreatedByAccountId());
+				    	} else {
+				    		user = userService.findUserByKey(t.getCreatedBy());
+				    	}
+				    }
+					if(user != null) {
+						if(StringUtils.isNotEmpty(t.getCreatedByAccountId()))
+							userMap.put(t.getCreatedByAccountId(), user);
+						else
 							userMap.put(t.getCreatedBy(), user);
-						}
+					}
 				}
 			);
 		return userMap;
@@ -236,8 +281,17 @@ public class TemplateServiceImpl implements TemplateService {
 	}
 
 	private TemplateRequest createTemplateRequest(Template created) {
+		CaptureUser createdBy = null;
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			createdBy = userService.findUserByAccountId(created.getCreatedByAccountId());			
+		} else {
+			if(StringUtils.isNotEmpty(created.getCreatedByAccountId()))
+				createdBy = userService.findUserByAccountId(created.getCreatedByAccountId());
+			else
+				createdBy = userService.findUserByKey(created.getCreatedBy());
+		}
 		return TemplateBuilder.createTemplateRequest(created, getProject(created.getProjectId())
-				, userService.findUserByKey(created.getCreatedBy()));
+				, createdBy);
 	}
 
 	protected Set<String> getVariables(JsonNode json, String userName, String userAccountId){

@@ -15,18 +15,18 @@ import java.util.Optional;
  */
 public interface SessionActivityService {
 
-    SessionActivity setStatus(Session session, Date timestamp, String user, String userAccountId);
+    SessionActivity setStatus(boolean isTenantGDPRFlag, Session session, Date timestamp, String user, String userAccountId);
 
-    SessionActivity setStatus(Session session, Date timestamp, String user, String userAccountId, boolean firstStarted);
+    SessionActivity setStatus(boolean isTenantGDPRFlag, Session session, Date timestamp, String user, String userAccountId, boolean firstStarted);
 
-    SessionActivity addParticipantJoined(Session session, Date timestamp, Participant participant, String user, String userAccountId);
+    SessionActivity addParticipantJoined(boolean isTenantGDPRFlag, Session session, Date timestamp, Participant participant, String user, String userAccountId);
 
     @Deprecated
-    SessionActivity addParticipantLeft(Session session, Date timestamp, String user, String userAccountId);
+    SessionActivity addParticipantLeft(boolean isTenantGDPRFlag, Session session, Date timestamp, String user, String userAccountId);
 
-    SessionActivity addParticipantLeft(Session session, Participant participant);
+    SessionActivity addParticipantLeft(boolean isTenantGDPRFlag, Session session, Participant participant);
     
-    SessionActivity removeRaisedIssue(Session session, CaptureIssue captureIssue, Date timeRaised, String creator, String creatorAccountId);
+    SessionActivity removeRaisedIssue(boolean isTenantGDPRFlag, Session session, CaptureIssue captureIssue, Date timeRaised, String creator, String creatorAccountId);
 
     SessionActivity addAttachment(Session session, Issue issue, Attachment attachment, Date creationDate, String author, String authorAccountId);
 
@@ -47,9 +47,9 @@ public interface SessionActivityService {
      * @param assignee -- User to which session is assigned.
      * @return -- Returns the saved session activity object.
      */
-    SessionActivity addAssignee(Session session, Date assignedTime, String assigner, String assignerAccountId, String assignee, String assigneeAccountId, String oldAssignee);
+    SessionActivity addAssignee(boolean isTenantGDPRFlag, Session session, Date assignedTime, String assigner, String assignerAccountId, String assignee, String assigneeAccountId, String oldAssignee, String oldAssigneeAccountId);
 
-    SessionActivity addRaisedIssue(Session session, Long issueId, Date timeRaised, String creator, String creatorAccountId);
+    SessionActivity addRaisedIssue(boolean isTenantGDPRFlag, Session session, Long issueId, Date timeRaised, String creator, String creatorAccountId);
 
     SessionActivity getSessionActivity(String id);
     

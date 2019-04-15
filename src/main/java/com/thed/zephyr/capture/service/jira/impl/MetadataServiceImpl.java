@@ -20,6 +20,7 @@ import com.thed.zephyr.capture.service.jira.MetadataService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
 import net.minidev.json.JSONObject;
@@ -179,11 +180,17 @@ public class MetadataServiceImpl implements MetadataService {
             List<FieldOption> userBeans = new ArrayList<>();
             if(userNode != null && userNode.size() > 0) {
                 userNode.forEach(jsonNode1 -> {
-                    userBeans.add(new FieldOption(
-                            jsonNode1.get("displayName").asText(),
-                            jsonNode1.get("name").asText()
-                    ));
-
+                   if(CaptureUtil.isTenantGDPRComplaint()) {
+                	   userBeans.add(new FieldOption(
+                               jsonNode1.get("displayName").asText(),
+                               jsonNode1.get("accountId").asText()
+                       ));  
+                   } else {
+                	   userBeans.add(new FieldOption(
+                               jsonNode1.get("displayName").asText(),
+                               jsonNode1.get("name").asText()
+                       ));
+                   }
                 });
             }
             resultMap.put(FIELD_LIST_BEANS,fieldMap);

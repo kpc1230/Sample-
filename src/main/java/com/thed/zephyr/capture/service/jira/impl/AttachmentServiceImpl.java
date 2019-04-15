@@ -2,6 +2,7 @@ package com.thed.zephyr.capture.service.jira.impl;
 
 import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.atlassian.connect.spring.AtlassianHostUser.AtlassianHostUserBuilder;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.Attachment;
@@ -146,11 +147,20 @@ public class AttachmentServiceImpl implements AttachmentService {
             Session session = sessionService.getSession(testSessionId);
             Issue updatedIssue = getJiraRestClient.getIssueClient().getIssue(issueKey).claim();
             Attachment jiraAttachment = getLastUploadedAttachmentByIssue(updatedIssue);
-            com.thed.zephyr.capture.model.jira.Attachment attachment = new
-                    com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
-                    jiraAttachment.getAuthor().getName(), null, jiraAttachment.getCreationDate().getMillis(),
-                    jiraAttachment.getSize(), jiraAttachment.getMimeType(),
-                    jiraAttachment.getContentUri());
+            com.thed.zephyr.capture.model.jira.Attachment attachment = null;
+            if(CaptureUtil.isTenantGDPRComplaint()) {
+            	attachment = new
+                        com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
+                        null, CaptureUtil.getAccountIdFromQueryString(jiraAttachment.getAuthor().getSelf().getQuery()), jiraAttachment.getCreationDate().getMillis(),
+                        jiraAttachment.getSize(), jiraAttachment.getMimeType(),
+                        jiraAttachment.getContentUri());
+            } else {
+            	attachment = new
+                        com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
+                        jiraAttachment.getAuthor().getName(), CaptureUtil.getAccountIdFromQueryString(jiraAttachment.getAuthor().getSelf().getQuery()), jiraAttachment.getCreationDate().getMillis(),
+                        jiraAttachment.getSize(), jiraAttachment.getMimeType(),
+                        jiraAttachment.getContentUri());
+            }
             sessionActivityService.addAttachment(session, updatedIssue, attachment, new Date(jiraAttachment.getCreationDate().getMillis()), attachment.getAuthor(), attachment.getAuthorAccountId());
         }
         return CaptureUtil.getFullIconUrl(issue,host);
@@ -161,9 +171,10 @@ public class AttachmentServiceImpl implements AttachmentService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         AtlassianHostUser hostUser = (AtlassianHostUser) auth.getPrincipal();
-        String user = hostUser.getUserKey().get();
-        if(null != user && StringUtils.isNotEmpty(user)){
-            hostUser = new AtlassianHostUser(hostUser.getHost(),Optional.of(user));
+        String userAccountId = hostUser.getUserAccountId().get();
+        AtlassianHostUserBuilder atlassianHostUserBuilder = AtlassianHostUser.builder(hostUser.getHost());	
+        if(null != userAccountId && StringUtils.isNotEmpty(userAccountId)){
+            hostUser = atlassianHostUserBuilder.withUserAccountId(userAccountId).build();
         }
 
         log.info("Attachment Upload request for Issue : {}", issueKey);
@@ -268,7 +279,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                             try{
                                com.thed.zephyr.capture.model.jira.Attachment attachment = new
                                         com.thed.zephyr.capture.model.jira.Attachment(jiraAttachment.getSelf(), jiraAttachment.getFilename(),
-                                        hostUser.getUserKey().get(), hostUser.getUserAccountId().get(), jiraAttachment.getCreationDate().getMillis(),
+                                        hostUser.getUserKey().orElse(null), hostUser.getUserAccountId().get(), jiraAttachment.getCreationDate().getMillis(),
                                         jiraAttachment.getSize(), jiraAttachment.getMimeType(),
                                         jiraAttachment.getContentUri());
                             } catch (Exception exp) {

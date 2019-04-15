@@ -26,23 +26,29 @@ public interface SessionESRepository extends ElasticsearchRepository<Session, St
     Page<Session> findByCtIdAndStatusAndCreator(String ctId, String status, String creator,Pageable pageable);
 
     Page<Session> findByCtIdAndStatusAndParticipantsUser(String ctId, String status, String participants,Pageable pageable);
+    
+    @Query("{\"query\":{\"bool\":{\"must\":[{\"match_phrase\":{\"ctId\":\"?0\"}},{\"match\":{\"status\":\"?1\"}}, {\"match_phrase\":{\"participants.userAccountId\":\"?2\"}}]}}}")
+    Page<Session> findByCtIdAndStatusAndParticipantsUserAccountId(String ctId, String status, String participants,Pageable pageable);
 
     List<Session> findByCtIdAndStatusAndAssignee(String ctId, String status, String assignee);
+    
+    @Query("{\"query\":{\"bool\":{\"must\":[{\"match_phrase\":{\"ctId\":\"?0\"}},{\"match\":{\"status\":\"?1\"}}, {\"match_phrase\":{\"assigneeAccountId\":\"?2\"}}]}}}")
+    List<Session> findByCtIdAndStatusAndAssigneeAccountId(String ctId, String status, String assigneeAccountId);
 
     Session findById(String id);
 
     long countByCtId(String ctId);
     
-    Map<String, Object> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<List<String>> status, Optional<String> searchTerm,
+    Map<String, Object> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<String> assigneeAccountId, Optional<List<String>> status, Optional<String> searchTerm,
                                        Optional<String> sortField, boolean sortAscending, int startAt, int size);
     
     Set<String> fetchAllAssigneesForCtId(String ctId);
     
     void deleteSessionsByCtId(String ctId);
     
-    AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user);
+    AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user, String userAccountId);
 	
-    AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user);
+    AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user, String userAccountId);
 
     Session findByCtIdAndJiraPropIndex(String ctId, String jiraPropIndex);
 

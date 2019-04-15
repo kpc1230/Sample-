@@ -22,6 +22,8 @@ import com.thed.zephyr.capture.service.jira.WebhookHandlerService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureConstants;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
+import com.thed.zephyr.capture.util.CaptureUtil;
+
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -144,8 +146,9 @@ public class IssueWebhookController {
     }
 
     @Deprecated
-    private List<ErrorCollection.ErrorItem> validateUpdate(String updater, Session newSession) {
+    private List<ErrorCollection.ErrorItem> validateUpdate(String updater, String updaterAccountId, Session newSession) {
         ErrorCollection errorCollection = new ErrorCollection();
+        boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         Session loadedSession = null;
         // Validation
         // Check inputs not null
@@ -178,11 +181,14 @@ public class IssueWebhookController {
             } else {
                 // If the session status is changed, we better have been allowed to do that!
                 if (!newSession.getStatus().equals(loadedSession.getStatus())
-                        && !permissionService.canEditSessionStatus(updater, loadedSession)) {
+                        && !permissionService.canEditSessionStatus(updater, updaterAccountId, loadedSession)) {
                     errorCollection.addError(i18n.getMessage("session.status.change.permissions.violation"));
                 }
                 // If the assignee has changed, then the new session should be paused
-                if (!newSession.getAssignee().equals(loadedSession.getAssignee()) && newSession.getStatus().equals(Session.Status.STARTED)) {
+                if (!isTenantGDPRComplaint && !newSession.getAssignee().equals(loadedSession.getAssignee()) && newSession.getStatus().equals(Session.Status.STARTED)) {
+                    errorCollection.addError(i18n.getMessage("session.assigning.active.session.violation"));
+                }
+                if (isTenantGDPRComplaint && !newSession.getAssigneeAccountId().equals(loadedSession.getAssigneeAccountId()) && newSession.getStatus().equals(Session.Status.STARTED)) {
                     errorCollection.addError(i18n.getMessage("session.assigning.active.session.violation"));
                 }
                 // Status can't go backwards from COMPLETED
@@ -190,7 +196,10 @@ public class IssueWebhookController {
                     errorCollection.addError(i18n.getMessage("session.reopen.completed.violation"));
                 }
                 // Check that certain fields haven't changed - creator + time created (paranoid check)
-                if (!newSession.getCreator().equals(loadedSession.getCreator())) {
+                if (!isTenantGDPRComplaint && !newSession.getCreator().equals(loadedSession.getCreator())) {
+                    errorCollection.addError(i18n.getMessage("session.change.creator.violation"));
+                }
+                if (isTenantGDPRComplaint && !newSession.getCreatorAccountId().equals(loadedSession.getCreatorAccountId())) {
                     errorCollection.addError(i18n.getMessage("session.change.creator.violation"));
                 }
                 if (!loadedSession.getTimeCreated().equals(newSession.getTimeCreated())) {
@@ -214,7 +223,7 @@ public class IssueWebhookController {
         // If we aren't shared, we wanna kick out all the current users
         if (!newSession.isShared()) {
             for (Participant p : Iterables.filter(newSession.getParticipants(), new ActiveParticipantPredicate())) {
-                sessionActivityService.addParticipantLeft(newSession, new Date(), p.getUser(), p.getUserAccountId());
+                sessionActivityService.addParticipantLeft(isTenantGDPRComplaint, newSession, new Date(), p.getUser(), p.getUserAccountId());
             }
         }
         return errorCollection.getErrors();

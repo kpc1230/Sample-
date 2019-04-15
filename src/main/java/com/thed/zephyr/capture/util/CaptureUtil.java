@@ -272,8 +272,12 @@ public class CaptureUtil {
 	public static String createSessionLink(String sessionId,String addonKey){
 		return String.format(ApplicationConstants.SESSION_URL_TEMPLATE, addonKey, sessionId);
 	}
-    public  static String createADGFlagCacheKey(String userKey){
-        return String.valueOf(ApplicationConstants.ADG3_FLAG_CACHE_PREFIX + "_" + userKey);
+    public  static String createADGFlagCacheKey(String userKey, String userAccountId){
+        if(isTenantGDPRComplaint()) {
+        	return String.valueOf(ApplicationConstants.ADG3_FLAG_CACHE_PREFIX + "_" + userAccountId);
+        } else {
+        	return String.valueOf(ApplicationConstants.ADG3_FLAG_CACHE_PREFIX + "_" + userKey);
+        }
     }
 
     /**
@@ -297,5 +301,53 @@ public class CaptureUtil {
             result = wikiParsedData.replace(ApplicationConstants.EMO_ICON_PATH, replacedStr);
         }
         return result;
+    }
+    
+    
+    public static boolean isTenantGDPRComplaint() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if(auth != null) {
+            if(auth.getPrincipal() instanceof String && auth.getPrincipal().toString().equals("anonymousUser")){
+                log.info("Anonymous user: returning gdpr complaint as false");
+                return false;
+            } else {
+                try {
+                    AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
+                    AcHostModel acHostModel = (AcHostModel) atlassianHostUser.getHost();
+                    return acHostModel.getMigrated() != null ? acHostModel.getMigrated() == AcHostModel.GDPRMigrationStatus.GDPR : false;
+                } catch (Exception ex){
+                    log.error("Error during getting gpdr flag from tenant {}", ex.getMessage());
+                }
+            }
+        }
+        return false;
+    }
+    
+    public static String getUserId(String userNameOrKey, String userAccountId, String defaultLoggedInUserAccountId) {
+    	if(isTenantGDPRComplaint()) {
+    		return userAccountId;
+    	} else {
+    		if(StringUtils.isNotEmpty(userAccountId)) {
+    			return userAccountId;
+    		} else if(StringUtils.isNotEmpty(userNameOrKey)) {
+    			return userNameOrKey;
+    		} else {
+    			return defaultLoggedInUserAccountId;
+    		}
+    	}
+    }
+    
+    public static String getAccountIdFromQueryString(String queryString) {
+    	if(StringUtils.isNotEmpty(queryString)) {
+    		String[] strArr = queryString.split("&");
+    		if(strArr != null) {
+    			for(int i=0; i < strArr.length; i++) {
+    				if(strArr[i].startsWith("accountId=")) {
+    					return strArr[i].split("=")[1];
+    				}
+    			}
+    		}
+    	}
+    	return null;
     }
 }

@@ -63,5 +63,9 @@ public class CaptureUser implements Serializable{
 	public String getAccountId() {
 		return accountId;
 	}
+	
+	public CaptureUser cloneWithOutNameAndKey() {
+		return new CaptureUser(this.self, null, null, this.emailAddress, this.displayName, this.active, this.avatarUrls, this.accountId);
+	}
     
 }

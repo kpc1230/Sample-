@@ -17,7 +17,7 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
 
      boolean hasCreateIssuePermission();
 
-     boolean hasCreateIssuePermission(Long projectId, String user);
+     boolean hasCreateIssuePermission(Long projectId, String user, String userAccountId);
 
      boolean hasEditIssuePermission(String issueKey);
 
@@ -25,64 +25,64 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
 
      boolean hasBrowsePermission(Long projectId);
 
-     boolean isSysadmin(String user);
+     boolean isSysadmin(String user, String userAccountId);
 
-     boolean canCreateSession(String user, CaptureProject project);
+     boolean canCreateSession(String user, String userAccountId, CaptureProject project);
 
-     boolean canBeAssignedSession(String user, CaptureProject project);
+     boolean canBeAssignedSession(String user, String userAccountId, CaptureProject project);
 
-     boolean canAssignSession(String user, CaptureProject project);
+     boolean canAssignSession(String user, String userAccountId, CaptureProject project);
 
-     boolean canJoinSession(String user, Session session);
+     boolean canJoinSession(String user, String userAccountId, Session session);
 
-     boolean canJoinSession(String user, LightSession session);
+     boolean canJoinSession(String user, String userAccountId, LightSession session);
 
-     boolean canCreateNote(String user, Session session);
+     boolean canCreateNote(String user, String userAccountId, Session session);
 
-     boolean canCreateNote(String user, String sessionId);
+     boolean canCreateNote(String user, String userAccountId, String sessionId);
 
-     boolean canCreateNote(String user, LightSession session);
+     boolean canCreateNote(String user, String userAccountId, LightSession session);
 
-     boolean canEditNote(String user, LightSession session, NoteSessionActivity note);
+     boolean canEditNote(String user, String userAccountId, LightSession session, NoteSessionActivity note);
 
-     boolean canEditNote(String user, Session session, NoteSessionActivity note);
+     boolean canEditNote(String user, String userAccountId, Session session, NoteSessionActivity note);
 
-     boolean canEditNote(String user, String sessionId, NoteSessionActivity note);
+     boolean canEditNote(String user, String userAccountId, String sessionId, NoteSessionActivity note);
 
-     boolean canEditSession(String user, Session session);
+     boolean canEditSession(String user, String userAccountId, Session session);
 
-     boolean canEditLightSession(String user, LightSession session);
+     boolean canEditLightSession(String user, String userAccountId, LightSession session);
 
-     boolean canEditSessionStatus(String user, Session session);
+     boolean canEditSessionStatus(String user, String userAccountId, Session session);
 
-     boolean canEditSessionStatus(String user, LightSession session);
+     boolean canEditSessionStatus(String user, String userAccountId, LightSession session);
 
-     boolean canUnraiseIssueInSession(String user, CaptureIssue captureIssue);
+     boolean canUnraiseIssueInSession(String user, String userAccountId, CaptureIssue captureIssue);
 
     /**
      * This will check both the issue security and the projects BROWSE permission
      */
-     boolean canSeeIssue(String user,CaptureIssue issue);
+     boolean canSeeIssue(String user, String userAccountId,CaptureIssue issue);
 
-     boolean canCreateInProject(String user, CaptureProject project);
+     boolean canCreateInProject(String user, String userAccountId, CaptureProject project);
 
-     boolean showActivityItem(String user, SessionActivity sessionActivity);
+     boolean showActivityItem(String user, String userAccountId, SessionActivity sessionActivity);
 
-     boolean canSeeSession(String user, Session session);
+     boolean canSeeSession(String user, String userAccountId, Session session);
 
-     boolean canSeeSession(String user, LightSession session);
+     boolean canSeeSession(String user, String userAccountId, LightSession session);
 
     //   boolean canSeeSession(String user, IndexedSession session);
 
-     boolean canCreateTemplate(String user, CaptureProject project);
+     boolean canCreateTemplate(String user, String userAccountId, CaptureProject project);
 
-     boolean canEditTemplate(String user, CaptureProject project);
+     boolean canEditTemplate(String user, String userAccountId, CaptureProject project);
 
-     boolean canUseTemplate(String user, Long projectId);
+     boolean canUseTemplate(String user, String userAccountId, Long projectId);
 
-	 boolean canUseTemplate(String user, CaptureProject project);
+	 boolean canUseTemplate(String user, String userAccountId, CaptureProject project);
 
-	 boolean canEditNote(String user, String assignee, Note note);
+	 boolean canEditNote(String user, String userAccountId, String assignee, String assigneeAccountId, Note note);
 
 	 boolean canAddCommentPermission(String issueKey);
 }

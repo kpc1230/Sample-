@@ -91,8 +91,12 @@ public class SessionActivityFunction implements Function<SessionActivity, Object
 		finalSescionActivityMap.put("sessionId", sessionActivity.getSessionId());
 		finalSescionActivityMap.put("ctId", sessionActivity.getCtId());
 		finalSescionActivityMap.put("timestamp", sessionActivity.getTimestamp());
-		finalSescionActivityMap.put("user", sessionActivity.getUser());
-		finalSescionActivityMap.put("userAccountId", sessionActivity.getUserAccountId());
+		if(CaptureUtil.isTenantGDPRComplaint()) {
+			finalSescionActivityMap.put("userAccountId", sessionActivity.getUserAccountId());
+		} else {
+			finalSescionActivityMap.put("user", sessionActivity.getUser());
+			finalSescionActivityMap.put("userAccountId", sessionActivity.getUserAccountId());
+		}
 		finalSescionActivityMap.put("clazz", sessionActivity.getClazz());
 		finalSescionActivityMap.put("projectId", sessionActivity.getProjectId());
 		finalSescionActivityMap.put("displayName", sessionActivity.getDisplayName());

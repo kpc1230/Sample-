@@ -57,20 +57,28 @@ public class InviteServiceImpl implements InviteService{
 
     @Override
     public void sendInviteToSession(Session session, InviteSessionRequest inviteSessionRequest) throws Exception {
-
+    	boolean isTenantGDPRComplaint = CaptureUtil.isTenantGDPRComplaint();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-        String userKey = host.getUserKey().get();
-        CaptureUser loggedUser = userService.findUserByKey(userKey);
-
+        String userAccount = host.getUserAccountId().get();
+        CaptureUser loggedUser = userService.findUserByAccountId(userAccount);
         List<String> toEmails = inviteSessionRequest.getEmails() != null ?
                 inviteSessionRequest.getEmails(): new ArrayList<>();
 
-        if(inviteSessionRequest.getUsernames() != null){
+        if(!isTenantGDPRComplaint && inviteSessionRequest.getUsernames() != null){
             inviteSessionRequest.getUsernames()
                     .forEach(username -> {
                         CaptureUser captureUser =
                                 userService.findUserByKey(username);
+                        if(captureUser != null) {
+                            toEmails.add(captureUser.getEmailAddress());
+                        }
+                    });
+        } else if(isTenantGDPRComplaint && inviteSessionRequest.getUserAccountIds() != null){
+            inviteSessionRequest.getUserAccountIds()
+                    .forEach(userAccountId -> {
+                        CaptureUser captureUser =
+                                userService.findUserByAccountId(userAccountId);
                         if(captureUser != null) {
                             toEmails.add(captureUser.getEmailAddress());
                         }
