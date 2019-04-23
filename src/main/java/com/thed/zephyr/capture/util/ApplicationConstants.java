@@ -261,4 +261,8 @@ public class ApplicationConstants {
     public static final String USERDETAILS_EVENTS_QUEUE = "userdetails_events_queue";
     public static final String JEDIS_POOL_CONFIG_MAX_TOTAL = "jedis.pool.config.max.total";
     public static final String JEDIS_POOL_CONFIG_MAX_IDLE = "jedis.pool.config.max.idle";
+    public static final String TENANT_STATUS_UPDATE_JOB = "tenant.status.update.job";
+    public static final String TENANT_STATUS_UPDATE_CRON = "tenant.status.update.job.cron";
+    public static final String TENANT_STATUS_UPDATE_CRON_EXPR = "0 40 14 * * *";
+
 }

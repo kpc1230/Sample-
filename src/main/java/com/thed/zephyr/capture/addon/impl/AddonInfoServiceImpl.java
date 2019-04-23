@@ -44,7 +44,7 @@ public class AddonInfoServiceImpl implements AddonInfoService {
                 log.warn("The getting add-on info request Unauthorized tenantKey:{}", acHostModel.getClientKey() , exception);
                 throw new UnauthorizedException(exception);
             }
-            log.error("Error during getting addon information from jira.", exception);
+            log.error("Error during getting addon information from jira. {}", exception.getMessage());
             throw exception;
         }
 
