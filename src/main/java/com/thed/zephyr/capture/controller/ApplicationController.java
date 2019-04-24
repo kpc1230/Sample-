@@ -69,12 +69,10 @@ public class ApplicationController {
 
     @LicenseCheck
     @RequestMapping(value = "/adminGenConf")
-    public String getGeneralConfigurationPage(@AuthenticationPrincipal AtlassianHostUser hostUser,
-                                              @RequestParam String user_id, Model model) {
+    public String getGeneralConfigurationPage(@AuthenticationPrincipal AtlassianHostUser hostUser, Model model) {
         AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
         String captureUIBaseUrl = dynamicProperty.getStringProp(ApplicationConstants.CAPTUREUI_BASE_URL, env.getProperty(ApplicationConstants.CAPTUREUI_BASE_URL)).getValue();
         String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
-        log.debug("Requesting the general configuration page with username : " + user_id);
         JsonNode jsonNode = addonInfoService.getProperty(acHostModel, "captureGenPageSettings");
         JsonNode resp = null;
         if (jsonNode != null) {
