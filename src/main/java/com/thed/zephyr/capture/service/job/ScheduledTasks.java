@@ -1,6 +1,7 @@
 package com.thed.zephyr.capture.service.job;
 
 import com.thed.zephyr.capture.service.PingHomeService;
+import com.thed.zephyr.capture.service.TenantUpdateService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.slf4j.Logger;
@@ -32,8 +33,12 @@ public class ScheduledTasks implements SchedulingConfigurer {
     @Autowired
     private PingHomeService pingHomeService;
 
+    @Autowired
+    private TenantUpdateService tenantUpdateService;
+
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
+        //Dial Ping Home
         taskRegistrar.addTriggerTask(new Runnable() {
             @Override
             public void run() {
@@ -52,6 +57,31 @@ public class ScheduledTasks implements SchedulingConfigurer {
                 String cron = dynamicProperty.getStringProp(ApplicationConstants.VERSION_PING_CRON_EXPR,
                         ApplicationConstants.VERSION_PING_DEFAULT_CRON_EXPR).get();
                 log.info("The next time pingVersionStatus job will be triggered:{}", cron.toString());
+                CronTrigger trigger = new CronTrigger(cron);
+                Date nextExec = trigger.nextExecutionTime(triggerContext);
+                return nextExec;
+            }
+        });
+
+        //Tenant Status Update
+        taskRegistrar.addTriggerTask(new Runnable() {
+            @Override
+            public void run() {
+                Boolean runTenantStatus = dynamicProperty.getBoolProp(ApplicationConstants.TENANT_STATUS_UPDATE_JOB, true).get();
+                if(runTenantStatus){
+                    log.info("Start pulling tenant status job ...");
+                    tenantUpdateService.runAllTenantStatusUpdate();
+                } else {
+                    log.info("Tenant status update job disabled, please check in dynamic.prop.conf tenant.status.update.job property.");
+                }
+
+            }
+        }, new Trigger() {
+            @Override
+            public Date nextExecutionTime(TriggerContext triggerContext) {
+                String cron = dynamicProperty.getStringProp(ApplicationConstants.TENANT_STATUS_UPDATE_CRON,
+                        ApplicationConstants.TENANT_STATUS_UPDATE_CRON_EXPR).get();
+                log.info("The next time tenant status update job will be triggered:{}", cron.toString());
                 CronTrigger trigger = new CronTrigger(cron);
                 Date nextExec = trigger.nextExecutionTime(triggerContext);
                 return nextExec;
