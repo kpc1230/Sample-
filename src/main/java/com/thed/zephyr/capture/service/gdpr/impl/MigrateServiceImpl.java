@@ -22,6 +22,7 @@ import com.thed.zephyr.capture.service.cache.LockService;
 import com.thed.zephyr.capture.service.db.DynamoDBTableNameResolver;
 import com.thed.zephyr.capture.service.gdpr.MigrateService;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.JiraConstants;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -412,8 +413,9 @@ public class MigrateServiceImpl implements MigrateService {
         do {
             JsonNode jsonNode = null;
             try {
-                String userPath = "/rest/api/latest/user/search?username=&startAt={start}&maxResults={limit}&includeInactive=true".replace("{start}", String.valueOf(start))
+                String userPath = JiraConstants.REST_API_SEARCH_USER.replace("{start}", String.valueOf(start))
                         .replace("{limit}", String.valueOf(maxResult));
+
                 Promise<User> userPromise = getJiraRestClient.getUserClient()
                         .getUser(new URI(hostUser.getHost().getBaseUrl() + userPath));
                 Object object = userPromise.claim();
