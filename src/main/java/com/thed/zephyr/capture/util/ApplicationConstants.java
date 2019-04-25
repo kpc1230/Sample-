@@ -261,4 +261,7 @@ public class ApplicationConstants {
     public static final String USERDETAILS_EVENTS_QUEUE = "userdetails_events_queue";
     public static final String JEDIS_POOL_CONFIG_MAX_TOTAL = "jedis.pool.config.max.total";
     public static final String JEDIS_POOL_CONFIG_MAX_IDLE = "jedis.pool.config.max.idle";
+
+    public static final String ENABLE_GDPR_FORCE_CHECH = "enable.gdpr.force.check";
+    public static final String MIGRATE_DATA = "migrate_capture_data";
 }
