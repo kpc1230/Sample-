@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.gdpr.impl;
 import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.Participant;
@@ -25,10 +26,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.thed.zephyr.capture.util.ApplicationConstants.JIRA_BULK_USER_LIMIT;
@@ -52,98 +50,122 @@ public class UserConversionServiceImpl implements UserConversionService {
     private HazelcastInstance hazelcastInstance;
 
     @Override
-    public void pullUserKeyFromSessions(String ctId) {
-        log.debug("Start pulling user keys from session --> {}",ctId);
-        Set<String> userKeys = new HashSet<>();
-
-        int start = 0;
-        int maxResult = 500;
-        boolean continueWhile = true;
-        do {
-            PageRequest pageRequest = CaptureUtil.getPageRequest(start, maxResult);
-            Page<Session> sessions = sessionRepository.findByCtId(ctId, pageRequest);
-
-            if(sessions != null){
-                sessions.forEach(session -> {
-                    //Take care assignee
-                    String assignee = session.getAssignee();
-                    if(assignee != null) {
-                        userKeys.add(assignee);
-                    }
-
-                    //Take care participant
-                    Collection<Participant> participants = session.getParticipants();
-                    if(participants != null && participants.size() > 0){
-                        participants.forEach(participant -> {
-                            userKeys.add(participant.getUser());
-                        });
-                    }
-
-                    //Take care creator
-                    String creator = session.getCreator();
-                    if(creator != null) {
-                        userKeys.add(creator);
-                    }
-
-                });
-            }else {
-                continueWhile = false;
-            }
-
-            start = start + maxResult;
-
-        }while (continueWhile);
-
-        log.debug("End pulling user keys from session --> {}",ctId);
-        if(userKeys != null && userKeys.size() > 0){
-            int partStart = 0, partMax = 200, size = userKeys.size();
-
+    public Map<String, String> pullUserKeyFromSessions(String ctId) {
+        Map<String, String> resultMap = new HashMap<>();
+        try {
+            log.debug("Start pulling user keys from session --> {}", ctId);
+            Set<String> userKeys = new HashSet<>();
+            int start = 0;
+            int maxResult = 500;
+            boolean continueWhile = true;
             do {
-                Set<String> userKey200 = userKeys.stream()
-                        .skip(partStart)
-                        .limit(partMax)
-                        .collect(Collectors.toSet());
+                PageRequest pageRequest = CaptureUtil.getPageRequest(start, maxResult);
+                Page<Session> sessions = sessionRepository.findByCtId(ctId, pageRequest);
 
-                pullUserAccountIdFromJira(ctId, userKey200.stream().collect(Collectors.toList()));
+                if (sessions != null && sessions.getSize() > 0) {
+                    sessions.forEach(session -> {
+                        //Take care assignee
+                        String assignee = session.getAssignee();
+                        if (assignee != null) {
+                            userKeys.add(assignee);
+                        }
 
-                partStart = partStart + partMax;
-            }while (partStart <= size);
+                        //Take care participant
+                        Collection<Participant> participants = session.getParticipants();
+                        if (participants != null && participants.size() > 0) {
+                            participants.forEach(participant -> {
+                                userKeys.add(participant.getUser());
+                            });
+                        }
+
+                        //Take care creator
+                        String creator = session.getCreator();
+                        if (creator != null) {
+                            userKeys.add(creator);
+                        }
+
+                    });
+                } else {
+                    continueWhile = false;
+                }
+
+                start = start + maxResult;
+
+            } while (continueWhile);
+
+            log.debug("End pulling user keys from session --> {}", ctId);
+            if (userKeys != null && userKeys.size() > 0) {
+                log.debug("userKeys --> {}", userKeys.size());
+                int partStart = 0, partMax = 200, size = userKeys.size();
+
+                do {
+                    Set<String> userKey200 = userKeys.stream()
+                            .skip(partStart)
+                            .limit(partMax)
+                            .collect(Collectors.toSet());
+
+                    Map<String, String> accMap = pullUserAccountIdFromJira(userKey200.stream().collect(Collectors.toList()), "key");
+                    if (accMap != null && accMap.size() > 0) {
+                        resultMap.putAll(accMap);
+                    }
+
+                    partStart = partStart + partMax;
+                } while (partStart <= size);
+            }
+        } catch (Exception exp) {
+            log.error("Exception got while getting users from from session Data ", exp);
         }
-
+        return resultMap;
     }
 
     @Override
-    public void pullUserAccountIdFromJira(String ctId, List<String> userKeys) {
-        if(userKeys != null && userKeys.size() > 0) {
-            AtlassianHostUser hostUser = (AtlassianHostUser) SecurityContextHolder.getContext()
-                    .getAuthentication().getPrincipal();
-            AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
-            String bulk_user_url = acHostModel.getBaseUrl() + "/" + JiraConstants.REST_API_SEARCH_USER_BULK;
+    public Map<String, String> pullUserAccountIdFromJira(List<String> userKeys, String keyType) {
+        Map<String, String> resultMap = new HashMap<>();
+        if (userKeys != null && userKeys.size() > 0) {
+            try {
+                ObjectMapper om = new ObjectMapper();
+                AtlassianHostUser hostUser = (AtlassianHostUser) SecurityContextHolder.getContext()
+                        .getAuthentication().getPrincipal();
+                AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+                String bulk_user_url = acHostModel.getBaseUrl() + "/" + JiraConstants.REST_API_SEARCH_USER_BULK;
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
-            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(bulk_user_url)
-                    .queryParam("startAt", 0)
-                    .queryParam("maxResults", JIRA_BULK_USER_LIMIT);
-            final MultiValueMap<String, String> userParams = new LinkedMultiValueMap<>();
-            userKeys.forEach(user -> {
-                userParams.add("key", user);
-            });
-            builder.queryParams(userParams);
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+                UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(bulk_user_url)
+                        .queryParam("startAt", 0)
+                        .queryParam("maxResults", JIRA_BULK_USER_LIMIT);
+                final MultiValueMap<String, String> userParams = new LinkedMultiValueMap<>();
+                userKeys.forEach(user -> {
+                    userParams.add(keyType, user);
+                });
+                builder.queryParams(userParams);
 
-            HttpEntity<?> entity = new HttpEntity<>(headers);
+                HttpEntity<?> entity = new HttpEntity<>(headers);
 
-            HttpEntity<JsonNode> response = atlassianHostRestClients
-                    .authenticatedAs(hostUser).exchange(
-                            builder.toUriString(),
-                            HttpMethod.GET,
-                            entity,
-                            JsonNode.class);
-            if(response != null && response.hasBody()){
-                //TODO found user list with accountId.
-                //put it under hazelcast cache
+                HttpEntity<JsonNode> response = atlassianHostRestClients
+                        .authenticatedAs(hostUser).exchange(
+                                builder.toUriString(),
+                                HttpMethod.GET,
+                                entity,
+                                JsonNode.class);
+                if (response != null && response.hasBody()) {
+                    JsonNode jsonNode = response.getBody();
+                    if (jsonNode != null && jsonNode.isArray()) {
+                        for (JsonNode node : jsonNode) {
+                            String userKey = node.has(keyType) ? node.get(keyType).asText() : "";
+                            String accountId = node.has("accountId") ? node.get("accountId").asText() : "";
+                            if (userKey != null && userKey.length() > 0 && accountId != null && accountId.length() > 0) {
+                                resultMap.put(userKey, accountId);
+                            }
+
+                        }
+                    }
+                }
+            } catch (Exception exp) {
+                log.error("Exception got while getting users from Jira ", exp);
             }
 
         }
+        return resultMap;
     }
 }
