@@ -265,4 +265,5 @@ public class ApplicationConstants {
     public static final String TENANT_STATUS_UPDATE_CRON = "tenant.status.update.job.cron";
     public static final String TENANT_STATUS_UPDATE_CRON_EXPR = "0 40 14 * * *";
 
+    public static final int JIRA_BULK_USER_LIMIT = 200;
 }
