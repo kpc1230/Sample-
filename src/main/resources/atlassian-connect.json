@@ -668,9 +668,6 @@
     ]
   },
   "scopes": ["READ", "WRITE","ADMIN","ACT_AS_USER"],
-  "apiMigrations": {
-    "gdpr": false
-  },
   "translations": {
     "paths": {
       "fr-FR": "/i18n/descriptor/fr_FR.json",

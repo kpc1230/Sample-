@@ -31,11 +31,6 @@ public class AddonInfoServiceImpl implements AddonInfoService {
     public AddonInfo getAddonInfo(AcHostModel acHostModel) throws RestClientException, UnauthorizedException {
         String pluginKey = env.getProperty(ApplicationConstants.PLUGIN_KEY);
         String uri = JiraConstants.REST_API_ADD_ON_INFO + "/" + pluginKey;
-        if(acHostModel.getStatus() != AcHostModel.TenantStatus.ACTIVE){
-            AddonInfo addonInfo = new AddonInfo();
-            addonInfo.setState(acHostModel.getStatus().toString());
-            return addonInfo;
-        }
         try {
             AddonInfo response = atlassianHostRestClients.authenticatedAsAddon().getForObject(uri, AddonInfo.class);
             return response;
@@ -44,7 +39,7 @@ public class AddonInfoServiceImpl implements AddonInfoService {
                 log.warn("The getting add-on info request Unauthorized tenantKey:{}", acHostModel.getClientKey() , exception);
                 throw new UnauthorizedException(exception);
             }
-            log.error("Error during getting addon information from jira.", exception);
+            log.error("Error during getting addon information from jira. {}", exception.getMessage());
             throw exception;
         }
 
