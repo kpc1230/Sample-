@@ -87,7 +87,7 @@
     ],
     "adminPages":[
       {
-        "url": "/adminGenConf",
+        "url": "/adminGenConf?kcehCecroFRPDGpiks=true",
         "key": "captureconfig-general",
         "name": {
           "value": "Capture For JIRA"
@@ -502,43 +502,43 @@
     "webhooks":[
       {
         "event": "connect_addon_enabled",
-        "url": "/rest/event/plugin/enabled"
+        "url": "/rest/event/plugin/enabled?kcehCecroFRPDGpiks=true"
       },
       {
         "event": "connect_addon_disabled",
-        "url": "/rest/event/plugin/disabled"
+        "url": "/rest/event/plugin/disabled?kcehCecroFRPDGpiks=true"
       },
       {
         "event": "jira:issue_created",
-        "url": "/rest/event/issue/created"
+        "url": "/rest/event/issue/created?kcehCecroFRPDGpiks=true"
       },
       {
         "event": "jira:issue_updated",
-        "url": "/rest/event/issue/updated"
+        "url": "/rest/event/issue/updated?kcehCecroFRPDGpiks=true"
       },
       {
         "event": "jira:issue_deleted",
-        "url": "/rest/event/issue/deleted"
+        "url": "/rest/event/issue/deleted?kcehCecroFRPDGpiks=true"
       },
       {
         "event": "project_deleted",
-        "url": "/rest/event/project/deleted"
+        "url": "/rest/event/project/deleted?kcehCecroFRPDGpiks=true"
       },
       {
         "event": "project_updated",
-        "url": "/rest/event/project/updated"
+        "url": "/rest/event/project/updated?kcehCecroFRPDGpiks=true"
       },
       {
         "event": "user_created",
-        "url": "/rest/event/user/created"
+        "url": "/rest/event/user/created?kcehCecroFRPDGpiks=true"
       },
       {
         "event": "user_updated",
-        "url": "/rest/event/user/updated"
+        "url": "/rest/event/user/updated?kcehCecroFRPDGpiks=true"
       },
       {
         "event": "user_deleted",
-        "url": "/rest/event/user/deleted"
+        "url": "/rest/event/user/deleted?kcehCecroFRPDGpiks=true"
       }
     ],
     "jiraEntityProperties": [
