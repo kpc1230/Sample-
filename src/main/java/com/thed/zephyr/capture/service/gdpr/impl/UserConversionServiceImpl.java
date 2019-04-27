@@ -96,7 +96,7 @@ public class UserConversionServiceImpl implements UserConversionService {
             log.debug("End pulling user keys from session --> {}", ctId);
             if (userKeys != null && userKeys.size() > 0) {
                 log.debug("userKeys --> {}", userKeys.size());
-                int partStart = 0, partMax = 200, size = userKeys.size();
+                int partStart = 0, partMax = JIRA_BULK_USER_LIMIT, size = userKeys.size();
 
                 do {
                     Set<String> userKey200 = userKeys.stream()
@@ -123,7 +123,6 @@ public class UserConversionServiceImpl implements UserConversionService {
         Map<String, String> resultMap = new HashMap<>();
         if (userKeys != null && userKeys.size() > 0) {
             try {
-                ObjectMapper om = new ObjectMapper();
                 AtlassianHostUser hostUser = (AtlassianHostUser) SecurityContextHolder.getContext()
                         .getAuthentication().getPrincipal();
                 AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
