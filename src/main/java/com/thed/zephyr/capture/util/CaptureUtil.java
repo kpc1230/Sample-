@@ -3,6 +3,8 @@ package com.thed.zephyr.capture.util;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.IssueType;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.Tag;
 import com.thed.zephyr.capture.service.ac.DynamoDBAcHostRepository;
@@ -349,5 +351,15 @@ public class CaptureUtil {
     		}
     	}
     	return null;
+    }
+
+    /**
+     * Update tenant cache since its using Spring Security Context to auth tenant
+     * @param acHostModel
+     * @param hazelcastInstance
+     */
+    public static void updateTenantCache(AcHostModel acHostModel, HazelcastInstance hazelcastInstance) {
+        IMap<String, AcHostModel> tenants = hazelcastInstance.getMap(ApplicationConstants.LOCATION_ACHOST);
+        tenants.put(acHostModel.getClientKey(), acHostModel);
     }
 }

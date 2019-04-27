@@ -10,14 +10,14 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.util.IOUtils;
 import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.User;
 import com.atlassian.util.concurrent.Promise;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.nimbusds.jwt.JWTClaimsSet;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.thed.zephyr.capture.exception.HazelcastInstanceNotDefinedException;
 import com.thed.zephyr.capture.model.*;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
@@ -28,10 +28,7 @@ import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.db.DynamoDBTableNameResolver;
 import com.thed.zephyr.capture.service.gdpr.MigrateService;
 import com.thed.zephyr.capture.service.gdpr.UserConversionService;
-import com.thed.zephyr.capture.util.ApplicationConstants;
-import com.thed.zephyr.capture.util.DynamicProperty;
-import com.thed.zephyr.capture.util.JiraConstants;
-import com.thed.zephyr.capture.util.UniqueIdGenerator;
+import com.thed.zephyr.capture.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -40,7 +37,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -86,6 +82,9 @@ public class MigrateServiceImpl implements MigrateService {
     @Autowired
     private SessionService sessionService;
 
+    @Autowired
+    private HazelcastInstance hazelcastInstance;
+
     private String KEY_KEY = "key";
     private String KEY_USERNAME = "username";
 
@@ -116,6 +115,9 @@ public class MigrateServiceImpl implements MigrateService {
 
                     acHostModel.setMigrated(AcHostModel.GDPRMigrationStatus.GDPR);
                     acHostModelRepository.save(acHostModel);
+
+                    //Update tenant cache since its using Spring Security Context to populate tenant
+                    CaptureUtil.updateTenantCache(acHostModel, hazelcastInstance);
 
                     //clear cache invoke
                     log.info("Start of clearTenantCache() : {} ", acHostModel.getBaseUrl());

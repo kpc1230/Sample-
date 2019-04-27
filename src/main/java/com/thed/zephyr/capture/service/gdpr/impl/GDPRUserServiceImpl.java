@@ -7,11 +7,13 @@ import com.atlassian.util.concurrent.Promise;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.core.HazelcastInstance;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
 import com.thed.zephyr.capture.service.gdpr.GDPRUserService;
 import com.thed.zephyr.capture.service.gdpr.model.UserDTO;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.slf4j.Logger;
@@ -50,6 +52,8 @@ public class GDPRUserServiceImpl implements GDPRUserService {
     @Autowired
     private JedisPool userRedisPool;
 
+    @Autowired
+    private HazelcastInstance hazelcastInstance;
 
     @Override
     public List<UserDTO> getAndPushUserToMigration(AtlassianHostUser hostUser) {
@@ -119,6 +123,7 @@ public class GDPRUserServiceImpl implements GDPRUserService {
                         if (userDTOS != null && userDTOS.size() > 0) {
                             acHostModel.setCapturedAccountId(true);
                             acHostModelRepository.save(acHostModel);
+                            CaptureUtil.updateTenantCache(acHostModel, hazelcastInstance);
                         }
                     }
                 } catch (Exception ex) {
