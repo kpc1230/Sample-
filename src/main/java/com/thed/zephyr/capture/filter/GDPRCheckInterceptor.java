@@ -40,35 +40,38 @@ public class GDPRCheckInterceptor extends HandlerInterceptorAdapter {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        Boolean passRequest = false;
         //check entrance allowed flag
         Boolean isGDPRForceCheck = dynamicProperty.getBoolProp(ApplicationConstants.ENABLE_GDPR_FORCE_CHECH, false).getValue();
         if (isGDPRForceCheck) {
-            log.info("enable.gdpr.force.check flag is enabled...");
+            log.debug("enable.gdpr.force.check flag is enabled...");
             String skipGDPRForceCheckStr = request.getParameter("kcehCecroFRPDGpiks");
             Boolean skipGDPRForceCheck = skipGDPRForceCheckStr != null && skipGDPRForceCheckStr.equalsIgnoreCase("true");
-            log.info("skipGDPRForceCheck  :{}", skipGDPRForceCheck);
+            log.debug("skipGDPRForceCheck  :{}", skipGDPRForceCheck);
             if (!skipGDPRForceCheck) {
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 if (auth != null) {
                     try {
-                        AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
-                        String baseUrl = host.getHost().getBaseUrl();
-                        log.debug("Get tenant by baseURL:{} from DynamoDB", baseUrl);
-                        List<AcHostModel> acHostModels = acHostModelRepository.findByBaseUrl(baseUrl);
-                        AcHostModel acHostModel = null;
-                        if (acHostModels.size() > 0) {
-                            acHostModel = acHostModels.get(0);
+                        if(auth.getPrincipal() instanceof String && auth.getPrincipal().toString().equals("anonymousUser")){
+                            log.debug("Anonymous user: returning with true");
+                            return true;
+                        } else {
+                            AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
+                            String baseUrl = host.getHost().getBaseUrl();
+                            log.debug("Get tenant by baseURL:{} from DynamoDB", baseUrl);
+                            List<AcHostModel> acHostModels = acHostModelRepository.findByBaseUrl(baseUrl);
+                            AcHostModel acHostModel = null;
+                            if (acHostModels.size() > 0) {
+                                acHostModel = acHostModels.get(0);
+                            }
+                            Boolean skip = !AcHostModel.GDPRMigrationStatus.GDPR.equals(acHostModel.getMigrated()) && !AcHostModel.GDPRMigrationStatus.MIGRATED.equals(acHostModel.getMigrated());
+                            if (acHostModel != null && AcHostModel.TenantStatus.ACTIVE.equals(acHostModel.getStatus()) && skip) {
+                                String errorContent = errorContent();
+                                response.setStatus(403);
+                                response.getWriter().write(errorContent);
+                                log.debug("Checked tenant from dynamic property to deny them clientKey:{}", host.getHost().getClientKey());
+                                return false;
+                            }
                         }
-                        Boolean skip = !AcHostModel.GDPRMigrationStatus.GDPR.equals(acHostModel.getMigrated()) && !AcHostModel.GDPRMigrationStatus.MIGRATED.equals(acHostModel.getMigrated());
-                        if (acHostModel != null && AcHostModel.TenantStatus.ACTIVE.equals(acHostModel.getStatus()) && skip) {
-                            String errorContent = errorContent();
-                            response.setStatus(403);
-                            response.getWriter().write(errorContent);
-                            log.info("Checked tenant from dynamic property to deny them clientKey:{}", host.getHost().getClientKey());
-                            return false;
-                        }
-
                     } catch (ClassCastException ex) {
                         log.error("error during getting jwt auth principal. {}", ex.getMessage());
                     }
