@@ -3,6 +3,7 @@ package com.thed.zephyr.capture.service.cache.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,6 +125,7 @@ public class TenantAwareCacheWrapper implements ITenantAwareCache {
         try{
             validateArgs("key", clientKey);
             hazelcastInstance.getMap(clientKey).clear();
+            CaptureUtil.updateTenantCache(acHostModel, hazelcastInstance);
         } catch (IllegalArgumentException exception){
             log.warn("The clientKey is null during clear iMap in cache clientKey:{}", clientKey, exception);
         } catch (Exception exception){
