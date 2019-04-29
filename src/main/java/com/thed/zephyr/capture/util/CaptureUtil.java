@@ -361,5 +361,9 @@ public class CaptureUtil {
     public static void updateTenantCache(AcHostModel acHostModel, HazelcastInstance hazelcastInstance) {
         IMap<String, AcHostModel> tenants = hazelcastInstance.getMap(ApplicationConstants.LOCATION_ACHOST);
         tenants.put(acHostModel.getClientKey(), acHostModel);
+        tenants.put(acHostModel.getCtId(), acHostModel);
+        if(acHostModel.getBaseUrl() != null) {
+            tenants.put(acHostModel.getBaseUrl(), acHostModel);
+        }
     }
 }
