@@ -1,5 +1,7 @@
 package com.thed.zephyr.capture.filter;
 
+import com.atlassian.connect.spring.AtlassianHost;
+import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
@@ -21,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.Optional;
 
 
 @Component
@@ -37,6 +40,8 @@ public class GDPRCheckInterceptor extends HandlerInterceptorAdapter {
 
     @Autowired
     private ResourceLoader resourceLoader;
+    @Autowired
+    private AtlassianHostRepository atlassianHostRepository;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -58,18 +63,22 @@ public class GDPRCheckInterceptor extends HandlerInterceptorAdapter {
                             AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
                             String baseUrl = host.getHost().getBaseUrl();
                             log.debug("Get tenant by baseURL:{} from DynamoDB", baseUrl);
-                            List<AcHostModel> acHostModels = acHostModelRepository.findByBaseUrl(baseUrl);
+                            Optional<AtlassianHost> atlassianHost = atlassianHostRepository.findFirstByBaseUrl(baseUrl);
+                            /*List<AcHostModel> acHostModels = acHostModelRepository.findByBaseUrl(baseUrl);
                             AcHostModel acHostModel = null;
                             if (acHostModels.size() > 0) {
                                 acHostModel = acHostModels.get(0);
-                            }
-                            Boolean skip = !AcHostModel.GDPRMigrationStatus.GDPR.equals(acHostModel.getMigrated()) && !AcHostModel.GDPRMigrationStatus.MIGRATED.equals(acHostModel.getMigrated());
-                            if (acHostModel != null && AcHostModel.TenantStatus.ACTIVE.equals(acHostModel.getStatus()) && skip) {
-                                String errorContent = errorContent();
-                                response.setStatus(403);
-                                response.getWriter().write(errorContent);
-                                log.debug("Checked tenant from dynamic property to deny them clientKey:{}", host.getHost().getClientKey());
-                                return false;
+                            }*/
+                            if(atlassianHost.isPresent()){
+                                AcHostModel acHostModel = (AcHostModel)atlassianHost.get();
+                                Boolean skip = !AcHostModel.GDPRMigrationStatus.GDPR.equals(acHostModel.getMigrated()) && !AcHostModel.GDPRMigrationStatus.MIGRATED.equals(acHostModel.getMigrated());
+                                if (acHostModel != null && AcHostModel.TenantStatus.ACTIVE.equals(acHostModel.getStatus()) && skip) {
+                                    String errorContent = errorContent();
+                                    response.setStatus(403);
+                                    response.getWriter().write(errorContent);
+                                    log.debug("Checked tenant from dynamic property to deny them clientKey:{}", host.getHost().getClientKey());
+                                    return false;
+                                }
                             }
                         }
                     } catch (ClassCastException ex) {
