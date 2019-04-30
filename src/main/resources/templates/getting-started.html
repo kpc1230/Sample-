@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8"/>
+    <meta name="token" th:content="${atlassianConnectToken}"/>
     <title>Getting Started Page</title>
     <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui.min.css" media="all" />
     <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui-experimental.min.css" media="all" />
@@ -12,6 +13,18 @@
     <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-datepicker.min.js"></script>
     <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-soy.min.js"></script>
     <link rel="stylesheet" th:href="@{css/getting-started.css}" />
+    <style type="text/css">
+        .gdpr-banner.aui-banner.aui-banner-error:after {
+          content: '' !important;
+        }
+        .gdpr-banner.aui-banner.aui-banner-error:before {
+          width: 0 !important;
+        }
+        .gdpr-banner {
+          background-color: rgb(255, 171, 0) !important;
+          color: rgb(37, 56, 88) !important;
+        }
+    </style>
 </head>
 <body>
 <div class="bf-main-container">
@@ -43,6 +56,8 @@
 
 <th:block th:include="fragments/footer :: foot"></th:block>
 
+<script th:src="@{js/utils/capture-utility.js}"></script>
+
 <script type="text/javascript" th:inline="javascript" id="connect-loader" data-options="sizeToParent:true;">
     //<![CDATA[
 
@@ -63,6 +78,11 @@
         style.href = baseUrl + '/atlassian-connect/all.css';
         if(options) {
             script.setAttribute('data-options', options);
+        }
+
+        script.onload = function() {
+            var token = /*[[${atlassianConnectToken}]]*/;
+            ZEPHYR.CaptureUtils.gdprBannerCheck(token);
         }
 
         document.getElementsByTagName("head")[0].appendChild(script);
