@@ -8,6 +8,18 @@
     <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui-experimental.min.css" media="all"></link>
     <!--<script th:src="@{${atlassianConnectAllJsUrl}}" type="text/javascript"></script>-->
     <link rel="stylesheet" th:href="${captureUIBaseUrl} + '/css/TestingIssueView/TestingIssueView.css'" media="all"></link>
+    <style type="text/css">
+        .gdpr-banner.aui-banner.aui-banner-error:after {
+          content: '' !important;
+        }
+        .gdpr-banner.aui-banner.aui-banner-error:before {
+          width: 0 !important;
+        }
+        .gdpr-banner {
+          background-color: rgb(255, 171, 0) !important;
+          color: rgb(37, 56, 88) !important;
+        }
+    </style>
     <script type="text/javascript" th:src="${captureUIBaseUrl} + '/js/polyfills/polyfills.js'" />
 </head>
 <body class="ac-content">
@@ -22,6 +34,9 @@
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui.min.js"></script>
     <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-experimental.min.js"></script>
+
+    <script th:src="@{js/utils/capture-utility.js}"></script>
+
     <script type="text/javascript" th:inline="javascript" id="connect-loader">
         //<![CDATA[
         (function() {
@@ -43,6 +58,8 @@
                 var appScript = document.createElement("script");
                 appScript.src = /*[[${captureUIBaseUrl} + '/js/TestingIssueView/TestingIssueView.js']]*/;
                 document.body.appendChild(appScript);
+                var token = /*[[${atlassianConnectToken}]]*/;
+                ZEPHYR.CaptureUtils.gdprBannerCheck(token);
             };
             document.body.appendChild(script);
             document.body.appendChild(style);
