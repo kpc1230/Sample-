@@ -265,4 +265,9 @@ public class ApplicationConstants {
     public static final String TENANT_STATUS_UPDATE_CRON = "tenant.status.update.job.cron";
     public static final String TENANT_STATUS_UPDATE_CRON_EXPR = "0 40 14 * * *";
 
+    public static final int JIRA_BULK_USER_LIMIT = 199;
+
+    public static final String ENABLE_GDPR_FORCE_CHECH = "enable.gdpr.force.check";
+    public static final String MIGRATE_DATA = "migrate_capture_data";
+
 }

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Maintenance</title>
+    <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui.min.css" media="all"></link>
+    <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.6/css/aui-experimental.min.css" media="all"></link>
+    <link rel="stylesheet" href="{base-url}/atlassian-connect/all.css">
+    <script src="{base-url}/atlassian-connect/all.js" data-options="sizeToParent:true;"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui.min.js"></script>
+    <script src="//aui-cdn.atlassian.com/aui-adg/6.0.6/js/aui-experimental.min.js"></script>
+</head>
+<body>
+<div class="form-body" style="padding:10px;">
+    <header>
+
+    </header>
+    <div class="aui-message error">
+        <aui:param name="'messageHtml'">
+            <span class="aui-icon icon-error"></span>
+            <p>
+                Despite several email reminders, we have not been able to migrate your Capture instance due to missing permission. As Atlassian is removing UserKey and UserName from their REST API starting Monday 29th April 2019, Capture for JIRA will need to be migrated to start functioning again. Please have your JIRA Admin perform the following operation:
+
+                <strong>Navigate to Jira settings --> Apps--> Capture for JIRA Settings --> Click on Migrate Application Button</strong>
+
+                <br/><br/>
+                    Upon the completion of the migration, Capture for JIRA will be available for use again. Migration can take anywhere between minutes to few hour depending on the data.
+                <br/><br/>
+                <strong>** We regret the inconvenience caused.</strong>
+            </p>
+        </aui:param>
+    </div>
+</div>
+</body>
+</html>

@@ -2,12 +2,14 @@ package com.thed.zephyr.capture.service.impl;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.auth.jwt.JwtAuthentication;
+import com.hazelcast.core.HazelcastInstance;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.AddonInfo;
 import com.thed.zephyr.capture.repositories.dynamodb.AcHostModelRepository;
 import com.thed.zephyr.capture.service.TenantUpdateService;
 import com.thed.zephyr.capture.service.data.LicenseService;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,9 @@ public class TenantUpdateServiceImpl implements TenantUpdateService {
 
     @Autowired
     private AcHostModelRepository acHostModelRepository;
+
+    @Autowired
+    private HazelcastInstance hazelcastInstance;
 
     @Override
     public void runAllTenantStatusUpdate() {
@@ -75,6 +80,7 @@ public class TenantUpdateServiceImpl implements TenantUpdateService {
             //update current license status
             acHostModel.setStatus(tenantStatus);
             acHostModelRepository.save(acHostModel);
+            CaptureUtil.updateTenantCache(acHostModel, hazelcastInstance);
             log.debug("Successfully updated tenant status {} {} {}", acHostModel.getBaseUrl(), acHostModel.getClientKey(), acHostModel.getStatus());
         }
 
