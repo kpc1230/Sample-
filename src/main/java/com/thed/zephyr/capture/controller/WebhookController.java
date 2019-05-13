@@ -4,8 +4,11 @@ import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.model.AcHostModel;
+import com.thed.zephyr.capture.service.gdpr.MigrateService;
 import com.thed.zephyr.capture.service.jira.IssueLinkTypeService;
+import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
+import com.thed.zephyr.capture.util.UniqueIdGenerator;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -32,6 +35,8 @@ public class WebhookController {
     private DynamicProperty dynamicProperty;
     @Autowired
     IssueLinkTypeService issueLinkTypeService;
+    @Autowired
+    private MigrateService migrateService;
 
     @RequestMapping(value = "/rest/event/plugin/enabled", method = RequestMethod.POST)
     public ResponseEntity pluginEnableEvent(@AuthenticationPrincipal AtlassianHostUser hostUser){
@@ -42,6 +47,11 @@ public class WebhookController {
             acHostModel.setStatus(AcHostModel.TenantStatus.ACTIVE);
             acHostModel.setCreatedByAccountId(hostUser.getUserAccountId().get());
             atlassianHostRepository.save(acHostModel);
+
+            if(acHostModel != null && !CaptureUtil.isTenantGDPRComplaint()) {
+                String jobProgressId = new UniqueIdGenerator().getStringId();
+                migrateService.migrateData(hostUser, acHostModel, jobProgressId);
+            }
         } catch (Exception exception) {
             log.error("Error during plugin enable event.", exception);
         }
