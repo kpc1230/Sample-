@@ -3,8 +3,8 @@ package com.thed.zephyr.capture.service.jira.impl;
 import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
-import com.atlassian.jira.rest.client.api.domain.BasicProject;
-import com.atlassian.jira.rest.client.api.domain.Project;
+import com.atlassian.jira.rest.client.api.OptionalIterable;
+import com.atlassian.jira.rest.client.api.domain.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
@@ -22,13 +22,18 @@ import com.thed.zephyr.capture.util.JiraConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Nullable;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.Callable;
 
 import static com.thed.zephyr.capture.util.JiraConstants.REST_API_PROJECT;
@@ -71,7 +76,34 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public Project getProjectObjByKey(String projectKey) {
-         return jiraRestClient.getProjectClient().getProject(projectKey).claim();
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        RestTemplate restTemplate = atlassianHostRestClients.authenticatedAsAddon();
+        if(hostUser != null){
+            restTemplate = atlassianHostRestClients.authenticatedAs(hostUser);
+        }
+        ResponseEntity<JsonNode> jsonNodeRE = restTemplate.getForEntity(REST_API_PROJECT+"/"+projectKey, JsonNode.class);
+        if(jsonNodeRE != null && jsonNodeRE.getStatusCodeValue()==200){
+            JsonNode projectJson = jsonNodeRE.getBody();
+            try {
+                BasicUser lead = new BasicUser(null, null, null);
+                Collection<Version> versions = Collections.EMPTY_LIST;
+                Collection<BasicComponent> components = Collections.EMPTY_LIST;
+                OptionalIterable<IssueType> issueTypes = OptionalIterable.absent();
+                Collection<BasicProjectRole> projectRoles = Collections.EMPTY_LIST;
+                Project project = new Project(null, null,
+                        projectJson.get("key").asText(),
+                        projectJson.get("id").asLong(),
+                        projectJson.get("name").asText(),
+                        projectJson.get("description").asText(),
+                        lead, null, versions, components, issueTypes, projectRoles);
+                return project;
+            } catch (Exception e) {
+                log.error("Error during getting project {} {}", projectKey, e.getMessage());
+                return null;
+            }
+        }else{
+            return null;
+        }
     }
 
     @Override
