@@ -76,4 +76,36 @@ public class WebhookController {
 
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
+
+    @RequestMapping(value = "/rest/event/comment/created", method = RequestMethod.POST)
+    public ResponseEntity commentCreated(@AuthenticationPrincipal AtlassianHostUser hostUser){
+        String tenantId = hostUser.getHost().getClientKey();
+        log.info("Add comment event for tenantId:{}", tenantId);
+        try {
+            AcHostModel acHostModel = (AcHostModel)atlassianHostRepository.findOne(hostUser.getHost().getClientKey());
+            if(acHostModel != null && !CaptureUtil.isTenantGDPRComplaint()) {
+                String jobProgressId = new UniqueIdGenerator().getStringId();
+                migrateService.migrateData(hostUser, acHostModel, jobProgressId);
+            }
+        } catch (Exception exception) {
+            log.error("Error during add comment event. {}", exception.getMessage());
+        }
+        return new ResponseEntity(HttpStatus.NO_CONTENT);
+    }
+
+    @RequestMapping(value = "/rest/event/comment/updated", method = RequestMethod.POST)
+    public ResponseEntity commentUpdated(@AuthenticationPrincipal AtlassianHostUser hostUser){
+        String tenantId = hostUser.getHost().getClientKey();
+        log.info("Update comment event for tenantId:{}", tenantId);
+        try {
+            AcHostModel acHostModel = (AcHostModel)atlassianHostRepository.findOne(hostUser.getHost().getClientKey());
+            if(acHostModel != null && !CaptureUtil.isTenantGDPRComplaint()) {
+                String jobProgressId = new UniqueIdGenerator().getStringId();
+                migrateService.migrateData(hostUser, acHostModel, jobProgressId);
+            }
+        } catch (Exception exception) {
+            log.error("Error during Update comment event. {}", exception.getMessage());
+        }
+        return new ResponseEntity(HttpStatus.NO_CONTENT);
+    }
 }

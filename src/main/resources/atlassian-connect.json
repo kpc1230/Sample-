@@ -539,6 +539,14 @@
       {
         "event": "user_deleted",
         "url": "/rest/event/user/deleted?kcehCecroFRPDGpiks=true"
+      },
+      {
+        "event": "comment_created",
+        "url": "/rest/event/comment/created?kcehCecroFRPDGpiks=true"
+      },
+      {
+        "event": "comment_updated",
+        "url": "/rest/event/comment/updated?kcehCecroFRPDGpiks=true"
       }
     ],
     "jiraEntityProperties": [
