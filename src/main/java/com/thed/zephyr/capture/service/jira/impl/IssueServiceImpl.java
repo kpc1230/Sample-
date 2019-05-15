@@ -845,7 +845,8 @@ public class IssueServiceImpl implements IssueService {
                     httpHeaders.setContentType(MediaType.APPLICATION_JSON);
                     String resourceUrl = targetUrl.toString();
                     HttpEntity<String> requestUpdate = new HttpEntity<>(httpHeaders);
-                    ResponseEntity<JsonNode> jsonNodeResponseEntity = atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.GET,requestUpdate,JsonNode.class);
+                    ResponseEntity<JsonNode> jsonNodeResponseEntity = atlassianHostRestClients
+                            .authenticatedAsAddon().exchange(resourceUrl, HttpMethod.GET,requestUpdate,JsonNode.class);
                     JSONObject jsonObject = new JSONObject(jsonNodeResponseEntity.getBody().toString());
                     Object issueObject = jsonObject.get("issues");
                     if(issueObject != null) {
@@ -896,7 +897,7 @@ public class IssueServiceImpl implements IssueService {
                             }
                             finalCaptureIssue = new CaptureIssue(new URI(issue.getString("self")), issue.getString("key"), issue.getLong("id"),
                                     issuetype != null ? issuetype.getString("iconUrl") : "", fields.getString("summary"), fields.getJSONObject("project").getLong("id"),
-                                    fields.getJSONObject("project").getString("key"), fields.getJSONObject("reporter") != null ? fields.getJSONObject("reporter").getString("name") : "",
+                                    fields.getJSONObject("project").getString("key"), fields.getJSONObject("reporter") != null ? fields.getJSONObject("reporter").getString("accountId") : "",
                                     		 fields.getJSONObject("reporter") != null ? fields.getJSONObject("reporter").getString("accountId") : "",
                                     captureResolution, propertiesMap, parentId, parentKey);
                         }
