@@ -255,7 +255,8 @@ public class CaptureContextIssueFieldsServiceImpl implements CaptureContextIssue
             HttpEntity<String> requestUpdate = new HttpEntity<>(request.toString(),httpHeaders);
             atlassianHostRestClients.authenticatedAsAddon().exchange(resourceUrl, HttpMethod.DELETE,requestUpdate,Void.class);
         } catch (HttpClientErrorException restException) {
-            if (StringUtils.equals(restException.getMessage(), "404 Not Found")){
+            if (StringUtils.equals(restException.getMessage(), "404 Not Found")
+            || StringUtils.equals(restException.getMessage(), "404 ")){
                 log.warn("Error during remove property. The Jira issue entity property wasn't found, hence can't be removed. Which is probably fine :) baseUrl:{} path:{}", baseUrl, path);
             } else{
                 throw restException;
