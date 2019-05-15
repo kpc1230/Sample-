@@ -1,8 +1,9 @@
 package com.thed.zephyr.capture.util;
 
 import com.atlassian.connect.spring.AtlassianHostUser;
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.IssueType;
+import com.atlassian.jira.rest.client.api.domain.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Lists;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.thed.zephyr.capture.model.AcHostModel;
@@ -20,6 +21,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -307,21 +310,21 @@ public class CaptureUtil {
     
     
     public static boolean isTenantGDPRComplaint() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if(auth != null) {
-            if(auth.getPrincipal() instanceof String && auth.getPrincipal().toString().equals("anonymousUser")){
-                log.info("Anonymous user: returning gdpr complaint as false");
-                return false;
-            } else {
-                try {
-                    AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
-                    AcHostModel acHostModel = (AcHostModel) atlassianHostUser.getHost();
-                    return acHostModel.getMigrated() != null ? acHostModel.getMigrated() == AcHostModel.GDPRMigrationStatus.GDPR : false;
-                } catch (Exception ex){
-                    log.error("Error during getting gpdr flag from tenant {}", ex.getMessage());
-                }
-            }
-        }
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        if(auth != null) {
+//            if(auth.getPrincipal() instanceof String && auth.getPrincipal().toString().equals("anonymousUser")){
+//                log.info("Anonymous user: returning gdpr complaint as false");
+//                return false;
+//            } else {
+//                try {
+//                    AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
+//                    AcHostModel acHostModel = (AcHostModel) atlassianHostUser.getHost();
+//                    return acHostModel.getMigrated() != null ? acHostModel.getMigrated() == AcHostModel.GDPRMigrationStatus.GDPR : false;
+//                } catch (Exception ex){
+//                    log.error("Error during getting gpdr flag from tenant {}", ex.getMessage());
+//                }
+//            }
+//        }
         return false;
     }
     
@@ -364,6 +367,126 @@ public class CaptureUtil {
         tenants.put(acHostModel.getCtId(), acHostModel);
         if(acHostModel.getBaseUrl() != null) {
             tenants.put(acHostModel.getBaseUrl(), acHostModel);
+        }
+    }
+
+    /**
+     * Parse author
+     * @param authorJson
+     * @return
+     */
+    public static BasicUser getAuthor(JsonNode authorJson) {
+        if(authorJson==null){
+            return null;
+        }
+        URI autSelf = null;
+        try {
+            autSelf = authorJson.has("self")? new URI(authorJson.get("self").asText()): new URI("");
+        }catch (Exception ex){ }
+        String autName = authorJson.has("name") ? authorJson.get("name").asText(): null;
+        String autDisplayName = authorJson.has("displayName") ? authorJson.get("displayName").asText(): null;
+        BasicUser author = new BasicUser(autSelf, autName, autDisplayName);
+        return author;
+    }
+
+    /**
+     * Parse Issue type
+     * @param issueTypeNode
+     * @return
+     */
+    public static IssueType getIssueType(JsonNode issueTypeNode) {
+        if(issueTypeNode==null){return null;}
+        URI self = null, iconUri = null;
+        try {
+            self = issueTypeNode.has("self") ? new URI(issueTypeNode.get("self").asText()): null;
+            iconUri = issueTypeNode.has("iconUrl") ? new URI(issueTypeNode.get("iconUrl").asText()): null;
+        } catch (URISyntaxException e) {
+        }
+        Long id = issueTypeNode.has("id")? issueTypeNode.get("id").asLong(): null;
+        String name = issueTypeNode.has("name")? issueTypeNode.get("name").asText(): null;
+        Boolean isSubtask = issueTypeNode.has("subtask")? issueTypeNode.get("subtask").asBoolean(): null;
+        String description= issueTypeNode.has("description")? issueTypeNode.get("description").asText(): null;
+        return new IssueType(self,id,name,isSubtask,description,iconUri);
+    }
+
+
+    /**
+     * get Status
+     * @param statusNode
+     * @return
+     */
+    public static Status getStatus(JsonNode statusNode){
+        if(statusNode==null){return null;}
+        URI self = null, statusIconUrl = null;
+        try {
+            self = statusNode.has("self") ? new URI(statusNode.get("self").asText()): null;
+            statusIconUrl = statusNode.has("iconUrl") ? new URI(statusNode.get("iconUrl").asText()): null;
+        } catch (URISyntaxException e) {
+
+        }
+        Long statusId = statusNode.has("id")? statusNode.get("id").asLong(): null;
+        String statusName = statusNode.has("name")? statusNode.get("name").asText(): null;
+        String statusDescription = statusNode.has("description")? statusNode.get("description").asText(): null;
+        return new Status(self, statusId, statusName, statusDescription,statusIconUrl);
+    }
+
+    /**
+     * Get List of versions
+     * @param jsonNode
+     * @return
+     */
+    public static List<Version> getVersions(JsonNode jsonNode){
+        if(jsonNode == null) {
+            return Lists.newArrayList();
+        }else{
+            List<Version> versions = Lists.newArrayList();
+            jsonNode.forEach(vNode ->{
+                Long fxVerId = vNode.has("id")? vNode.get("id").asLong(): null;
+                URI fxVerSelf = null;
+                try {
+                    fxVerSelf = vNode.has("self")? new URI(vNode.get("self").asText()): new URI("");
+                }catch (Exception ex){ }
+                String fxVerName = vNode.has("name")? vNode.get("name").asText(): "";
+                String fxVerDescription = vNode.has("description") ? vNode.get("description").asText(): null;
+                Boolean fxVerIsArchived = vNode.has("archived") ? vNode.get("archived").asBoolean(): null;
+                Boolean fxVerIsReleased = vNode.has("released") ? vNode.get("released").asBoolean(): null;
+                DateTime fxVerReleaseDate = vNode.has("releaseDate") ? DateTime.parse(vNode.get("releaseDate").asText()): null;
+                Version version = new Version(fxVerSelf,fxVerId,fxVerName,fxVerDescription, fxVerIsArchived, fxVerIsReleased, fxVerReleaseDate);
+                if(version != null) {
+                    versions.add(version);
+                }
+            });
+
+            return versions;
+        }
+    }
+
+    /**
+     * Get list of components
+     * @param jsonNode
+     * @return
+     */
+    public static List<BasicComponent> getComponents(JsonNode jsonNode){
+        if(jsonNode==null){
+            return Lists.newArrayList();
+        }else{
+            List<BasicComponent> components = Lists.newArrayList();
+            if(jsonNode != null){
+                jsonNode.forEach(cNode ->{
+                    Long id = cNode.has("id")? cNode.get("id").asLong(): null;
+                    URI self = null;
+                    try {
+                        self = cNode.has("self")? new URI(cNode.get("self").asText()): new URI("");
+                    }catch (Exception ex){ }
+                    String name = cNode.has("name")? cNode.get("name").asText(): "";
+                    String description = cNode.has("description") ? cNode.get("description").asText(): null;;
+                    BasicComponent component = new BasicComponent(self,id,name,description);
+                    if(component != null) {
+                        components.add(component);
+                    }
+                });
+            }
+            return components;
         }
     }
 }
