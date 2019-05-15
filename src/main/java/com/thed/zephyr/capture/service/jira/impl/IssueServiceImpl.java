@@ -53,6 +53,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
+import java.io.DataInput;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -681,7 +682,7 @@ public class IssueServiceImpl implements IssueService {
      * @param issueLinks
      * @param host
      */
-    private void updateIssueLinks(String issueKey, IssueLinks issueLinks, AtlassianHostUser host) {
+    private void updateIssueLinks(String issueKey, IssueLinks issueLinks, final AtlassianHostUser host) {
         final JiraRestClient postJiraRestClient  =  createPostJiraRestClient(host);
        CompletableFuture.runAsync(() -> {
             log.debug("New Thread Started in order to update issues links ");
@@ -697,27 +698,31 @@ public class IssueServiceImpl implements IssueService {
                     if (linkType != null) {
                         String linkTypeToSend = linkType.getName();
                         if (linkType.getInward().equalsIgnoreCase(issueLinks.getLinktype())) {
-                            Arrays.asList(issueLinks.getIssues()).forEach(s -> {
-                                LinkIssuesInput linkIssuesInput = new LinkIssuesInput(s, issueKey, linkTypeToSend);
-                                try {
-                                    log.debug("Linking issues Issue Type: {} , From Issue: {} , To Issue: {} ", linkIssuesInput.getLinkType(), linkIssuesInput.getFromIssueKey(), linkIssuesInput.getToIssueKey());
-                                    postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
-                                    Thread.sleep(500);
-                                } catch (Exception exception) {
-                                    log.error("Error during create inward link issue", exception);
-                                }
+                            Arrays.asList(issueLinks.getIssues()).forEach(issueLink -> {
+                                String linkTypeStr = new String(linkTypeToSend);
+                                String url = host.getHost().getBaseUrl()+JiraConstants.REST_API_ISSUE_LINK;
+                                    log.debug("linkIssues Started for Created Issue : {}, {} : {} ",issueLink, linkTypeStr, issueKey);
+                                    JSONObject reqJson = new JSONObject();
+                                    try {
+                                        Thread.sleep(500);
+                                        createIssueLinkByDirection(issueLink, host, issueKey, linkTypeStr, url, reqJson);
+                                    }catch (Exception exp){
+                                        log.error("Error during create inward link issue {}: "+exp.getMessage());
+                                    }
                             });
 
                         } else {
                             if (linkType.getOutward().equalsIgnoreCase(issueLinks.getLinktype())) {
-                                Arrays.asList(issueLinks.getIssues()).forEach(s -> {
+                                Arrays.asList(issueLinks.getIssues()).forEach(issueLink -> {
+                                    String linkTypeStr = new String(linkTypeToSend);
+                                    String url = host.getHost().getBaseUrl()+JiraConstants.REST_API_ISSUE_LINK;
+                                    log.debug("linkIssues Started for Created Issue : {}, {} : {} ",issueKey, linkTypeStr, issueLink);
+                                    JSONObject reqJson = new JSONObject();
                                     try {
-                                        LinkIssuesInput linkIssuesInput = new LinkIssuesInput(issueKey, s, linkTypeToSend);
-                                        log.debug("Linking issues Issue Type: {} , From Issue: {} , To Issue: {} ", linkIssuesInput.getLinkType(), linkIssuesInput.getFromIssueKey(), linkIssuesInput.getToIssueKey());
-                                        postJiraRestClient.getIssueClient().linkIssue(linkIssuesInput);
                                         Thread.sleep(500);
-                                    } catch (Exception exception) {
-                                        log.error("Error during create outward link issue", exception);
+                                        createIssueLinkByDirection(issueKey, host, issueLink, linkTypeStr, url, reqJson);
+                                    }catch (Exception exp){
+                                        log.error("Error during create outward link issue {}: "+exp.getMessage());
                                     }
                                 });
                             }
@@ -736,6 +741,29 @@ public class IssueServiceImpl implements IssueService {
             }
            log.debug("Thread Completed Issue links update");
         });
+    }
+
+    /**
+     * Helper to create issue link
+     * @param issueKey
+     * @param host
+     * @param issueLink
+     * @param linkTypeStr
+     * @param url
+     * @param reqJson
+     * @throws JSONException
+     */
+    private void createIssueLinkByDirection(String issueKey, AtlassianHostUser host, String issueLink, String linkTypeStr, String url, JSONObject reqJson) throws JSONException {
+        reqJson.put("type", (new JSONObject()).put("name", linkTypeStr));
+        reqJson.put("inwardIssue", (new JSONObject()).put("key", issueKey));
+        reqJson.put("outwardIssue", (new JSONObject()).put("key", issueLink));
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> requestUpdate = new HttpEntity<>(reqJson.toString(), httpHeaders);
+        ResponseEntity<Void> resp = atlassianHostRestClients.authenticatedAs(host).exchange(url, HttpMethod.POST, requestUpdate, Void.class);
+        if (resp != null && resp.getStatusCodeValue() == 201) {
+            log.debug("Successfully linked issues {} {}", issueKey, issueLink);
+        }
     }
 
     @Override
