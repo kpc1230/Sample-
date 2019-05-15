@@ -310,21 +310,21 @@ public class CaptureUtil {
     
     
     public static boolean isTenantGDPRComplaint() {
-//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//        if(auth != null) {
-//            if(auth.getPrincipal() instanceof String && auth.getPrincipal().toString().equals("anonymousUser")){
-//                log.info("Anonymous user: returning gdpr complaint as false");
-//                return false;
-//            } else {
-//                try {
-//                    AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
-//                    AcHostModel acHostModel = (AcHostModel) atlassianHostUser.getHost();
-//                    return acHostModel.getMigrated() != null ? acHostModel.getMigrated() == AcHostModel.GDPRMigrationStatus.GDPR : false;
-//                } catch (Exception ex){
-//                    log.error("Error during getting gpdr flag from tenant {}", ex.getMessage());
-//                }
-//            }
-//        }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if(auth != null) {
+            if(auth.getPrincipal() instanceof String && auth.getPrincipal().toString().equals("anonymousUser")){
+                log.info("Anonymous user: returning gdpr complaint as false");
+                return false;
+            } else {
+                try {
+                    AtlassianHostUser atlassianHostUser = (AtlassianHostUser) auth.getPrincipal();
+                    AcHostModel acHostModel = (AcHostModel) atlassianHostUser.getHost();
+                    return acHostModel.getMigrated() != null ? acHostModel.getMigrated() == AcHostModel.GDPRMigrationStatus.GDPR : false;
+                } catch (Exception ex){
+                    log.error("Error during getting gpdr flag from tenant {}", ex.getMessage());
+                }
+            }
+        }
         return false;
     }
     
