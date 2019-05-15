@@ -923,12 +923,8 @@ public class IssueServiceImpl implements IssueService {
                 !issueFields.assigneeAccountId().id().equalsIgnoreCase("-1")) {
         	CaptureUser user = userService.findUserByAccountId(issueFields.assigneeAccountId().id());
         	if(user != null) {
-        		try {
-					issueInputBuilder.setAssignee(new BasicUser(new URI(user.getSelf()), user.getName(), user.getDisplayName()));
-				} catch (URISyntaxException e) {
-					e.printStackTrace();
-				}
-        	}            
+        	    issueInputBuilder.setAssigneeAccountId(user.getAccountId());
+        	}
         }
         Project project = projectService.getProjectObjByKey(issueFields.project().id());
         issueInputBuilder.setProject(project);
