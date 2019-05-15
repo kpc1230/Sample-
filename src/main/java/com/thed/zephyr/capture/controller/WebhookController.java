@@ -2,16 +2,20 @@ package com.thed.zephyr.capture.controller;
 
 import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.AtlassianHostUser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.thed.zephyr.capture.addon.AddonInfoService;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.jira.IssueLinkTypeService;
+import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.DynamicProperty;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,13 +38,21 @@ public class WebhookController {
     IssueLinkTypeService issueLinkTypeService;
 
     @RequestMapping(value = "/rest/event/plugin/enabled", method = RequestMethod.POST)
-    public ResponseEntity pluginEnableEvent(@AuthenticationPrincipal AtlassianHostUser hostUser){
+    public ResponseEntity pluginEnableEvent(@AuthenticationPrincipal AtlassianHostUser hostUser,
+                                            @RequestBody JsonNode requestBody){
         String tenantId = hostUser.getHost().getClientKey();
         log.info("Plugin enable event for tenantId:{}", tenantId);
         try {
             AcHostModel acHostModel = (AcHostModel)atlassianHostRepository.findOne(hostUser.getHost().getClientKey());
             acHostModel.setStatus(AcHostModel.TenantStatus.ACTIVE);
             acHostModel.setCreatedByAccountId(hostUser.getUserAccountId().get());
+            Boolean enableSiteRename = dynamicProperty.getBoolProp(ApplicationConstants.SITE_RENAME_FEATURE_ENABLE,true).getValue();
+            if(enableSiteRename) {
+                String baseUrl = (requestBody != null && requestBody.has("baseUrl") ? requestBody.get("baseUrl").asText() : null);
+                if (StringUtils.isNotEmpty(baseUrl)) {
+                    acHostModel.setBaseUrl(baseUrl);
+                }
+            }
             atlassianHostRepository.save(acHostModel);
         } catch (Exception exception) {
             log.error("Error during plugin enable event.", exception);
