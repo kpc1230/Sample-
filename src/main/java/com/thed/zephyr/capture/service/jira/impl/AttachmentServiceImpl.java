@@ -16,6 +16,7 @@ import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.jira.AttachmentService;
+import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
 import com.thed.zephyr.capture.util.CaptureUtil;
@@ -71,6 +72,8 @@ public class AttachmentServiceImpl implements AttachmentService {
     private AtlassianHostRestClients atlassianHostRestClients;
     @Autowired
     protected CaptureI18NMessageSource i18n;
+    @Autowired
+    private IssueService issueService;
 
 
     @Override
@@ -105,7 +108,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
         log.info("Attachment Upload request for Issue : {}", issueKey);
-        Issue issue = getJiraRestClient.getIssueClient().getIssue(issueKey).claim();
+        Issue issue = issueService.getIssueObject(issueKey);
         if (issue == null) {
             throw new CaptureRuntimeException("file.error.issue.key.invalid", issueKey);
         }
@@ -178,7 +181,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         }
 
         log.info("Attachment Upload request for Issue : {}", issueKey);
-        Issue issue = getJiraRestClient.getIssueClient().getIssue(issueKey).claim();
+        Issue issue = issueService.getIssueObject(issueKey);
         if (issue == null) {
             throw new CaptureRuntimeException("file.error.issue.key.invalid", issueKey);
         }

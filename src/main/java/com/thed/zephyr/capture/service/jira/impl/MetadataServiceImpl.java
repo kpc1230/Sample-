@@ -186,9 +186,9 @@ public class MetadataServiceImpl implements MetadataService {
                                jsonNode1.get("accountId").asText()
                        ));  
                    } else {
+                       String user = jsonNode1.has("name") ? jsonNode1.get("name").asText() : jsonNode1.get("accountId").asText();
                 	   userBeans.add(new FieldOption(
-                               jsonNode1.get("displayName").asText(),
-                               jsonNode1.get("name").asText()
+                               jsonNode1.get("displayName").asText(), user
                        ));
                    }
                 });

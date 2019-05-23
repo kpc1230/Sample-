@@ -16,6 +16,7 @@ import com.thed.zephyr.capture.util.ApplicationConstants;
 import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -98,9 +99,9 @@ public class GDPRUserServiceImpl implements GDPRUserService {
                                     if (jsonNode.isArray()) {
                                         for (JsonNode jsonNode1 : jsonNode) {
                                             processed = true;
-                                            String userKey = jsonNode1.get("key").asText();
+                                            String userKey = jsonNode1.has("key") ? jsonNode1.get("key").asText() : null;
                                             //No need to store addon_users
-                                            if (!userKey.startsWith("addon_")) {
+                                            if (StringUtils.isNotEmpty(userKey) && !userKey.startsWith("addon_")) {
                                                 userDTOS.add(new UserDTO(userKey, jsonNode1.get("name").asText(), jsonNode1.get("accountId").asText()
                                                 ));
                                             }

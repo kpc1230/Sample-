@@ -3,10 +3,11 @@ package com.thed.zephyr.capture.service.jira.impl;
 import com.atlassian.connect.spring.AtlassianHostRestClients;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
-import com.atlassian.jira.rest.client.api.domain.BasicProject;
-import com.atlassian.jira.rest.client.api.domain.Project;
+import com.atlassian.jira.rest.client.api.OptionalIterable;
+import com.atlassian.jira.rest.client.api.domain.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import com.thed.zephyr.capture.exception.CaptureRuntimeException;
 import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.model.Session;
@@ -20,15 +21,23 @@ import com.thed.zephyr.capture.util.CaptureUtil;
 import com.thed.zephyr.capture.util.DynamicProperty;
 import com.thed.zephyr.capture.util.JiraConstants;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Array;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import static com.thed.zephyr.capture.util.JiraConstants.REST_API_PROJECT;
@@ -71,7 +80,59 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public Project getProjectObjByKey(String projectKey) {
-         return jiraRestClient.getProjectClient().getProject(projectKey).claim();
+        AtlassianHostUser hostUser = CaptureUtil.getAtlassianHostUser();
+        RestTemplate restTemplate = atlassianHostRestClients.authenticatedAsAddon();
+        if(hostUser != null){
+            restTemplate = atlassianHostRestClients.authenticatedAs(hostUser);
+        }
+        ResponseEntity<JsonNode> jsonNodeRE = restTemplate.getForEntity(REST_API_PROJECT+"/"+projectKey, JsonNode.class);
+        if(jsonNodeRE != null && jsonNodeRE.getStatusCodeValue()==200){
+            JsonNode projectJson = jsonNodeRE.getBody();
+            try {
+                BasicUser lead = new BasicUser(null, null, null);
+                List<Version> versions = Lists.newArrayList();
+                List<BasicComponent> components = Lists.newArrayList();
+                List<IssueType> issueTypeList = Lists.newArrayList();
+                Collection<BasicProjectRole> projectRoles = Collections.EMPTY_LIST;
+                JsonNode issueTypeJson = projectJson.has("issueTypes") ? projectJson.get("issueTypes"): null;
+                if(issueTypeJson != null){
+                    issueTypeJson.forEach(itNode ->{
+                        Long id = itNode.has("id")? itNode.get("id").asLong(): null;
+                        URI self = null, iconUri = null;
+                        try {
+                            self = itNode.has("self")? new URI(itNode.get("self").asText()): new URI("");
+                            iconUri = itNode.has("iconUri")? new URI(itNode.get("iconUri").asText()): new URI("");
+                        }catch (Exception ex){ }
+                        String name = itNode.has("name")? itNode.get("name").asText(): "";
+                        String description = itNode.has("description") ? itNode.get("description").asText(): null;
+                        Boolean isSubtask = itNode.has("subtask") ? itNode.get("subtask").asBoolean(): null;
+                        IssueType issueType = new IssueType(self,id,name, isSubtask,description, iconUri);
+                        if(issueType != null) {
+                            issueTypeList.add(issueType);
+                        }
+                    });
+                }
+
+                components = CaptureUtil.getComponents(projectJson.get("components"));
+                versions = CaptureUtil.getVersions(projectJson.get("versions"));
+
+                OptionalIterable<IssueType> issueTypes = (issueTypeList != null && issueTypeList.size() > 0? new OptionalIterable(issueTypeList) : OptionalIterable.absent());
+
+                Project project = new Project(null,
+                        new URI(projectJson.get("self").asText()),
+                        projectJson.get("key").asText(),
+                        projectJson.get("id").asLong(),
+                        projectJson.get("name").asText(),
+                        projectJson.get("description").asText(),
+                        lead, null, versions, components, issueTypes , projectRoles);
+                return project;
+            } catch (Exception e) {
+                log.error("Error during getting project {} {}", projectKey, e.getMessage());
+                return null;
+            }
+        }else{
+            return null;
+        }
     }
 
     @Override
@@ -130,9 +191,13 @@ public class ProjectServiceImpl implements ProjectService {
                 public CaptureProject call() throws Exception {
                     Project project = getProjectObjByKey(projectIdOrKey);
                     log.debug("Getting project from Jira.");
-                    return new CaptureProject(project.getSelf(),
-                            project.getKey(), project.getId(),
-                            project.getName());
+                    if(project != null) {
+                        return new CaptureProject(project.getSelf(),
+                                project.getKey(), project.getId(),
+                                project.getName());
+                    }else {
+                        return null;
+                    }
                 }
             }, dynamicProperty.getIntProp(ApplicationConstants.PROJECT_CACHE_EXPIRATION_DYNAMIC_PROP,ApplicationConstants.FOUR_HOUR_CACHE_EXPIRATION).get());
 

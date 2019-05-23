@@ -1,5 +1,6 @@
 package com.thed.zephyr.capture.controller;
 
+import com.atlassian.connect.spring.AtlassianHostRepository;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,13 +17,11 @@ import com.thed.zephyr.capture.service.PermissionService;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionActivityService;
 import com.thed.zephyr.capture.service.data.SessionService;
+import com.thed.zephyr.capture.service.gdpr.MigrateService;
 import com.thed.zephyr.capture.service.jira.IssueService;
 import com.thed.zephyr.capture.service.jira.IssueWebHookHandler;
 import com.thed.zephyr.capture.service.jira.WebhookHandlerService;
-import com.thed.zephyr.capture.util.ApplicationConstants;
-import com.thed.zephyr.capture.util.CaptureConstants;
-import com.thed.zephyr.capture.util.CaptureI18NMessageSource;
-import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.*;
 
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +51,8 @@ public class IssueWebhookController {
     private IssueWebHookHandler issueWebHookHandler;
     private SessionESRepository sessionESRepository;
     private WebhookHandlerService webhookHandlerService;
+    private AtlassianHostRepository atlassianHostRepository;
+    private MigrateService migrateService;
 
     public IssueWebhookController(@Autowired Logger log,
                                   @Autowired SessionService sessionService,
@@ -62,7 +63,9 @@ public class IssueWebhookController {
                                   @Autowired ITenantAwareCache tenantAwareCache,
                                   @Autowired IssueWebHookHandler issueWebHookHandler,
                                   @Autowired SessionESRepository sessionESRepository,
-                                  @Autowired WebhookHandlerService webhookHandlerService) {
+                                  @Autowired WebhookHandlerService webhookHandlerService,
+                                  @Autowired AtlassianHostRepository atlassianHostRepository,
+                                  @Autowired MigrateService migrateService) {
         this.log = log;
         this.sessionService = sessionService;
         this.sessionActivityService = sessionActivityService;
@@ -73,6 +76,8 @@ public class IssueWebhookController {
         this.issueWebHookHandler = issueWebHookHandler;
         this.sessionESRepository = sessionESRepository;
         this.webhookHandlerService = webhookHandlerService;
+        this.atlassianHostRepository = atlassianHostRepository;
+        this.migrateService = migrateService;
     }
 
     @RequestMapping(value = "/created", method = RequestMethod.POST)
@@ -93,8 +98,24 @@ public class IssueWebhookController {
         } catch (IOException exception) {
             log.error("Error during read issue json issueJson:{}", issueJson.toString(), exception);
         }
-
+        processMigration(hostUser, acHostModel);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Trigger migration from issue webhook
+     * @param hostUser
+     * @param acHostModel
+     */
+    private void processMigration(AtlassianHostUser hostUser, AcHostModel acHostModel) {
+        try {
+            if(acHostModel != null && !CaptureUtil.isTenantGDPRComplaint()) {
+                String jobProgressId = new UniqueIdGenerator().getStringId();
+                migrateService.migrateData(hostUser, acHostModel, jobProgressId);
+            }
+        } catch (Exception exception) {
+            log.error("Error during process user migration {}", exception.getMessage());
+        }
     }
 
     @RequestMapping(value = "/updated", method = RequestMethod.POST)
@@ -116,7 +137,7 @@ public class IssueWebhookController {
         } catch (Exception exception) {
             log.error("Error during read updatedIssueJson json updatedIssueJson:{}", updatedIssueJson.toString(), exception);
         }
-
+        processMigration(hostUser, acHostModel);
         return ResponseEntity.ok().build();
     }
 
