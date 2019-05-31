@@ -8,8 +8,11 @@ import com.thed.zephyr.capture.model.AcHostModel;
 import com.thed.zephyr.capture.service.cache.ITenantAwareCache;
 import com.thed.zephyr.capture.service.data.SessionService;
 import com.thed.zephyr.capture.service.gdpr.GDPRUserService;
+import com.thed.zephyr.capture.service.gdpr.MigrateService;
 import com.thed.zephyr.capture.service.gdpr.model.UserDTO;
 import com.thed.zephyr.capture.util.ApplicationConstants;
+import com.thed.zephyr.capture.util.CaptureUtil;
+import com.thed.zephyr.capture.util.UniqueIdGenerator;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -38,6 +41,8 @@ public class UserWebhookController {
     private AtlassianHostRepository atlassianHostRepository;
     @Autowired
     private GDPRUserService gdprUserService;
+    @Autowired
+    private MigrateService migrateService;
 
     @RequestMapping(value = "/created", method = RequestMethod.POST)
     public ResponseEntity<?> userCreated(@AuthenticationPrincipal AtlassianHostUser hostUser, @RequestBody JsonNode createUserJson) {
@@ -58,6 +63,8 @@ public class UserWebhookController {
         } catch (Exception exception) {
             log.error("Error during create JIRA user.", exception);
         }
+        AcHostModel acHostModel = (AcHostModel) hostUser.getHost();
+        processMigration(hostUser, acHostModel);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
@@ -71,6 +78,7 @@ public class UserWebhookController {
             JsonNode userNode = null != updateUserJson ? updateUserJson.get("user") : null;
             if (userNode == null) {
                 log.warn("User Update event triggered with no Project details.");
+                processMigration(hostUser, acHostModel);
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             String username = userNode.get("name").asText();
@@ -93,6 +101,7 @@ public class UserWebhookController {
             log.warn("Unable to handle the user updating webhook: ", e);
             throw new CaptureRuntimeException("Unable to handle the user updating webhook");
         }
+        processMigration(hostUser, acHostModel);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
@@ -106,6 +115,7 @@ public class UserWebhookController {
             JsonNode userNode = null != deleteUserJson ? deleteUserJson.get("user") : null;
             if (userNode == null) {
                 log.warn("User Update event triggered with no Project details.");
+                processMigration(hostUser, acHostModel);
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             String username = userNode.get("name").asText();
@@ -124,7 +134,24 @@ public class UserWebhookController {
             log.warn("Unable to handle the user deleting webhook: ", e);
             throw new CaptureRuntimeException("Unable to handle the user deleting webhook");
         }
+        processMigration(hostUser, acHostModel);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    /**
+     * Trigger migration from issue webhook
+     * @param hostUser
+     * @param acHostModel
+     */
+    private void processMigration(AtlassianHostUser hostUser, AcHostModel acHostModel) {
+        try {
+             if(acHostModel != null && !CaptureUtil.isTenantGDPRComplaint()) {
+               String jobProgressId = new UniqueIdGenerator().getStringId();
+               migrateService.migrateData(hostUser, acHostModel, jobProgressId);
+            }
+        } catch (Exception exception) {
+            log.error("Error during process user migration {}", exception.getMessage());
+        }
     }
 
 
