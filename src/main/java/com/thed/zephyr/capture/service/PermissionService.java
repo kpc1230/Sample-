@@ -25,6 +25,8 @@ import com.thed.zephyr.capture.model.jira.CaptureProject;
 
      boolean hasBrowsePermission(Long projectId);
 
+     boolean hasBrowsePermission(Long projectId,String userAccountId);
+
      boolean isSysadmin(String user, String userAccountId);
 
      boolean canCreateSession(String user, String userAccountId, CaptureProject project);

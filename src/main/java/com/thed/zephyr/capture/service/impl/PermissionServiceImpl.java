@@ -260,6 +260,13 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    public boolean hasBrowsePermission(Long projectId,String userAccountId) {
+        if (checkPermissionForType(projectId, null, null, ApplicationConstants.BROWSE_PROJECT_PERMISSION, null, userAccountId))
+            return true;
+        return false;
+    }
+
+    @Override
     public boolean canAddCommentPermission(String issueKey) {
         if (checkPermissionForType(null, null, issueKey, ApplicationConstants.COMMENT_ISSUE, null, null))
             return true;

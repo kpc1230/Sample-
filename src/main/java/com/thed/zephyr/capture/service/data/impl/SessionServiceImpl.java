@@ -5,6 +5,7 @@ import com.atlassian.connect.spring.AtlassianHostUser;
 import com.atlassian.connect.spring.internal.descriptor.AddonDescriptorLoader;
 import com.atlassian.core.util.DateUtils;
 import com.atlassian.core.util.InvalidDurationException;
+import com.atlassian.jira.rest.client.api.domain.BasicProject;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -469,8 +470,9 @@ public class SessionServiceImpl implements SessionService {
 		}else{
 			List<Session> privateSessionsList = new ArrayList<>(0), sharedSessionsList = new ArrayList<>(0);
 			try {
-				privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user, userAccountId).getContent();
-				sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user, userAccountId).getContent();
+				List<Long> projectIds = getUserProjects();
+				privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user, userAccountId,projectIds).getContent();
+				sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user, userAccountId,projectIds).getContent();
 			} catch(SearchPhaseExecutionException se) {
 				log.warn("Error in get sessions for user as no data in ES ->" + se.getMessage());
 			}
@@ -524,7 +526,15 @@ public class SessionServiceImpl implements SessionService {
 	public SessionDtoSearchList searchSession(String loggedUser, String loggedUserAccountId, Optional<Long> projectId, Optional<String> assignee, Optional<String> assigneeAccountId,
 			Optional<List<String>> status, Optional<String> searchTerm, Optional<String> sortField, boolean sortAscending, int startAt, int size) {
 		String ctId = CaptureUtil.getCurrentCtId();
-		Map<String,Object> sessionMap = sessionESRepository.searchSessions(ctId, projectId, assignee, assigneeAccountId, status, searchTerm, sortField, sortAscending, startAt, size);
+		List<Long> projectIds =null;
+		if(!projectId.isPresent()) {
+				 projectIds = getUserProjects();
+		}else{
+			 projectIds = new ArrayList<>();
+			projectIds.add(projectId.get());
+		}
+		//
+		Map<String,Object> sessionMap = sessionESRepository.searchSessions(ctId, projectIds, assignee, assigneeAccountId, status, searchTerm, sortField, sortAscending, startAt, size);
 		List<Session>  sessionsList = new ArrayList<>();
 		Long totalElement = 0l;
 		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
@@ -1809,7 +1819,10 @@ public class SessionServiceImpl implements SessionService {
 	}
 	
 	private Map<String, Object> updateProjectNameIntoES(String ctId, Long projectId, String projectName, int index, int maxResults) {
-		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctId, Optional.of(projectId), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+		List<Long> projectIds = new ArrayList<>();
+		projectIds.add(projectId);
+
+		Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctId, projectIds, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
 				Optional.empty(), true, index, maxResults);
 		List<Session> sessionList = new ArrayList<>();
 		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
@@ -1873,10 +1886,10 @@ public class SessionServiceImpl implements SessionService {
 	private Map<String, Object> updateUserDisplayNameIntoES(String ctid, String userKey, String userAccountId, String userDisplayName, int index, int maxResults) {
 		Map<String, Object> sessionMap = null;
 		if(CaptureUtil.isTenantGDPRComplaint()) {
-			sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.empty(), Optional.of(userAccountId), Optional.empty(), Optional.empty(),
+			sessionMap = sessionESRepository.searchSessions(ctid, null, Optional.empty(), Optional.of(userAccountId), Optional.empty(), Optional.empty(),
 					Optional.empty(), true, index, maxResults);
 		} else {
-			sessionMap = sessionESRepository.searchSessions(ctid, Optional.empty(), Optional.of(userKey), Optional.empty(), Optional.empty(), Optional.empty(),
+			sessionMap = sessionESRepository.searchSessions(ctid, null, Optional.of(userKey), Optional.empty(), Optional.empty(), Optional.empty(),
 					Optional.empty(), true, index, maxResults);
 		}
 		List<Session> sessionList = new ArrayList<>();
@@ -1898,6 +1911,20 @@ public class SessionServiceImpl implements SessionService {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		AtlassianHostUser host = (AtlassianHostUser) auth.getPrincipal();
 		return host.getHost().getBaseUrl();
+	}
+
+	private List<Long>  getUserProjects(){
+		List<Long> projectIds = null;
+		try {
+			ArrayList<BasicProject> basicProjects = projectService.getProjects();
+			if(basicProjects!=null&&basicProjects.size()>0){
+				projectIds = new ArrayList<>();
+				projectIds =basicProjects.stream().map(BasicProject::getId).collect(Collectors.toList());
+			}
+		}catch (Exception exp){
+			log.warn("Exception while getting projects from Jira");
+		}
+		return projectIds;
 	}
 
 }

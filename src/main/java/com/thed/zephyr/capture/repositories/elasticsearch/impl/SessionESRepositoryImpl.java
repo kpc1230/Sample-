@@ -78,7 +78,7 @@ public class SessionESRepositoryImpl {
 		escapeCharactersMap.put('\\', '\\');
 	}
 	
-	public Map<String, Object> searchSessions(String ctId, Optional<Long> projectId, Optional<String> assignee, Optional<String> assigneeAccountId, Optional<List<String>> status, Optional<String> searchTerm,
+	public Map<String, Object> searchSessions(String ctId,List<Long> projectIds, Optional<String> assignee, Optional<String> assigneeAccountId, Optional<List<String>> status, Optional<String> searchTerm,
 			Optional<String> sortField, boolean sortAscending, int startAt, int size) {
 		Map<String,Object> results = new HashMap<>();
 		List<Session> sessionList = new ArrayList<>();
@@ -86,8 +86,11 @@ public class SessionESRepositoryImpl {
 		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
 		boolQueryBuilder.must(ctidQueryBuilder);
 		
-		if(projectId.isPresent()) { //Check if project is selected then add to query.
-			MatchQueryBuilder projectQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.PROJECT_ID, projectId.get());
+		if(projectIds != null && projectIds.size()>0) { //Check if project is selected then add to query.
+			BoolQueryBuilder projectQueryBuilder =QueryBuilders.boolQuery();
+			projectIds.stream().forEach(projectId -> {
+				projectQueryBuilder.should((QueryBuilders.matchQuery(ApplicationConstants.PROJECT_ID, projectId)));
+			});
 			boolQueryBuilder.must(projectQueryBuilder);
     	}
     	
@@ -207,10 +210,12 @@ public class SessionESRepositoryImpl {
     	});
     }
 	
-	public AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user, String userAccountId) {
+	public AggregatedPage<Session> fetchPrivateSessionsForUser(String ctId, String user, String userAccountId,List<Long> projectIds) {
 		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
 		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
 		boolQueryBuilder.must(ctidQueryBuilder);
+
+		addProjectFilter(projectIds,boolQueryBuilder);
 		
 		MatchQueryBuilder statusQueryBuilder = (QueryBuilders.matchQuery(ApplicationConstants.STATUS_FIELD, Status.COMPLETED.name()));
 		boolQueryBuilder.mustNot(statusQueryBuilder);
@@ -231,10 +236,12 @@ public class SessionESRepositoryImpl {
 		return elasticsearchTemplate.queryForPage(query, Session.class);
 	}
 	
-	public AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user, String userAccountId) {
+	public AggregatedPage<Session> fetchSharedSessionsForUser(String ctId, String user, String userAccountId,List<Long> projectIds) {
 		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
 		MatchQueryBuilder ctidQueryBuilder = QueryBuilders.matchPhraseQuery(ApplicationConstants.TENANT_ID_FIELD, ctId);
 		boolQueryBuilder.must(ctidQueryBuilder);
+
+		addProjectFilter(projectIds,boolQueryBuilder);
 		
 		MatchQueryBuilder sharedQueryBuilder = QueryBuilders.matchQuery(ApplicationConstants.SHARED_FIELD, true);
 		boolQueryBuilder.must(sharedQueryBuilder);
@@ -254,6 +261,16 @@ public class SessionESRepositoryImpl {
     	Pageable pageable = CaptureUtil.getPageRequest(0, 50);
 		SearchQuery query = new NativeSearchQueryBuilder().withFilter(boolQueryBuilder).withSort(sortFieldBuilder).withPageable(pageable).build();
 		return elasticsearchTemplate.queryForPage(query, Session.class);
+	}
+
+	private void addProjectFilter(List<Long> projectIds,BoolQueryBuilder boolQueryBuilder){
+		if(projectIds !=null && projectIds.size()>0) {
+			BoolQueryBuilder projectQueryBuilder =QueryBuilders.boolQuery();
+			projectIds.stream().forEach(projectId -> {
+				projectQueryBuilder.should((QueryBuilders.matchQuery(ApplicationConstants.PROJECT_ID, projectId)));
+			});
+			boolQueryBuilder.must(projectQueryBuilder);
+		}
 	}
 	
 	public void deleteSessionsByCtId(String ctId) {
