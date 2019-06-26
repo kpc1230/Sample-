@@ -115,9 +115,10 @@ public class TemplateServiceImpl implements TemplateService {
 
 	@Override
 	public TemplateSearchList getSharedTemplates(Integer offset, Integer limit) throws Exception {
-		Page<Template> templatePage = repository.findByCtIdAndShared(CaptureUtil.getCurrentCtId(),true, getPageRequest(offset, limit));
-        ArrayList<BasicProject> projects = projectService.getProjects();
-        Map<Long, BasicProject> projectsMap = new TreeMap<>();
+		ArrayList<BasicProject> projects = projectService.getProjects();
+		List<Long> projectIds = projects.stream().map(BasicProject::getId).collect(Collectors.toList());
+		Page<Template> templatePage = repository.findByCtIdAndProjectIdIsInAndShared(CaptureUtil.getCurrentCtId(), projectIds, true, getPageRequest(offset, limit));
+		Map<Long, BasicProject> projectsMap = new TreeMap<>();
         projects.forEach(basicProject -> {projectsMap.put(basicProject.getId(), basicProject);});
         List<Template> templateList = filterSharedTemplateByAccessedProjects(templatePage, projectsMap);
         templateList = templateList != null?templateList:new ArrayList<>();
@@ -127,7 +128,9 @@ public class TemplateServiceImpl implements TemplateService {
 
 	@Override
 	public TemplateSearchList getFavouriteTemplates(String owner, String ownerAccountId, Integer offset, Integer limit) throws Exception {
-		Page<Template> shared = repository.findByCtIdAndFavouriteAndShared(CaptureUtil.getCurrentCtId(),true, true, getPageRequest(offset, limit));
+		ArrayList<BasicProject> projects = projectService.getProjects();
+		List<Long> projectIds = projects.stream().map(BasicProject::getId).collect(Collectors.toList());
+		Page<Template> shared = repository.findByCtIdAndProjectIdIsInAndFavouriteAndShared(CaptureUtil.getCurrentCtId(),projectIds,true, true, getPageRequest(offset, limit));
 		Page<Template> createdBy = null;
 		if(CaptureUtil.isTenantGDPRComplaint()) {
 			createdBy = repository.findByCtIdAndFavouriteAndCreatedByAccountId(CaptureUtil.getCurrentCtId(), true, ownerAccountId, getPageRequest(offset, limit));

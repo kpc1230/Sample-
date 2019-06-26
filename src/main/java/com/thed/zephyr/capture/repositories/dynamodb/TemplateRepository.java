@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 
 import com.thed.zephyr.capture.model.Template;
 
+import java.util.List;
+
 /**
  * Created by aliakseimatsarski on 8/20/17.
  */
@@ -101,4 +103,27 @@ public interface TemplateRepository extends CrudRepository<Template, String> {
 	@EnableScan
 	@EnableScanCount
 	public Page<Template> findByCtIdAndFavouriteAndCreatedByAccountId(String ctId,Boolean favourite, String createdByAccountId, Pageable pageable);
+
+	/**
+	 * Find all the Template objects using ctId and Shared as true.
+	 * @param ctId
+	 * @param projectIds
+	 * @param shared
+	 * @param pageable
+	 * @return - Paginated Template objects.
+	 */
+	@EnableScan
+	@EnableScanCount
+	 Page<Template> findByCtIdAndProjectIdIsInAndShared(String ctId, List<Long> projectIds, Boolean shared, Pageable pageable);
+
+	/**
+	 * Find all the Template objects using favourite as true and owner.
+	 * @param favourite
+	 * @param favourite
+	 * @param pageable
+	 * @return - Paginated Template objects.
+	 */
+	@EnableScan
+	@EnableScanCount
+	 Page<Template> findByCtIdAndProjectIdIsInAndFavouriteAndShared(String ctId,List<Long> projectIds,Boolean favourite, Boolean shared, Pageable pageable);
 }
