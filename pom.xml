@@ -31,7 +31,7 @@
         <repository>
             <id>zephyr-private-repo</id>
             <name>Zephyr Private Repository</name>
-            <url>http://192.168.100.200:9999/repository</url>
+            <url>http://18.223.61.8:9999/repository</url>
         </repository>
     </repositories>
 
