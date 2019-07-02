@@ -688,6 +688,6 @@
     }
   },
   "apiMigrations": {
-    "gdpr": false
+    "gdpr": true
   }
 }
