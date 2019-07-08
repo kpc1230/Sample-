@@ -116,21 +116,28 @@ public class TemplateServiceImpl implements TemplateService {
 	@Override
 	public TemplateSearchList getSharedTemplates(Integer offset, Integer limit) throws Exception {
 		ArrayList<BasicProject> projects = projectService.getProjects();
-		List<Long> projectIds = projects.stream().map(BasicProject::getId).collect(Collectors.toList());
-		Page<Template> templatePage = repository.findByCtIdAndProjectIdIsInAndShared(CaptureUtil.getCurrentCtId(), projectIds, true, getPageRequest(offset, limit));
-		Map<Long, BasicProject> projectsMap = new TreeMap<>();
-        projects.forEach(basicProject -> {projectsMap.put(basicProject.getId(), basicProject);});
-        List<Template> templateList = filterSharedTemplateByAccessedProjects(templatePage, projectsMap);
-        templateList = templateList != null?templateList:new ArrayList<>();
-
-        return createSearchList(templateList, projectsMap, offset, limit);
+		if(projects !=null && projects.size() >0){
+			List<Long> projectIds = projects.stream().map(BasicProject::getId).collect(Collectors.toList());
+			Page<Template> templatePage = repository.findByCtIdAndProjectIdIsInAndShared(CaptureUtil.getCurrentCtId(), projectIds, true, getPageRequest(offset, limit));
+			Map<Long, BasicProject> projectsMap = new TreeMap<>();
+			projects.forEach(basicProject -> {projectsMap.put(basicProject.getId(), basicProject);});
+			List<Template> templateList = filterSharedTemplateByAccessedProjects(templatePage, projectsMap);
+			templateList = templateList != null?templateList:new ArrayList<>();
+			return createSearchList(templateList, projectsMap, offset, limit);
+		}else{
+			List<TemplateRequest> templateRequestList = new ArrayList<>();
+			return new TemplateSearchList(templateRequestList, offset, limit, 0);
+		}
 	}
 
 	@Override
 	public TemplateSearchList getFavouriteTemplates(String owner, String ownerAccountId, Integer offset, Integer limit) throws Exception {
 		ArrayList<BasicProject> projects = projectService.getProjects();
 		List<Long> projectIds = projects.stream().map(BasicProject::getId).collect(Collectors.toList());
-		Page<Template> shared = repository.findByCtIdAndProjectIdIsInAndFavouriteAndShared(CaptureUtil.getCurrentCtId(),projectIds,true, true, getPageRequest(offset, limit));
+		Page<Template> shared = null;
+		if(projectIds!=null&&projectIds.size()>0){
+			shared = repository.findByCtIdAndProjectIdIsInAndFavouriteAndShared(CaptureUtil.getCurrentCtId(),projectIds,true, true, getPageRequest(offset, limit));
+		}
 		Page<Template> createdBy = null;
 		if(CaptureUtil.isTenantGDPRComplaint()) {
 			createdBy = repository.findByCtIdAndFavouriteAndCreatedByAccountId(CaptureUtil.getCurrentCtId(), true, ownerAccountId, getPageRequest(offset, limit));

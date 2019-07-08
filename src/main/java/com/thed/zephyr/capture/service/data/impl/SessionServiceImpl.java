@@ -471,8 +471,10 @@ public class SessionServiceImpl implements SessionService {
 			List<Session> privateSessionsList = new ArrayList<>(0), sharedSessionsList = new ArrayList<>(0);
 			try {
 				List<Long> projectIds = getUserProjects();
-				privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user, userAccountId,projectIds).getContent();
-				sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user, userAccountId,projectIds).getContent();
+				if(projectIds!=null&&projectIds.size()>0){
+					privateSessionsList = sessionESRepository.fetchPrivateSessionsForUser(ctId, user, userAccountId,projectIds).getContent();
+					sharedSessionsList = sessionESRepository.fetchSharedSessionsForUser(ctId, user, userAccountId,projectIds).getContent();
+				}
 			} catch(SearchPhaseExecutionException se) {
 				log.warn("Error in get sessions for user as no data in ES ->" + se.getMessage());
 			}
@@ -533,19 +535,20 @@ public class SessionServiceImpl implements SessionService {
 			 projectIds = new ArrayList<>();
 			projectIds.add(projectId.get());
 		}
-		//
-		Map<String,Object> sessionMap = sessionESRepository.searchSessions(ctId, projectIds, assignee, assigneeAccountId, status, searchTerm, sortField, sortAscending, startAt, size);
-		List<Session>  sessionsList = new ArrayList<>();
-		Long totalElement = 0l;
-		for(Map.Entry<String, Object> entry : sessionMap.entrySet()) {
-			String key = entry.getKey();
-			if(key.equals(ApplicationConstants.SESSION_LIST)){
-				sessionsList  = (List<Session>)entry.getValue();
-			}
-			if(key.equals(ApplicationConstants.TOTAL_COUNT)){
-				totalElement  = (Long)entry.getValue();
-			}
-		}
+        List<Session> sessionsList = new ArrayList<>();
+        Long totalElement = 0l;
+		if(projectIds !=null && projectIds.size() >0) {            //
+            Map<String, Object> sessionMap = sessionESRepository.searchSessions(ctId, projectIds, assignee, assigneeAccountId, status, searchTerm, sortField, sortAscending, startAt, size);
+            for (Map.Entry<String, Object> entry : sessionMap.entrySet()) {
+                String key = entry.getKey();
+                if (key.equals(ApplicationConstants.SESSION_LIST)) {
+                    sessionsList = (List<Session>) entry.getValue();
+                }
+                if (key.equals(ApplicationConstants.TOTAL_COUNT)) {
+                    totalElement = (Long) entry.getValue();
+                }
+            }
+        }
 		List<SessionDto> sessionDtoList = sortAndFetchSessionDto(loggedUser, loggedUserAccountId, sessionsList, size, false);
 		SessionDtoSearchList sessionDtoSearchList = new SessionDtoSearchList(sessionDtoList, startAt, size, totalElement);
 		return sessionDtoSearchList;
