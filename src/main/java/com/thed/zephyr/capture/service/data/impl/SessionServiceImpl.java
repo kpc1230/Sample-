@@ -1778,6 +1778,7 @@ public class SessionServiceImpl implements SessionService {
 	private Duration calculateEstimatedTimeSpentOnSession(Session session) {
 		List<SessionActivity> sessionActivityList = sessionActivityService.getAllSessionActivityByPropertyExist(session.getId(), Optional.of("status"));
 		DateTime startTime = null;
+		DateTime Completetimestamp=null;
         org.joda.time.Duration timeSpent = new org.joda.time.Duration(0L);
         for(SessionActivity sessionActivity : sessionActivityList) {
         	if(sessionActivity instanceof StatusSessionActivity) { //To avoid class cast exception.
@@ -1796,6 +1797,14 @@ public class SessionServiceImpl implements SessionService {
     	                    log.warn("Test Session " + session.getId() + " : Paused before Started");
     	                }
     	                break;
+					case COMPLETED:
+
+                        Completetimestamp=timestamp.toDateTime();
+                        log.warn("this is the time completed :  " + Completetimestamp.toString()+ " in SessionServiceImpl");
+                        org.joda.time.Duration d=new org.joda.time.Duration(startTime,Completetimestamp);
+                        log.warn("Time spent:  " + d.getMillis()+ " in SessionServiceImpl");
+                        timeSpent=timeSpent.plus(d);
+                        break;
     	            default:
     	                break;
             	}
@@ -1803,7 +1812,14 @@ public class SessionServiceImpl implements SessionService {
         }
         // If we're not paused at this point, add time from started to now
         if (startTime != null) {
-            timeSpent = timeSpent.plus(new org.joda.time.Duration(startTime, new DateTime()));
+            if(Completetimestamp!=null)
+            {
+                log.warn("this is the total time spend :  " + timeSpent.getMillis() + " in SessionServiceImpl");
+            }else {
+
+                timeSpent = timeSpent.plus(new org.joda.time.Duration(startTime, new DateTime()));
+
+            }
         }
 		return Duration.ofMillis(timeSpent.getMillis());
 	}
