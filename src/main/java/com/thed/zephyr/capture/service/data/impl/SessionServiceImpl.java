@@ -1792,18 +1792,25 @@ public class SessionServiceImpl implements SessionService {
     	                // Append the time
     	                if (startTime != null) {
     	                    timeSpent = timeSpent.plus(new org.joda.time.Duration(startTime, timestamp));
-    	                    startTime = null;
+                            log.warn("Session is in paused state " + session.getId() + " ::"+timeSpent.getMillis()+" Paused before Started");
+    	                  startTime = null;
+
     	                } else {
     	                    log.warn("Test Session " + session.getId() + " : Paused before Started");
     	                }
     	                break;
 					case COMPLETED:
-
                         Completetimestamp=timestamp.toDateTime();
-                        log.warn("this is the time completed :  " + Completetimestamp.toString()+ " in SessionServiceImpl");
-                        org.joda.time.Duration d=new org.joda.time.Duration(startTime,Completetimestamp);
-                        log.warn("Time spent:  " + d.getMillis()+ " in SessionServiceImpl");
-                        timeSpent=timeSpent.plus(d);
+                        org.joda.time.Duration d = new org.joda.time.Duration(startTime,Completetimestamp);
+                            log.warn("this is the time started :  " + timestamp.toString() + "::" + timeSpent.getMillis() + " in SessionServiceImpl");
+                            log.warn("this is the time completed :  " + Completetimestamp.toString() + " in SessionServiceImpl");
+                        if(d.getMillis() < 0.0) {
+                            log.warn("Session transaction from paused to complete");
+                        }else
+                        {
+                            timeSpent = timeSpent.plus(d);
+                            log.warn("Time spent:  " + d.getMillis() + " in SessionServiceImpl");
+                        }
                         break;
     	            default:
     	                break;
@@ -1816,9 +1823,8 @@ public class SessionServiceImpl implements SessionService {
             {
                 log.warn("this is the total time spend :  " + timeSpent.getMillis() + " in SessionServiceImpl");
             }else {
-
                 timeSpent = timeSpent.plus(new org.joda.time.Duration(startTime, new DateTime()));
-
+                log.warn("Comes to the else part and time :  " + timeSpent.getMillis() + " in SessionServiceImpl");
             }
         }
 		return Duration.ofMillis(timeSpent.getMillis());
