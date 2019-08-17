@@ -13,9 +13,9 @@ public interface JiraAuthService {
 
     CaptureUser getUserDetails(String username, String password, String baseURL);
 
-    BEAuthToken createBEAuthTokenWithCookies(String clientKey, String userKey, String userAccountId, long timestamp, String jiraToken, String userAgent);
+    BEAuthToken createBEAuthTokenWithCookies(String clientKey, String userKey, String userAccountId, long timestamp, String jiraToken, String userAgent,String beLoggedInParam);
 
-    BEAuthToken createBEAuthTokenWithApiToken(String clientKey, String userKey, String userAccountId, long timestamp, String apiToken, String userAgent);
+    BEAuthToken createBEAuthTokenWithApiToken(String clientKey, String userKey, String userAccountId, long timestamp, String apiToken, String userAgent,String beLoggedInParam);
 
     BEAuthToken createBEAuthTokenFromString(String token);
 
