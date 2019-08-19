@@ -9,6 +9,7 @@ public class BEAuthToken {
     private String jiraToken;
     private String userAgent;
     private String apiToken;
+    private String beLoggedInParam;
 
     public BEAuthToken() {
     }
@@ -17,15 +18,16 @@ public class BEAuthToken {
         return ctId;
     }
 
-    public BEAuthToken(String ctId, String userKey, String userAccountId, long timestamp, String userAgent) {
+    public BEAuthToken(String ctId, String userKey, String userAccountId, long timestamp, String userAgent,String beLoggedInParam) {
         this.ctId = ctId;
         this.userKey = userKey;
         this.userAccountId = userAccountId;
         this.timestamp = timestamp;
         this.userAgent = userAgent;
+        this.beLoggedInParam=beLoggedInParam;
     }
 
-    public BEAuthToken(String ctId, String userKey, String userAccountId, long timestamp, String jiraToken, String userAgent, String apiToken) {
+    public BEAuthToken(String ctId, String userKey, String userAccountId, long timestamp, String jiraToken, String userAgent, String apiToken,String beLoggedInParam) {
         this.ctId = ctId;
         this.userKey = userKey;
         this.userAccountId = userAccountId;
@@ -33,6 +35,7 @@ public class BEAuthToken {
         this.jiraToken = jiraToken;
         this.userAgent = userAgent;
         this.apiToken = apiToken;
+        this.beLoggedInParam=beLoggedInParam;
     }
 
     public void setCtId(String ctId) {
@@ -86,5 +89,12 @@ public class BEAuthToken {
 	public void setUserAccountId(String userAccountId) {
 		this.userAccountId = userAccountId;
 	}
-   
+
+    public String getBeLoggedInParam() {
+        return beLoggedInParam;
+    }
+
+    public void setBeLoggedInParam(String beLoggedInParam) {
+        this.beLoggedInParam = beLoggedInParam;
+    }
 }
