@@ -45,15 +45,15 @@ public class JiraAuthServiceImpl implements JiraAuthService {
             String jiraToken = sessionNode.get(NAME).asText() + "=" + sessionNode.get(VALUE).asText();
 
             if(CaptureUtil.isTenantGDPRComplaint()) {
-            	return createBEAuthTokenWithCookies(host.getCtId(), null, captureUser.getAccountId(), System.currentTimeMillis(), jiraToken, userAgent);
+            	return createBEAuthTokenWithCookies(host.getCtId(), null, captureUser.getAccountId(), System.currentTimeMillis(), jiraToken, userAgent,userKey);
             } else {
-            	return createBEAuthTokenWithCookies(host.getCtId(), captureUser.getKey(), captureUser.getAccountId(), System.currentTimeMillis(), jiraToken, userAgent);
+            	return createBEAuthTokenWithCookies(host.getCtId(),captureUser.getKey(), captureUser.getAccountId(), System.currentTimeMillis(), jiraToken, userAgent,userKey);
             }
         } else if(captureUser != null) {
             if(CaptureUtil.isTenantGDPRComplaint()) {
-            	return createBEAuthTokenWithApiToken(host.getCtId(), null, captureUser.getAccountId(), System.currentTimeMillis(), password, userAgent);
+            	return createBEAuthTokenWithApiToken(host.getCtId(), null, captureUser.getAccountId(), System.currentTimeMillis(), password, userAgent,userKey);
             } else {
-            	return createBEAuthTokenWithApiToken(host.getCtId(), captureUser.getKey(), captureUser.getAccountId(), System.currentTimeMillis(), password, userAgent);
+            	return createBEAuthTokenWithApiToken(host.getCtId(), captureUser.getKey(), captureUser.getAccountId(), System.currentTimeMillis(), password, userAgent,userKey);
             }
         }
 
@@ -69,16 +69,16 @@ public class JiraAuthServiceImpl implements JiraAuthService {
 
 
     @Override
-    public BEAuthToken createBEAuthTokenWithCookies(String clientKey, String userKey, String userAccountId, long timestamp, String jiraToken, String userAgent){
-        BEAuthToken beAuthToken = new BEAuthToken(clientKey, userKey, userAccountId, timestamp, userAgent);
+    public BEAuthToken createBEAuthTokenWithCookies(String clientKey, String userKey, String userAccountId, long timestamp, String jiraToken, String userAgent,String beLoggedInParam){
+        BEAuthToken beAuthToken = new BEAuthToken(clientKey, userKey, userAccountId, timestamp, userAgent,beLoggedInParam);
         beAuthToken.setJiraToken(jiraToken);
 
         return beAuthToken;
     }
 
     @Override
-    public BEAuthToken createBEAuthTokenWithApiToken(String clientKey, String userKey, String userAccountId, long timestamp, String apiToken, String userAgent){
-        BEAuthToken beAuthToken = new BEAuthToken(clientKey, userKey, userAccountId, timestamp, userAgent);
+    public BEAuthToken createBEAuthTokenWithApiToken(String clientKey, String userKey, String userAccountId, long timestamp, String apiToken, String userAgent,String beLoggedInParam){
+        BEAuthToken beAuthToken = new BEAuthToken(clientKey, userKey, userAccountId, timestamp, userAgent,beLoggedInParam);
         beAuthToken.setApiToken(apiToken);
 
         return beAuthToken;
@@ -94,10 +94,14 @@ public class JiraAuthServiceImpl implements JiraAuthService {
             String jiraToken = !StringUtils.equals(tokenParts[3], "null")?tokenParts[3]:null;
             String userAgent = tokenParts[4];
             String apiToken = null;
+            String beLoggedInParam = null;
             if(tokenParts.length > 5){
                 apiToken = !StringUtils.equals(tokenParts[5], "null")?tokenParts[5]:null;
             }
-            return new BEAuthToken(clientKey, null, userAccountId, timestamp, jiraToken, userAgent, apiToken);
+            if(tokenParts.length > 6){
+                beLoggedInParam = !StringUtils.equals(tokenParts[6], "null")?tokenParts[6]:null;
+            }
+            return new BEAuthToken(clientKey, null, userAccountId, timestamp, jiraToken, userAgent, apiToken,beLoggedInParam);
         } else {
         	String userKey = tokenParts[2];
             long timestamp = Long.valueOf(tokenParts[3]);
@@ -107,7 +111,11 @@ public class JiraAuthServiceImpl implements JiraAuthService {
             if(tokenParts.length > 6){
                 apiToken = !StringUtils.equals(tokenParts[6], "null")?tokenParts[6]:null;
             }
-            return new BEAuthToken(clientKey, userKey, userAccountId, timestamp, jiraToken, userAgent, apiToken);
+            String beLoggedInParam = null;
+            if(tokenParts.length > 7){
+                beLoggedInParam = !StringUtils.equals(tokenParts[7], "null")?tokenParts[7]:null;
+            }
+            return new BEAuthToken(clientKey, userKey, userAccountId, timestamp, jiraToken, userAgent, apiToken,beLoggedInParam);
         }
     }
 
@@ -123,6 +131,8 @@ public class JiraAuthServiceImpl implements JiraAuthService {
         sb.append((beAuthToken.getJiraToken() != null?beAuthToken.getJiraToken():"null") + "__");
         sb.append(beAuthToken.getUserAgent() + "__");
         sb.append(beAuthToken.getApiToken() !=null?beAuthToken.getApiToken():"null");
+
+        sb.append("__"+ (beAuthToken.getBeLoggedInParam() !=null?beAuthToken.getBeLoggedInParam():"null"));
 
         return sb.toString();
     }

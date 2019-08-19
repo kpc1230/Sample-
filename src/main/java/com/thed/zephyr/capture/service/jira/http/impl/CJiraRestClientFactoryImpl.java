@@ -11,6 +11,7 @@ import com.thed.zephyr.capture.service.jira.UserService;
 import com.thed.zephyr.capture.service.jira.http.CJiraRestClientFactory;
 import com.thed.zephyr.capture.service.jira.http.JwtGetAuthenticationHandler;
 import com.thed.zephyr.capture.service.jira.http.JwtPostAuthenticationHandler;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -47,7 +48,8 @@ public class CJiraRestClientFactoryImpl implements CJiraRestClientFactory {
             BEAuthToken beAuthToken = ((BEContextAuthentication) auth).getBeAuthToken();
             if(beAuthToken.getApiToken() != null){
                 CaptureUser userByKey = userService.findUserByKey(beAuthToken.getUserKey());
-                client = factory.createWithBasicHttpAuthentication(URI.create(host.getHost().getBaseUrl()), userByKey.getEmailAddress(), beAuthToken.getApiToken());
+                String userName = StringUtils.isNotBlank(userByKey.getEmailAddress()) ? userByKey.getEmailAddress() : beAuthToken.getBeLoggedInParam();
+                client = factory.createWithBasicHttpAuthentication(URI.create(host.getHost().getBaseUrl()), userName, beAuthToken.getApiToken());
             } else {
                 client = factory.create(URI.create(host.getHost().getBaseUrl()), new JwtPostAuthenticationHandler(host, ad, beAuthToken.getJiraToken()));
             }
