@@ -261,7 +261,7 @@ public class SessionController extends CaptureAbstractController{
 			String userAccountId = getUserAccountId();
 			Session session = validateAndGetSession(sessionId);
 			if (session != null && !permissionService.canSeeSession(user, userAccountId, session)) {
-				throw new CaptureValidationException(i18n.getMessage("session.update.not.editable"));
+				throw new CaptureValidationException(i18n.getMessage("session.view.not.allowed"));
 			} else if(Objects.isNull(session)) {
 				throw new CaptureValidationException(i18n.getMessage("session.not.exist.message"));
 			}
@@ -763,7 +763,12 @@ public class SessionController extends CaptureAbstractController{
 											   HttpServletRequest request) throws CaptureValidationException {
 		try {
 			log.info("Start of sessionActivities() --> params " + sessionId);
-			validateAndGetSession(sessionId);
+			String user = getUser();
+			String userAccountId = getUserAccountId();
+			Session session = validateAndGetSession(sessionId);
+			if (session != null && !permissionService.canSeeSession(user, userAccountId, session)) {
+				throw new CaptureValidationException(i18n.getMessage("session.view.not.allowed"));
+			}
 			List<SessionActivity> sessionActivities = sessionActivityService.getAllSessionActivityBySession(sessionId,
 					CaptureUtil.getPageRequest(offset.orElse(0), limit.orElse(ApplicationConstants.DEFAULT_RESULT_SIZE))
 			);

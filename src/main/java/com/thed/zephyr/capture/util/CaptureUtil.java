@@ -330,8 +330,12 @@ public class CaptureUtil {
     
     public static String getUserId(String userNameOrKey, String userAccountId, String defaultLoggedInUserAccountId) {
     	if(isTenantGDPRComplaint()) {
-    		return userAccountId;
-    	} else {
+            if (StringUtils.isNotEmpty(userAccountId)) {
+                return userAccountId;
+            } else {
+                return defaultLoggedInUserAccountId;
+            }
+        } else {
     		if(StringUtils.isNotEmpty(userAccountId)) {
     			return userAccountId;
     		} else if(StringUtils.isNotEmpty(userNameOrKey)) {
