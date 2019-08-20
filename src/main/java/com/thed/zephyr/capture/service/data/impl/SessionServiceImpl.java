@@ -1791,6 +1791,7 @@ public class SessionServiceImpl implements SessionService {
 	private Duration calculateEstimatedTimeSpentOnSession(Session session) {
 		List<SessionActivity> sessionActivityList = sessionActivityService.getAllSessionActivityByPropertyExist(session.getId(), Optional.of("status"));
 		DateTime startTime = null;
+		DateTime Completetimestamp=null;
         org.joda.time.Duration timeSpent = new org.joda.time.Duration(0L);
         for(SessionActivity sessionActivity : sessionActivityList) {
         	if(sessionActivity instanceof StatusSessionActivity) { //To avoid class cast exception.
@@ -1804,11 +1805,26 @@ public class SessionServiceImpl implements SessionService {
     	                // Append the time
     	                if (startTime != null) {
     	                    timeSpent = timeSpent.plus(new org.joda.time.Duration(startTime, timestamp));
-    	                    startTime = null;
+                            log.warn("Session is in paused state " + session.getId() + " ::"+timeSpent.getMillis()+" Paused before Started");
+    	                  startTime = null;
+
     	                } else {
     	                    log.warn("Test Session " + session.getId() + " : Paused before Started");
     	                }
     	                break;
+					case COMPLETED:
+                        Completetimestamp=timestamp.toDateTime();
+                        org.joda.time.Duration d = new org.joda.time.Duration(startTime,Completetimestamp);
+                            log.warn("this is the time started :  " + timestamp.toString() + "::" + timeSpent.getMillis() + " in SessionServiceImpl");
+                            log.warn("this is the time completed :  " + Completetimestamp.toString() + " in SessionServiceImpl");
+                        if(d.getMillis() < 0.0) {
+                            log.warn("Session transaction from paused to complete");
+                        }else
+                        {
+                            timeSpent = timeSpent.plus(d);
+                            log.warn("Time spent:  " + d.getMillis() + " in SessionServiceImpl");
+                        }
+                        break;
     	            default:
     	                break;
             	}
@@ -1816,7 +1832,13 @@ public class SessionServiceImpl implements SessionService {
         }
         // If we're not paused at this point, add time from started to now
         if (startTime != null) {
-            timeSpent = timeSpent.plus(new org.joda.time.Duration(startTime, new DateTime()));
+            if(Completetimestamp!=null)
+            {
+                log.warn("this is the total time spend :  " + timeSpent.getMillis() + " in SessionServiceImpl");
+            }else {
+                timeSpent = timeSpent.plus(new org.joda.time.Duration(startTime, new DateTime()));
+                log.warn("Comes to the else part and time :  " + timeSpent.getMillis() + " in SessionServiceImpl");
+            }
         }
 		return Duration.ofMillis(timeSpent.getMillis());
 	}

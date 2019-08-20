@@ -56,7 +56,7 @@
                        th:onclick="'getBonfire(\'' + ${browser} + '\');'" >
                         <span class="bf-gs-button-right"><strong>Install Capture for JIRA</strong> at the Chrome Store</span>
                     </a>
-                    <a th:target="_parent"
+                    <a th:target="_blank"
                        th:if="${browser != 'Chrome'}"
                        th:href="${downloadUrl}"
                        id="capture-download-button"
